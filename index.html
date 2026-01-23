@@ -10,7 +10,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     
     <style>
@@ -43,7 +42,6 @@
             --t2: #06b6d4;
             --t3: #f59e0b;
             --shadow: 0 4px 20px rgba(26, 95, 74, 0.1);
-            --shadow-lg: 0 8px 40px rgba(26, 95, 74, 0.15);
             --radius: 16px;
             --radius-sm: 10px;
         }
@@ -58,10 +56,11 @@
             line-height: 1.5;
         }
 
+        /* ===== HEADER ===== */
         .header {
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
             color: white;
-            padding: 16px 20px;
+            padding: 14px 20px;
             position: sticky;
             top: 0;
             z-index: 100;
@@ -69,36 +68,25 @@
         }
 
         .header-content {
-            max-width: 1400px;
+            max-width: 1200px;
             margin: 0 auto;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 16px;
-        }
-
-        .header h1 {
-            font-size: 1.4rem;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .header-right {
-            display: flex;
-            align-items: center;
             gap: 12px;
         }
+
+        .header h1 { font-size: 1.3rem; font-weight: 700; }
+        .header-right { display: flex; align-items: center; gap: 10px; }
 
         .status-badge {
             display: flex;
             align-items: center;
             gap: 6px;
             background: rgba(255,255,255,0.2);
-            padding: 6px 12px;
+            padding: 5px 10px;
             border-radius: 20px;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
         }
 
         .status-dot {
@@ -109,88 +97,77 @@
             animation: pulse 1.5s infinite;
         }
 
-        .status-dot.connected { background: var(--success); animation: none; }
+        .status-dot.ok { background: var(--success); animation: none; }
 
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 
-        .btn-back {
+        .btn-header {
             background: rgba(255,255,255,0.15);
             border: none;
             color: white;
-            padding: 8px 14px;
+            padding: 7px 12px;
             border-radius: var(--radius-sm);
             cursor: pointer;
             font-family: inherit;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             font-weight: 500;
+            display: none;
         }
 
-        .btn-back:hover { background: rgba(255,255,255,0.25); }
+        .btn-header:hover { background: rgba(255,255,255,0.25); }
 
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 20px;
-        }
+        /* ===== CONTAINER ===== */
+        .container { max-width: 1200px; margin: 0 auto; padding: 16px; }
 
         .screen { display: none; }
-        .screen.active { display: block; animation: fadeIn 0.3s ease; }
+        .screen.active { display: block; }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
+        /* ===== GRID ALUMNOS ===== */
         .alumnos-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-            gap: 14px;
-            margin-top: 16px;
+            gap: 12px;
+            margin-top: 14px;
         }
 
         .alumno-card {
             background: var(--bg-card);
             border-radius: var(--radius);
-            padding: 20px 14px;
+            padding: 18px 12px;
             text-align: center;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.2s;
             box-shadow: var(--shadow);
             border: 2px solid transparent;
             position: relative;
         }
 
-        .alumno-card:hover {
-            transform: translateY(-4px);
-            box-shadow: var(--shadow-lg);
-            border-color: var(--primary-light);
-        }
+        .alumno-card:hover { transform: translateY(-3px); border-color: var(--primary-light); }
 
         .alumno-siglas {
             font-family: 'JetBrains Mono', monospace;
-            font-size: 1.3rem;
+            font-size: 1.4rem;
             font-weight: 700;
             color: var(--primary);
-            margin-bottom: 6px;
+            margin-bottom: 4px;
         }
 
         .alumno-curso { font-size: 0.8rem; color: var(--text-light); }
 
-        .alumno-estado {
+        .alumno-badge {
             position: absolute;
-            top: 10px;
-            right: 10px;
-            width: 22px;
-            height: 22px;
+            top: 8px;
+            right: 8px;
+            width: 20px;
+            height: 20px;
             border-radius: 50%;
+            background: var(--success);
+            color: white;
+            font-size: 0.65rem;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.75rem;
         }
-
-        .alumno-estado.con-programa { background: var(--success); color: white; }
-        .alumno-estado.sin-programa { background: var(--border); color: var(--text-light); }
 
         .alumno-card-add {
             background: transparent;
@@ -199,38 +176,53 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 6px;
+            gap: 4px;
             color: var(--primary);
-            min-height: 100px;
+            min-height: 90px;
         }
 
-        .alumno-card-add:hover { background: rgba(26, 95, 74, 0.05); }
+        /* ===== CARD ===== */
+        .card {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 18px;
+            margin-bottom: 14px;
+            box-shadow: var(--shadow);
+        }
 
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .card-title { font-size: 1.05rem; font-weight: 700; color: var(--primary-dark); }
+
+        /* ===== TABS ===== */
         .tabs {
             display: flex;
-            gap: 6px;
+            gap: 4px;
             background: var(--bg-card);
-            padding: 6px;
+            padding: 5px;
             border-radius: var(--radius);
-            margin-bottom: 20px;
+            margin-bottom: 16px;
             box-shadow: var(--shadow);
-            overflow-x: auto;
         }
 
         .tab {
             flex: 1;
-            min-width: 90px;
-            padding: 12px 16px;
+            padding: 10px 12px;
             border: none;
             background: transparent;
             color: var(--text-light);
             font-family: inherit;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             font-weight: 600;
             cursor: pointer;
             border-radius: var(--radius-sm);
-            transition: all 0.2s;
-            white-space: nowrap;
         }
 
         .tab:hover { background: var(--bg); }
@@ -239,230 +231,228 @@
         .tab-content { display: none; }
         .tab-content.active { display: block; }
 
-        .card {
-            background: var(--bg-card);
-            border-radius: var(--radius);
-            padding: 20px;
-            margin-bottom: 16px;
-            box-shadow: var(--shadow);
-        }
+        /* ===== FORMS ===== */
+        .form-group { margin-bottom: 14px; }
+        .form-label { display: block; font-weight: 600; margin-bottom: 5px; font-size: 0.85rem; }
 
-        .card-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 16px;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .card-title {
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: var(--primary-dark);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .form-group { margin-bottom: 16px; }
-        .form-label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.9rem; }
-
-        .form-input, .form-select, .form-textarea {
+        .form-input, .form-select {
             width: 100%;
-            padding: 12px 14px;
+            padding: 10px 12px;
             border: 2px solid var(--border);
             border-radius: var(--radius-sm);
             font-family: inherit;
-            font-size: 0.95rem;
-            transition: all 0.2s;
+            font-size: 0.9rem;
             background: white;
         }
 
-        .form-input:focus, .form-select:focus, .form-textarea:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(26, 95, 74, 0.1);
-        }
+        .form-input:focus, .form-select:focus { outline: none; border-color: var(--primary); }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
-        .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
-
+        /* ===== BUTTONS ===== */
         .btn {
-            padding: 12px 20px;
+            padding: 10px 16px;
             border: none;
             border-radius: var(--radius-sm);
             font-family: inherit;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 6px;
+            gap: 5px;
         }
 
         .btn-primary { background: var(--primary); color: white; }
         .btn-primary:hover { background: var(--primary-light); }
         .btn-primary:disabled { background: var(--border); cursor: not-allowed; }
         .btn-secondary { background: var(--bg); color: var(--text); border: 2px solid var(--border); }
-        .btn-secondary:hover { border-color: var(--primary); color: var(--primary); }
+        .btn-secondary:hover { border-color: var(--primary); }
         .btn-danger { background: var(--danger); color: white; }
-        .btn-sm { padding: 8px 14px; font-size: 0.85rem; }
-        .btn-group { display: flex; gap: 10px; flex-wrap: wrap; }
+        .btn-sm { padding: 7px 12px; font-size: 0.8rem; }
+        .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
 
-        .area-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
+        /* ===== UPLOAD ===== */
+        .upload-zone {
+            border: 2px dashed var(--border);
+            border-radius: var(--radius-sm);
+            padding: 30px 16px;
+            text-align: center;
+            cursor: pointer;
+            background: var(--bg);
+        }
+
+        .upload-zone:hover { border-color: var(--primary); }
+        .upload-zone.has-file { border-color: var(--success); background: rgba(34, 197, 94, 0.1); }
+        .upload-icon { font-size: 2rem; margin-bottom: 8px; }
+
+        /* ===== SESIONES BTNS ===== */
+        .sesiones-btns { display: flex; gap: 8px; margin-top: 6px; }
+
+        .sesion-btn {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: white;
+            font-family: inherit;
             font-weight: 600;
+            cursor: pointer;
+            font-size: 0.9rem;
         }
 
-        .area-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
+        .sesion-btn:hover { border-color: var(--primary-light); }
+        .sesion-btn.active { border-color: var(--primary); background: rgba(26, 95, 74, 0.1); }
+
+        /* ===== PREVIEW ===== */
+        .preview-box {
+            display: none;
+            margin-top: 14px;
+            max-height: 200px;
+            overflow-y: auto;
+            background: var(--bg);
+            border-radius: var(--radius-sm);
+            padding: 14px;
         }
 
-        .programa-section {
-            margin-bottom: 24px;
-            border-left: 4px solid var(--primary);
-            padding-left: 16px;
+        .preview-box.active { display: block; }
+
+        .preview-obj {
+            background: white;
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 6px;
+            border-left: 3px solid var(--primary);
         }
 
-        .programa-header {
+        .preview-obj h4 { font-size: 0.85rem; margin-bottom: 3px; }
+        .preview-obj p { font-size: 0.75rem; color: var(--text-light); }
+
+        /* ===== MODAL ===== */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 16px;
+        }
+
+        .modal-overlay.active { display: flex; }
+
+        .modal {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            width: 100%;
+            max-width: 550px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title { font-size: 1rem; font-weight: 700; }
+        .modal-close { background: none; border: none; font-size: 1.4rem; cursor: pointer; color: var(--text-light); }
+        .modal-body { padding: 18px; }
+        .modal-footer { padding: 14px 18px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; }
+
+        /* ===== ALUMNO HEADER ===== */
+        .alumno-header {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 14px;
             margin-bottom: 16px;
             flex-wrap: wrap;
         }
 
-        .objetivo-item {
+        .alumno-header-siglas {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary);
+            background: rgba(26, 95, 74, 0.1);
+            padding: 12px 20px;
+            border-radius: var(--radius);
+        }
+
+        .alumno-header-info h2 { font-size: 1.1rem; }
+        .alumno-header-info p { color: var(--text-light); font-size: 0.85rem; }
+
+        /* ===== OBJETIVO CARD ===== */
+        .objetivo-card {
             background: var(--bg);
             border-radius: var(--radius-sm);
-            padding: 16px;
-            margin-bottom: 12px;
-        }
-
-        .objetivo-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
+            padding: 14px;
             margin-bottom: 10px;
-            gap: 8px;
-            flex-wrap: wrap;
+            border-left: 4px solid var(--primary);
         }
 
-        .objetivo-badges { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+        .objetivo-header { display: flex; gap: 6px; margin-bottom: 6px; align-items: center; }
 
-        .objetivo-codigo {
+        .objetivo-num {
             font-family: 'JetBrains Mono', monospace;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             font-weight: 600;
-            padding: 3px 8px;
+            padding: 2px 6px;
             border-radius: 4px;
             background: rgba(26, 95, 74, 0.15);
             color: var(--primary);
         }
 
         .trimestre-badge {
-            font-size: 0.75rem;
-            padding: 3px 8px;
+            font-size: 0.7rem;
+            padding: 2px 6px;
             border-radius: 4px;
             font-weight: 600;
         }
 
-        .trimestre-badge.t1 { background: rgba(139, 92, 246, 0.15); color: var(--t1); }
-        .trimestre-badge.t2 { background: rgba(6, 182, 212, 0.15); color: var(--t2); }
-        .trimestre-badge.t3 { background: rgba(245, 158, 11, 0.15); color: var(--t3); }
+        .trimestre-badge.t1 { background: #8b5cf620; color: #8b5cf6; }
+        .trimestre-badge.t2 { background: #06b6d420; color: #06b6d4; }
+        .trimestre-badge.t3 { background: #f59e0b20; color: #f59e0b; }
 
-        .objetivo-descripcion { font-weight: 500; font-size: 0.95rem; margin-bottom: 10px; }
+        .objetivo-desc { font-weight: 500; font-size: 0.9rem; margin-bottom: 8px; }
 
-        .objetivo-section {
-            margin-top: 12px;
-            padding-top: 10px;
-            border-top: 1px solid var(--border);
-        }
+        .objetivo-section { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+        .objetivo-section-title { font-size: 0.7rem; font-weight: 700; color: var(--text-light); text-transform: uppercase; margin-bottom: 4px; }
 
-        .objetivo-section-title {
-            font-size: 0.75rem;
-            font-weight: 700;
-            color: var(--text-light);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 6px;
-        }
+        .item-list { list-style: none; }
+        .item-list li { font-size: 0.8rem; padding: 4px 0 4px 14px; position: relative; }
+        .item-list li::before { content: "•"; position: absolute; left: 0; color: var(--primary); }
 
-        .indicador-item, .contenido-item, .actividad-item {
-            background: white;
-            border-radius: 6px;
-            padding: 10px 12px;
-            margin-bottom: 6px;
-            font-size: 0.85rem;
-            display: flex;
-            align-items: flex-start;
-            gap: 8px;
-        }
-
-        .item-bullet {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            margin-top: 6px;
-            flex-shrink: 0;
-            background: var(--primary);
-        }
-
-        /* CUADRANTE */
-        .cuadrante-container {
-            overflow-x: auto;
-            margin-bottom: 20px;
-        }
-
-        .semana-selector {
+        /* ===== CUADRANTE ===== */
+        .cuadrante-nav {
             display: flex;
             align-items: center;
-            gap: 12px;
-            margin-bottom: 16px;
+            gap: 10px;
+            margin-bottom: 14px;
             flex-wrap: wrap;
         }
 
-        .semana-nav {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .semana-nav-btn {
-            width: 36px;
-            height: 36px;
+        .nav-btn {
+            width: 32px;
+            height: 32px;
             border: 2px solid var(--border);
             background: white;
-            border-radius: 8px;
+            border-radius: 6px;
             cursor: pointer;
-            font-size: 1.1rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            font-size: 0.9rem;
         }
 
-        .semana-nav-btn:hover { border-color: var(--primary); color: var(--primary); }
-
-        .semana-titulo {
-            font-weight: 700;
-            font-size: 1rem;
-            min-width: 180px;
-            text-align: center;
-        }
+        .nav-btn:hover { border-color: var(--primary); }
 
         .cuadrante-table {
             width: 100%;
             border-collapse: collapse;
-            min-width: 500px;
+            margin-bottom: 12px;
+            font-size: 0.8rem;
         }
 
         .cuadrante-table th, .cuadrante-table td {
@@ -477,10 +467,7 @@
             color: white;
             font-weight: 600;
             text-align: center;
-        }
-
-        .cuadrante-table th:first-child {
-            width: 80px;
+            font-size: 0.75rem;
         }
 
         .cuadrante-table td:first-child {
@@ -488,119 +475,50 @@
             color: white;
             font-weight: 600;
             text-align: center;
-        }
-
-        .cuadrante-celda {
-            min-height: 80px;
-            cursor: pointer;
-            transition: background 0.2s;
-            position: relative;
-        }
-
-        .cuadrante-celda:hover {
-            background: var(--bg);
-        }
-
-        .cuadrante-celda.vacia {
-            background: #f9fafb;
-        }
-
-        .celda-objetivo {
-            font-weight: 600;
-            color: var(--primary-dark);
-            font-size: 0.8rem;
-            margin-bottom: 4px;
-        }
-
-        .celda-indicador {
+            width: 60px;
             font-size: 0.75rem;
-            color: var(--text);
-            margin-bottom: 4px;
         }
 
-        .celda-actividad {
-            font-size: 0.7rem;
-            color: var(--text-light);
-            font-style: italic;
-        }
+        .celda { min-height: 60px; cursor: pointer; }
+        .celda:hover { background: var(--bg); }
+        .celda-vacia { background: #f9fafb; color: var(--text-light); font-size: 0.75rem; }
 
-        .celda-color {
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            margin-right: 4px;
-        }
+        .celda-obj { font-weight: 600; color: var(--primary-dark); font-size: 0.75rem; margin-bottom: 2px; }
+        .celda-ind { font-size: 0.7rem; color: var(--text); margin-bottom: 2px; }
+        .celda-act { font-size: 0.65rem; color: var(--text-light); font-style: italic; }
 
-        /* Modal */
-        .modal-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.5);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            padding: 20px;
-        }
-
-        .modal-overlay.active { display: flex; }
-
-        .modal {
-            background: var(--bg-card);
-            border-radius: var(--radius);
-            width: 100%;
-            max-width: 500px;
-            max-height: 90vh;
-            overflow-y: auto;
-            animation: slideUp 0.3s ease;
-        }
-
-        .modal.modal-lg { max-width: 700px; }
-
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .modal-header {
-            padding: 16px 20px;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .modal-title { font-size: 1.1rem; font-weight: 700; }
-        .modal-close { background: none; border: none; font-size: 1.4rem; cursor: pointer; color: var(--text-light); }
-        .modal-body { padding: 20px; }
-        .modal-footer { padding: 16px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; }
-
-        .empty-state { text-align: center; padding: 40px 20px; color: var(--text-light); }
-        .empty-state-icon { font-size: 3rem; margin-bottom: 12px; opacity: 0.5; }
-
-        .alumno-info {
+        /* ===== EVALUACIÓN ===== */
+        .eval-item {
             display: flex;
             align-items: center;
-            gap: 16px;
-            margin-bottom: 20px;
+            gap: 8px;
+            padding: 10px;
+            background: var(--bg);
+            border-radius: 6px;
+            margin-bottom: 6px;
             flex-wrap: wrap;
         }
 
-        .alumno-info-siglas {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: var(--primary);
-            background: rgba(26, 95, 74, 0.1);
-            padding: 14px 20px;
-            border-radius: var(--radius);
+        .eval-text { flex: 1; font-size: 0.85rem; min-width: 150px; }
+
+        .eval-btn {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 2px solid var(--border);
+            background: white;
+            cursor: pointer;
+            font-size: 0.9rem;
         }
 
-        .alumno-info-details { flex: 1; }
-        .alumno-info-curso { font-size: 1.1rem; font-weight: 600; }
-        .alumno-info-programas { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+        .eval-btn.c { border-color: var(--success); color: var(--success); }
+        .eval-btn.c.active { background: var(--success); color: white; }
+        .eval-btn.p { border-color: var(--proceso); color: var(--proceso); }
+        .eval-btn.p.active { background: var(--proceso); color: white; }
+        .eval-btn.n { border-color: gray; color: gray; }
+        .eval-btn.n.active { background: gray; color: white; }
 
+        /* ===== TOAST ===== */
         .toast {
             position: fixed;
             bottom: 20px;
@@ -608,11 +526,12 @@
             transform: translateX(-50%) translateY(100px);
             background: var(--text);
             color: white;
-            padding: 12px 20px;
+            padding: 10px 18px;
             border-radius: var(--radius-sm);
             font-weight: 500;
+            font-size: 0.9rem;
             opacity: 0;
-            transition: all 0.3s ease;
+            transition: all 0.3s;
             z-index: 2000;
         }
 
@@ -620,200 +539,91 @@
         .toast.success { background: var(--success); }
         .toast.error { background: var(--danger); }
 
-        .loading { display: flex; flex-direction: column; align-items: center; padding: 40px; gap: 12px; }
-        .spinner { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        .empty-state { text-align: center; padding: 30px; color: var(--text-light); }
+        .empty-icon { font-size: 2.5rem; margin-bottom: 8px; opacity: 0.5; }
 
-        .upload-zone {
-            border: 2px dashed var(--border);
-            border-radius: var(--radius-sm);
-            padding: 30px 20px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s;
-            background: var(--bg);
+        /* ===== PRINT STYLES ===== */
+        @media print {
+            body { background: white; }
+            .header, .tabs, .btn, .nav-btn, .cuadrante-nav, .modal-overlay, .toast, .btn-group { display: none !important; }
+            .screen, .tab-content, .card { display: block !important; box-shadow: none; }
+            .container { max-width: 100%; padding: 0; }
+            .print-header { display: block !important; text-align: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #333; }
+            .print-header h1 { font-size: 1.4rem; margin-bottom: 5px; }
+            .print-header p { font-size: 0.9rem; color: #666; }
+            .cuadrante-table { font-size: 0.7rem; }
+            .cuadrante-table th, .cuadrante-table td { padding: 4px; }
+            .objetivo-card { break-inside: avoid; }
+            .page-break { page-break-before: always; }
         }
 
-        .upload-zone:hover, .upload-zone.dragover {
-            border-color: var(--primary);
-            background: rgba(26, 95, 74, 0.05);
-        }
+        .print-header { display: none; }
 
-        .upload-zone.has-file {
-            border-color: var(--success);
-            background: rgba(34, 197, 94, 0.1);
-        }
-
-        .upload-zone span { display: block; color: var(--text-light); }
-        .upload-zone.has-file span { color: var(--success); }
-        .upload-icon { font-size: 2.5rem; margin-bottom: 8px; }
-        .upload-hint { font-size: 0.85rem; margin-top: 8px; }
-
-        .processing-box {
-            display: none;
-            text-align: center;
-            padding: 20px;
-            background: var(--bg);
-            border-radius: var(--radius-sm);
-            margin-top: 16px;
-        }
-
-        .processing-box.active { display: block; }
-
-        .preview-box {
-            display: none;
-            margin-top: 16px;
-            max-height: 300px;
-            overflow-y: auto;
-            background: var(--bg);
-            border-radius: var(--radius-sm);
-            padding: 16px;
-        }
-
-        .preview-box.active { display: block; }
-
-        .preview-objetivo {
-            background: white;
-            border-radius: 8px;
-            padding: 12px;
-            margin-bottom: 10px;
-            border-left: 3px solid var(--primary);
-        }
-
-        .preview-objetivo h4 { font-size: 0.9rem; margin-bottom: 6px; }
-        .preview-list { font-size: 0.8rem; color: var(--text-light); margin-left: 16px; }
-
-        .area-selector {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 8px;
-            margin-top: 8px;
-        }
-
-        .area-option {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 12px;
-            border: 2px solid var(--border);
-            border-radius: var(--radius-sm);
-            cursor: pointer;
-            transition: all 0.2s;
-            font-size: 0.85rem;
-        }
-
-        .area-option:hover { border-color: var(--primary-light); }
-        .area-option.selected { border-color: var(--primary); background: rgba(26, 95, 74, 0.05); }
-        .area-option input { display: none; }
-
-        .area-option-dot {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-        }
-
-        .sesiones-selector {
-            display: flex;
-            gap: 10px;
-            margin-top: 8px;
-        }
-
-        .sesion-option {
-            flex: 1;
-            padding: 12px;
-            border: 2px solid var(--border);
-            border-radius: var(--radius-sm);
-            text-align: center;
-            cursor: pointer;
-            font-weight: 600;
-        }
-
-        .sesion-option:hover { border-color: var(--primary-light); }
-        .sesion-option.selected { border-color: var(--primary); background: rgba(26, 95, 74, 0.1); }
-        .sesion-option input { display: none; }
-
-        .leyenda {
-            display: flex;
-            gap: 16px;
-            margin-top: 12px;
-            font-size: 0.85rem;
-            flex-wrap: wrap;
-        }
-
-        .leyenda-item {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .debug-info {
-            background: #fef3c7;
-            border: 1px solid #f59e0b;
-            padding: 10px;
-            border-radius: 8px;
-            font-size: 0.8rem;
-            margin-top: 10px;
+        @media (max-width: 600px) {
+            .form-row { grid-template-columns: 1fr; }
+            .alumno-header { flex-direction: column; align-items: flex-start; }
         }
     </style>
 </head>
 <body>
     <header class="header">
         <div class="header-content">
-            <h1>📋 Gestor PE v2</h1>
+            <h1>📋 Gestor PE</h1>
             <div class="header-right">
                 <div class="status-badge">
                     <div class="status-dot" id="statusDot"></div>
                     <span id="statusText">Conectando...</span>
                 </div>
-                <button class="btn-back" id="btnVolver" style="display: none;" onclick="volverInicio()">← Volver</button>
+                <button class="btn-header" id="btnVolver" onclick="volverInicio()">← Volver</button>
             </div>
         </div>
     </header>
 
+    <!-- PANTALLA INICIO -->
     <div id="screenInicio" class="screen active">
         <div class="container">
             <div class="card">
                 <div class="card-header">
                     <h2 class="card-title">👥 Mis Alumnos</h2>
-                    <button class="btn btn-primary btn-sm" onclick="abrirModalSubirDOCX()">📄 Importar DOCX</button>
+                    <button class="btn btn-primary btn-sm" onclick="abrirModalImportar()">📄 Importar DOCX</button>
                 </div>
-                <div class="alumnos-grid" id="alumnosGrid">
-                    <div class="loading"><div class="spinner"></div><span>Cargando...</span></div>
-                </div>
+                <div class="alumnos-grid" id="alumnosGrid"></div>
             </div>
         </div>
     </div>
 
+    <!-- PANTALLA ALUMNO -->
     <div id="screenAlumno" class="screen">
         <div class="container">
-            <div class="alumno-info" id="alumnoInfoHeader"></div>
-            <div class="tabs">
-                <button class="tab active" onclick="cambiarTab('programa', this)">📄 Programa</button>
-                <button class="tab" onclick="cambiarTab('programacion', this)">📅 Programación</button>
-                <button class="tab" onclick="cambiarTab('evaluacion', this)">📊 Evaluación</button>
+            <div class="print-header" id="printHeader"></div>
+            <div class="alumno-header" id="alumnoHeader"></div>
+            <div class="tabs" id="tabsContainer">
+                <button class="tab active" onclick="cambiarTab('programa')">📄 Programa</button>
+                <button class="tab" onclick="cambiarTab('programacion')">📅 Programación</button>
+                <button class="tab" onclick="cambiarTab('evaluacion')">📊 Evaluación</button>
             </div>
-            <div id="tabPrograma" class="tab-content active"><div id="programaContent"></div></div>
-            <div id="tabProgramacion" class="tab-content"><div id="programacionContent"></div></div>
-            <div id="tabEvaluacion" class="tab-content"><div id="evaluacionContent"></div></div>
+            <div id="tabPrograma" class="tab-content active"></div>
+            <div id="tabProgramacion" class="tab-content"></div>
+            <div id="tabEvaluacion" class="tab-content"></div>
         </div>
     </div>
 
-    <!-- Modal Subir DOCX -->
-    <div class="modal-overlay" id="modalSubirDOCX">
-        <div class="modal modal-lg">
+    <!-- MODAL IMPORTAR -->
+    <div class="modal-overlay" id="modalImportar">
+        <div class="modal">
             <div class="modal-header">
-                <h3 class="modal-title">📄 Importar Programa Específico</h3>
-                <button class="modal-close" onclick="cerrarModal('modalSubirDOCX')">×</button>
+                <h3 class="modal-title">📄 Importar Programa</h3>
+                <button class="modal-close" onclick="cerrarModal('modalImportar')">×</button>
             </div>
             <div class="modal-body">
                 <div class="form-row">
                     <div class="form-group">
-                        <label class="form-label">Siglas del alumno *</label>
-                        <input type="text" class="form-input" id="docxSiglas" placeholder="M.G.L." maxlength="10">
+                        <label class="form-label">Siglas *</label>
+                        <input type="text" class="form-input" id="inputSiglas" placeholder="M.G.L." maxlength="10">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Curso *</label>
-                        <select class="form-select" id="docxCurso">
+                        <select class="form-select" id="inputCurso">
                             <option value="Infantil 3 años">Infantil 3 años</option>
                             <option value="Infantil 4 años">Infantil 4 años</option>
                             <option value="Infantil 5 años" selected>Infantil 5 años</option>
@@ -829,25 +639,16 @@
 
                 <div class="form-group">
                     <label class="form-label">Sesiones por semana *</label>
-                    <div class="sesiones-selector">
-                        <label class="sesion-option" onclick="seleccionarSesiones(1)">
-                            <input type="radio" name="sesiones" value="1">
-                            1 sesión
-                        </label>
-                        <label class="sesion-option" onclick="seleccionarSesiones(2)">
-                            <input type="radio" name="sesiones" value="2">
-                            2 sesiones
-                        </label>
-                        <label class="sesion-option selected" onclick="seleccionarSesiones(3)">
-                            <input type="radio" name="sesiones" value="3" checked>
-                            3 sesiones
-                        </label>
+                    <div class="sesiones-btns">
+                        <button type="button" class="sesion-btn" onclick="selSesiones(1)">1 sesión</button>
+                        <button type="button" class="sesion-btn" onclick="selSesiones(2)">2 sesiones</button>
+                        <button type="button" class="sesion-btn active" onclick="selSesiones(3)">3 sesiones</button>
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Área del Programa *</label>
-                    <select class="form-select" id="docxArea">
+                    <label class="form-label">Área del programa *</label>
+                    <select class="form-select" id="inputArea">
                         <option value="cognitivo">🧠 Estimulación cognitiva</option>
                         <option value="atencion">👁️ Atención</option>
                         <option value="memoria">💾 Memoria</option>
@@ -863,56 +664,45 @@
 
                 <div class="form-group">
                     <label class="form-label">Archivo DOCX *</label>
-                    <div class="upload-zone" id="uploadZone" onclick="document.getElementById('inputDOCX').click()">
-                        <div id="uploadZoneContent">
-                            <div class="upload-icon">📄</div>
-                            <span>Haz clic o arrastra tu archivo DOCX</span>
-                            <div class="upload-hint">Solo archivos .docx</div>
-                        </div>
+                    <div class="upload-zone" id="uploadZone" onclick="document.getElementById('inputFile').click()">
+                        <div class="upload-icon">📄</div>
+                        <span id="uploadText">Haz clic para seleccionar</span>
                     </div>
-                    <input type="file" id="inputDOCX" accept=".docx" style="display:none" onchange="docxSeleccionado(this)">
+                    <input type="file" id="inputFile" accept=".docx" style="display:none" onchange="archivoSeleccionado(this)">
                 </div>
 
-                <div class="processing-box" id="processingBox">
-                    <div class="spinner"></div>
-                    <p id="processingText">Extrayendo contenido...</p>
-                </div>
-
-                <div class="preview-box" id="previewBox">
-                    <h4 style="margin-bottom: 12px; color: var(--primary-dark);">📋 Contenido extraído:</h4>
-                    <div id="previewContent"></div>
-                </div>
+                <div class="preview-box" id="previewBox"></div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="cerrarModal('modalSubirDOCX')">Cancelar</button>
-                <button class="btn btn-primary" id="btnImportar" onclick="importarPrograma()" disabled>📥 Importar y Programar</button>
+                <button class="btn btn-secondary" onclick="cerrarModal('modalImportar')">Cancelar</button>
+                <button class="btn btn-primary" id="btnImportar" onclick="importarAlumno()" disabled>📥 Importar</button>
             </div>
         </div>
     </div>
 
-    <!-- Modal Editar Celda -->
+    <!-- MODAL EDITAR CELDA -->
     <div class="modal-overlay" id="modalCelda">
         <div class="modal">
             <div class="modal-header">
-                <h3 class="modal-title" id="modalCeldaTitulo">Editar sesión</h3>
+                <h3 class="modal-title" id="celdaTitulo">Editar sesión</h3>
                 <button class="modal-close" onclick="cerrarModal('modalCelda')">×</button>
             </div>
             <div class="modal-body">
                 <div class="form-group">
                     <label class="form-label">Objetivo</label>
-                    <select class="form-select" id="celdaObjetivo" onchange="actualizarIndicadores()"></select>
+                    <select class="form-select" id="selObjetivo" onchange="cargarIndicadores()"></select>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Indicador</label>
-                    <select class="form-select" id="celdaIndicador"></select>
+                    <select class="form-select" id="selIndicador"></select>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Actividad</label>
-                    <select class="form-select" id="celdaActividad"></select>
+                    <select class="form-select" id="selActividad"></select>
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-danger btn-sm" onclick="limpiarCelda()">🗑️ Limpiar</button>
+                <button class="btn btn-danger btn-sm" onclick="borrarCelda()">🗑️</button>
                 <button class="btn btn-secondary" onclick="cerrarModal('modalCelda')">Cancelar</button>
                 <button class="btn btn-primary" onclick="guardarCelda()">💾 Guardar</button>
             </div>
@@ -921,42 +711,55 @@
 
     <div class="toast" id="toast"></div>
 
-    <!-- Firebase -->
+    <!-- FIREBASE -->
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-        import { getDatabase, ref, onValue, push, set, remove } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+        import { getDatabase, ref, onValue, set, remove, push } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
 
         const firebaseConfig = {
-            apiKey: "AIzaSyCDmT-NPx9RvFnBzEVVqbBnJi0OgCSB4tU",
-            authDomain: "capitulacionesapps.firebaseapp.com",
-            databaseURL: "https://capitulacionesapps-default-rtdb.europe-west1.firebasedatabase.app",
-            projectId: "capitulacionesapps",
-            storageBucket: "capitulacionesapps.firebasestorage.app",
-            messagingSenderId: "546505391498",
-            appId: "1:546505391498:web:500239cd714aee2c056076"
+            databaseURL: "https://gestorpt-7946b-default-rtdb.europe-west1.firebasedatabase.app"
         };
 
-        const app = initializeApp(firebaseConfig);
-        window.database = getDatabase(app);
-        window.dbRef = ref;
-        window.dbOnValue = onValue;
-        window.dbPush = push;
-        window.dbSet = set;
-        window.dbRemove = remove;
-        
-        window.initApp();
+        try {
+            const app = initializeApp(firebaseConfig);
+            const db = getDatabase(app);
+
+            window.db = db;
+            window.dbRef = ref;
+            window.dbSet = set;
+            window.dbRemove = remove;
+            window.dbPush = push;
+            window.dbOnValue = onValue;
+
+            const alumnosRef = ref(db, 'gestorpe/alumnos');
+            
+            onValue(alumnosRef, (snapshot) => {
+                window.alumnos = snapshot.val() || {};
+                window.renderInicio();
+                document.getElementById('statusDot').classList.add('ok');
+                document.getElementById('statusText').textContent = 'Conectado';
+            }, (error) => {
+                console.error('Error Firebase:', error);
+                document.getElementById('statusText').textContent = 'Error';
+            });
+            
+        } catch (err) {
+            console.error('Error inicialización:', err);
+            document.getElementById('statusText').textContent = 'Error';
+        }
     </script>
 
     <script>
-        // ========== ESTADO GLOBAL ==========
-        let alumnos = {};
+        // ===== DATOS =====
+        window.alumnos = {};
         let alumnoActual = null;
         let mesActual = 0;
-        let semanaActual = 1;
+        let sesionesSeleccionadas = 3;
+        let docExtraido = null;
         let celdaEditando = null;
-        let documentoExtraido = null;
+        let evalTrim = 1;
 
-        const AREAS_INFO = {
+        const AREAS = {
             cognitivo: { nombre: '🧠 Estimulación cognitiva', color: '#8b5cf6' },
             atencion: { nombre: '👁️ Atención', color: '#f59e0b' },
             memoria: { nombre: '💾 Memoria', color: '#06b6d4' },
@@ -968,8 +771,6 @@
             ejecutivas: { nombre: '🎯 Funciones ejecutivas', color: '#6366f1' },
             autonomia: { nombre: '🏃 Autonomía', color: '#14b8a6' }
         };
-
-        const DIAS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
 
         const MESES = [
             { nombre: 'Septiembre', semanas: 3, trimestre: 1 },
@@ -984,101 +785,67 @@
             { nombre: 'Junio', semanas: 3, trimestre: 3 }
         ];
 
-        // ========== INICIALIZACIÓN ==========
-        window.initApp = function() {
-            console.log('🚀 Iniciando app...');
-            const alumnosRef = window.dbRef(window.database, 'gestorpe/alumnos');
-            window.dbOnValue(alumnosRef, (snapshot) => {
-                alumnos = snapshot.val() || {};
-                console.log('📦 Alumnos cargados:', Object.keys(alumnos).length);
-                renderizarAlumnos();
-                document.getElementById('statusDot').classList.add('connected');
-                document.getElementById('statusText').textContent = 'Conectado';
-            }, (error) => {
-                console.error('❌ Error Firebase:', error);
-                document.getElementById('statusText').textContent = 'Error';
-            });
+        const DIAS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
 
-            // Drag & drop
-            const zone = document.getElementById('uploadZone');
-            if (zone) {
-                zone.ondragover = (e) => { e.preventDefault(); zone.classList.add('dragover'); };
-                zone.ondragleave = () => zone.classList.remove('dragover');
-                zone.ondrop = (e) => {
-                    e.preventDefault();
-                    zone.classList.remove('dragover');
-                    if (e.dataTransfer.files[0]) {
-                        document.getElementById('inputDOCX').files = e.dataTransfer.files;
-                        docxSeleccionado(document.getElementById('inputDOCX'));
-                    }
-                };
-            }
-        };
-
-        function seleccionarSesiones(n) {
-            document.querySelectorAll('.sesion-option').forEach(el => el.classList.remove('selected'));
-            event.currentTarget.classList.add('selected');
-            document.querySelector(`input[name="sesiones"][value="${n}"]`).checked = true;
-        }
-
-        // ========== ALUMNOS ==========
-        function renderizarAlumnos() {
+        // ===== INICIO =====
+        window.renderInicio = function() {
             const grid = document.getElementById('alumnosGrid');
-            const arr = Object.entries(alumnos);
-            
-            if (arr.length === 0) {
-                grid.innerHTML = `<div class="alumno-card alumno-card-add" onclick="abrirModalSubirDOCX()"><span style="font-size:1.5rem">➕</span><span>Añadir</span></div>`;
+            const ids = Object.keys(window.alumnos);
+
+            if (ids.length === 0) {
+                grid.innerHTML = `<div class="alumno-card alumno-card-add" onclick="abrirModalImportar()">
+                    <span style="font-size:1.5rem">➕</span><span>Añadir</span>
+                </div>`;
                 return;
             }
 
             let html = '';
-            arr.forEach(([id, a]) => {
-                const tiene = a.programas?.length > 0;
+            ids.forEach(id => {
+                const a = window.alumnos[id];
                 html += `<div class="alumno-card" onclick="abrirAlumno('${id}')">
-                    <div class="alumno-estado ${tiene ? 'con-programa' : 'sin-programa'}">${tiene ? '✓' : '○'}</div>
+                    <div class="alumno-badge">✓</div>
                     <div class="alumno-siglas">${a.siglas}</div>
                     <div class="alumno-curso">${a.curso}</div>
                 </div>`;
             });
-            html += `<div class="alumno-card alumno-card-add" onclick="abrirModalSubirDOCX()"><span style="font-size:1.5rem">➕</span><span>Añadir</span></div>`;
+            html += `<div class="alumno-card alumno-card-add" onclick="abrirModalImportar()">
+                <span style="font-size:1.5rem">➕</span><span>Añadir</span>
+            </div>`;
             grid.innerHTML = html;
-        }
+        };
 
         function abrirAlumno(id) {
             alumnoActual = id;
-            const a = alumnos[id];
-            semanaActual = 1;
             mesActual = 0;
+            evalTrim = 1;
 
             document.getElementById('screenInicio').classList.remove('active');
             document.getElementById('screenAlumno').classList.add('active');
-            document.getElementById('btnVolver').style.display = 'flex';
+            document.getElementById('btnVolver').style.display = 'block';
 
-            let badges = '';
-            if (a.programas) {
-                a.programas.forEach(p => {
-                    const info = AREAS_INFO[p.area] || { nombre: p.area, color: '#666' };
-                    badges += `<span class="area-badge" style="background:${info.color}20;color:${info.color}">
-                        <span class="area-dot" style="background:${info.color}"></span>${info.nombre}
-                    </span>`;
-                });
-            }
+            const a = window.alumnos[id];
+            const areaInfo = AREAS[a.area] || { nombre: a.area };
 
-            document.getElementById('alumnoInfoHeader').innerHTML = `
-                <div class="alumno-info-siglas">${a.siglas}</div>
-                <div class="alumno-info-details">
-                    <div class="alumno-info-curso">${a.curso} · ${a.sesionesSemana} sesiones/semana</div>
-                    <div class="alumno-info-programas">${badges || '<span style="color:var(--text-light)">Sin programas</span>'}</div>
+            document.getElementById('printHeader').innerHTML = `
+                <h1>Programa Específico - ${a.siglas}</h1>
+                <p>${a.curso} · ${areaInfo.nombre} · ${a.sesionesSemana} sesiones/semana</p>
+            `;
+
+            document.getElementById('alumnoHeader').innerHTML = `
+                <div class="alumno-header-siglas">${a.siglas}</div>
+                <div class="alumno-header-info">
+                    <h2>${a.curso}</h2>
+                    <p>${a.sesionesSemana} sesiones/semana · ${areaInfo.nombre}</p>
                 </div>
-                <button class="btn btn-danger btn-sm" onclick="eliminarAlumno('${id}')">🗑️</button>
+                <button class="btn btn-danger btn-sm" onclick="eliminarAlumno('${id}')" style="margin-left:auto">🗑️</button>
             `;
 
             document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', i === 0));
             document.querySelectorAll('.tab-content').forEach((c, i) => c.classList.toggle('active', i === 0));
 
-            renderizarPrograma();
-            renderizarProgramacion();
-            renderizarEvaluacion();
+            renderPrograma();
+            renderProgramacion();
+            renderEvaluacion();
         }
 
         function volverInicio() {
@@ -1088,311 +855,198 @@
             document.getElementById('btnVolver').style.display = 'none';
         }
 
-        function cambiarTab(tab, btn) {
-            btn.parentElement.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            btn.classList.add('active');
+        function cambiarTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
             document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
         }
 
         function eliminarAlumno(id) {
-            if (confirm('¿Eliminar este alumno?')) {
-                window.dbRemove(window.dbRef(window.database, `gestorpe/alumnos/${id}`));
+            if (confirm('¿Eliminar este alumno y todos sus datos?')) {
+                window.dbRemove(window.dbRef(window.db, `gestorpe/alumnos/${id}`));
                 volverInicio();
-                mostrarToast('Alumno eliminado', 'success');
+                toast('Alumno eliminado', 'success');
             }
         }
 
-        // ========== SUBIR DOCX ==========
-        function abrirModalSubirDOCX() {
-            document.getElementById('docxSiglas').value = '';
+        // ===== MODAL IMPORTAR =====
+        function abrirModalImportar() {
+            document.getElementById('inputSiglas').value = '';
             document.getElementById('uploadZone').classList.remove('has-file');
-            document.getElementById('uploadZoneContent').innerHTML = `
-                <div class="upload-icon">📄</div>
-                <span>Haz clic o arrastra tu archivo DOCX</span>
-                <div class="upload-hint">Solo archivos .docx</div>
-            `;
-            document.getElementById('processingBox').classList.remove('active');
+            document.getElementById('uploadText').textContent = 'Haz clic para seleccionar';
             document.getElementById('previewBox').classList.remove('active');
             document.getElementById('btnImportar').disabled = true;
-            documentoExtraido = null;
-            abrirModal('modalSubirDOCX');
+            document.getElementById('inputFile').value = '';
+            docExtraido = null;
+            sesionesSeleccionadas = 3;
+            document.querySelectorAll('.sesion-btn').forEach((b, i) => b.classList.toggle('active', i === 2));
+            abrirModal('modalImportar');
         }
 
-        function docxSeleccionado(input) {
+        function selSesiones(n) {
+            sesionesSeleccionadas = n;
+            document.querySelectorAll('.sesion-btn').forEach((b, i) => b.classList.toggle('active', i === n - 1));
+        }
+
+        function archivoSeleccionado(input) {
             const file = input.files[0];
             if (!file) return;
 
             if (!file.name.toLowerCase().endsWith('.docx')) {
-                mostrarToast('Solo archivos DOCX', 'error');
+                toast('Solo archivos DOCX', 'error');
                 return;
             }
 
-            document.getElementById('uploadZoneContent').innerHTML = `<span style="font-size:2rem">📄</span><span>${file.name}</span>`;
             document.getElementById('uploadZone').classList.add('has-file');
-            
+            document.getElementById('uploadText').textContent = file.name;
             procesarDOCX(file);
         }
 
         async function procesarDOCX(file) {
-            document.getElementById('processingBox').classList.add('active');
-            document.getElementById('processingText').textContent = 'Extrayendo contenido...';
-            document.getElementById('btnImportar').disabled = true;
-
             try {
-                const arrayBuffer = await file.arrayBuffer();
-                const result = await mammoth.extractRawText({ arrayBuffer });
-                const texto = result.value;
-
-                console.log('📝 Texto extraído:', texto.substring(0, 500) + '...');
-
-                document.getElementById('processingText').textContent = 'Analizando estructura...';
-
-                const objetivos = extraerObjetivos(texto);
-                console.log('🎯 Objetivos extraídos:', objetivos);
+                const buffer = await file.arrayBuffer();
+                const result = await mammoth.extractRawText({ arrayBuffer: buffer });
+                const objetivos = extraerObjetivos(result.value);
 
                 if (objetivos.length === 0) {
-                    throw new Error('No se encontraron objetivos. Asegúrate de que el documento contiene "OBJETIVO 1:", "OBJETIVO 2:", etc.');
+                    toast('No se encontraron objetivos', 'error');
+                    return;
                 }
 
-                documentoExtraido = { objetivos };
-                mostrarPreview(objetivos);
+                docExtraido = objetivos;
 
-                document.getElementById('processingBox').classList.remove('active');
+                let html = '<strong style="font-size:0.85rem">Contenido extraído:</strong>';
+                objetivos.forEach(obj => {
+                    html += `<div class="preview-obj">
+                        <h4>Objetivo ${obj.numero}: ${obj.descripcion.substring(0, 40)}...</h4>
+                        <p>${obj.indicadores.length} ind. · ${obj.contenidos.length} cont. · ${obj.actividades.length} act.</p>
+                    </div>`;
+                });
+
+                document.getElementById('previewBox').innerHTML = html;
                 document.getElementById('previewBox').classList.add('active');
                 document.getElementById('btnImportar').disabled = false;
 
-            } catch (error) {
-                console.error('❌ Error:', error);
-                mostrarToast('Error: ' + error.message, 'error');
-                document.getElementById('processingBox').classList.remove('active');
+            } catch (err) {
+                console.error(err);
+                toast('Error: ' + err.message, 'error');
             }
         }
 
         function extraerObjetivos(texto) {
             const objetivos = [];
-            const lineas = texto.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            const lineas = texto.split('\n').map(l => l.trim()).filter(l => l);
 
-            let objetivoActual = null;
-            let seccionActual = null;
+            let actual = null;
+            let seccion = null;
 
             for (const linea of lineas) {
                 const upper = linea.toUpperCase();
 
-                // Detectar OBJETIVO
-                const matchObj = linea.match(/^OBJETIVO\s*(\d+)[.:\s]*(.+)?/i);
-                if (matchObj) {
-                    if (objetivoActual) objetivos.push(objetivoActual);
-                    objetivoActual = {
-                        numero: parseInt(matchObj[1]),
-                        descripcion: (matchObj[2] || '').trim(),
+                const match = linea.match(/^OBJETIVO\s*(\d+)[.:\s]*(.+)?/i);
+                if (match) {
+                    if (actual) objetivos.push(actual);
+                    actual = {
+                        numero: parseInt(match[1]),
+                        descripcion: (match[2] || '').trim(),
                         indicadores: [],
                         contenidos: [],
                         actividades: []
                     };
-                    seccionActual = null;
+                    seccion = null;
                     continue;
                 }
 
-                // Detectar secciones
-                if (upper.includes('INDICADOR') && (upper.includes('EVALUACIÓN') || upper.includes('EVALUACION') || upper.includes('LOGRO'))) {
-                    seccionActual = 'indicadores';
-                    continue;
-                }
-                if (upper === 'CONTENIDOS' || upper.startsWith('CONTENIDOS')) {
-                    seccionActual = 'contenidos';
-                    continue;
-                }
-                if (upper.includes('ACTIVIDADES')) {
-                    seccionActual = 'actividades';
-                    continue;
-                }
-                
-                // Ignorar encabezados
-                if (upper.includes('ORGANIZACIÓN') || upper.startsWith('SESIÓN') || 
-                    upper.startsWith('ESPECIALIDAD') || upper.startsWith('FRECUENCIA') ||
-                    upper.startsWith('PERFIL') || upper.startsWith('EDAD')) {
-                    continue;
-                }
+                if (upper.includes('INDICADOR')) { seccion = 'indicadores'; continue; }
+                if (upper === 'CONTENIDOS' || upper.startsWith('CONTENIDOS')) { seccion = 'contenidos'; continue; }
+                if (upper.includes('ACTIVIDADES')) { seccion = 'actividades'; continue; }
+                if (upper.includes('ORGANIZACIÓN') || upper.startsWith('SESIÓN') || upper.startsWith('ESPECIALIDAD')) continue;
 
-                // Añadir contenido
-                if (objetivoActual && seccionActual && linea.length > 5) {
-                    let contenido = linea.replace(/^[-•·▪►→✓]\s*/, '').replace(/^[""]|[""]$/g, '').trim();
-                    
-                    if (contenido.length > 5 && !contenido.toUpperCase().startsWith('OBJETIVO')) {
-                        objetivoActual[seccionActual].push(contenido);
-                    }
+                if (actual && seccion && linea.length > 5) {
+                    let txt = linea.replace(/^[-•·▪►]\s*/, '').replace(/^[""]|[""]$/g, '').trim();
+                    if (txt.length > 5) actual[seccion].push(txt);
                 }
             }
 
-            if (objetivoActual) objetivos.push(objetivoActual);
+            if (actual) objetivos.push(actual);
 
-            // Asegurar que cada objetivo tiene al menos una actividad
             objetivos.forEach(obj => {
-                if (obj.actividades.length === 0) {
-                    obj.actividades = ['Actividad según objetivo'];
-                }
-                if (obj.indicadores.length === 0) {
-                    obj.indicadores = ['Indicador según objetivo'];
-                }
+                if (obj.indicadores.length === 0) obj.indicadores = ['Indicador general'];
+                if (obj.actividades.length === 0) obj.actividades = ['Actividad general'];
             });
 
             return objetivos;
         }
 
-        function mostrarPreview(objetivos) {
-            let html = '';
-            objetivos.forEach(obj => {
-                html += `<div class="preview-objetivo">
-                    <h4>Objetivo ${obj.numero}: ${obj.descripcion || '(sin descripción)'}</h4>
-                    <div class="preview-list">
-                        ✓ ${obj.indicadores.length} indicadores<br>
-                        ✓ ${obj.contenidos.length} contenidos<br>
-                        ✓ ${obj.actividades.length} actividades
-                    </div>
-                </div>`;
-            });
-            document.getElementById('previewContent').innerHTML = html;
-        }
+        function importarAlumno() {
+            const siglas = document.getElementById('inputSiglas').value.trim().toUpperCase();
+            if (!siglas) { toast('Introduce las siglas', 'error'); return; }
+            if (!docExtraido) { toast('Sube un documento', 'error'); return; }
 
-        function importarPrograma() {
-            const siglas = document.getElementById('docxSiglas').value.trim().toUpperCase();
-            if (!siglas) {
-                mostrarToast('Introduce las siglas', 'error');
-                return;
-            }
+            const curso = document.getElementById('inputCurso').value;
+            const area = document.getElementById('inputArea').value;
 
-            if (!documentoExtraido) {
-                mostrarToast('Sube un documento primero', 'error');
-                return;
-            }
+            const total = docExtraido.length;
+            const porT = Math.ceil(total / 3);
 
-            const curso = document.getElementById('docxCurso').value;
-            const sesiones = parseInt(document.querySelector('input[name="sesiones"]:checked').value);
-            const area = document.getElementById('docxArea').value;
+            const objetivos = docExtraido.map((obj, idx) => ({
+                ...obj,
+                trimestre: idx < porT ? 1 : idx < porT * 2 ? 2 : 3
+            }));
 
-            console.log('📦 Importando:', { siglas, curso, sesiones, area });
-            console.log('📄 Documento:', documentoExtraido);
-
-            // Crear programa con estructura correcta
-            const programa = {
-                area: area,
-                tipo: AREAS_INFO[area].nombre,
-                color: AREAS_INFO[area].color,
-                objetivos: documentoExtraido.objetivos.map((obj, idx) => ({
-                    numero: obj.numero,
-                    descripcion: obj.descripcion,
-                    trimestre: calcularTrimestre(idx, documentoExtraido.objetivos.length),
-                    indicadores: obj.indicadores,  // Array de strings
-                    contenidos: obj.contenidos,    // Array de strings
-                    actividades: obj.actividades   // Array de strings
-                }))
-            };
-
-            console.log('📋 Programa creado:', programa);
-
-            // Crear alumno
             const alumno = {
-                siglas: siglas,
-                curso: curso,
-                sesionesSemana: sesiones,
-                fechaCreacion: new Date().toISOString(),
-                programas: [programa],
+                siglas,
+                curso,
+                area,
+                sesionesSemana: sesionesSeleccionadas,
+                objetivos,
                 programacion: {},
                 evaluaciones: {}
             };
 
-            // Generar programación
             alumno.programacion = generarProgramacion(alumno);
-            console.log('📅 Programación generada:', Object.keys(alumno.programacion).length, 'sesiones');
 
-            // Guardar
-            window.dbPush(window.dbRef(window.database, 'gestorpe/alumnos'), alumno).then(() => {
-                cerrarModal('modalSubirDOCX');
-                mostrarToast(`${siglas} importado con ${Object.keys(alumno.programacion).length} sesiones ✓`, 'success');
+            const newRef = window.dbPush(window.dbRef(window.db, 'gestorpe/alumnos'));
+            window.dbSet(newRef, alumno).then(() => {
+                cerrarModal('modalImportar');
+                toast(`${siglas} importado ✓`, 'success');
             }).catch(err => {
-                console.error('❌ Error guardando:', err);
-                mostrarToast('Error al guardar', 'error');
+                console.error(err);
+                toast('Error al guardar', 'error');
             });
         }
 
-        function calcularTrimestre(idx, total) {
-            const porT = Math.ceil(total / 3);
-            if (idx < porT) return 1;
-            if (idx < porT * 2) return 2;
-            return 3;
-        }
-
-        // ========== GENERAR PROGRAMACIÓN ==========
+        // ===== PROGRAMACIÓN =====
         function generarProgramacion(alumno) {
             const prog = {};
             const sesiones = alumno.sesionesSemana;
-            const programa = alumno.programas[0];
 
-            if (!programa || !programa.objetivos || programa.objetivos.length === 0) {
-                console.warn('⚠️ No hay objetivos para programar');
-                return prog;
-            }
+            let dias;
+            if (sesiones === 1) dias = [2];
+            else if (sesiones === 2) dias = [1, 3];
+            else dias = [0, 2, 4];
 
-            // Días según sesiones
-            let diasSesion;
-            if (sesiones === 1) diasSesion = [2]; // Miércoles
-            else if (sesiones === 2) diasSesion = [1, 3]; // Martes, Jueves
-            else diasSesion = [0, 2, 4]; // Lunes, Miércoles, Viernes
-
-            console.log('📆 Días de sesión:', diasSesion);
-
-            // Por cada mes
             MESES.forEach((mes, mIdx) => {
                 const trim = mes.trimestre;
-                
-                // Objetivos del trimestre
-                const objsTrim = programa.objetivos.filter(o => o.trimestre === trim);
+                const objsTrim = alumno.objetivos.filter(o => o.trimestre === trim);
                 if (objsTrim.length === 0) return;
 
-                // Crear pool de combinaciones
                 let pool = [];
                 objsTrim.forEach(obj => {
-                    const objIdx = programa.objetivos.indexOf(obj);
-                    const indicadores = obj.indicadores || ['Sin indicador'];
-                    const actividades = obj.actividades || ['Sin actividad'];
-
-                    indicadores.forEach((ind, iIdx) => {
-                        actividades.forEach((act, aIdx) => {
-                            pool.push({
-                                objetivoIdx: objIdx,
-                                objetivoNum: obj.numero,
-                                objetivoDesc: obj.descripcion,
-                                indicadorIdx: iIdx,
-                                indicador: typeof ind === 'object' ? ind.descripcion : ind,
-                                actividadIdx: aIdx,
-                                actividad: typeof act === 'object' ? act.descripcion : act
-                            });
+                    const oIdx = alumno.objetivos.indexOf(obj);
+                    obj.indicadores.forEach((ind, iIdx) => {
+                        obj.actividades.forEach((act, aIdx) => {
+                            pool.push({ oIdx, iIdx, aIdx });
                         });
                     });
                 });
 
-                if (pool.length === 0) return;
-
                 let pIdx = 0;
-
-                // Por cada semana
                 for (let sem = 1; sem <= mes.semanas; sem++) {
-                    diasSesion.forEach((dia, sIdx) => {
-                        const clave = `${mIdx}_${sem}_${dia}_${sIdx + 1}`;
-                        const item = pool[pIdx % pool.length];
-
-                        prog[clave] = {
-                            area: programa.area,
-                            objetivoIdx: item.objetivoIdx,
-                            objetivo: `O${item.objetivoNum}`,
-                            objetivoDesc: item.objetivoDesc,
-                            indicadorIdx: item.indicadorIdx,
-                            indicador: item.indicador,
-                            actividadIdx: item.actividadIdx,
-                            actividad: item.actividad
-                        };
-
+                    dias.forEach(dia => {
+                        const key = `${mIdx}_${sem}_${dia}`;
+                        prog[key] = pool[pIdx % pool.length];
                         pIdx++;
                     });
                 }
@@ -1401,382 +1055,350 @@
             return prog;
         }
 
-        // ========== RENDERIZAR PROGRAMA ==========
-        function renderizarPrograma() {
-            const a = alumnos[alumnoActual];
-            const container = document.getElementById('programaContent');
+        // ===== RENDER PROGRAMA =====
+        function renderPrograma() {
+            const a = window.alumnos[alumnoActual];
+            const container = document.getElementById('tabPrograma');
 
-            if (!a.programas?.length) {
-                container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📄</div><p>No hay programas</p></div>`;
+            if (!a.objetivos?.length) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-icon">📄</div><p>Sin objetivos</p></div>';
                 return;
             }
 
-            let html = '';
-            a.programas.forEach(prog => {
-                const info = AREAS_INFO[prog.area] || { nombre: prog.area, color: '#666' };
-                
-                html += `<div class="programa-section" style="border-left-color:${info.color}">
-                    <div class="programa-header">
-                        <span class="area-badge" style="background:${info.color}20;color:${info.color}">
-                            <span class="area-dot" style="background:${info.color}"></span>${info.nombre}
-                        </span>
-                        <span style="color:var(--text-light);font-size:0.85rem">${prog.objetivos?.length || 0} objetivos</span>
-                    </div>`;
-
-                (prog.objetivos || []).forEach(obj => {
-                    html += `<div class="objetivo-item">
-                        <div class="objetivo-header">
-                            <div class="objetivo-badges">
-                                <span class="objetivo-codigo">O${obj.numero}</span>
-                                <span class="trimestre-badge t${obj.trimestre}">T${obj.trimestre}</span>
-                            </div>
-                        </div>
-                        <div class="objetivo-descripcion">${obj.descripcion || '(Sin descripción)'}</div>`;
-                    
-                    // Indicadores
-                    if (obj.indicadores?.length) {
-                        html += `<div class="objetivo-section"><div class="objetivo-section-title">Indicadores</div>`;
-                        obj.indicadores.forEach(ind => {
-                            const texto = typeof ind === 'object' ? ind.descripcion : ind;
-                            html += `<div class="indicador-item"><div class="item-bullet" style="background:${info.color}"></div><span>${texto}</span></div>`;
-                        });
-                        html += `</div>`;
-                    }
-
-                    // Contenidos
-                    if (obj.contenidos?.length) {
-                        html += `<div class="objetivo-section"><div class="objetivo-section-title">Contenidos</div>`;
-                        obj.contenidos.forEach(cont => {
-                            html += `<div class="contenido-item"><div class="item-bullet" style="background:${info.color}"></div><span>${cont}</span></div>`;
-                        });
-                        html += `</div>`;
-                    }
-
-                    // Actividades
-                    if (obj.actividades?.length) {
-                        html += `<div class="objetivo-section"><div class="objetivo-section-title">Actividades</div>`;
-                        obj.actividades.forEach(act => {
-                            html += `<div class="actividad-item"><div class="item-bullet" style="background:${info.color}"></div><span>${act}</span></div>`;
-                        });
-                        html += `</div>`;
-                    }
-
-                    html += `</div>`;
-                });
-                html += `</div>`;
-            });
-
-            html += `<button class="btn btn-primary" onclick="regenerarProgramacion()">🔄 Regenerar Programación</button>`;
-            container.innerHTML = html;
-        }
-
-        // ========== RENDERIZAR PROGRAMACIÓN ==========
-        function renderizarProgramacion() {
-            const a = alumnos[alumnoActual];
-            const container = document.getElementById('programacionContent');
-
-            if (!a.programas?.length) {
-                container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📅</div><p>Importa un programa primero</p></div>`;
-                return;
-            }
-
-            const mes = MESES[mesActual];
-            const sesiones = a.sesionesSemana || 3;
-            const info = AREAS_INFO[a.programas[0]?.area] || { color: '#666' };
-
-            // Días según sesiones
-            let diasSesion, nombresDias;
-            if (sesiones === 1) {
-                diasSesion = [2];
-                nombresDias = ['Miércoles'];
-            } else if (sesiones === 2) {
-                diasSesion = [1, 3];
-                nombresDias = ['Martes', 'Jueves'];
-            } else {
-                diasSesion = [0, 2, 4];
-                nombresDias = ['Lunes', 'Miércoles', 'Viernes'];
-            }
-
-            // Contar sesiones programadas
-            const totalSesiones = Object.keys(a.programacion || {}).length;
-
-            let html = `
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">📅 Programación Semanal</h3>
-                        <span style="font-size:0.85rem;color:var(--text-light)">${totalSesiones} sesiones programadas</span>
-                    </div>
-
-                    <div class="semana-selector">
-                        <div class="semana-nav">
-                            <button class="semana-nav-btn" onclick="cambiarMes(-1)">◀</button>
-                            <select class="form-select" style="width:auto" onchange="mesActual=parseInt(this.value);renderizarProgramacion()">
-                                ${MESES.map((m, i) => `<option value="${i}" ${i === mesActual ? 'selected' : ''}>${m.nombre}</option>`).join('')}
-                            </select>
-                            <button class="semana-nav-btn" onclick="cambiarMes(1)">▶</button>
-                        </div>
-                        <span class="trimestre-badge t${mes.trimestre}">Trimestre ${mes.trimestre}</span>
-                    </div>
-
-                    <div class="cuadrante-container">
-                        <table class="cuadrante-table">
-                            <thead>
-                                <tr>
-                                    <th>Semana</th>
-                                    ${nombresDias.map(d => `<th>${d}</th>`).join('')}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${Array.from({length: mes.semanas}, (_, semIdx) => {
-                                    const sem = semIdx + 1;
-                                    return `<tr>
-                                        <td>Sem ${sem}</td>
-                                        ${diasSesion.map((dia, sIdx) => {
-                                            const clave = `${mesActual}_${sem}_${dia}_${sIdx + 1}`;
-                                            const celda = a.programacion?.[clave];
-                                            return renderizarCelda(celda, clave, dia, sIdx + 1, info.color);
-                                        }).join('')}
-                                    </tr>`;
-                                }).join('')}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div class="leyenda">
-                        <div class="leyenda-item">
-                            <span class="area-dot" style="background:${info.color}"></span>
-                            ${AREAS_INFO[a.programas[0]?.area]?.nombre || 'Programa'}
-                        </div>
-                    </div>
+            let html = `<div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">📄 Objetivos del Programa</h3>
+                    <button class="btn btn-secondary btn-sm" onclick="imprimirPrograma()">🖨️ Imprimir</button>
                 </div>`;
 
+            a.objetivos.forEach(obj => {
+                html += `<div class="objetivo-card">
+                    <div class="objetivo-header">
+                        <span class="objetivo-num">O${obj.numero}</span>
+                        <span class="trimestre-badge t${obj.trimestre}">T${obj.trimestre}</span>
+                    </div>
+                    <div class="objetivo-desc">${obj.descripcion}</div>`;
+
+                if (obj.indicadores?.length) {
+                    html += `<div class="objetivo-section">
+                        <div class="objetivo-section-title">Indicadores</div>
+                        <ul class="item-list">${obj.indicadores.map(i => `<li>${i}</li>`).join('')}</ul>
+                    </div>`;
+                }
+
+                if (obj.contenidos?.length) {
+                    html += `<div class="objetivo-section">
+                        <div class="objetivo-section-title">Contenidos</div>
+                        <ul class="item-list">${obj.contenidos.map(c => `<li>${c}</li>`).join('')}</ul>
+                    </div>`;
+                }
+
+                if (obj.actividades?.length) {
+                    html += `<div class="objetivo-section">
+                        <div class="objetivo-section-title">Actividades</div>
+                        <ul class="item-list">${obj.actividades.map(a => `<li>${a}</li>`).join('')}</ul>
+                    </div>`;
+                }
+
+                html += '</div>';
+            });
+
+            html += `<div class="btn-group" style="margin-top:12px">
+                <button class="btn btn-primary btn-sm" onclick="regenerar()">🔄 Regenerar Programación</button>
+            </div></div>`;
+
             container.innerHTML = html;
         }
 
-        function renderizarCelda(celda, clave, dia, sesion, color) {
-            if (!celda) {
-                return `<td class="cuadrante-celda vacia" onclick="editarCelda('${clave}', ${dia}, ${sesion})">
-                    <span style="color:var(--text-light);font-size:0.8rem">+ Añadir</span>
-                </td>`;
-            }
+        function regenerar() {
+            if (!confirm('¿Regenerar programación?')) return;
+            const a = window.alumnos[alumnoActual];
+            a.programacion = generarProgramacion(a);
+            window.dbSet(window.dbRef(window.db, `gestorpe/alumnos/${alumnoActual}/programacion`), a.programacion);
+            renderProgramacion();
+            toast('Regenerado ✓', 'success');
+        }
 
-            return `<td class="cuadrante-celda" onclick="editarCelda('${clave}', ${dia}, ${sesion})">
-                <div class="celda-objetivo">
-                    <span class="celda-color" style="background:${color}"></span>
-                    ${celda.objetivo || ''}
+        function imprimirPrograma() {
+            window.print();
+        }
+
+        // ===== RENDER PROGRAMACIÓN =====
+        function renderProgramacion() {
+            const a = window.alumnos[alumnoActual];
+            const container = document.getElementById('tabProgramacion');
+            const sesiones = a.sesionesSemana;
+
+            let dias, nombres;
+            if (sesiones === 1) { dias = [2]; nombres = ['Miércoles']; }
+            else if (sesiones === 2) { dias = [1, 3]; nombres = ['Martes', 'Jueves']; }
+            else { dias = [0, 2, 4]; nombres = ['Lunes', 'Miércoles', 'Viernes']; }
+
+            let html = `<div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">📅 Programación Anual</h3>
+                    <button class="btn btn-secondary btn-sm" onclick="imprimirProgramacion()">🖨️ Imprimir Todo</button>
                 </div>
-                <div class="celda-indicador">${(celda.indicador || '').substring(0, 50)}${celda.indicador?.length > 50 ? '...' : ''}</div>
-                <div class="celda-actividad">${(celda.actividad || '').substring(0, 35)}${celda.actividad?.length > 35 ? '...' : ''}</div>
+
+                <div class="cuadrante-nav">
+                    <button class="nav-btn" onclick="cambiarMes(-1)">◀</button>
+                    <select class="form-select" style="width:auto" onchange="mesActual=parseInt(this.value);renderProgramacion()">
+                        ${MESES.map((m, i) => `<option value="${i}" ${i === mesActual ? 'selected' : ''}>${m.nombre}</option>`).join('')}
+                    </select>
+                    <button class="nav-btn" onclick="cambiarMes(1)">▶</button>
+                    <span class="trimestre-badge t${MESES[mesActual].trimestre}">T${MESES[mesActual].trimestre}</span>
+                </div>
+
+                <div style="overflow-x:auto">
+                    <table class="cuadrante-table">
+                        <thead><tr><th>Sem</th>${nombres.map(n => `<th>${n}</th>`).join('')}</tr></thead>
+                        <tbody>
+                            ${Array.from({length: MESES[mesActual].semanas}, (_, sIdx) => {
+                                const sem = sIdx + 1;
+                                return `<tr><td>${sem}</td>${dias.map(dia => {
+                                    const key = `${mesActual}_${sem}_${dia}`;
+                                    const c = a.programacion?.[key];
+                                    return renderCelda(a, key, c, dia);
+                                }).join('')}</tr>`;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="printAllMonths" style="display:none"></div>`;
+
+            container.innerHTML = html;
+            generarTodosLosMeses(a, dias, nombres);
+        }
+
+        function generarTodosLosMeses(a, dias, nombres) {
+            let html = '';
+            MESES.forEach((mes, mIdx) => {
+                html += `<div class="page-break" style="margin-top:20px">
+                    <h3 style="margin-bottom:10px">${mes.nombre} - T${mes.trimestre}</h3>
+                    <table class="cuadrante-table">
+                        <thead><tr><th>Sem</th>${nombres.map(n => `<th>${n}</th>`).join('')}</tr></thead>
+                        <tbody>
+                            ${Array.from({length: mes.semanas}, (_, sIdx) => {
+                                const sem = sIdx + 1;
+                                return `<tr><td>${sem}</td>${dias.map(dia => {
+                                    const key = `${mIdx}_${sem}_${dia}`;
+                                    const c = a.programacion?.[key];
+                                    return renderCeldaPrint(a, c);
+                                }).join('')}</tr>`;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>`;
+            });
+            document.getElementById('printAllMonths').innerHTML = html;
+        }
+
+        function renderCelda(alumno, key, c, dia) {
+            if (!c) return `<td class="celda celda-vacia" onclick="editarCelda('${key}', ${dia})">+</td>`;
+
+            const obj = alumno.objetivos[c.oIdx];
+            if (!obj) return `<td class="celda celda-vacia" onclick="editarCelda('${key}', ${dia})">?</td>`;
+
+            const ind = obj.indicadores[c.iIdx] || '';
+            const act = obj.actividades[c.aIdx] || '';
+
+            return `<td class="celda" onclick="editarCelda('${key}', ${dia})">
+                <div class="celda-obj">O${obj.numero}</div>
+                <div class="celda-ind">${ind.substring(0, 35)}${ind.length > 35 ? '...' : ''}</div>
+                <div class="celda-act">${act.substring(0, 25)}${act.length > 25 ? '...' : ''}</div>
             </td>`;
+        }
+
+        function renderCeldaPrint(alumno, c) {
+            if (!c) return `<td class="celda-vacia">-</td>`;
+            const obj = alumno.objetivos[c.oIdx];
+            if (!obj) return `<td>?</td>`;
+            const ind = obj.indicadores[c.iIdx] || '';
+            const act = obj.actividades[c.aIdx] || '';
+            return `<td><div class="celda-obj">O${obj.numero}</div><div class="celda-ind">${ind.substring(0, 30)}...</div></td>`;
         }
 
         function cambiarMes(dir) {
             mesActual = Math.max(0, Math.min(MESES.length - 1, mesActual + dir));
-            renderizarProgramacion();
+            renderProgramacion();
         }
 
-        function editarCelda(clave, dia, sesion) {
-            celdaEditando = clave;
-            const a = alumnos[alumnoActual];
-            const celda = a.programacion?.[clave] || {};
-            const prog = a.programas[0];
+        function editarCelda(key, dia) {
+            celdaEditando = key;
+            const a = window.alumnos[alumnoActual];
+            const c = a.programacion?.[key] || {};
 
-            document.getElementById('modalCeldaTitulo').textContent = `${DIAS[dia]} - Sesión`;
+            document.getElementById('celdaTitulo').textContent = DIAS[dia];
 
-            // Objetivos
-            const selObj = document.getElementById('celdaObjetivo');
-            selObj.innerHTML = '<option value="">Seleccionar...</option>';
-            prog.objetivos.forEach((obj, idx) => {
-                selObj.innerHTML += `<option value="${idx}" ${celda.objetivoIdx === idx ? 'selected' : ''}>O${obj.numero}: ${(obj.descripcion || '').substring(0, 40)}...</option>`;
+            const sel = document.getElementById('selObjetivo');
+            sel.innerHTML = '<option value="">Seleccionar...</option>';
+            a.objetivos.forEach((obj, idx) => {
+                sel.innerHTML += `<option value="${idx}" ${c.oIdx === idx ? 'selected' : ''}>O${obj.numero}: ${obj.descripcion.substring(0, 35)}...</option>`;
             });
 
-            if (celda.objetivoIdx !== undefined) {
-                actualizarIndicadores();
+            if (c.oIdx !== undefined) {
+                cargarIndicadores();
                 setTimeout(() => {
-                    document.getElementById('celdaIndicador').value = celda.indicadorIdx ?? '';
-                    document.getElementById('celdaActividad').value = celda.actividadIdx ?? '';
+                    document.getElementById('selIndicador').value = c.iIdx ?? '';
+                    document.getElementById('selActividad').value = c.aIdx ?? '';
                 }, 50);
+            } else {
+                document.getElementById('selIndicador').innerHTML = '<option value="">-</option>';
+                document.getElementById('selActividad').innerHTML = '<option value="">-</option>';
             }
 
             abrirModal('modalCelda');
         }
 
-        function actualizarIndicadores() {
-            const a = alumnos[alumnoActual];
-            const objIdx = document.getElementById('celdaObjetivo').value;
-            const selInd = document.getElementById('celdaIndicador');
-            const selAct = document.getElementById('celdaActividad');
+        function cargarIndicadores() {
+            const a = window.alumnos[alumnoActual];
+            const oIdx = document.getElementById('selObjetivo').value;
+            const selI = document.getElementById('selIndicador');
+            const selA = document.getElementById('selActividad');
 
-            selInd.innerHTML = '<option value="">Seleccionar...</option>';
-            selAct.innerHTML = '<option value="">Seleccionar...</option>';
+            selI.innerHTML = '<option value="">Seleccionar...</option>';
+            selA.innerHTML = '<option value="">Seleccionar...</option>';
 
-            if (objIdx === '') return;
+            if (oIdx === '') return;
 
-            const obj = a.programas[0].objetivos[parseInt(objIdx)];
-            
-            (obj.indicadores || []).forEach((ind, idx) => {
-                const texto = typeof ind === 'object' ? ind.descripcion : ind;
-                selInd.innerHTML += `<option value="${idx}">${texto.substring(0, 50)}...</option>`;
-            });
-
-            (obj.actividades || []).forEach((act, idx) => {
-                selAct.innerHTML += `<option value="${idx}">${act.substring(0, 50)}...</option>`;
-            });
+            const obj = a.objetivos[parseInt(oIdx)];
+            obj.indicadores.forEach((ind, i) => selI.innerHTML += `<option value="${i}">${ind.substring(0, 45)}...</option>`);
+            obj.actividades.forEach((act, i) => selA.innerHTML += `<option value="${i}">${act.substring(0, 45)}...</option>`);
         }
 
         function guardarCelda() {
-            const a = alumnos[alumnoActual];
-            const objIdx = document.getElementById('celdaObjetivo').value;
-            const indIdx = document.getElementById('celdaIndicador').value;
-            const actIdx = document.getElementById('celdaActividad').value;
+            const oIdx = document.getElementById('selObjetivo').value;
+            if (oIdx === '') { toast('Selecciona objetivo', 'error'); return; }
 
-            if (objIdx === '') {
-                mostrarToast('Selecciona un objetivo', 'error');
-                return;
-            }
+            const iIdx = document.getElementById('selIndicador').value;
+            const aIdx = document.getElementById('selActividad').value;
 
-            const prog = a.programas[0];
-            const obj = prog.objetivos[parseInt(objIdx)];
-            const ind = indIdx !== '' ? obj.indicadores[parseInt(indIdx)] : null;
-            const act = actIdx !== '' ? obj.actividades[parseInt(actIdx)] : null;
-
-            if (!a.programacion) a.programacion = {};
-            
-            a.programacion[celdaEditando] = {
-                area: prog.area,
-                objetivoIdx: parseInt(objIdx),
-                objetivo: `O${obj.numero}`,
-                objetivoDesc: obj.descripcion,
-                indicadorIdx: indIdx !== '' ? parseInt(indIdx) : null,
-                indicador: typeof ind === 'object' ? ind?.descripcion : (ind || ''),
-                actividadIdx: actIdx !== '' ? parseInt(actIdx) : null,
-                actividad: act || ''
+            const data = {
+                oIdx: parseInt(oIdx),
+                iIdx: iIdx !== '' ? parseInt(iIdx) : 0,
+                aIdx: aIdx !== '' ? parseInt(aIdx) : 0
             };
 
-            window.dbSet(window.dbRef(window.database, `gestorpe/alumnos/${alumnoActual}/programacion`), a.programacion).then(() => {
-                cerrarModal('modalCelda');
-                renderizarProgramacion();
-                mostrarToast('Guardado ✓', 'success');
-            });
+            window.dbSet(window.dbRef(window.db, `gestorpe/alumnos/${alumnoActual}/programacion/${celdaEditando}`), data);
+            window.alumnos[alumnoActual].programacion[celdaEditando] = data;
+
+            cerrarModal('modalCelda');
+            renderProgramacion();
+            toast('Guardado ✓', 'success');
         }
 
-        function limpiarCelda() {
-            const a = alumnos[alumnoActual];
-            if (a.programacion?.[celdaEditando]) {
-                delete a.programacion[celdaEditando];
-                window.dbSet(window.dbRef(window.database, `gestorpe/alumnos/${alumnoActual}/programacion`), a.programacion).then(() => {
-                    cerrarModal('modalCelda');
-                    renderizarProgramacion();
-                    mostrarToast('Eliminado', 'success');
-                });
-            }
+        function borrarCelda() {
+            window.dbRemove(window.dbRef(window.db, `gestorpe/alumnos/${alumnoActual}/programacion/${celdaEditando}`));
+            delete window.alumnos[alumnoActual].programacion[celdaEditando];
+            cerrarModal('modalCelda');
+            renderProgramacion();
+            toast('Eliminado', 'success');
         }
 
-        function regenerarProgramacion() {
-            if (!confirm('¿Regenerar toda la programación?')) return;
-            
-            const a = alumnos[alumnoActual];
-            a.programacion = generarProgramacion(a);
-
-            window.dbSet(window.dbRef(window.database, `gestorpe/alumnos/${alumnoActual}/programacion`), a.programacion).then(() => {
-                renderizarProgramacion();
-                mostrarToast('Regenerado ✓', 'success');
-            });
+        function imprimirProgramacion() {
+            document.getElementById('printAllMonths').style.display = 'block';
+            document.querySelector('.cuadrante-nav').style.display = 'none';
+            document.querySelector('.cuadrante-table').style.display = 'none';
+            window.print();
+            setTimeout(() => {
+                document.getElementById('printAllMonths').style.display = 'none';
+                document.querySelector('.cuadrante-nav').style.display = 'flex';
+                document.querySelector('.cuadrante-table').style.display = 'table';
+            }, 500);
         }
 
-        // ========== EVALUACIÓN ==========
-        let evalPeriodo = 'T1';
+        // ===== EVALUACIÓN =====
+        function renderEvaluacion() {
+            const a = window.alumnos[alumnoActual];
+            const container = document.getElementById('tabEvaluacion');
 
-        function renderizarEvaluacion() {
-            const a = alumnos[alumnoActual];
-            const container = document.getElementById('evaluacionContent');
+            let html = `<div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">📊 Evaluación</h3>
+                    <button class="btn btn-secondary btn-sm" onclick="imprimirEvaluacion()">🖨️ Imprimir T${evalTrim}</button>
+                </div>
+                <div class="btn-group" style="margin-bottom:14px">
+                    <button class="btn ${evalTrim === 1 ? 'btn-primary' : 'btn-secondary'} btn-sm" onclick="setTrim(1)">T1</button>
+                    <button class="btn ${evalTrim === 2 ? 'btn-primary' : 'btn-secondary'} btn-sm" onclick="setTrim(2)">T2</button>
+                    <button class="btn ${evalTrim === 3 ? 'btn-primary' : 'btn-secondary'} btn-sm" onclick="setTrim(3)">T3</button>
+                </div>
+                <div id="evalList"></div>
+            </div>`;
 
-            if (!a.programas?.length) {
-                container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📊</div><p>No hay programas</p></div>`;
-                return;
-            }
-
-            container.innerHTML = `
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">📊 Evaluación</h3>
-                    </div>
-                    <div style="display:flex;gap:8px;margin-bottom:16px">
-                        <button class="btn ${evalPeriodo === 'T1' ? 'btn-primary' : 'btn-secondary'} btn-sm" onclick="setEvalPeriodo('T1')">T1</button>
-                        <button class="btn ${evalPeriodo === 'T2' ? 'btn-primary' : 'btn-secondary'} btn-sm" onclick="setEvalPeriodo('T2')">T2</button>
-                        <button class="btn ${evalPeriodo === 'T3' ? 'btn-primary' : 'btn-secondary'} btn-sm" onclick="setEvalPeriodo('T3')">T3</button>
-                    </div>
-                    <div id="evalLista"></div>
-                </div>`;
-            
-            renderizarIndicadoresEval();
+            container.innerHTML = html;
+            renderEvalList();
         }
 
-        function setEvalPeriodo(p) {
-            evalPeriodo = p;
-            renderizarEvaluacion();
+        function setTrim(t) {
+            evalTrim = t;
+            renderEvaluacion();
         }
 
-        function renderizarIndicadoresEval() {
-            const a = alumnos[alumnoActual];
-            const container = document.getElementById('evalLista');
-            const trim = parseInt(evalPeriodo.replace('T', ''));
+        function renderEvalList() {
+            const a = window.alumnos[alumnoActual];
+            const container = document.getElementById('evalList');
 
             let html = '';
-            a.programas.forEach((prog, pIdx) => {
-                prog.objetivos.forEach((obj, oIdx) => {
-                    if (obj.trimestre !== trim) return;
+            let hayIndicadores = false;
 
-                    html += `<div style="margin-bottom:16px">
-                        <div style="font-weight:600;margin-bottom:8px">O${obj.numero}: ${obj.descripcion?.substring(0, 50) || ''}...</div>`;
+            a.objetivos.forEach((obj, oIdx) => {
+                if (obj.trimestre !== evalTrim) return;
+                hayIndicadores = true;
 
-                    (obj.indicadores || []).forEach((ind, iIdx) => {
-                        const key = `${pIdx}_${oIdx}_${iIdx}_${evalPeriodo}`;
-                        const estado = a.evaluaciones?.[key] || '';
-                        const texto = typeof ind === 'object' ? ind.descripcion : ind;
+                html += `<div style="margin-bottom:14px">
+                    <div style="font-weight:600;margin-bottom:6px;font-size:0.9rem">O${obj.numero}: ${obj.descripcion.substring(0, 45)}...</div>`;
 
-                        html += `<div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--bg);border-radius:8px;margin-bottom:6px">
-                            <span style="flex:1;font-size:0.85rem">${texto}</span>
-                            <button onclick="setEval(${pIdx},${oIdx},${iIdx},'C')" style="width:32px;height:32px;border-radius:50%;border:2px solid ${estado === 'C' ? 'var(--success)' : 'var(--border)'};background:${estado === 'C' ? 'var(--success)' : 'white'};color:${estado === 'C' ? 'white' : 'var(--success)'};cursor:pointer">✓</button>
-                            <button onclick="setEval(${pIdx},${oIdx},${iIdx},'P')" style="width:32px;height:32px;border-radius:50%;border:2px solid ${estado === 'P' ? 'var(--proceso)' : 'var(--border)'};background:${estado === 'P' ? 'var(--proceso)' : 'white'};color:${estado === 'P' ? 'white' : 'var(--proceso)'};cursor:pointer">◐</button>
-                            <button onclick="setEval(${pIdx},${oIdx},${iIdx},'N')" style="width:32px;height:32px;border-radius:50%;border:2px solid ${estado === 'N' ? 'var(--text-light)' : 'var(--border)'};background:${estado === 'N' ? 'var(--text-light)' : 'white'};color:${estado === 'N' ? 'white' : 'var(--text-light)'};cursor:pointer">○</button>
-                        </div>`;
-                    });
+                obj.indicadores.forEach((ind, iIdx) => {
+                    const key = `${oIdx}_${iIdx}_T${evalTrim}`;
+                    const estado = a.evaluaciones?.[key] || '';
 
-                    html += `</div>`;
+                    html += `<div class="eval-item">
+                        <span class="eval-text">${ind}</span>
+                        <button class="eval-btn c ${estado === 'C' ? 'active' : ''}" onclick="setEval(${oIdx},${iIdx},'C')">✓</button>
+                        <button class="eval-btn p ${estado === 'P' ? 'active' : ''}" onclick="setEval(${oIdx},${iIdx},'P')">◐</button>
+                        <button class="eval-btn n ${estado === 'N' ? 'active' : ''}" onclick="setEval(${oIdx},${iIdx},'N')">○</button>
+                    </div>`;
                 });
+
+                html += '</div>';
             });
 
-            container.innerHTML = html || '<p style="text-align:center;color:var(--text-light)">No hay indicadores para este trimestre</p>';
+            container.innerHTML = hayIndicadores ? html : '<p style="text-align:center;color:var(--text-light)">No hay indicadores en este trimestre</p>';
         }
 
-        function setEval(pIdx, oIdx, iIdx, estado) {
-            const a = alumnos[alumnoActual];
-            const key = `${pIdx}_${oIdx}_${iIdx}_${evalPeriodo}`;
+        function setEval(oIdx, iIdx, estado) {
+            const a = window.alumnos[alumnoActual];
+            const key = `${oIdx}_${iIdx}_T${evalTrim}`;
 
             if (!a.evaluaciones) a.evaluaciones = {};
-            
+
             if (a.evaluaciones[key] === estado) {
                 delete a.evaluaciones[key];
+                window.dbRemove(window.dbRef(window.db, `gestorpe/alumnos/${alumnoActual}/evaluaciones/${key}`));
             } else {
                 a.evaluaciones[key] = estado;
+                window.dbSet(window.dbRef(window.db, `gestorpe/alumnos/${alumnoActual}/evaluaciones/${key}`), estado);
             }
 
-            window.dbSet(window.dbRef(window.database, `gestorpe/alumnos/${alumnoActual}/evaluaciones`), a.evaluaciones).then(() => {
-                renderizarIndicadoresEval();
-            });
+            renderEvalList();
         }
 
-        // ========== UTILIDADES ==========
+        function imprimirEvaluacion() {
+            window.print();
+        }
+
+        // ===== UTILS =====
         function abrirModal(id) { document.getElementById(id).classList.add('active'); }
         function cerrarModal(id) { document.getElementById(id).classList.remove('active'); }
 
-        function mostrarToast(msg, tipo = '') {
-            const toast = document.getElementById('toast');
-            toast.textContent = msg;
-            toast.className = 'toast ' + tipo;
-            setTimeout(() => toast.classList.add('show'), 10);
-            setTimeout(() => toast.classList.remove('show'), 3000);
+        function toast(msg, tipo = '') {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.className = 'toast ' + tipo;
+            setTimeout(() => t.classList.add('show'), 10);
+            setTimeout(() => t.classList.remove('show'), 3000);
         }
     </script>
 </body>
