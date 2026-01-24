@@ -7,6 +7,10 @@
     <meta name="theme-color" content="#1a5f4a">
     <title>Gestor PE - Programas Específicos</title>
     
+    <!-- ICONO SVG -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%231a5f4a'/><text x='50' y='38' font-size='24' text-anchor='middle' fill='white' font-weight='bold'>PE</text><text x='50' y='70' font-size='28' text-anchor='middle' fill='white'>📋</text></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%231a5f4a'/><text x='50' y='65' font-size='45' text-anchor='middle' fill='white'>PE</text></svg>">
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
@@ -26,6 +30,7 @@
             --warning: #f59e0b;
             --danger: #ef4444;
             --proceso: #3b82f6;
+            --ausencia: #9ca3af;
             
             --cognitivo: #8b5cf6;
             --atencion: #f59e0b;
@@ -38,9 +43,6 @@
             --ejecutivas: #6366f1;
             --autonomia: #14b8a6;
             
-            --t1: #8b5cf6;
-            --t2: #06b6d4;
-            --t3: #f59e0b;
             --shadow: 0 4px 20px rgba(26, 95, 74, 0.1);
             --radius: 16px;
             --radius-sm: 10px;
@@ -56,11 +58,11 @@
             line-height: 1.5;
         }
 
-        /* ===== HEADER ===== */
+        /* HEADER */
         .header {
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
             color: white;
-            padding: 14px 20px;
+            padding: 12px 16px;
             position: sticky;
             top: 0;
             z-index: 100;
@@ -73,25 +75,42 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 12px;
+            gap: 10px;
         }
 
-        .header h1 { font-size: 1.3rem; font-weight: 700; }
-        .header-right { display: flex; align-items: center; gap: 10px; }
+        .header-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-icon {
+            width: 38px;
+            height: 38px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .header h1 { font-size: 1.2rem; font-weight: 700; }
+        .header-right { display: flex; align-items: center; gap: 8px; }
 
         .status-badge {
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 5px;
             background: rgba(255,255,255,0.2);
-            padding: 5px 10px;
+            padding: 4px 10px;
             border-radius: 20px;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
         }
 
         .status-dot {
-            width: 8px;
-            height: 8px;
+            width: 7px;
+            height: 7px;
             border-radius: 50%;
             background: var(--warning);
             animation: pulse 1.5s infinite;
@@ -105,35 +124,35 @@
             background: rgba(255,255,255,0.15);
             border: none;
             color: white;
-            padding: 7px 12px;
+            padding: 6px 10px;
             border-radius: var(--radius-sm);
             cursor: pointer;
             font-family: inherit;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             font-weight: 500;
             display: none;
         }
 
         .btn-header:hover { background: rgba(255,255,255,0.25); }
 
-        /* ===== CONTAINER ===== */
-        .container { max-width: 1200px; margin: 0 auto; padding: 16px; }
+        /* CONTAINER */
+        .container { max-width: 1200px; margin: 0 auto; padding: 14px; }
 
         .screen { display: none; }
         .screen.active { display: block; }
 
-        /* ===== GRID ALUMNOS ===== */
+        /* GRID ALUMNOS */
         .alumnos-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-            gap: 12px;
-            margin-top: 14px;
+            gap: 10px;
+            margin-top: 12px;
         }
 
         .alumno-card {
             background: var(--bg-card);
             border-radius: var(--radius);
-            padding: 18px 12px;
+            padding: 16px 10px;
             text-align: center;
             cursor: pointer;
             transition: all 0.2s;
@@ -142,32 +161,18 @@
             position: relative;
         }
 
-        .alumno-card:hover { transform: translateY(-3px); border-color: var(--primary-light); }
+        .alumno-card:hover { transform: translateY(-2px); border-color: var(--primary-light); }
 
         .alumno-siglas {
             font-family: 'JetBrains Mono', monospace;
-            font-size: 1.4rem;
+            font-size: 1.3rem;
             font-weight: 700;
             color: var(--primary);
-            margin-bottom: 4px;
+            margin-bottom: 3px;
         }
 
-        .alumno-curso { font-size: 0.8rem; color: var(--text-light); }
-
-        .alumno-badge {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: var(--success);
-            color: white;
-            font-size: 0.65rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+        .alumno-curso { font-size: 0.75rem; color: var(--text-light); }
+        .alumno-programas { font-size: 0.65rem; color: var(--primary); margin-top: 4px; }
 
         .alumno-card-add {
             background: transparent;
@@ -176,17 +181,17 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 4px;
+            gap: 3px;
             color: var(--primary);
-            min-height: 90px;
+            min-height: 85px;
         }
 
-        /* ===== CARD ===== */
+        /* CARD */
         .card {
             background: var(--bg-card);
             border-radius: var(--radius);
-            padding: 18px;
-            margin-bottom: 14px;
+            padding: 16px;
+            margin-bottom: 12px;
             box-shadow: var(--shadow);
         }
 
@@ -194,35 +199,37 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 14px;
+            margin-bottom: 12px;
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 8px;
         }
 
-        .card-title { font-size: 1.05rem; font-weight: 700; color: var(--primary-dark); }
+        .card-title { font-size: 1rem; font-weight: 700; color: var(--primary-dark); }
 
-        /* ===== TABS ===== */
+        /* TABS */
         .tabs {
             display: flex;
             gap: 4px;
             background: var(--bg-card);
-            padding: 5px;
+            padding: 4px;
             border-radius: var(--radius);
-            margin-bottom: 16px;
+            margin-bottom: 14px;
             box-shadow: var(--shadow);
+            overflow-x: auto;
         }
 
         .tab {
             flex: 1;
-            padding: 10px 12px;
+            padding: 9px 8px;
             border: none;
             background: transparent;
             color: var(--text-light);
             font-family: inherit;
-            font-size: 0.85rem;
+            font-size: 0.75rem;
             font-weight: 600;
             cursor: pointer;
             border-radius: var(--radius-sm);
+            white-space: nowrap;
         }
 
         .tab:hover { background: var(--bg); }
@@ -231,36 +238,37 @@
         .tab-content { display: none; }
         .tab-content.active { display: block; }
 
-        /* ===== FORMS ===== */
-        .form-group { margin-bottom: 14px; }
-        .form-label { display: block; font-weight: 600; margin-bottom: 5px; font-size: 0.85rem; }
+        /* FORMS */
+        .form-group { margin-bottom: 12px; }
+        .form-label { display: block; font-weight: 600; margin-bottom: 4px; font-size: 0.8rem; }
 
-        .form-input, .form-select {
+        .form-input, .form-select, .form-textarea {
             width: 100%;
-            padding: 10px 12px;
+            padding: 9px 11px;
             border: 2px solid var(--border);
             border-radius: var(--radius-sm);
             font-family: inherit;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             background: white;
         }
 
-        .form-input:focus, .form-select:focus { outline: none; border-color: var(--primary); }
+        .form-input:focus, .form-select:focus, .form-textarea:focus { outline: none; border-color: var(--primary); }
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .form-textarea { min-height: 100px; resize: vertical; }
 
-        /* ===== BUTTONS ===== */
+        /* BUTTONS */
         .btn {
-            padding: 10px 16px;
+            padding: 9px 14px;
             border: none;
             border-radius: var(--radius-sm);
             font-family: inherit;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             font-weight: 600;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 5px;
+            gap: 4px;
         }
 
         .btn-primary { background: var(--primary); color: white; }
@@ -269,66 +277,248 @@
         .btn-secondary { background: var(--bg); color: var(--text); border: 2px solid var(--border); }
         .btn-secondary:hover { border-color: var(--primary); }
         .btn-danger { background: var(--danger); color: white; }
-        .btn-sm { padding: 7px 12px; font-size: 0.8rem; }
-        .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-warning { background: var(--warning); color: white; }
+        .btn-sm { padding: 6px 10px; font-size: 0.75rem; }
+        .btn-group { display: flex; gap: 6px; flex-wrap: wrap; }
 
-        /* ===== UPLOAD ===== */
-        .upload-zone {
-            border: 2px dashed var(--border);
-            border-radius: var(--radius-sm);
-            padding: 30px 16px;
-            text-align: center;
-            cursor: pointer;
-            background: var(--bg);
-        }
-
-        .upload-zone:hover { border-color: var(--primary); }
-        .upload-zone.has-file { border-color: var(--success); background: rgba(34, 197, 94, 0.1); }
-        .upload-icon { font-size: 2rem; margin-bottom: 8px; }
-
-        /* ===== SESIONES BTNS ===== */
-        .sesiones-btns { display: flex; gap: 8px; margin-top: 6px; }
-
-        .sesion-btn {
-            flex: 1;
-            padding: 10px;
-            border: 2px solid var(--border);
-            border-radius: var(--radius-sm);
-            background: white;
-            font-family: inherit;
+        /* ÁREA BADGES */
+        .area-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
             font-weight: 600;
-            cursor: pointer;
-            font-size: 0.9rem;
         }
 
-        .sesion-btn:hover { border-color: var(--primary-light); }
-        .sesion-btn.active { border-color: var(--primary); background: rgba(26, 95, 74, 0.1); }
+        .area-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+        }
 
-        /* ===== PREVIEW ===== */
-        .preview-box {
-            display: none;
-            margin-top: 14px;
-            max-height: 200px;
-            overflow-y: auto;
+        /* PROGRAMA CARD */
+        .programa-card {
             background: var(--bg);
             border-radius: var(--radius-sm);
-            padding: 14px;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-left: 4px solid var(--primary);
         }
 
-        .preview-box.active { display: block; }
+        .programa-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
 
-        .preview-obj {
+        .programa-titulo { font-weight: 600; font-size: 0.9rem; }
+
+        /* OBJETIVO */
+        .objetivo-card {
+            background: white;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 8px;
+        }
+
+        .objetivo-header { display: flex; gap: 5px; margin-bottom: 5px; align-items: center; flex-wrap: wrap; }
+
+        .objetivo-num {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 2px 5px;
+            border-radius: 4px;
+            background: rgba(26, 95, 74, 0.15);
+            color: var(--primary);
+        }
+
+        .trimestre-badge {
+            font-size: 0.65rem;
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .trimestre-badge.t1 { background: #8b5cf620; color: #8b5cf6; }
+        .trimestre-badge.t2 { background: #06b6d420; color: #06b6d4; }
+        .trimestre-badge.t3 { background: #f59e0b20; color: #f59e0b; }
+
+        .objetivo-desc { font-size: 0.8rem; font-weight: 500; }
+
+        .objetivo-section { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--border); }
+        .objetivo-section-title { font-size: 0.65rem; font-weight: 700; color: var(--text-light); text-transform: uppercase; margin-bottom: 3px; }
+
+        .item-list { list-style: none; font-size: 0.75rem; }
+        .item-list li { padding: 2px 0 2px 12px; position: relative; }
+        .item-list li::before { content: "•"; position: absolute; left: 0; color: var(--primary); }
+
+        /* CUADRANTE */
+        .cuadrante-nav {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .nav-btn {
+            width: 30px;
+            height: 30px;
+            border: 2px solid var(--border);
             background: white;
             border-radius: 6px;
-            padding: 10px;
-            margin-bottom: 6px;
-            border-left: 3px solid var(--primary);
+            cursor: pointer;
+            font-size: 0.85rem;
         }
 
-        .preview-obj h4 { font-size: 0.85rem; margin-bottom: 3px; }
-        .preview-obj p { font-size: 0.75rem; color: var(--text-light); }
+        .nav-btn:hover { border-color: var(--primary); }
 
-        /* ===== MODAL ===== */
+        .cuadrante-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+            font-size: 0.75rem;
+        }
+
+        .cuadrante-table th, .cuadrante-table td {
+            border: 1px solid var(--border);
+            padding: 5px;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        .cuadrante-table th {
+            background: var(--primary);
+            color: white;
+            font-weight: 600;
+            text-align: center;
+            font-size: 0.7rem;
+        }
+
+        .cuadrante-table td:first-child {
+            background: var(--primary-light);
+            color: white;
+            font-weight: 600;
+            text-align: center;
+            width: 45px;
+            font-size: 0.7rem;
+        }
+
+        .celda { min-height: 50px; cursor: pointer; position: relative; }
+        .celda:hover { background: var(--bg); }
+        .celda-vacia { background: #f9fafb; color: var(--text-light); }
+
+        .celda-area { 
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            margin-right: 3px;
+        }
+
+        .celda-obj { font-weight: 600; color: var(--primary-dark); font-size: 0.7rem; margin-bottom: 2px; }
+        .celda-ind { font-size: 0.6rem; color: var(--text); }
+
+        .celda-ausencia {
+            background: repeating-linear-gradient(45deg, #f3f4f6, #f3f4f6 5px, #e5e7eb 5px, #e5e7eb 10px);
+            opacity: 0.8;
+        }
+
+        .celda-ausencia::after {
+            content: "❌";
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            font-size: 0.6rem;
+        }
+
+        .celda-conseguido::after {
+            content: "✅";
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            font-size: 0.6rem;
+        }
+
+        .celda-noconseguido::after {
+            content: "🔄";
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            font-size: 0.6rem;
+        }
+
+        /* STATS AUSENCIAS */
+        .stats-box {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            padding: 10px;
+            background: var(--bg);
+            border-radius: var(--radius-sm);
+            margin-bottom: 12px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 8px 14px;
+            background: white;
+            border-radius: 8px;
+            min-width: 80px;
+        }
+
+        .stat-num {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .stat-num.ausencias { color: var(--danger); }
+
+        .stat-label {
+            font-size: 0.7rem;
+            color: var(--text-light);
+        }
+
+        /* EVALUACIÓN */
+        .eval-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px;
+            background: var(--bg);
+            border-radius: 6px;
+            margin-bottom: 5px;
+            flex-wrap: wrap;
+        }
+
+        .eval-text { flex: 1; font-size: 0.8rem; min-width: 140px; }
+
+        .eval-btn {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            border: 2px solid var(--border);
+            background: white;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        .eval-btn.c { border-color: var(--success); color: var(--success); }
+        .eval-btn.c.active { background: var(--success); color: white; }
+        .eval-btn.p { border-color: var(--proceso); color: var(--proceso); }
+        .eval-btn.p.active { background: var(--proceso); color: white; }
+        .eval-btn.n { border-color: gray; color: gray; }
+        .eval-btn.n.active { background: gray; color: white; }
+
+        /* MODAL */
         .modal-overlay {
             position: fixed;
             inset: 0;
@@ -337,7 +527,7 @@
             align-items: center;
             justify-content: center;
             z-index: 1000;
-            padding: 16px;
+            padding: 14px;
         }
 
         .modal-overlay.active { display: flex; }
@@ -352,184 +542,107 @@
         }
 
         .modal-header {
-            padding: 14px 18px;
+            padding: 12px 16px;
             border-bottom: 1px solid var(--border);
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
-        .modal-title { font-size: 1rem; font-weight: 700; }
-        .modal-close { background: none; border: none; font-size: 1.4rem; cursor: pointer; color: var(--text-light); }
-        .modal-body { padding: 18px; }
-        .modal-footer { padding: 14px 18px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; }
+        .modal-title { font-size: 0.95rem; font-weight: 700; }
+        .modal-close { background: none; border: none; font-size: 1.3rem; cursor: pointer; color: var(--text-light); }
+        .modal-body { padding: 16px; }
+        .modal-footer { padding: 12px 16px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 6px; flex-wrap: wrap; }
 
-        /* ===== ALUMNO HEADER ===== */
+        /* ASISTENCIA */
+        .asistencia-btns {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+        }
+
+        .asist-btn {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: white;
+            cursor: pointer;
+            text-align: center;
+            font-family: inherit;
+            min-width: 100px;
+        }
+
+        .asist-btn:hover { border-color: var(--primary-light); }
+        .asist-btn.selected { border-width: 3px; }
+        .asist-btn.asiste.selected { border-color: var(--success); background: rgba(34, 197, 94, 0.1); }
+        .asist-btn.no-asiste.selected { border-color: var(--danger); background: rgba(239, 68, 68, 0.1); }
+
+        .asist-icon { font-size: 1.5rem; display: block; margin-bottom: 4px; }
+        .asist-text { font-size: 0.8rem; font-weight: 600; }
+
+        /* RESULTADO SESIÓN */
+        .resultado-btns {
+            display: flex;
+            gap: 8px;
+            margin-top: 14px;
+            padding-top: 14px;
+            border-top: 1px solid var(--border);
+            flex-wrap: wrap;
+        }
+
+        .resultado-btn {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: white;
+            cursor: pointer;
+            text-align: center;
+            font-family: inherit;
+            min-width: 90px;
+        }
+
+        .resultado-btn:hover { border-color: var(--primary-light); }
+        .resultado-btn.selected { border-width: 3px; }
+        .resultado-btn.conseguido.selected { border-color: var(--success); background: rgba(34, 197, 94, 0.1); }
+        .resultado-btn.noconseguido.selected { border-color: var(--warning); background: rgba(245, 158, 11, 0.1); }
+
+        /* ALUMNO HEADER */
         .alumno-header {
             display: flex;
             align-items: center;
-            gap: 14px;
-            margin-bottom: 16px;
+            gap: 12px;
+            margin-bottom: 14px;
             flex-wrap: wrap;
         }
 
         .alumno-header-siglas {
             font-family: 'JetBrains Mono', monospace;
-            font-size: 1.8rem;
+            font-size: 1.6rem;
             font-weight: 700;
             color: var(--primary);
             background: rgba(26, 95, 74, 0.1);
-            padding: 12px 20px;
+            padding: 10px 18px;
             border-radius: var(--radius);
         }
 
-        .alumno-header-info h2 { font-size: 1.1rem; }
-        .alumno-header-info p { color: var(--text-light); font-size: 0.85rem; }
+        .alumno-header-info h2 { font-size: 1rem; }
+        .alumno-header-info p { color: var(--text-light); font-size: 0.8rem; }
 
-        /* ===== OBJETIVO CARD ===== */
-        .objetivo-card {
-            background: var(--bg);
-            border-radius: var(--radius-sm);
-            padding: 14px;
-            margin-bottom: 10px;
-            border-left: 4px solid var(--primary);
-        }
-
-        .objetivo-header { display: flex; gap: 6px; margin-bottom: 6px; align-items: center; }
-
-        .objetivo-num {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.75rem;
-            font-weight: 600;
-            padding: 2px 6px;
-            border-radius: 4px;
-            background: rgba(26, 95, 74, 0.15);
-            color: var(--primary);
-        }
-
-        .trimestre-badge {
-            font-size: 0.7rem;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-weight: 600;
-        }
-
-        .trimestre-badge.t1 { background: #8b5cf620; color: #8b5cf6; }
-        .trimestre-badge.t2 { background: #06b6d420; color: #06b6d4; }
-        .trimestre-badge.t3 { background: #f59e0b20; color: #f59e0b; }
-
-        .objetivo-desc { font-weight: 500; font-size: 0.9rem; margin-bottom: 8px; }
-
-        .objetivo-section { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
-        .objetivo-section-title { font-size: 0.7rem; font-weight: 700; color: var(--text-light); text-transform: uppercase; margin-bottom: 4px; }
-
-        .item-list { list-style: none; }
-        .item-list li { font-size: 0.8rem; padding: 4px 0 4px 14px; position: relative; }
-        .item-list li::before { content: "•"; position: absolute; left: 0; color: var(--primary); }
-
-        /* ===== CUADRANTE ===== */
-        .cuadrante-nav {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 14px;
-            flex-wrap: wrap;
-        }
-
-        .nav-btn {
-            width: 32px;
-            height: 32px;
-            border: 2px solid var(--border);
-            background: white;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.9rem;
-        }
-
-        .nav-btn:hover { border-color: var(--primary); }
-
-        .cuadrante-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 12px;
-            font-size: 0.8rem;
-        }
-
-        .cuadrante-table th, .cuadrante-table td {
-            border: 1px solid var(--border);
-            padding: 8px;
-            text-align: left;
-            vertical-align: top;
-        }
-
-        .cuadrante-table th {
-            background: var(--primary);
-            color: white;
-            font-weight: 600;
-            text-align: center;
-            font-size: 0.75rem;
-        }
-
-        .cuadrante-table td:first-child {
-            background: var(--primary-light);
-            color: white;
-            font-weight: 600;
-            text-align: center;
-            width: 60px;
-            font-size: 0.75rem;
-        }
-
-        .celda { min-height: 60px; cursor: pointer; }
-        .celda:hover { background: var(--bg); }
-        .celda-vacia { background: #f9fafb; color: var(--text-light); font-size: 0.75rem; }
-
-        .celda-obj { font-weight: 600; color: var(--primary-dark); font-size: 0.75rem; margin-bottom: 2px; }
-        .celda-ind { font-size: 0.7rem; color: var(--text); margin-bottom: 2px; }
-        .celda-act { font-size: 0.65rem; color: var(--text-light); font-style: italic; }
-
-        /* ===== EVALUACIÓN ===== */
-        .eval-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px;
-            background: var(--bg);
-            border-radius: 6px;
-            margin-bottom: 6px;
-            flex-wrap: wrap;
-        }
-
-        .eval-text { flex: 1; font-size: 0.85rem; min-width: 150px; }
-
-        .eval-btn {
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            border: 2px solid var(--border);
-            background: white;
-            cursor: pointer;
-            font-size: 0.9rem;
-        }
-
-        .eval-btn.c { border-color: var(--success); color: var(--success); }
-        .eval-btn.c.active { background: var(--success); color: white; }
-        .eval-btn.p { border-color: var(--proceso); color: var(--proceso); }
-        .eval-btn.p.active { background: var(--proceso); color: white; }
-        .eval-btn.n { border-color: gray; color: gray; }
-        .eval-btn.n.active { background: gray; color: white; }
-
-        /* ===== TOAST ===== */
+        /* TOAST */
         .toast {
             position: fixed;
-            bottom: 20px;
+            bottom: 16px;
             left: 50%;
             transform: translateX(-50%) translateY(100px);
             background: var(--text);
             color: white;
-            padding: 10px 18px;
+            padding: 9px 16px;
             border-radius: var(--radius-sm);
             font-weight: 500;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             opacity: 0;
             transition: all 0.3s;
             z-index: 2000;
@@ -539,25 +652,59 @@
         .toast.success { background: var(--success); }
         .toast.error { background: var(--danger); }
 
-        .empty-state { text-align: center; padding: 30px; color: var(--text-light); }
-        .empty-icon { font-size: 2.5rem; margin-bottom: 8px; opacity: 0.5; }
+        .empty-state { text-align: center; padding: 25px; color: var(--text-light); }
+        .empty-icon { font-size: 2rem; margin-bottom: 6px; opacity: 0.5; }
 
-        /* ===== PRINT STYLES ===== */
+        /* SESIONES BTNS */
+        .sesiones-btns { display: flex; gap: 6px; margin-top: 5px; }
+
+        .sesion-btn {
+            flex: 1;
+            padding: 8px;
+            border: 2px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: white;
+            font-family: inherit;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        .sesion-btn:hover { border-color: var(--primary-light); }
+        .sesion-btn.active { border-color: var(--primary); background: rgba(26, 95, 74, 0.1); }
+
+        /* UPLOAD */
+        .upload-zone {
+            border: 2px dashed var(--border);
+            border-radius: var(--radius-sm);
+            padding: 20px 14px;
+            text-align: center;
+            cursor: pointer;
+            background: var(--bg);
+            font-size: 0.85rem;
+        }
+
+        .upload-zone:hover { border-color: var(--primary); }
+        .upload-zone.has-file { border-color: var(--success); background: rgba(34, 197, 94, 0.1); }
+
+        /* PRINT */
         @media print {
-            body { background: white; }
-            .header, .tabs, .btn, .nav-btn, .cuadrante-nav, .modal-overlay, .toast, .btn-group { display: none !important; }
-            .screen, .tab-content, .card { display: block !important; box-shadow: none; }
+            body { background: white; font-size: 10px; }
+            .header, .tabs, .btn, .btn-group, .nav-btn, .cuadrante-nav, .modal-overlay, .toast, .no-print { display: none !important; }
+            .screen, .tab-content, .card { display: block !important; box-shadow: none; margin: 0; padding: 8px 0; }
             .container { max-width: 100%; padding: 0; }
-            .print-header { display: block !important; text-align: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #333; }
-            .print-header h1 { font-size: 1.4rem; margin-bottom: 5px; }
-            .print-header p { font-size: 0.9rem; color: #666; }
-            .cuadrante-table { font-size: 0.7rem; }
-            .cuadrante-table th, .cuadrante-table td { padding: 4px; }
-            .objetivo-card { break-inside: avoid; }
-            .page-break { page-break-before: always; }
+            .print-section { page-break-before: always; }
+            .print-section:first-child { page-break-before: avoid; }
+            .print-header { display: block !important; text-align: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid #333; }
+            .print-header h1 { font-size: 14px; margin-bottom: 3px; }
+            .print-header p { font-size: 10px; color: #666; }
+            .cuadrante-table { font-size: 8px; }
+            .cuadrante-table th, .cuadrante-table td { padding: 3px; }
+            .objetivo-card, .programa-card { break-inside: avoid; }
         }
 
         .print-header { display: none; }
+        .print-only { display: none; }
 
         @media (max-width: 600px) {
             .form-row { grid-template-columns: 1fr; }
@@ -568,7 +715,10 @@
 <body>
     <header class="header">
         <div class="header-content">
-            <h1>📋 Gestor PE</h1>
+            <div class="header-logo">
+                <div class="header-icon">📋</div>
+                <h1>Gestor PE</h1>
+            </div>
             <div class="header-right">
                 <div class="status-badge">
                     <div class="status-dot" id="statusDot"></div>
@@ -585,7 +735,7 @@
             <div class="card">
                 <div class="card-header">
                     <h2 class="card-title">👥 Mis Alumnos</h2>
-                    <button class="btn btn-primary btn-sm" onclick="abrirModalImportar()">📄 Importar DOCX</button>
+                    <button class="btn btn-primary btn-sm" onclick="abrirModalNuevoAlumno()">➕ Nuevo</button>
                 </div>
                 <div class="alumnos-grid" id="alumnosGrid"></div>
             </div>
@@ -597,33 +747,37 @@
         <div class="container">
             <div class="print-header" id="printHeader"></div>
             <div class="alumno-header" id="alumnoHeader"></div>
-            <div class="tabs" id="tabsContainer">
-                <button class="tab active" onclick="cambiarTab('programa')">📄 Programa</button>
+            
+            <div class="tabs no-print">
+                <button class="tab active" onclick="cambiarTab('programas')">📄 Programas</button>
                 <button class="tab" onclick="cambiarTab('programacion')">📅 Programación</button>
                 <button class="tab" onclick="cambiarTab('evaluacion')">📊 Evaluación</button>
+                <button class="tab" onclick="cambiarTab('asistencia')">📊 Asistencia</button>
             </div>
-            <div id="tabPrograma" class="tab-content active"></div>
+
+            <div id="tabProgramas" class="tab-content active"></div>
             <div id="tabProgramacion" class="tab-content"></div>
             <div id="tabEvaluacion" class="tab-content"></div>
+            <div id="tabAsistencia" class="tab-content"></div>
         </div>
     </div>
 
-    <!-- MODAL IMPORTAR -->
-    <div class="modal-overlay" id="modalImportar">
+    <!-- MODAL NUEVO ALUMNO -->
+    <div class="modal-overlay" id="modalNuevoAlumno">
         <div class="modal">
             <div class="modal-header">
-                <h3 class="modal-title">📄 Importar Programa</h3>
-                <button class="modal-close" onclick="cerrarModal('modalImportar')">×</button>
+                <h3 class="modal-title">➕ Nuevo Alumno</h3>
+                <button class="modal-close" onclick="cerrarModal('modalNuevoAlumno')">×</button>
             </div>
             <div class="modal-body">
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Siglas *</label>
-                        <input type="text" class="form-input" id="inputSiglas" placeholder="M.G.L." maxlength="10">
+                        <input type="text" class="form-input" id="nuevoSiglas" placeholder="M.G.L." maxlength="10">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Curso *</label>
-                        <select class="form-select" id="inputCurso">
+                        <select class="form-select" id="nuevoCurso">
                             <option value="Infantil 3 años">Infantil 3 años</option>
                             <option value="Infantil 4 años">Infantil 4 años</option>
                             <option value="Infantil 5 años" selected>Infantil 5 años</option>
@@ -636,24 +790,39 @@
                         </select>
                     </div>
                 </div>
-
                 <div class="form-group">
                     <label class="form-label">Sesiones por semana *</label>
                     <div class="sesiones-btns">
-                        <button type="button" class="sesion-btn" onclick="selSesiones(1)">1 sesión</button>
-                        <button type="button" class="sesion-btn" onclick="selSesiones(2)">2 sesiones</button>
-                        <button type="button" class="sesion-btn active" onclick="selSesiones(3)">3 sesiones</button>
+                        <button type="button" class="sesion-btn" onclick="selSesiones(1, this)">1</button>
+                        <button type="button" class="sesion-btn" onclick="selSesiones(2, this)">2</button>
+                        <button type="button" class="sesion-btn active" onclick="selSesiones(3, this)">3</button>
                     </div>
                 </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="cerrarModal('modalNuevoAlumno')">Cancelar</button>
+                <button class="btn btn-primary" onclick="crearAlumno()">✓ Crear</button>
+            </div>
+        </div>
+    </div>
 
+    <!-- MODAL AÑADIR PROGRAMA -->
+    <div class="modal-overlay" id="modalAddPrograma">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">📄 Añadir Programa</h3>
+                <button class="modal-close" onclick="cerrarModal('modalAddPrograma')">×</button>
+            </div>
+            <div class="modal-body">
                 <div class="form-group">
-                    <label class="form-label">Área del programa *</label>
-                    <select class="form-select" id="inputArea">
+                    <label class="form-label">Tipo de Programa *</label>
+                    <select class="form-select" id="addProgTipo" onchange="cambioTipoPrograma()">
+                        <option value="">Seleccionar...</option>
                         <option value="cognitivo">🧠 Estimulación cognitiva</option>
                         <option value="atencion">👁️ Atención</option>
                         <option value="memoria">💾 Memoria</option>
-                        <option value="comunicacion" selected>💬 Comunicación y lenguaje</option>
-                        <option value="lectoescritura">📖 Lectoescritura</option>
+                        <option value="comunicacion">💬 Comunicación y lenguaje</option>
+                        <option value="lectoescritura">📖 Lectoescritura (predefinido)</option>
                         <option value="matematico">🔢 Razonamiento matemático</option>
                         <option value="social">🤝 Habilidades sociales</option>
                         <option value="emocional">❤️ Gestión emocional</option>
@@ -662,25 +831,43 @@
                     </select>
                 </div>
 
-                <div class="form-group">
-                    <label class="form-label">Archivo DOCX *</label>
-                    <div class="upload-zone" id="uploadZone" onclick="document.getElementById('inputFile').click()">
-                        <div class="upload-icon">📄</div>
-                        <span id="uploadText">Haz clic para seleccionar</span>
+                <div id="opcionDocx">
+                    <div class="form-group">
+                        <label class="form-label">Importar desde DOCX</label>
+                        <div class="upload-zone" id="uploadZone2" onclick="document.getElementById('inputFile2').click()">
+                            📄 Clic para seleccionar archivo
+                        </div>
+                        <input type="file" id="inputFile2" accept=".docx" style="display:none" onchange="archivoPrograma(this)">
                     </div>
-                    <input type="file" id="inputFile" accept=".docx" style="display:none" onchange="archivoSeleccionado(this)">
+                    <div class="form-group">
+                        <label class="form-label">O pegar contenido del programa</label>
+                        <textarea class="form-textarea" id="addProgTexto" placeholder="OBJETIVO 1: ...&#10;Indicadores:&#10;- Indicador 1&#10;Contenidos:&#10;- Contenido 1&#10;Actividades:&#10;- Actividad 1"></textarea>
+                    </div>
+                    <button class="btn btn-secondary btn-sm" onclick="procesarTextoPegado()">🔍 Analizar texto</button>
                 </div>
 
-                <div class="preview-box" id="previewBox"></div>
+                <div id="opcionLecto" style="display:none">
+                    <div style="background:var(--bg);padding:12px;border-radius:8px;font-size:0.85rem">
+                        <strong>📖 Programa de Lectoescritura Predefinido</strong>
+                        <p style="margin-top:6px;color:var(--text-light)">Enseñanza sistemática:</p>
+                        <ul style="margin:6px 0 0 18px;font-size:0.8rem">
+                            <li>Vocales: A, E, I, O, U</li>
+                            <li>Consonantes en orden didáctico</li>
+                            <li>Cada semana una letra nueva</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div id="previewProg" style="display:none;margin-top:12px;max-height:120px;overflow-y:auto;background:var(--bg);padding:10px;border-radius:8px;font-size:0.8rem"></div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="cerrarModal('modalImportar')">Cancelar</button>
-                <button class="btn btn-primary" id="btnImportar" onclick="importarAlumno()" disabled>📥 Importar</button>
+                <button class="btn btn-secondary" onclick="cerrarModal('modalAddPrograma')">Cancelar</button>
+                <button class="btn btn-primary" id="btnAddProg" onclick="addPrograma()" disabled>📥 Añadir</button>
             </div>
         </div>
     </div>
 
-    <!-- MODAL EDITAR CELDA -->
+    <!-- MODAL EDITAR SESIÓN -->
     <div class="modal-overlay" id="modalCelda">
         <div class="modal">
             <div class="modal-header">
@@ -688,23 +875,74 @@
                 <button class="modal-close" onclick="cerrarModal('modalCelda')">×</button>
             </div>
             <div class="modal-body">
+                <!-- ASISTENCIA -->
                 <div class="form-group">
-                    <label class="form-label">Objetivo</label>
-                    <select class="form-select" id="selObjetivo" onchange="cargarIndicadores()"></select>
+                    <label class="form-label">¿Asistió a clase?</label>
+                    <div class="asistencia-btns">
+                        <button type="button" class="asist-btn asiste" onclick="setAsistencia(true, this)">
+                            <span class="asist-icon">✅</span>
+                            <span class="asist-text">Asistió</span>
+                        </button>
+                        <button type="button" class="asist-btn no-asiste" onclick="setAsistencia(false, this)">
+                            <span class="asist-icon">❌</span>
+                            <span class="asist-text">No asistió</span>
+                        </button>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label class="form-label">Indicador</label>
-                    <select class="form-select" id="selIndicador"></select>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Actividad</label>
-                    <select class="form-select" id="selActividad"></select>
+
+                <!-- CONTENIDO (solo si asiste) -->
+                <div id="contenidoSesion">
+                    <div class="form-group">
+                        <label class="form-label">Programa</label>
+                        <select class="form-select" id="selPrograma" onchange="cargarObjetivos()"></select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Objetivo</label>
+                        <select class="form-select" id="selObjetivo" onchange="cargarIndicadores()"></select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Indicador</label>
+                        <select class="form-select" id="selIndicador"></select>
+                    </div>
+
+                    <!-- RESULTADO -->
+                    <div class="form-group">
+                        <label class="form-label">Resultado de la sesión</label>
+                        <div class="resultado-btns">
+                            <button type="button" class="resultado-btn conseguido" onclick="setResultado('conseguido', this)">
+                                ✅ Conseguido
+                            </button>
+                            <button type="button" class="resultado-btn noconseguido" onclick="setResultado('noconseguido', this)">
+                                🔄 Repetir semana siguiente
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-danger btn-sm" onclick="borrarCelda()">🗑️</button>
                 <button class="btn btn-secondary" onclick="cerrarModal('modalCelda')">Cancelar</button>
                 <button class="btn btn-primary" onclick="guardarCelda()">💾 Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL IMPRIMIR -->
+    <div class="modal-overlay" id="modalImprimir">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">🖨️ Imprimir</h3>
+                <button class="modal-close" onclick="cerrarModal('modalImprimir')">×</button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom:12px;font-size:0.9rem">¿Qué quieres imprimir?</p>
+                <div class="btn-group" style="flex-direction:column">
+                    <button class="btn btn-primary" onclick="imprimirTodo()">📋 Todo</button>
+                    <button class="btn btn-secondary" onclick="imprimirSeccion('programas')">📄 Solo Programas</button>
+                    <button class="btn btn-secondary" onclick="imprimirSeccion('programacion')">📅 Solo Programación</button>
+                    <button class="btn btn-secondary" onclick="imprimirSeccion('evaluacion')">📊 Solo Evaluación T<span id="trimPrint">1</span></button>
+                    <button class="btn btn-secondary" onclick="imprimirSeccion('asistencia')">📊 Solo Asistencia</button>
+                </div>
             </div>
         </div>
     </div>
@@ -732,7 +970,6 @@
             window.dbOnValue = onValue;
 
             const alumnosRef = ref(db, 'gestorpe/alumnos');
-            
             onValue(alumnosRef, (snapshot) => {
                 window.alumnos = snapshot.val() || {};
                 window.renderInicio();
@@ -742,9 +979,8 @@
                 console.error('Error Firebase:', error);
                 document.getElementById('statusText').textContent = 'Error';
             });
-            
         } catch (err) {
-            console.error('Error inicialización:', err);
+            console.error('Error init:', err);
             document.getElementById('statusText').textContent = 'Error';
         }
     </script>
@@ -754,22 +990,24 @@
         window.alumnos = {};
         let alumnoActual = null;
         let mesActual = 0;
-        let sesionesSeleccionadas = 3;
-        let docExtraido = null;
+        let sesionesNuevo = 3;
         let celdaEditando = null;
         let evalTrim = 1;
+        let docExtraido = null;
+        let asistenciaActual = true;
+        let resultadoActual = null;
 
         const AREAS = {
-            cognitivo: { nombre: '🧠 Estimulación cognitiva', color: '#8b5cf6' },
-            atencion: { nombre: '👁️ Atención', color: '#f59e0b' },
-            memoria: { nombre: '💾 Memoria', color: '#06b6d4' },
-            comunicacion: { nombre: '💬 Comunicación y lenguaje', color: '#10b981' },
-            lectoescritura: { nombre: '📖 Lectoescritura', color: '#3b82f6' },
-            matematico: { nombre: '🔢 Razonamiento matemático', color: '#ef4444' },
-            social: { nombre: '🤝 Habilidades sociales', color: '#ec4899' },
-            emocional: { nombre: '❤️ Gestión emocional', color: '#f97316' },
-            ejecutivas: { nombre: '🎯 Funciones ejecutivas', color: '#6366f1' },
-            autonomia: { nombre: '🏃 Autonomía', color: '#14b8a6' }
+            cognitivo: { nombre: 'Estimulación cognitiva', icon: '🧠', color: '#8b5cf6' },
+            atencion: { nombre: 'Atención', icon: '👁️', color: '#f59e0b' },
+            memoria: { nombre: 'Memoria', icon: '💾', color: '#06b6d4' },
+            comunicacion: { nombre: 'Comunicación y lenguaje', icon: '💬', color: '#10b981' },
+            lectoescritura: { nombre: 'Lectoescritura', icon: '📖', color: '#3b82f6' },
+            matematico: { nombre: 'Razonamiento matemático', icon: '🔢', color: '#ef4444' },
+            social: { nombre: 'Habilidades sociales', icon: '🤝', color: '#ec4899' },
+            emocional: { nombre: 'Gestión emocional', icon: '❤️', color: '#f97316' },
+            ejecutivas: { nombre: 'Funciones ejecutivas', icon: '🎯', color: '#6366f1' },
+            autonomia: { nombre: 'Autonomía', icon: '🏃', color: '#14b8a6' }
         };
 
         const MESES = [
@@ -787,14 +1025,55 @@
 
         const DIAS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
 
+        // Programa de Lectoescritura predefinido
+        const LECTO_PROGRAMA = generarProgramaLecto();
+
+        function generarProgramaLecto() {
+            const letras = [
+                { letra: 'A', tipo: 'vocal' }, { letra: 'E', tipo: 'vocal' }, { letra: 'I', tipo: 'vocal' },
+                { letra: 'O', tipo: 'vocal' }, { letra: 'U', tipo: 'vocal' },
+                { letra: 'M', tipo: 'consonante' }, { letra: 'P', tipo: 'consonante' }, { letra: 'S', tipo: 'consonante' },
+                { letra: 'L', tipo: 'consonante' }, { letra: 'T', tipo: 'consonante' }, { letra: 'N', tipo: 'consonante' },
+                { letra: 'D', tipo: 'consonante' }, { letra: 'F', tipo: 'consonante' }, { letra: 'B', tipo: 'consonante' },
+                { letra: 'V', tipo: 'consonante' }, { letra: 'J', tipo: 'consonante' }, { letra: 'R', tipo: 'consonante' },
+                { letra: 'C', tipo: 'consonante' }, { letra: 'Q', tipo: 'consonante' }, { letra: 'G', tipo: 'consonante' },
+                { letra: 'H', tipo: 'consonante' }, { letra: 'CH', tipo: 'consonante' }, { letra: 'Ñ', tipo: 'consonante' },
+                { letra: 'Y', tipo: 'consonante' }, { letra: 'LL', tipo: 'consonante' }, { letra: 'Z', tipo: 'consonante' },
+                { letra: 'X', tipo: 'consonante' }, { letra: 'K', tipo: 'consonante' }, { letra: 'W', tipo: 'consonante' }
+            ];
+
+            return letras.map((l, idx) => ({
+                numero: idx + 1,
+                descripcion: `Aprender la ${l.tipo === 'vocal' ? 'vocal' : 'letra'} ${l.letra}`,
+                trimestre: idx < 10 ? 1 : idx < 20 ? 2 : 3,
+                indicadores: [
+                    `Reconoce la letra ${l.letra} mayúscula y minúscula`,
+                    `Asocia la letra ${l.letra} con su sonido`,
+                    `Traza correctamente la letra ${l.letra}`,
+                    `Lee sílabas con la letra ${l.letra}`
+                ],
+                contenidos: [
+                    `Letra ${l.letra} mayúscula y minúscula`,
+                    `Sonido de la letra ${l.letra}`,
+                    `Sílabas con ${l.letra}`
+                ],
+                actividades: [
+                    `Presentación de la letra ${l.letra}`,
+                    `Trazo en arena/pizarra/papel`,
+                    `Lectura de sílabas`,
+                    `Juegos de identificación`
+                ]
+            }));
+        }
+
         // ===== INICIO =====
         window.renderInicio = function() {
             const grid = document.getElementById('alumnosGrid');
             const ids = Object.keys(window.alumnos);
 
             if (ids.length === 0) {
-                grid.innerHTML = `<div class="alumno-card alumno-card-add" onclick="abrirModalImportar()">
-                    <span style="font-size:1.5rem">➕</span><span>Añadir</span>
+                grid.innerHTML = `<div class="alumno-card alumno-card-add" onclick="abrirModalNuevoAlumno()">
+                    <span style="font-size:1.3rem">➕</span><span style="font-size:0.8rem">Añadir</span>
                 </div>`;
                 return;
             }
@@ -802,18 +1081,55 @@
             let html = '';
             ids.forEach(id => {
                 const a = window.alumnos[id];
+                const numProgs = a.programas ? Object.keys(a.programas).length : 0;
                 html += `<div class="alumno-card" onclick="abrirAlumno('${id}')">
-                    <div class="alumno-badge">✓</div>
                     <div class="alumno-siglas">${a.siglas}</div>
                     <div class="alumno-curso">${a.curso}</div>
+                    <div class="alumno-programas">${numProgs} prog.</div>
                 </div>`;
             });
-            html += `<div class="alumno-card alumno-card-add" onclick="abrirModalImportar()">
-                <span style="font-size:1.5rem">➕</span><span>Añadir</span>
+            html += `<div class="alumno-card alumno-card-add" onclick="abrirModalNuevoAlumno()">
+                <span style="font-size:1.3rem">➕</span><span style="font-size:0.8rem">Añadir</span>
             </div>`;
             grid.innerHTML = html;
         };
 
+        // ===== NUEVO ALUMNO =====
+        function abrirModalNuevoAlumno() {
+            document.getElementById('nuevoSiglas').value = '';
+            sesionesNuevo = 3;
+            document.querySelectorAll('#modalNuevoAlumno .sesion-btn').forEach((b, i) => b.classList.toggle('active', i === 2));
+            abrirModal('modalNuevoAlumno');
+        }
+
+        function selSesiones(n, btn) {
+            sesionesNuevo = n;
+            btn.parentElement.querySelectorAll('.sesion-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        }
+
+        function crearAlumno() {
+            const siglas = document.getElementById('nuevoSiglas').value.trim().toUpperCase();
+            if (!siglas) { toast('Introduce las siglas', 'error'); return; }
+
+            const alumno = {
+                siglas,
+                curso: document.getElementById('nuevoCurso').value,
+                sesionesSemana: sesionesNuevo,
+                programas: {},
+                programacion: {},
+                evaluaciones: {},
+                ausencias: {}
+            };
+
+            const newRef = window.dbPush(window.dbRef(window.db, 'gestorpe/alumnos'));
+            window.dbSet(newRef, alumno).then(() => {
+                cerrarModal('modalNuevoAlumno');
+                toast(`${siglas} creado ✓`, 'success');
+            });
+        }
+
+        // ===== ABRIR ALUMNO =====
         function abrirAlumno(id) {
             alumnoActual = id;
             mesActual = 0;
@@ -824,28 +1140,44 @@
             document.getElementById('btnVolver').style.display = 'block';
 
             const a = window.alumnos[id];
-            const areaInfo = AREAS[a.area] || { nombre: a.area };
 
             document.getElementById('printHeader').innerHTML = `
                 <h1>Programa Específico - ${a.siglas}</h1>
-                <p>${a.curso} · ${areaInfo.nombre} · ${a.sesionesSemana} sesiones/semana</p>
+                <p>${a.curso} · ${a.sesionesSemana} sesiones/semana</p>
             `;
+
+            let progsList = '';
+            if (a.programas) {
+                Object.keys(a.programas).forEach(pId => {
+                    const p = a.programas[pId];
+                    const info = AREAS[p.tipo] || { icon: '📄', nombre: p.tipo };
+                    progsList += `<span class="area-badge" style="background:${info.color}20;color:${info.color}"><span class="area-dot" style="background:${info.color}"></span>${info.icon}</span> `;
+                });
+            }
+
+            // Calcular ausencias
+            const stats = calcularAusencias(a);
 
             document.getElementById('alumnoHeader').innerHTML = `
                 <div class="alumno-header-siglas">${a.siglas}</div>
                 <div class="alumno-header-info">
                     <h2>${a.curso}</h2>
-                    <p>${a.sesionesSemana} sesiones/semana · ${areaInfo.nombre}</p>
+                    <p>${a.sesionesSemana} ses/sem · ${stats.totalAusencias} ausencias</p>
+                    <div style="margin-top:4px">${progsList || '<span style="color:var(--text-light);font-size:0.75rem">Sin programas</span>'}</div>
                 </div>
-                <button class="btn btn-danger btn-sm" onclick="eliminarAlumno('${id}')" style="margin-left:auto">🗑️</button>
+                <div style="margin-left:auto" class="btn-group no-print">
+                    <button class="btn btn-secondary btn-sm" onclick="abrirModalImprimir()">🖨️</button>
+                    <button class="btn btn-danger btn-sm" onclick="eliminarAlumno('${id}')">🗑️</button>
+                </div>
             `;
 
             document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', i === 0));
             document.querySelectorAll('.tab-content').forEach((c, i) => c.classList.toggle('active', i === 0));
 
-            renderPrograma();
+            renderProgramas();
             renderProgramacion();
             renderEvaluacion();
+            renderAsistencia();
         }
 
         function volverInicio() {
@@ -863,97 +1195,166 @@
         }
 
         function eliminarAlumno(id) {
-            if (confirm('¿Eliminar este alumno y todos sus datos?')) {
+            if (confirm('¿Eliminar este alumno?')) {
                 window.dbRemove(window.dbRef(window.db, `gestorpe/alumnos/${id}`));
                 volverInicio();
-                toast('Alumno eliminado', 'success');
+                toast('Eliminado', 'success');
             }
         }
 
-        // ===== MODAL IMPORTAR =====
-        function abrirModalImportar() {
-            document.getElementById('inputSiglas').value = '';
-            document.getElementById('uploadZone').classList.remove('has-file');
-            document.getElementById('uploadText').textContent = 'Haz clic para seleccionar';
-            document.getElementById('previewBox').classList.remove('active');
-            document.getElementById('btnImportar').disabled = true;
-            document.getElementById('inputFile').value = '';
+        // ===== CALCULAR AUSENCIAS =====
+        function calcularAusencias(alumno) {
+            const ausencias = alumno.ausencias || {};
+            let totalAusencias = 0;
+            let ausenciasMes = {};
+            let ausenciasTrim = { 1: 0, 2: 0, 3: 0 };
+
+            MESES.forEach((mes, mIdx) => {
+                ausenciasMes[mIdx] = 0;
+                for (let sem = 1; sem <= mes.semanas; sem++) {
+                    [0, 1, 2, 3, 4].forEach(dia => {
+                        const key = `${mIdx}_${sem}_${dia}`;
+                        if (ausencias[key] === false) {
+                            totalAusencias++;
+                            ausenciasMes[mIdx]++;
+                            ausenciasTrim[mes.trimestre]++;
+                        }
+                    });
+                }
+            });
+
+            return { totalAusencias, ausenciasMes, ausenciasTrim };
+        }
+
+        // ===== PROGRAMAS =====
+        function renderProgramas() {
+            const a = window.alumnos[alumnoActual];
+            const container = document.getElementById('tabProgramas');
+
+            let html = `<div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">📄 Programas</h3>
+                    <button class="btn btn-primary btn-sm no-print" onclick="abrirModalAddPrograma()">➕ Añadir</button>
+                </div>`;
+
+            if (!a.programas || Object.keys(a.programas).length === 0) {
+                html += `<div class="empty-state"><div class="empty-icon">📄</div><p>Sin programas</p></div>`;
+            } else {
+                Object.keys(a.programas).forEach(pId => {
+                    const p = a.programas[pId];
+                    const info = AREAS[p.tipo] || { icon: '📄', nombre: p.tipo, color: '#666' };
+
+                    html += `<div class="programa-card print-section" style="border-left-color:${info.color}">
+                        <div class="programa-header">
+                            <span class="programa-titulo">${info.icon} ${info.nombre}</span>
+                            <button class="btn btn-danger btn-sm no-print" onclick="eliminarPrograma('${pId}')">🗑️</button>
+                        </div>`;
+
+                    (p.objetivos || []).forEach(obj => {
+                        html += `<div class="objetivo-card">
+                            <div class="objetivo-header">
+                                <span class="objetivo-num">O${obj.numero}</span>
+                                <span class="trimestre-badge t${obj.trimestre}">T${obj.trimestre}</span>
+                            </div>
+                            <div class="objetivo-desc">${obj.descripcion}</div>`;
+
+                        if (obj.indicadores?.length) {
+                            html += `<div class="objetivo-section">
+                                <div class="objetivo-section-title">Indicadores</div>
+                                <ul class="item-list">${obj.indicadores.map(i => `<li>${i}</li>`).join('')}</ul>
+                            </div>`;
+                        }
+                        if (obj.contenidos?.length) {
+                            html += `<div class="objetivo-section">
+                                <div class="objetivo-section-title">Contenidos</div>
+                                <ul class="item-list">${obj.contenidos.map(c => `<li>${c}</li>`).join('')}</ul>
+                            </div>`;
+                        }
+                        if (obj.actividades?.length) {
+                            html += `<div class="objetivo-section">
+                                <div class="objetivo-section-title">Actividades</div>
+                                <ul class="item-list">${obj.actividades.map(ac => `<li>${ac}</li>`).join('')}</ul>
+                            </div>`;
+                        }
+                        html += '</div>';
+                    });
+                    html += '</div>';
+                });
+            }
+
+            html += `<div class="btn-group no-print" style="margin-top:10px">
+                <button class="btn btn-secondary btn-sm" onclick="regenerarProgramacion()">🔄 Regenerar</button>
+            </div></div>`;
+
+            container.innerHTML = html;
+        }
+
+        function abrirModalAddPrograma() {
+            document.getElementById('addProgTipo').value = '';
+            document.getElementById('addProgTexto').value = '';
+            document.getElementById('uploadZone2').innerHTML = '📄 Clic para seleccionar archivo';
+            document.getElementById('uploadZone2').classList.remove('has-file');
+            document.getElementById('previewProg').style.display = 'none';
+            document.getElementById('opcionDocx').style.display = 'block';
+            document.getElementById('opcionLecto').style.display = 'none';
+            document.getElementById('btnAddProg').disabled = true;
+            document.getElementById('inputFile2').value = '';
             docExtraido = null;
-            sesionesSeleccionadas = 3;
-            document.querySelectorAll('.sesion-btn').forEach((b, i) => b.classList.toggle('active', i === 2));
-            abrirModal('modalImportar');
+            abrirModal('modalAddPrograma');
         }
 
-        function selSesiones(n) {
-            sesionesSeleccionadas = n;
-            document.querySelectorAll('.sesion-btn').forEach((b, i) => b.classList.toggle('active', i === n - 1));
+        function cambioTipoPrograma() {
+            const tipo = document.getElementById('addProgTipo').value;
+            if (tipo === 'lectoescritura') {
+                document.getElementById('opcionDocx').style.display = 'none';
+                document.getElementById('opcionLecto').style.display = 'block';
+                document.getElementById('btnAddProg').disabled = false;
+            } else if (tipo) {
+                document.getElementById('opcionDocx').style.display = 'block';
+                document.getElementById('opcionLecto').style.display = 'none';
+                document.getElementById('btnAddProg').disabled = true;
+            }
         }
 
-        function archivoSeleccionado(input) {
+        async function archivoPrograma(input) {
             const file = input.files[0];
             if (!file) return;
-
-            if (!file.name.toLowerCase().endsWith('.docx')) {
-                toast('Solo archivos DOCX', 'error');
-                return;
-            }
-
-            document.getElementById('uploadZone').classList.add('has-file');
-            document.getElementById('uploadText').textContent = file.name;
-            procesarDOCX(file);
-        }
-
-        async function procesarDOCX(file) {
+            document.getElementById('uploadZone2').innerHTML = '📄 ' + file.name;
+            document.getElementById('uploadZone2').classList.add('has-file');
             try {
                 const buffer = await file.arrayBuffer();
                 const result = await mammoth.extractRawText({ arrayBuffer: buffer });
-                const objetivos = extraerObjetivos(result.value);
+                procesarTexto(result.value);
+            } catch (err) { toast('Error: ' + err.message, 'error'); }
+        }
 
-                if (objetivos.length === 0) {
-                    toast('No se encontraron objetivos', 'error');
-                    return;
-                }
+        function procesarTextoPegado() {
+            const texto = document.getElementById('addProgTexto').value;
+            if (texto.trim().length < 20) { toast('Pega más contenido', 'error'); return; }
+            procesarTexto(texto);
+        }
 
-                docExtraido = objetivos;
-
-                let html = '<strong style="font-size:0.85rem">Contenido extraído:</strong>';
-                objetivos.forEach(obj => {
-                    html += `<div class="preview-obj">
-                        <h4>Objetivo ${obj.numero}: ${obj.descripcion.substring(0, 40)}...</h4>
-                        <p>${obj.indicadores.length} ind. · ${obj.contenidos.length} cont. · ${obj.actividades.length} act.</p>
-                    </div>`;
-                });
-
-                document.getElementById('previewBox').innerHTML = html;
-                document.getElementById('previewBox').classList.add('active');
-                document.getElementById('btnImportar').disabled = false;
-
-            } catch (err) {
-                console.error(err);
-                toast('Error: ' + err.message, 'error');
-            }
+        function procesarTexto(texto) {
+            const objetivos = extraerObjetivos(texto);
+            if (objetivos.length === 0) { toast('No se encontraron objetivos', 'error'); return; }
+            docExtraido = objetivos;
+            document.getElementById('previewProg').innerHTML = `<strong>✓ ${objetivos.length} objetivos extraídos</strong>`;
+            document.getElementById('previewProg').style.display = 'block';
+            document.getElementById('btnAddProg').disabled = false;
         }
 
         function extraerObjetivos(texto) {
             const objetivos = [];
             const lineas = texto.split('\n').map(l => l.trim()).filter(l => l);
-
-            let actual = null;
-            let seccion = null;
+            let actual = null, seccion = null;
 
             for (const linea of lineas) {
                 const upper = linea.toUpperCase();
-
                 const match = linea.match(/^OBJETIVO\s*(\d+)[.:\s]*(.+)?/i);
+
                 if (match) {
                     if (actual) objetivos.push(actual);
-                    actual = {
-                        numero: parseInt(match[1]),
-                        descripcion: (match[2] || '').trim(),
-                        indicadores: [],
-                        contenidos: [],
-                        actividades: []
-                    };
+                    actual = { numero: parseInt(match[1]), descripcion: (match[2] || '').trim(), indicadores: [], contenidos: [], actividades: [] };
                     seccion = null;
                     continue;
                 }
@@ -961,14 +1362,13 @@
                 if (upper.includes('INDICADOR')) { seccion = 'indicadores'; continue; }
                 if (upper === 'CONTENIDOS' || upper.startsWith('CONTENIDOS')) { seccion = 'contenidos'; continue; }
                 if (upper.includes('ACTIVIDADES')) { seccion = 'actividades'; continue; }
-                if (upper.includes('ORGANIZACIÓN') || upper.startsWith('SESIÓN') || upper.startsWith('ESPECIALIDAD')) continue;
+                if (upper.includes('ORGANIZACIÓN') || upper.startsWith('SESIÓN')) continue;
 
                 if (actual && seccion && linea.length > 5) {
                     let txt = linea.replace(/^[-•·▪►]\s*/, '').replace(/^[""]|[""]$/g, '').trim();
                     if (txt.length > 5) actual[seccion].push(txt);
                 }
             }
-
             if (actual) objetivos.push(actual);
 
             objetivos.forEach(obj => {
@@ -976,77 +1376,80 @@
                 if (obj.actividades.length === 0) obj.actividades = ['Actividad general'];
             });
 
+            const total = objetivos.length, porT = Math.ceil(total / 3);
+            objetivos.forEach((obj, idx) => { obj.trimestre = idx < porT ? 1 : idx < porT * 2 ? 2 : 3; });
+
             return objetivos;
         }
 
-        function importarAlumno() {
-            const siglas = document.getElementById('inputSiglas').value.trim().toUpperCase();
-            if (!siglas) { toast('Introduce las siglas', 'error'); return; }
-            if (!docExtraido) { toast('Sube un documento', 'error'); return; }
+        function addPrograma() {
+            const tipo = document.getElementById('addProgTipo').value;
+            if (!tipo) { toast('Selecciona tipo', 'error'); return; }
 
-            const curso = document.getElementById('inputCurso').value;
-            const area = document.getElementById('inputArea').value;
+            let objetivos = tipo === 'lectoescritura' ? LECTO_PROGRAMA : docExtraido;
+            if (!objetivos) { toast('Sube o pega el programa', 'error'); return; }
 
-            const total = docExtraido.length;
-            const porT = Math.ceil(total / 3);
+            const programa = { tipo, objetivos };
+            const a = window.alumnos[alumnoActual];
+            if (!a.programas) a.programas = {};
 
-            const objetivos = docExtraido.map((obj, idx) => ({
-                ...obj,
-                trimestre: idx < porT ? 1 : idx < porT * 2 ? 2 : 3
-            }));
+            const pId = 'p_' + Date.now();
+            a.programas[pId] = programa;
 
-            const alumno = {
-                siglas,
-                curso,
-                area,
-                sesionesSemana: sesionesSeleccionadas,
-                objetivos,
-                programacion: {},
-                evaluaciones: {}
-            };
-
-            alumno.programacion = generarProgramacion(alumno);
-
-            const newRef = window.dbPush(window.dbRef(window.db, 'gestorpe/alumnos'));
-            window.dbSet(newRef, alumno).then(() => {
-                cerrarModal('modalImportar');
-                toast(`${siglas} importado ✓`, 'success');
-            }).catch(err => {
-                console.error(err);
-                toast('Error al guardar', 'error');
+            window.dbSet(window.dbRef(window.db, `gestorpe/alumnos/${alumnoActual}/programas/${pId}`), programa).then(() => {
+                a.programacion = generarProgramacionMultiple(a);
+                window.dbSet(window.dbRef(window.db, `gestorpe/alumnos/${alumnoActual}/programacion`), a.programacion);
+                cerrarModal('modalAddPrograma');
+                abrirAlumno(alumnoActual);
+                toast('Programa añadido ✓', 'success');
             });
         }
 
-        // ===== PROGRAMACIÓN =====
-        function generarProgramacion(alumno) {
-            const prog = {};
-            const sesiones = alumno.sesionesSemana;
+        function eliminarPrograma(pId) {
+            if (!confirm('¿Eliminar este programa?')) return;
+            window.dbRemove(window.dbRef(window.db, `gestorpe/alumnos/${alumnoActual}/programas/${pId}`));
+            delete window.alumnos[alumnoActual].programas[pId];
+            const a = window.alumnos[alumnoActual];
+            a.programacion = generarProgramacionMultiple(a);
+            window.dbSet(window.dbRef(window.db, `gestorpe/alumnos/${alumnoActual}/programacion`), a.programacion);
+            abrirAlumno(alumnoActual);
+            toast('Eliminado', 'success');
+        }
 
+        // ===== PROGRAMACIÓN MÚLTIPLE =====
+        function generarProgramacionMultiple(alumno) {
+            const prog = {};
+            if (!alumno.programas) return prog;
+
+            const sesiones = alumno.sesionesSemana;
             let dias;
             if (sesiones === 1) dias = [2];
             else if (sesiones === 2) dias = [1, 3];
             else dias = [0, 2, 4];
 
-            MESES.forEach((mes, mIdx) => {
-                const trim = mes.trimestre;
-                const objsTrim = alumno.objetivos.filter(o => o.trimestre === trim);
-                if (objsTrim.length === 0) return;
-
-                let pool = [];
-                objsTrim.forEach(obj => {
-                    const oIdx = alumno.objetivos.indexOf(obj);
-                    obj.indicadores.forEach((ind, iIdx) => {
-                        obj.actividades.forEach((act, aIdx) => {
-                            pool.push({ oIdx, iIdx, aIdx });
-                        });
+            let poolGlobal = [];
+            Object.keys(alumno.programas).forEach(pId => {
+                const p = alumno.programas[pId];
+                (p.objetivos || []).forEach((obj, oIdx) => {
+                    (obj.indicadores || []).forEach((ind, iIdx) => {
+                        poolGlobal.push({ pId, oIdx, iIdx, trimestre: obj.trimestre });
                     });
                 });
+            });
+
+            if (poolGlobal.length === 0) return prog;
+
+            MESES.forEach((mes, mIdx) => {
+                const trim = mes.trimestre;
+                const poolTrim = poolGlobal.filter(item => item.trimestre === trim);
+                if (poolTrim.length === 0) return;
 
                 let pIdx = 0;
                 for (let sem = 1; sem <= mes.semanas; sem++) {
                     dias.forEach(dia => {
                         const key = `${mIdx}_${sem}_${dia}`;
-                        prog[key] = pool[pIdx % pool.length];
+                        const item = poolTrim[pIdx % poolTrim.length];
+                        prog[key] = { pId: item.pId, oIdx: item.oIdx, iIdx: item.iIdx };
                         pIdx++;
                     });
                 }
@@ -1055,72 +1458,13 @@
             return prog;
         }
 
-        // ===== RENDER PROGRAMA =====
-        function renderPrograma() {
-            const a = window.alumnos[alumnoActual];
-            const container = document.getElementById('tabPrograma');
-
-            if (!a.objetivos?.length) {
-                container.innerHTML = '<div class="empty-state"><div class="empty-icon">📄</div><p>Sin objetivos</p></div>';
-                return;
-            }
-
-            let html = `<div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">📄 Objetivos del Programa</h3>
-                    <button class="btn btn-secondary btn-sm" onclick="imprimirPrograma()">🖨️ Imprimir</button>
-                </div>`;
-
-            a.objetivos.forEach(obj => {
-                html += `<div class="objetivo-card">
-                    <div class="objetivo-header">
-                        <span class="objetivo-num">O${obj.numero}</span>
-                        <span class="trimestre-badge t${obj.trimestre}">T${obj.trimestre}</span>
-                    </div>
-                    <div class="objetivo-desc">${obj.descripcion}</div>`;
-
-                if (obj.indicadores?.length) {
-                    html += `<div class="objetivo-section">
-                        <div class="objetivo-section-title">Indicadores</div>
-                        <ul class="item-list">${obj.indicadores.map(i => `<li>${i}</li>`).join('')}</ul>
-                    </div>`;
-                }
-
-                if (obj.contenidos?.length) {
-                    html += `<div class="objetivo-section">
-                        <div class="objetivo-section-title">Contenidos</div>
-                        <ul class="item-list">${obj.contenidos.map(c => `<li>${c}</li>`).join('')}</ul>
-                    </div>`;
-                }
-
-                if (obj.actividades?.length) {
-                    html += `<div class="objetivo-section">
-                        <div class="objetivo-section-title">Actividades</div>
-                        <ul class="item-list">${obj.actividades.map(a => `<li>${a}</li>`).join('')}</ul>
-                    </div>`;
-                }
-
-                html += '</div>';
-            });
-
-            html += `<div class="btn-group" style="margin-top:12px">
-                <button class="btn btn-primary btn-sm" onclick="regenerar()">🔄 Regenerar Programación</button>
-            </div></div>`;
-
-            container.innerHTML = html;
-        }
-
-        function regenerar() {
+        function regenerarProgramacion() {
             if (!confirm('¿Regenerar programación?')) return;
             const a = window.alumnos[alumnoActual];
-            a.programacion = generarProgramacion(a);
+            a.programacion = generarProgramacionMultiple(a);
             window.dbSet(window.dbRef(window.db, `gestorpe/alumnos/${alumnoActual}/programacion`), a.programacion);
             renderProgramacion();
             toast('Regenerado ✓', 'success');
-        }
-
-        function imprimirPrograma() {
-            window.print();
         }
 
         // ===== RENDER PROGRAMACIÓN =====
@@ -1130,94 +1474,79 @@
             const sesiones = a.sesionesSemana;
 
             let dias, nombres;
-            if (sesiones === 1) { dias = [2]; nombres = ['Miércoles']; }
-            else if (sesiones === 2) { dias = [1, 3]; nombres = ['Martes', 'Jueves']; }
-            else { dias = [0, 2, 4]; nombres = ['Lunes', 'Miércoles', 'Viernes']; }
+            if (sesiones === 1) { dias = [2]; nombres = ['Mié']; }
+            else if (sesiones === 2) { dias = [1, 3]; nombres = ['Mar', 'Jue']; }
+            else { dias = [0, 2, 4]; nombres = ['Lun', 'Mié', 'Vie']; }
+
+            const mes = MESES[mesActual];
+            const stats = calcularAusencias(a);
 
             let html = `<div class="card">
                 <div class="card-header">
-                    <h3 class="card-title">📅 Programación Anual</h3>
-                    <button class="btn btn-secondary btn-sm" onclick="imprimirProgramacion()">🖨️ Imprimir Todo</button>
+                    <h3 class="card-title">📅 Programación</h3>
                 </div>
 
-                <div class="cuadrante-nav">
+                <div class="stats-box no-print">
+                    <div class="stat-item">
+                        <div class="stat-num ausencias">${stats.ausenciasMes[mesActual] || 0}</div>
+                        <div class="stat-label">Ausencias ${mes.nombre}</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-num ausencias">${stats.ausenciasTrim[mes.trimestre] || 0}</div>
+                        <div class="stat-label">Ausencias T${mes.trimestre}</div>
+                    </div>
+                </div>
+
+                <div class="cuadrante-nav no-print">
                     <button class="nav-btn" onclick="cambiarMes(-1)">◀</button>
-                    <select class="form-select" style="width:auto" onchange="mesActual=parseInt(this.value);renderProgramacion()">
+                    <select class="form-select" style="width:auto;font-size:0.8rem" onchange="mesActual=parseInt(this.value);renderProgramacion()">
                         ${MESES.map((m, i) => `<option value="${i}" ${i === mesActual ? 'selected' : ''}>${m.nombre}</option>`).join('')}
                     </select>
                     <button class="nav-btn" onclick="cambiarMes(1)">▶</button>
-                    <span class="trimestre-badge t${MESES[mesActual].trimestre}">T${MESES[mesActual].trimestre}</span>
+                    <span class="trimestre-badge t${mes.trimestre}">T${mes.trimestre}</span>
                 </div>
 
                 <div style="overflow-x:auto">
                     <table class="cuadrante-table">
                         <thead><tr><th>Sem</th>${nombres.map(n => `<th>${n}</th>`).join('')}</tr></thead>
                         <tbody>
-                            ${Array.from({length: MESES[mesActual].semanas}, (_, sIdx) => {
+                            ${Array.from({length: mes.semanas}, (_, sIdx) => {
                                 const sem = sIdx + 1;
-                                return `<tr><td>${sem}</td>${dias.map(dia => {
-                                    const key = `${mesActual}_${sem}_${dia}`;
-                                    const c = a.programacion?.[key];
-                                    return renderCelda(a, key, c, dia);
-                                }).join('')}</tr>`;
+                                return `<tr><td>${sem}</td>${dias.map(dia => renderCeldaHTML(a, `${mesActual}_${sem}_${dia}`, dia)).join('')}</tr>`;
                             }).join('')}
                         </tbody>
                     </table>
                 </div>
-            </div>
-
-            <div id="printAllMonths" style="display:none"></div>`;
+            </div>`;
 
             container.innerHTML = html;
-            generarTodosLosMeses(a, dias, nombres);
         }
 
-        function generarTodosLosMeses(a, dias, nombres) {
-            let html = '';
-            MESES.forEach((mes, mIdx) => {
-                html += `<div class="page-break" style="margin-top:20px">
-                    <h3 style="margin-bottom:10px">${mes.nombre} - T${mes.trimestre}</h3>
-                    <table class="cuadrante-table">
-                        <thead><tr><th>Sem</th>${nombres.map(n => `<th>${n}</th>`).join('')}</tr></thead>
-                        <tbody>
-                            ${Array.from({length: mes.semanas}, (_, sIdx) => {
-                                const sem = sIdx + 1;
-                                return `<tr><td>${sem}</td>${dias.map(dia => {
-                                    const key = `${mIdx}_${sem}_${dia}`;
-                                    const c = a.programacion?.[key];
-                                    return renderCeldaPrint(a, c);
-                                }).join('')}</tr>`;
-                            }).join('')}
-                        </tbody>
-                    </table>
-                </div>`;
-            });
-            document.getElementById('printAllMonths').innerHTML = html;
-        }
+        function renderCeldaHTML(alumno, key, dia) {
+            const c = alumno.programacion?.[key];
+            const ausencia = alumno.ausencias?.[key] === false;
+            const resultado = alumno.resultados?.[key];
 
-        function renderCelda(alumno, key, c, dia) {
-            if (!c) return `<td class="celda celda-vacia" onclick="editarCelda('${key}', ${dia})">+</td>`;
+            let claseExtra = '';
+            if (ausencia) claseExtra = ' celda-ausencia';
+            else if (resultado === 'conseguido') claseExtra = ' celda-conseguido';
+            else if (resultado === 'noconseguido') claseExtra = ' celda-noconseguido';
 
-            const obj = alumno.objetivos[c.oIdx];
-            if (!obj) return `<td class="celda celda-vacia" onclick="editarCelda('${key}', ${dia})">?</td>`;
+            if (!c || !alumno.programas?.[c.pId]) {
+                return `<td class="celda celda-vacia${claseExtra}" onclick="editarCelda('${key}', ${dia})">+</td>`;
+            }
 
-            const ind = obj.indicadores[c.iIdx] || '';
-            const act = obj.actividades[c.aIdx] || '';
+            const p = alumno.programas[c.pId];
+            const obj = p.objetivos?.[c.oIdx];
+            if (!obj) return `<td class="celda celda-vacia${claseExtra}">?</td>`;
 
-            return `<td class="celda" onclick="editarCelda('${key}', ${dia})">
-                <div class="celda-obj">O${obj.numero}</div>
-                <div class="celda-ind">${ind.substring(0, 35)}${ind.length > 35 ? '...' : ''}</div>
-                <div class="celda-act">${act.substring(0, 25)}${act.length > 25 ? '...' : ''}</div>
+            const info = AREAS[p.tipo] || { color: '#666' };
+            const ind = obj.indicadores?.[c.iIdx] || '';
+
+            return `<td class="celda${claseExtra}" onclick="editarCelda('${key}', ${dia})">
+                <div class="celda-obj"><span class="celda-area" style="background:${info.color}"></span>O${obj.numero}</div>
+                <div class="celda-ind">${ind.substring(0, 25)}${ind.length > 25 ? '...' : ''}</div>
             </td>`;
-        }
-
-        function renderCeldaPrint(alumno, c) {
-            if (!c) return `<td class="celda-vacia">-</td>`;
-            const obj = alumno.objetivos[c.oIdx];
-            if (!obj) return `<td>?</td>`;
-            const ind = obj.indicadores[c.iIdx] || '';
-            const act = obj.actividades[c.aIdx] || '';
-            return `<td><div class="celda-obj">O${obj.numero}</div><div class="celda-ind">${ind.substring(0, 30)}...</div></td>`;
         }
 
         function cambiarMes(dir) {
@@ -1225,88 +1554,240 @@
             renderProgramacion();
         }
 
+        // ===== EDITAR CELDA =====
         function editarCelda(key, dia) {
             celdaEditando = key;
+            asistenciaActual = true;
+            resultadoActual = null;
+
             const a = window.alumnos[alumnoActual];
             const c = a.programacion?.[key] || {};
 
             document.getElementById('celdaTitulo').textContent = DIAS[dia];
 
-            const sel = document.getElementById('selObjetivo');
-            sel.innerHTML = '<option value="">Seleccionar...</option>';
-            a.objetivos.forEach((obj, idx) => {
-                sel.innerHTML += `<option value="${idx}" ${c.oIdx === idx ? 'selected' : ''}>O${obj.numero}: ${obj.descripcion.substring(0, 35)}...</option>`;
-            });
+            // Resetear botones asistencia
+            document.querySelectorAll('.asist-btn').forEach(b => b.classList.remove('selected'));
 
-            if (c.oIdx !== undefined) {
-                cargarIndicadores();
-                setTimeout(() => {
-                    document.getElementById('selIndicador').value = c.iIdx ?? '';
-                    document.getElementById('selActividad').value = c.aIdx ?? '';
-                }, 50);
+            // Cargar estado actual
+            if (a.ausencias?.[key] === false) {
+                asistenciaActual = false;
+                document.querySelector('.asist-btn.no-asiste').classList.add('selected');
+                document.getElementById('contenidoSesion').style.display = 'none';
             } else {
+                document.querySelector('.asist-btn.asiste').classList.add('selected');
+                document.getElementById('contenidoSesion').style.display = 'block';
+            }
+
+            // Resultado
+            resultadoActual = a.resultados?.[key] || null;
+            document.querySelectorAll('.resultado-btn').forEach(b => b.classList.remove('selected'));
+            if (resultadoActual) {
+                document.querySelector(`.resultado-btn.${resultadoActual}`)?.classList.add('selected');
+            }
+
+            // Programas
+            const selP = document.getElementById('selPrograma');
+            selP.innerHTML = '<option value="">Seleccionar...</option>';
+            if (a.programas) {
+                Object.keys(a.programas).forEach(pId => {
+                    const p = a.programas[pId];
+                    const info = AREAS[p.tipo] || { icon: '📄', nombre: p.tipo };
+                    selP.innerHTML += `<option value="${pId}" ${c.pId === pId ? 'selected' : ''}>${info.icon} ${info.nombre}</option>`;
+                });
+            }
+
+            if (c.pId) {
+                cargarObjetivos();
+                setTimeout(() => {
+                    document.getElementById('selObjetivo').value = c.oIdx ?? '';
+                    cargarIndicadores();
+                    setTimeout(() => {
+                        document.getElementById('selIndicador').value = c.iIdx ?? '';
+                    }, 30);
+                }, 30);
+            } else {
+                document.getElementById('selObjetivo').innerHTML = '<option value="">-</option>';
                 document.getElementById('selIndicador').innerHTML = '<option value="">-</option>';
-                document.getElementById('selActividad').innerHTML = '<option value="">-</option>';
             }
 
             abrirModal('modalCelda');
         }
 
+        function setAsistencia(asiste, btn) {
+            asistenciaActual = asiste;
+            document.querySelectorAll('.asist-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            document.getElementById('contenidoSesion').style.display = asiste ? 'block' : 'none';
+        }
+
+        function setResultado(resultado, btn) {
+            if (resultadoActual === resultado) {
+                resultadoActual = null;
+                btn.classList.remove('selected');
+            } else {
+                resultadoActual = resultado;
+                document.querySelectorAll('.resultado-btn').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+            }
+        }
+
+        function cargarObjetivos() {
+            const a = window.alumnos[alumnoActual];
+            const pId = document.getElementById('selPrograma').value;
+            const sel = document.getElementById('selObjetivo');
+            sel.innerHTML = '<option value="">Seleccionar...</option>';
+            document.getElementById('selIndicador').innerHTML = '<option value="">-</option>';
+
+            if (!pId || !a.programas?.[pId]) return;
+
+            a.programas[pId].objetivos.forEach((obj, idx) => {
+                sel.innerHTML += `<option value="${idx}">O${obj.numero}: ${obj.descripcion.substring(0, 25)}...</option>`;
+            });
+        }
+
         function cargarIndicadores() {
             const a = window.alumnos[alumnoActual];
+            const pId = document.getElementById('selPrograma').value;
             const oIdx = document.getElementById('selObjetivo').value;
-            const selI = document.getElementById('selIndicador');
-            const selA = document.getElementById('selActividad');
+            const sel = document.getElementById('selIndicador');
+            sel.innerHTML = '<option value="">Seleccionar...</option>';
 
-            selI.innerHTML = '<option value="">Seleccionar...</option>';
-            selA.innerHTML = '<option value="">Seleccionar...</option>';
+            if (!pId || oIdx === '' || !a.programas?.[pId]) return;
 
-            if (oIdx === '') return;
-
-            const obj = a.objetivos[parseInt(oIdx)];
-            obj.indicadores.forEach((ind, i) => selI.innerHTML += `<option value="${i}">${ind.substring(0, 45)}...</option>`);
-            obj.actividades.forEach((act, i) => selA.innerHTML += `<option value="${i}">${act.substring(0, 45)}...</option>`);
+            const obj = a.programas[pId].objetivos[parseInt(oIdx)];
+            (obj.indicadores || []).forEach((ind, idx) => {
+                sel.innerHTML += `<option value="${idx}">${ind.substring(0, 35)}...</option>`;
+            });
         }
 
         function guardarCelda() {
-            const oIdx = document.getElementById('selObjetivo').value;
-            if (oIdx === '') { toast('Selecciona objetivo', 'error'); return; }
+            const a = window.alumnos[alumnoActual];
 
-            const iIdx = document.getElementById('selIndicador').value;
-            const aIdx = document.getElementById('selActividad').value;
+            // Guardar ausencia
+            if (!a.ausencias) a.ausencias = {};
+            if (!asistenciaActual) {
+                a.ausencias[celdaEditando] = false;
+                window.dbSet(window.dbRef(window.db, `gestorpe/alumnos/${alumnoActual}/ausencias/${celdaEditando}`), false);
 
-            const data = {
-                oIdx: parseInt(oIdx),
-                iIdx: iIdx !== '' ? parseInt(iIdx) : 0,
-                aIdx: aIdx !== '' ? parseInt(aIdx) : 0
-            };
+                // Mover contenido a siguiente sesión disponible
+                moverASiguienteSesion(celdaEditando);
+            } else {
+                if (a.ausencias[celdaEditando] === false) {
+                    delete a.ausencias[celdaEditando];
+                    window.dbRemove(window.dbRef(window.db, `gestorpe/alumnos/${alumnoActual}/ausencias/${celdaEditando}`));
+                }
 
-            window.dbSet(window.dbRef(window.db, `gestorpe/alumnos/${alumnoActual}/programacion/${celdaEditando}`), data);
-            window.alumnos[alumnoActual].programacion[celdaEditando] = data;
+                // Guardar programación
+                const pId = document.getElementById('selPrograma').value;
+                const oIdx = document.getElementById('selObjetivo').value;
+                const iIdx = document.getElementById('selIndicador').value;
+
+                if (pId && oIdx !== '') {
+                    const data = { pId, oIdx: parseInt(oIdx), iIdx: iIdx !== '' ? parseInt(iIdx) : 0 };
+                    window.dbSet(window.dbRef(window.db, `gestorpe/alumnos/${alumnoActual}/programacion/${celdaEditando}`), data);
+                    a.programacion[celdaEditando] = data;
+                }
+
+                // Guardar resultado
+                if (!a.resultados) a.resultados = {};
+                if (resultadoActual) {
+                    a.resultados[celdaEditando] = resultadoActual;
+                    window.dbSet(window.dbRef(window.db, `gestorpe/alumnos/${alumnoActual}/resultados/${celdaEditando}`), resultadoActual);
+
+                    // Si no conseguido, programar para siguiente semana
+                    if (resultadoActual === 'noconseguido') {
+                        programarSiguienteSemana(celdaEditando);
+                    }
+                } else if (a.resultados[celdaEditando]) {
+                    delete a.resultados[celdaEditando];
+                    window.dbRemove(window.dbRef(window.db, `gestorpe/alumnos/${alumnoActual}/resultados/${celdaEditando}`));
+                }
+            }
 
             cerrarModal('modalCelda');
             renderProgramacion();
+            renderAsistencia();
             toast('Guardado ✓', 'success');
         }
 
+        function moverASiguienteSesion(key) {
+            const a = window.alumnos[alumnoActual];
+            const contenido = a.programacion[key];
+            if (!contenido) return;
+
+            const [mIdx, sem, dia] = key.split('_').map(Number);
+            const siguiente = encontrarSiguienteSesion(mIdx, sem, dia, a.sesionesSemana);
+
+            if (siguiente) {
+                a.programacion[siguiente] = { ...contenido };
+                window.dbSet(window.dbRef(window.db, `gestorpe/alumnos/${alumnoActual}/programacion/${siguiente}`), a.programacion[siguiente]);
+            }
+        }
+
+        function programarSiguienteSemana(key) {
+            const a = window.alumnos[alumnoActual];
+            const contenido = a.programacion[key];
+            if (!contenido) return;
+
+            const [mIdx, sem, dia] = key.split('_').map(Number);
+
+            // Buscar misma sesión de la semana siguiente
+            let nextSem = sem + 1;
+            let nextMIdx = mIdx;
+
+            if (nextSem > MESES[nextMIdx].semanas) {
+                nextSem = 1;
+                nextMIdx++;
+            }
+
+            if (nextMIdx < MESES.length) {
+                const nextKey = `${nextMIdx}_${nextSem}_${dia}`;
+                a.programacion[nextKey] = { ...contenido };
+                window.dbSet(window.dbRef(window.db, `gestorpe/alumnos/${alumnoActual}/programacion/${nextKey}`), a.programacion[nextKey]);
+                toast('Reprogramado para semana siguiente', 'success');
+            }
+        }
+
+        function encontrarSiguienteSesion(mIdx, sem, dia, sesiones) {
+            let dias;
+            if (sesiones === 1) dias = [2];
+            else if (sesiones === 2) dias = [1, 3];
+            else dias = [0, 2, 4];
+
+            const diaActualIdx = dias.indexOf(dia);
+
+            // Buscar siguiente día de la misma semana
+            for (let d = diaActualIdx + 1; d < dias.length; d++) {
+                return `${mIdx}_${sem}_${dias[d]}`;
+            }
+
+            // Buscar primera sesión de la semana siguiente
+            let nextSem = sem + 1;
+            let nextMIdx = mIdx;
+
+            if (nextSem > MESES[nextMIdx].semanas) {
+                nextSem = 1;
+                nextMIdx++;
+            }
+
+            if (nextMIdx < MESES.length) {
+                return `${nextMIdx}_${nextSem}_${dias[0]}`;
+            }
+
+            return null;
+        }
+
         function borrarCelda() {
+            const a = window.alumnos[alumnoActual];
             window.dbRemove(window.dbRef(window.db, `gestorpe/alumnos/${alumnoActual}/programacion/${celdaEditando}`));
-            delete window.alumnos[alumnoActual].programacion[celdaEditando];
+            window.dbRemove(window.dbRef(window.db, `gestorpe/alumnos/${alumnoActual}/ausencias/${celdaEditando}`));
+            window.dbRemove(window.dbRef(window.db, `gestorpe/alumnos/${alumnoActual}/resultados/${celdaEditando}`));
+            delete a.programacion?.[celdaEditando];
+            delete a.ausencias?.[celdaEditando];
+            delete a.resultados?.[celdaEditando];
             cerrarModal('modalCelda');
             renderProgramacion();
             toast('Eliminado', 'success');
-        }
-
-        function imprimirProgramacion() {
-            document.getElementById('printAllMonths').style.display = 'block';
-            document.querySelector('.cuadrante-nav').style.display = 'none';
-            document.querySelector('.cuadrante-table').style.display = 'none';
-            window.print();
-            setTimeout(() => {
-                document.getElementById('printAllMonths').style.display = 'none';
-                document.querySelector('.cuadrante-nav').style.display = 'flex';
-                document.querySelector('.cuadrante-table').style.display = 'table';
-            }, 500);
         }
 
         // ===== EVALUACIÓN =====
@@ -1317,9 +1798,8 @@
             let html = `<div class="card">
                 <div class="card-header">
                     <h3 class="card-title">📊 Evaluación</h3>
-                    <button class="btn btn-secondary btn-sm" onclick="imprimirEvaluacion()">🖨️ Imprimir T${evalTrim}</button>
                 </div>
-                <div class="btn-group" style="margin-bottom:14px">
+                <div class="btn-group no-print" style="margin-bottom:12px">
                     <button class="btn ${evalTrim === 1 ? 'btn-primary' : 'btn-secondary'} btn-sm" onclick="setTrim(1)">T1</button>
                     <button class="btn ${evalTrim === 2 ? 'btn-primary' : 'btn-secondary'} btn-sm" onclick="setTrim(2)">T2</button>
                     <button class="btn ${evalTrim === 3 ? 'btn-primary' : 'btn-secondary'} btn-sm" onclick="setTrim(3)">T3</button>
@@ -1333,44 +1813,56 @@
 
         function setTrim(t) {
             evalTrim = t;
+            document.getElementById('trimPrint').textContent = t;
             renderEvaluacion();
         }
 
         function renderEvalList() {
             const a = window.alumnos[alumnoActual];
             const container = document.getElementById('evalList');
-
             let html = '';
-            let hayIndicadores = false;
+            let hay = false;
 
-            a.objetivos.forEach((obj, oIdx) => {
-                if (obj.trimestre !== evalTrim) return;
-                hayIndicadores = true;
+            if (a.programas) {
+                Object.keys(a.programas).forEach(pId => {
+                    const p = a.programas[pId];
+                    const info = AREAS[p.tipo] || { icon: '📄', nombre: p.tipo, color: '#666' };
 
-                html += `<div style="margin-bottom:14px">
-                    <div style="font-weight:600;margin-bottom:6px;font-size:0.9rem">O${obj.numero}: ${obj.descripcion.substring(0, 45)}...</div>`;
+                    const objsTrim = (p.objetivos || []).filter(o => o.trimestre === evalTrim);
+                    if (objsTrim.length === 0) return;
 
-                obj.indicadores.forEach((ind, iIdx) => {
-                    const key = `${oIdx}_${iIdx}_T${evalTrim}`;
-                    const estado = a.evaluaciones?.[key] || '';
+                    hay = true;
+                    html += `<div class="programa-card print-section" style="border-left-color:${info.color}">
+                        <div class="programa-titulo" style="margin-bottom:8px">${info.icon} ${info.nombre}</div>`;
 
-                    html += `<div class="eval-item">
-                        <span class="eval-text">${ind}</span>
-                        <button class="eval-btn c ${estado === 'C' ? 'active' : ''}" onclick="setEval(${oIdx},${iIdx},'C')">✓</button>
-                        <button class="eval-btn p ${estado === 'P' ? 'active' : ''}" onclick="setEval(${oIdx},${iIdx},'P')">◐</button>
-                        <button class="eval-btn n ${estado === 'N' ? 'active' : ''}" onclick="setEval(${oIdx},${iIdx},'N')">○</button>
-                    </div>`;
+                    objsTrim.forEach(obj => {
+                        const oIdx = p.objetivos.indexOf(obj);
+                        html += `<div style="margin-bottom:8px">
+                            <div style="font-weight:600;font-size:0.8rem;margin-bottom:4px">O${obj.numero}: ${obj.descripcion.substring(0, 35)}...</div>`;
+
+                        (obj.indicadores || []).forEach((ind, iIdx) => {
+                            const key = `${pId}_${oIdx}_${iIdx}_T${evalTrim}`;
+                            const estado = a.evaluaciones?.[key] || '';
+
+                            html += `<div class="eval-item">
+                                <span class="eval-text">${ind}</span>
+                                <button class="eval-btn c ${estado === 'C' ? 'active' : ''}" onclick="setEval('${pId}',${oIdx},${iIdx},'C')">✓</button>
+                                <button class="eval-btn p ${estado === 'P' ? 'active' : ''}" onclick="setEval('${pId}',${oIdx},${iIdx},'P')">◐</button>
+                                <button class="eval-btn n ${estado === 'N' ? 'active' : ''}" onclick="setEval('${pId}',${oIdx},${iIdx},'N')">○</button>
+                            </div>`;
+                        });
+                        html += '</div>';
+                    });
+                    html += '</div>';
                 });
+            }
 
-                html += '</div>';
-            });
-
-            container.innerHTML = hayIndicadores ? html : '<p style="text-align:center;color:var(--text-light)">No hay indicadores en este trimestre</p>';
+            container.innerHTML = hay ? html : '<p style="text-align:center;color:var(--text-light)">No hay indicadores en T' + evalTrim + '</p>';
         }
 
-        function setEval(oIdx, iIdx, estado) {
+        function setEval(pId, oIdx, iIdx, estado) {
             const a = window.alumnos[alumnoActual];
-            const key = `${oIdx}_${iIdx}_T${evalTrim}`;
+            const key = `${pId}_${oIdx}_${iIdx}_T${evalTrim}`;
 
             if (!a.evaluaciones) a.evaluaciones = {};
 
@@ -1381,12 +1873,83 @@
                 a.evaluaciones[key] = estado;
                 window.dbSet(window.dbRef(window.db, `gestorpe/alumnos/${alumnoActual}/evaluaciones/${key}`), estado);
             }
-
             renderEvalList();
         }
 
-        function imprimirEvaluacion() {
-            window.print();
+        // ===== ASISTENCIA =====
+        function renderAsistencia() {
+            const a = window.alumnos[alumnoActual];
+            const container = document.getElementById('tabAsistencia');
+            const stats = calcularAusencias(a);
+
+            let html = `<div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">📊 Resumen de Asistencia</h3>
+                </div>
+
+                <div class="stats-box">
+                    <div class="stat-item">
+                        <div class="stat-num ausencias">${stats.totalAusencias}</div>
+                        <div class="stat-label">Total Ausencias</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-num ausencias">${stats.ausenciasTrim[1]}</div>
+                        <div class="stat-label">T1</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-num ausencias">${stats.ausenciasTrim[2]}</div>
+                        <div class="stat-label">T2</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-num ausencias">${stats.ausenciasTrim[3]}</div>
+                        <div class="stat-label">T3</div>
+                    </div>
+                </div>
+
+                <h4 style="margin:12px 0 8px;font-size:0.9rem">Por mes:</h4>
+                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px">
+                    ${MESES.map((m, i) => `<div class="stat-item" style="padding:6px">
+                        <div class="stat-num ausencias" style="font-size:1.1rem">${stats.ausenciasMes[i] || 0}</div>
+                        <div class="stat-label">${m.nombre.substring(0, 3)}</div>
+                    </div>`).join('')}
+                </div>
+            </div>`;
+
+            container.innerHTML = html;
+        }
+
+        // ===== IMPRIMIR =====
+        function abrirModalImprimir() {
+            document.getElementById('trimPrint').textContent = evalTrim;
+            abrirModal('modalImprimir');
+        }
+
+        function imprimirTodo() {
+            cerrarModal('modalImprimir');
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('active'));
+            document.querySelectorAll('.print-only').forEach(c => c.style.display = 'block');
+            setTimeout(() => {
+                window.print();
+                setTimeout(() => {
+                    document.querySelectorAll('.print-only').forEach(c => c.style.display = 'none');
+                    cambiarTab('programas');
+                }, 300);
+            }, 100);
+        }
+
+        function imprimirSeccion(seccion) {
+            cerrarModal('modalImprimir');
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById('tab' + seccion.charAt(0).toUpperCase() + seccion.slice(1)).classList.add('active');
+            if (seccion === 'programacion') {
+                document.querySelectorAll('.print-only').forEach(c => c.style.display = 'block');
+            }
+            setTimeout(() => {
+                window.print();
+                setTimeout(() => {
+                    document.querySelectorAll('.print-only').forEach(c => c.style.display = 'none');
+                }, 300);
+            }, 100);
         }
 
         // ===== UTILS =====
