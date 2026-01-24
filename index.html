@@ -4,513 +4,129 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#1a5f4a">
-    <title>Gestor PE - Programas Específicos</title>
+    <title>Gestor PE</title>
     
-    <!-- ICONO SVG -->
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%231a5f4a'/><text x='50' y='38' font-size='24' text-anchor='middle' fill='white' font-weight='bold'>PE</text><text x='50' y='70' font-size='28' text-anchor='middle' fill='white'>📋</text></svg>">
-    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%231a5f4a'/><text x='50' y='65' font-size='45' text-anchor='middle' fill='white'>PE</text></svg>">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Cdefs%3E%3ClinearGradient id='bg' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%232d8a6e'/%3E%3Cstop offset='100%25' stop-color='%231a5f4a'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='512' height='512' rx='110' fill='url(%23bg)'/%3E%3Crect x='100' y='70' width='220' height='300' rx='20' fill='white'/%3E%3Ccircle cx='160' cy='140' r='16' fill='%2322c55e'/%3E%3Cpath d='M152 140l6 6 12-12' stroke='white' stroke-width='4' fill='none' stroke-linecap='round'/%3E%3Crect x='195' y='130' width='100' height='18' rx='4' fill='%231a5f4a'/%3E%3Ccircle cx='160' cy='200' r='16' fill='%233b82f6'/%3E%3Crect x='195' y='190' width='80' height='18' rx='4' fill='%231a5f4a'/%3E%3Ccircle cx='160' cy='260' r='16' fill='%23d4ddd9'/%3E%3Crect x='195' y='250' width='90' height='18' rx='4' fill='%231a5f4a'/%3E%3Ccircle cx='370' cy='350' r='100' fill='%23f59e0b'/%3E%3Ccircle cx='370' cy='350' r='80' fill='white'/%3E%3Cpath d='M370 290v60h50' stroke='%231a5f4a' stroke-width='12' stroke-linecap='round' fill='none'/%3E%3Ccircle cx='370' cy='350' r='8' fill='%231a5f4a'/%3E%3C/svg%3E">
+    <link rel="manifest" href="data:application/json,%7B%22name%22%3A%22Gestor%20PE%22%2C%22short_name%22%3A%22GestorPE%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23f5f7f6%22%2C%22theme_color%22%3A%22%231a5f4a%22%7D">
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     
     <style>
         :root {
-            --primary: #1a5f4a;
-            --primary-light: #2d8a6e;
-            --primary-dark: #134536;
-            --bg: #f5f7f6;
-            --bg-card: #ffffff;
-            --text: #1a2a24;
-            --text-light: #5a6b64;
-            --border: #d4ddd9;
-            --success: #22c55e;
-            --warning: #f59e0b;
-            --danger: #ef4444;
-            --proceso: #3b82f6;
-            --ausencia: #9ca3af;
-            
-            --cognitivo: #8b5cf6;
-            --atencion: #f59e0b;
-            --memoria: #06b6d4;
-            --comunicacion: #10b981;
-            --lectoescritura: #3b82f6;
-            --matematico: #ef4444;
-            --social: #ec4899;
-            --emocional: #f97316;
-            --ejecutivas: #6366f1;
-            --autonomia: #14b8a6;
-            
-            --shadow: 0 4px 20px rgba(26, 95, 74, 0.1);
-            --radius: 16px;
-            --radius-sm: 10px;
+            --primary: #1a5f4a; --primary-light: #2d8a6e; --primary-dark: #134536;
+            --bg: #f5f7f6; --bg-card: #ffffff; --text: #1a2a24; --text-light: #5a6b64;
+            --border: #d4ddd9; --success: #22c55e; --warning: #f59e0b; --danger: #ef4444; --proceso: #3b82f6;
+            --shadow: 0 4px 20px rgba(26,95,74,0.1); --radius: 16px; --radius-sm: 10px;
         }
-
         * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body {
-            font-family: 'DM Sans', sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            min-height: 100vh;
-            line-height: 1.5;
-        }
-
-        /* HEADER */
-        .header {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            color: white;
-            padding: 12px 16px;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            box-shadow: var(--shadow);
-        }
-
-        .header-content {
-            max-width: 1200px;
-            margin: 0 auto;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-        }
-
-        .header-logo {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .header-icon {
-            width: 38px;
-            height: 38px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
-        }
-
-        .header h1 { font-size: 1.2rem; font-weight: 700; }
+        body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; min-height: 100dvh; line-height: 1.5; -webkit-tap-highlight-color: transparent; }
+        
+        .header { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: white; padding: 12px 16px; padding-top: max(12px, env(safe-area-inset-top)); position: sticky; top: 0; z-index: 100; box-shadow: var(--shadow); }
+        .header-content { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+        .header-logo { display: flex; align-items: center; gap: 10px; }
+        .header-icon { width: 38px; height: 38px; background: rgba(255,255,255,0.2); border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+        .header-icon svg { width: 100%; height: 100%; }
+        .header h1 { font-size: 1.15rem; font-weight: 700; }
         .header-right { display: flex; align-items: center; gap: 8px; }
-
-        .status-badge {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            background: rgba(255,255,255,0.2);
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 0.7rem;
-        }
-
-        .status-dot {
-            width: 7px;
-            height: 7px;
-            border-radius: 50%;
-            background: var(--warning);
-            animation: pulse 1.5s infinite;
-        }
-
+        .status-badge { display: flex; align-items: center; gap: 5px; background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; }
+        .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--warning); animation: pulse 1.5s infinite; }
         .status-dot.ok { background: var(--success); animation: none; }
-
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .btn-header { background: rgba(255,255,255,0.15); border: none; color: white; padding: 6px 10px; border-radius: var(--radius-sm); cursor: pointer; font-family: inherit; font-size: 0.8rem; font-weight: 500; display: none; }
 
-        .btn-header {
-            background: rgba(255,255,255,0.15);
-            border: none;
-            color: white;
-            padding: 6px 10px;
-            border-radius: var(--radius-sm);
-            cursor: pointer;
-            font-family: inherit;
-            font-size: 0.8rem;
-            font-weight: 500;
-            display: none;
-        }
-
-        .btn-header:hover { background: rgba(255,255,255,0.25); }
-
-        /* CONTAINER */
-        .container { max-width: 1200px; margin: 0 auto; padding: 14px; }
-
+        .container { max-width: 1200px; margin: 0 auto; padding: 14px; padding-bottom: max(14px, env(safe-area-inset-bottom)); }
         .screen { display: none; }
         .screen.active { display: block; }
 
-        /* GRID ALUMNOS */
-        .alumnos-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-            gap: 10px;
-            margin-top: 12px;
-        }
-
-        .alumno-card {
-            background: var(--bg-card);
-            border-radius: var(--radius);
-            padding: 16px 10px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s;
-            box-shadow: var(--shadow);
-            border: 2px solid transparent;
-            position: relative;
-        }
-
+        .alumnos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin-top: 12px; }
+        .alumno-card { background: var(--bg-card); border-radius: var(--radius); padding: 16px 10px; text-align: center; cursor: pointer; transition: all 0.2s; box-shadow: var(--shadow); border: 2px solid transparent; }
         .alumno-card:hover { transform: translateY(-2px); border-color: var(--primary-light); }
-
-        .alumno-siglas {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: var(--primary);
-            margin-bottom: 3px;
-        }
-
+        .alumno-card:active { transform: scale(0.98); }
+        .alumno-siglas { font-family: 'JetBrains Mono', monospace; font-size: 1.3rem; font-weight: 700; color: var(--primary); margin-bottom: 3px; }
         .alumno-curso { font-size: 0.75rem; color: var(--text-light); }
         .alumno-programas { font-size: 0.65rem; color: var(--primary); margin-top: 4px; }
+        .alumno-card-add { background: transparent; border: 2px dashed var(--primary-light); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: var(--primary); min-height: 85px; }
 
-        .alumno-card-add {
-            background: transparent;
-            border: 2px dashed var(--primary-light);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 3px;
-            color: var(--primary);
-            min-height: 85px;
-        }
-
-        /* CARD */
-        .card {
-            background: var(--bg-card);
-            border-radius: var(--radius);
-            padding: 16px;
-            margin-bottom: 12px;
-            box-shadow: var(--shadow);
-        }
-
-        .card-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 12px;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-
+        .card { background: var(--bg-card); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; box-shadow: var(--shadow); }
+        .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
         .card-title { font-size: 1rem; font-weight: 700; color: var(--primary-dark); }
 
-        /* TABS */
-        .tabs {
-            display: flex;
-            gap: 4px;
-            background: var(--bg-card);
-            padding: 4px;
-            border-radius: var(--radius);
-            margin-bottom: 14px;
-            box-shadow: var(--shadow);
-            overflow-x: auto;
-        }
-
-        .tab {
-            flex: 1;
-            padding: 9px 8px;
-            border: none;
-            background: transparent;
-            color: var(--text-light);
-            font-family: inherit;
-            font-size: 0.75rem;
-            font-weight: 600;
-            cursor: pointer;
-            border-radius: var(--radius-sm);
-            white-space: nowrap;
-        }
-
+        .tabs { display: flex; gap: 4px; background: var(--bg-card); padding: 4px; border-radius: var(--radius); margin-bottom: 14px; box-shadow: var(--shadow); overflow-x: auto; }
+        .tab { flex: 1; padding: 9px 8px; border: none; background: transparent; color: var(--text-light); font-family: inherit; font-size: 0.75rem; font-weight: 600; cursor: pointer; border-radius: var(--radius-sm); white-space: nowrap; }
         .tab:hover { background: var(--bg); }
         .tab.active { background: var(--primary); color: white; }
-
         .tab-content { display: none; }
         .tab-content.active { display: block; }
 
-        /* FORMS */
         .form-group { margin-bottom: 12px; }
         .form-label { display: block; font-weight: 600; margin-bottom: 4px; font-size: 0.8rem; }
-
-        .form-input, .form-select, .form-textarea {
-            width: 100%;
-            padding: 9px 11px;
-            border: 2px solid var(--border);
-            border-radius: var(--radius-sm);
-            font-family: inherit;
-            font-size: 0.85rem;
-            background: white;
-        }
-
+        .form-input, .form-select, .form-textarea { width: 100%; padding: 10px 12px; border: 2px solid var(--border); border-radius: var(--radius-sm); font-family: inherit; font-size: 16px; background: white; }
         .form-input:focus, .form-select:focus, .form-textarea:focus { outline: none; border-color: var(--primary); }
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .form-textarea { min-height: 100px; resize: vertical; }
 
-        /* BUTTONS */
-        .btn {
-            padding: 9px 14px;
-            border: none;
-            border-radius: var(--radius-sm);
-            font-family: inherit;
-            font-size: 0.85rem;
-            font-weight: 600;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 4px;
-        }
-
+        .btn { padding: 10px 14px; border: none; border-radius: var(--radius-sm); font-family: inherit; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 4px; }
         .btn-primary { background: var(--primary); color: white; }
         .btn-primary:hover { background: var(--primary-light); }
+        .btn-primary:active { transform: scale(0.98); }
         .btn-primary:disabled { background: var(--border); cursor: not-allowed; }
         .btn-secondary { background: var(--bg); color: var(--text); border: 2px solid var(--border); }
-        .btn-secondary:hover { border-color: var(--primary); }
         .btn-danger { background: var(--danger); color: white; }
-        .btn-success { background: var(--success); color: white; }
-        .btn-warning { background: var(--warning); color: white; }
-        .btn-sm { padding: 6px 10px; font-size: 0.75rem; }
+        .btn-sm { padding: 7px 10px; font-size: 0.75rem; }
         .btn-group { display: flex; gap: 6px; flex-wrap: wrap; }
 
-        /* ÁREA BADGES */
-        .area-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            padding: 3px 8px;
-            border-radius: 12px;
-            font-size: 0.7rem;
-            font-weight: 600;
-        }
-
-        .area-dot {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-        }
-
-        /* PROGRAMA CARD */
-        .programa-card {
-            background: var(--bg);
-            border-radius: var(--radius-sm);
-            padding: 12px;
-            margin-bottom: 10px;
-            border-left: 4px solid var(--primary);
-        }
-
-        .programa-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-            flex-wrap: wrap;
-            gap: 6px;
-        }
-
+        .area-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 600; }
+        
+        .programa-card { background: var(--bg); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 10px; border-left: 4px solid var(--primary); }
+        .programa-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px; }
         .programa-titulo { font-weight: 600; font-size: 0.9rem; }
 
-        /* OBJETIVO */
-        .objetivo-card {
-            background: white;
-            border-radius: 8px;
-            padding: 10px;
-            margin-bottom: 8px;
-        }
-
+        .objetivo-card { background: white; border-radius: 8px; padding: 10px; margin-bottom: 8px; }
         .objetivo-header { display: flex; gap: 5px; margin-bottom: 5px; align-items: center; flex-wrap: wrap; }
-
-        .objetivo-num {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.7rem;
-            font-weight: 600;
-            padding: 2px 5px;
-            border-radius: 4px;
-            background: rgba(26, 95, 74, 0.15);
-            color: var(--primary);
-        }
-
-        .trimestre-badge {
-            font-size: 0.65rem;
-            padding: 2px 5px;
-            border-radius: 4px;
-            font-weight: 600;
-        }
-
+        .objetivo-num { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; font-weight: 600; padding: 2px 5px; border-radius: 4px; background: rgba(26,95,74,0.15); color: var(--primary); }
+        .trimestre-badge { font-size: 0.65rem; padding: 2px 5px; border-radius: 4px; font-weight: 600; }
         .trimestre-badge.t1 { background: #8b5cf620; color: #8b5cf6; }
         .trimestre-badge.t2 { background: #06b6d420; color: #06b6d4; }
         .trimestre-badge.t3 { background: #f59e0b20; color: #f59e0b; }
-
         .objetivo-desc { font-size: 0.8rem; font-weight: 500; }
-
         .objetivo-section { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--border); }
         .objetivo-section-title { font-size: 0.65rem; font-weight: 700; color: var(--text-light); text-transform: uppercase; margin-bottom: 3px; }
-
         .item-list { list-style: none; font-size: 0.75rem; }
         .item-list li { padding: 2px 0 2px 12px; position: relative; }
         .item-list li::before { content: "•"; position: absolute; left: 0; color: var(--primary); }
 
-        /* CUADRANTE */
-        .cuadrante-nav {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 12px;
-            flex-wrap: wrap;
-        }
-
-        .nav-btn {
-            width: 30px;
-            height: 30px;
-            border: 2px solid var(--border);
-            background: white;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.85rem;
-        }
-
+        .cuadrante-nav { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+        .nav-btn { width: 34px; height: 34px; border: 2px solid var(--border); background: white; border-radius: 8px; cursor: pointer; font-size: 0.9rem; }
         .nav-btn:hover { border-color: var(--primary); }
 
-        .cuadrante-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 10px;
-            font-size: 0.75rem;
-        }
-
-        .cuadrante-table th, .cuadrante-table td {
-            border: 1px solid var(--border);
-            padding: 5px;
-            text-align: left;
-            vertical-align: top;
-        }
-
-        .cuadrante-table th {
-            background: var(--primary);
-            color: white;
-            font-weight: 600;
-            text-align: center;
-            font-size: 0.7rem;
-        }
-
-        .cuadrante-table td:first-child {
-            background: var(--primary-light);
-            color: white;
-            font-weight: 600;
-            text-align: center;
-            width: 45px;
-            font-size: 0.7rem;
-        }
+        .cuadrante-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 0.75rem; }
+        .cuadrante-table th, .cuadrante-table td { border: 1px solid var(--border); padding: 5px; text-align: left; vertical-align: top; }
+        .cuadrante-table th { background: var(--primary); color: white; font-weight: 600; text-align: center; font-size: 0.7rem; }
+        .cuadrante-table td:first-child { background: var(--primary-light); color: white; font-weight: 600; text-align: center; width: 45px; font-size: 0.7rem; }
 
         .celda { min-height: 50px; cursor: pointer; position: relative; }
         .celda:hover { background: var(--bg); }
+        .celda:active { background: #e8f5e9; }
         .celda-vacia { background: #f9fafb; color: var(--text-light); }
-
-        .celda-area { 
-            display: inline-block;
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            margin-right: 3px;
-        }
-
+        .celda-area { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 3px; }
         .celda-obj { font-weight: 600; color: var(--primary-dark); font-size: 0.7rem; margin-bottom: 2px; }
         .celda-ind { font-size: 0.6rem; color: var(--text); }
+        .celda-ausencia { background: repeating-linear-gradient(45deg, #fef2f2, #fef2f2 5px, #fee2e2 5px, #fee2e2 10px) !important; }
+        .celda-icon { position: absolute; top: 2px; right: 2px; font-size: 0.6rem; }
 
-        .celda-ausencia {
-            background: repeating-linear-gradient(45deg, #f3f4f6, #f3f4f6 5px, #e5e7eb 5px, #e5e7eb 10px);
-            opacity: 0.8;
-        }
-
-        .celda-ausencia::after {
-            content: "❌";
-            position: absolute;
-            top: 2px;
-            right: 2px;
-            font-size: 0.6rem;
-        }
-
-        .celda-conseguido::after {
-            content: "✅";
-            position: absolute;
-            top: 2px;
-            right: 2px;
-            font-size: 0.6rem;
-        }
-
-        .celda-noconseguido::after {
-            content: "🔄";
-            position: absolute;
-            top: 2px;
-            right: 2px;
-            font-size: 0.6rem;
-        }
-
-        /* STATS AUSENCIAS */
-        .stats-box {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-            padding: 10px;
-            background: var(--bg);
-            border-radius: var(--radius-sm);
-            margin-bottom: 12px;
-        }
-
-        .stat-item {
-            text-align: center;
-            padding: 8px 14px;
-            background: white;
-            border-radius: 8px;
-            min-width: 80px;
-        }
-
-        .stat-num {
-            font-size: 1.4rem;
-            font-weight: 700;
-            color: var(--primary);
-        }
-
+        .stats-box { display: flex; gap: 10px; flex-wrap: wrap; padding: 10px; background: var(--bg); border-radius: var(--radius-sm); margin-bottom: 12px; }
+        .stat-item { text-align: center; padding: 8px 12px; background: white; border-radius: 8px; min-width: 70px; flex: 1; }
+        .stat-num { font-size: 1.3rem; font-weight: 700; color: var(--primary); }
         .stat-num.ausencias { color: var(--danger); }
+        .stat-label { font-size: 0.65rem; color: var(--text-light); }
 
-        .stat-label {
-            font-size: 0.7rem;
-            color: var(--text-light);
-        }
-
-        /* EVALUACIÓN */
-        .eval-item {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            padding: 8px;
-            background: var(--bg);
-            border-radius: 6px;
-            margin-bottom: 5px;
-            flex-wrap: wrap;
-        }
-
+        .eval-item { display: flex; align-items: center; gap: 6px; padding: 8px; background: var(--bg); border-radius: 6px; margin-bottom: 5px; flex-wrap: wrap; }
         .eval-text { flex: 1; font-size: 0.8rem; min-width: 140px; }
-
-        .eval-btn {
-            width: 26px;
-            height: 26px;
-            border-radius: 50%;
-            border: 2px solid var(--border);
-            background: white;
-            cursor: pointer;
-            font-size: 0.8rem;
-        }
-
+        .eval-btn { width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--border); background: white; cursor: pointer; font-size: 0.85rem; }
         .eval-btn.c { border-color: var(--success); color: var(--success); }
         .eval-btn.c.active { background: var(--success); color: white; }
         .eval-btn.p { border-color: var(--proceso); color: var(--proceso); }
@@ -518,136 +134,45 @@
         .eval-btn.n { border-color: gray; color: gray; }
         .eval-btn.n.active { background: gray; color: white; }
 
-        /* MODAL */
-        .modal-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.5);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            padding: 14px;
-        }
-
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 14px; }
         .modal-overlay.active { display: flex; }
-
-        .modal {
-            background: var(--bg-card);
-            border-radius: var(--radius);
-            width: 100%;
-            max-width: 550px;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-
-        .modal-header {
-            padding: 12px 16px;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
+        .modal { background: var(--bg-card); border-radius: var(--radius); width: 100%; max-width: 500px; max-height: 85vh; overflow-y: auto; }
+        .modal-header { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: var(--bg-card); z-index: 1; }
         .modal-title { font-size: 0.95rem; font-weight: 700; }
-        .modal-close { background: none; border: none; font-size: 1.3rem; cursor: pointer; color: var(--text-light); }
+        .modal-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-light); padding: 0 5px; }
         .modal-body { padding: 16px; }
         .modal-footer { padding: 12px 16px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 6px; flex-wrap: wrap; }
 
-        /* ASISTENCIA */
-        .asistencia-btns {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 14px;
-            flex-wrap: wrap;
-        }
-
-        .asist-btn {
-            flex: 1;
-            padding: 12px;
-            border: 2px solid var(--border);
-            border-radius: var(--radius-sm);
-            background: white;
-            cursor: pointer;
-            text-align: center;
-            font-family: inherit;
-            min-width: 100px;
-        }
-
-        .asist-btn:hover { border-color: var(--primary-light); }
+        .asistencia-btns { display: flex; gap: 8px; margin-bottom: 14px; }
+        .asist-btn { flex: 1; padding: 14px 10px; border: 2px solid var(--border); border-radius: var(--radius-sm); background: white; cursor: pointer; text-align: center; font-family: inherit; }
+        .asist-btn:active { transform: scale(0.98); }
         .asist-btn.selected { border-width: 3px; }
-        .asist-btn.asiste.selected { border-color: var(--success); background: rgba(34, 197, 94, 0.1); }
-        .asist-btn.no-asiste.selected { border-color: var(--danger); background: rgba(239, 68, 68, 0.1); }
-
-        .asist-icon { font-size: 1.5rem; display: block; margin-bottom: 4px; }
+        .asist-btn.asiste.selected { border-color: var(--success); background: rgba(34,197,94,0.1); }
+        .asist-btn.no-asiste.selected { border-color: var(--danger); background: rgba(239,68,68,0.1); }
+        .asist-icon { font-size: 1.6rem; display: block; margin-bottom: 4px; }
         .asist-text { font-size: 0.8rem; font-weight: 600; }
 
-        /* RESULTADO SESIÓN */
-        .resultado-btns {
-            display: flex;
-            gap: 8px;
-            margin-top: 14px;
-            padding-top: 14px;
-            border-top: 1px solid var(--border);
-            flex-wrap: wrap;
-        }
-
-        .resultado-btn {
-            flex: 1;
-            padding: 10px;
-            border: 2px solid var(--border);
-            border-radius: var(--radius-sm);
-            background: white;
-            cursor: pointer;
-            text-align: center;
-            font-family: inherit;
-            min-width: 90px;
-        }
-
-        .resultado-btn:hover { border-color: var(--primary-light); }
+        .resultado-btns { display: flex; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
+        .resultado-btn { flex: 1; padding: 10px; border: 2px solid var(--border); border-radius: var(--radius-sm); background: white; cursor: pointer; text-align: center; font-family: inherit; font-size: 0.8rem; }
         .resultado-btn.selected { border-width: 3px; }
-        .resultado-btn.conseguido.selected { border-color: var(--success); background: rgba(34, 197, 94, 0.1); }
-        .resultado-btn.noconseguido.selected { border-color: var(--warning); background: rgba(245, 158, 11, 0.1); }
+        .resultado-btn.conseguido.selected { border-color: var(--success); background: rgba(34,197,94,0.1); }
+        .resultado-btn.noconseguido.selected { border-color: var(--warning); background: rgba(245,158,11,0.1); }
 
-        /* ALUMNO HEADER */
-        .alumno-header {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 14px;
-            flex-wrap: wrap;
-        }
+        .alumno-header { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+        .alumno-header-siglas { font-family: 'JetBrains Mono', monospace; font-size: 1.5rem; font-weight: 700; color: var(--primary); background: rgba(26,95,74,0.1); padding: 10px 16px; border-radius: var(--radius); }
+        .alumno-header-info h2 { font-size: 0.95rem; }
+        .alumno-header-info p { color: var(--text-light); font-size: 0.75rem; }
 
-        .alumno-header-siglas {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 1.6rem;
-            font-weight: 700;
-            color: var(--primary);
-            background: rgba(26, 95, 74, 0.1);
-            padding: 10px 18px;
-            border-radius: var(--radius);
-        }
+        .dias-btns { display: flex; gap: 6px; margin-top: 5px; flex-wrap: wrap; }
+        .dia-btn { width: 42px; height: 42px; border: 2px solid var(--border); border-radius: var(--radius-sm); background: white; font-family: inherit; font-weight: 600; cursor: pointer; font-size: 0.75rem; display: flex; align-items: center; justify-content: center; }
+        .dia-btn:active { transform: scale(0.95); }
+        .dia-btn.active { border-color: var(--primary); background: rgba(26,95,74,0.15); color: var(--primary); }
 
-        .alumno-header-info h2 { font-size: 1rem; }
-        .alumno-header-info p { color: var(--text-light); font-size: 0.8rem; }
+        .upload-zone { border: 2px dashed var(--border); border-radius: var(--radius-sm); padding: 20px 14px; text-align: center; cursor: pointer; background: var(--bg); font-size: 0.85rem; }
+        .upload-zone:active { background: #e8f5e9; }
+        .upload-zone.has-file { border-color: var(--success); background: rgba(34,197,94,0.1); }
 
-        /* TOAST */
-        .toast {
-            position: fixed;
-            bottom: 16px;
-            left: 50%;
-            transform: translateX(-50%) translateY(100px);
-            background: var(--text);
-            color: white;
-            padding: 9px 16px;
-            border-radius: var(--radius-sm);
-            font-weight: 500;
-            font-size: 0.85rem;
-            opacity: 0;
-            transition: all 0.3s;
-            z-index: 2000;
-        }
-
+        .toast { position: fixed; bottom: max(16px, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%) translateY(100px); background: var(--text); color: white; padding: 10px 18px; border-radius: var(--radius-sm); font-weight: 500; font-size: 0.85rem; opacity: 0; transition: all 0.3s; z-index: 2000; }
         .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
         .toast.success { background: var(--success); }
         .toast.error { background: var(--danger); }
@@ -655,68 +180,24 @@
         .empty-state { text-align: center; padding: 25px; color: var(--text-light); }
         .empty-icon { font-size: 2rem; margin-bottom: 6px; opacity: 0.5; }
 
-        /* SESIONES BTNS */
-        .sesiones-btns { display: flex; gap: 6px; margin-top: 5px; }
-
-        .sesion-btn {
-            flex: 1;
-            padding: 8px;
-            border: 2px solid var(--border);
-            border-radius: var(--radius-sm);
-            background: white;
-            font-family: inherit;
-            font-weight: 600;
-            cursor: pointer;
-            font-size: 0.8rem;
-        }
-
-        .sesion-btn:hover { border-color: var(--primary-light); }
-        .sesion-btn.active { border-color: var(--primary); background: rgba(26, 95, 74, 0.1); }
-
-        /* UPLOAD */
-        .upload-zone {
-            border: 2px dashed var(--border);
-            border-radius: var(--radius-sm);
-            padding: 20px 14px;
-            text-align: center;
-            cursor: pointer;
-            background: var(--bg);
-            font-size: 0.85rem;
-        }
-
-        .upload-zone:hover { border-color: var(--primary); }
-        .upload-zone.has-file { border-color: var(--success); background: rgba(34, 197, 94, 0.1); }
-
-        /* PRINT */
         @media print {
             body { background: white; font-size: 10px; }
-            .header, .tabs, .btn, .btn-group, .nav-btn, .cuadrante-nav, .modal-overlay, .toast, .no-print { display: none !important; }
+            .header, .tabs, .btn, .btn-group, .nav-btn, .cuadrante-nav, .modal-overlay, .toast, .no-print, .stats-box { display: none !important; }
             .screen, .tab-content, .card { display: block !important; box-shadow: none; margin: 0; padding: 8px 0; }
             .container { max-width: 100%; padding: 0; }
-            .print-section { page-break-before: always; }
-            .print-section:first-child { page-break-before: avoid; }
             .print-header { display: block !important; text-align: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid #333; }
-            .print-header h1 { font-size: 14px; margin-bottom: 3px; }
-            .print-header p { font-size: 10px; color: #666; }
-            .cuadrante-table { font-size: 8px; }
-            .cuadrante-table th, .cuadrante-table td { padding: 3px; }
-            .objetivo-card, .programa-card { break-inside: avoid; }
         }
-
         .print-header { display: none; }
-        .print-only { display: none; }
-
-        @media (max-width: 600px) {
-            .form-row { grid-template-columns: 1fr; }
-            .alumno-header { flex-direction: column; align-items: flex-start; }
-        }
+        @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } .alumno-header { flex-direction: column; align-items: flex-start; } }
     </style>
 </head>
 <body>
     <header class="header">
         <div class="header-content">
             <div class="header-logo">
-                <div class="header-icon">📋</div>
+                <div class="header-icon">
+                    <svg viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="rgba(255,255,255,0.3)"/><rect x="18" y="12" width="44" height="60" rx="4" fill="white"/><circle cx="30" cy="26" r="4" fill="#22c55e"/><path d="M28 26l1.5 1.5 3-3" stroke="white" stroke-width="1.2" fill="none" stroke-linecap="round"/><rect x="38" y="23" width="20" height="5" rx="1" fill="#1a5f4a"/><circle cx="30" cy="40" r="4" fill="#3b82f6"/><rect x="38" y="37" width="16" height="5" rx="1" fill="#1a5f4a"/><circle cx="30" cy="54" r="4" fill="#d4ddd9"/><rect x="38" y="51" width="18" height="5" rx="1" fill="#1a5f4a"/><circle cx="72" cy="68" r="22" fill="#f59e0b"/><circle cx="72" cy="68" r="17" fill="white"/><path d="M72 56v12h10" stroke="#1a5f4a" stroke-width="3" stroke-linecap="round" fill="none"/></svg>
+                </div>
                 <h1>Gestor PE</h1>
             </div>
             <div class="header-right">
@@ -729,7 +210,6 @@
         </div>
     </header>
 
-    <!-- PANTALLA INICIO -->
     <div id="screenInicio" class="screen active">
         <div class="container">
             <div class="card">
@@ -742,19 +222,16 @@
         </div>
     </div>
 
-    <!-- PANTALLA ALUMNO -->
     <div id="screenAlumno" class="screen">
         <div class="container">
             <div class="print-header" id="printHeader"></div>
             <div class="alumno-header" id="alumnoHeader"></div>
-            
             <div class="tabs no-print">
                 <button class="tab active" onclick="cambiarTab('programas')">📄 Programas</button>
                 <button class="tab" onclick="cambiarTab('programacion')">📅 Programación</button>
                 <button class="tab" onclick="cambiarTab('evaluacion')">📊 Evaluación</button>
-                <button class="tab" onclick="cambiarTab('asistencia')">📊 Asistencia</button>
+                <button class="tab" onclick="cambiarTab('asistencia')">📈 Asistencia</button>
             </div>
-
             <div id="tabProgramas" class="tab-content active"></div>
             <div id="tabProgramacion" class="tab-content"></div>
             <div id="tabEvaluacion" class="tab-content"></div>
@@ -762,7 +239,6 @@
         </div>
     </div>
 
-    <!-- MODAL NUEVO ALUMNO -->
     <div class="modal-overlay" id="modalNuevoAlumno">
         <div class="modal">
             <div class="modal-header">
@@ -773,7 +249,7 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Siglas *</label>
-                        <input type="text" class="form-input" id="nuevoSiglas" placeholder="M.G.L." maxlength="10">
+                        <input type="text" class="form-input" id="nuevoSiglas" placeholder="M.G.L." maxlength="10" autocomplete="off">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Curso *</label>
@@ -791,12 +267,15 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Sesiones por semana *</label>
-                    <div class="sesiones-btns">
-                        <button type="button" class="sesion-btn" onclick="selSesiones(1, this)">1</button>
-                        <button type="button" class="sesion-btn" onclick="selSesiones(2, this)">2</button>
-                        <button type="button" class="sesion-btn active" onclick="selSesiones(3, this)">3</button>
+                    <label class="form-label">Días de sesión</label>
+                    <div class="dias-btns" id="diasBtns">
+                        <button type="button" class="dia-btn" data-dia="0" onclick="toggleDia(0)">L</button>
+                        <button type="button" class="dia-btn active" data-dia="1" onclick="toggleDia(1)">M</button>
+                        <button type="button" class="dia-btn" data-dia="2" onclick="toggleDia(2)">X</button>
+                        <button type="button" class="dia-btn active" data-dia="3" onclick="toggleDia(3)">J</button>
+                        <button type="button" class="dia-btn active" data-dia="4" onclick="toggleDia(4)">V</button>
                     </div>
+                    <p style="font-size:0.7rem;color:var(--text-light);margin-top:4px">Seleccionados: <span id="diasSelCount">3</span> días</p>
                 </div>
             </div>
             <div class="modal-footer">
@@ -806,7 +285,6 @@
         </div>
     </div>
 
-    <!-- MODAL AÑADIR PROGRAMA -->
     <div class="modal-overlay" id="modalAddPrograma">
         <div class="modal">
             <div class="modal-header">
@@ -815,13 +293,13 @@
             </div>
             <div class="modal-body">
                 <div class="form-group">
-                    <label class="form-label">Tipo de Programa *</label>
-                    <select class="form-select" id="addProgTipo" onchange="cambioTipoPrograma()">
+                    <label class="form-label">Tipo</label>
+                    <select class="form-select" id="addProgTipo" onchange="cambioTipo()">
                         <option value="">Seleccionar...</option>
                         <option value="cognitivo">🧠 Estimulación cognitiva</option>
                         <option value="atencion">👁️ Atención</option>
                         <option value="memoria">💾 Memoria</option>
-                        <option value="comunicacion">💬 Comunicación y lenguaje</option>
+                        <option value="comunicacion">💬 Comunicación</option>
                         <option value="lectoescritura">📖 Lectoescritura (predefinido)</option>
                         <option value="matematico">🔢 Razonamiento matemático</option>
                         <option value="social">🤝 Habilidades sociales</option>
@@ -830,35 +308,25 @@
                         <option value="autonomia">🏃 Autonomía</option>
                     </select>
                 </div>
-
                 <div id="opcionDocx">
                     <div class="form-group">
-                        <label class="form-label">Importar desde DOCX</label>
-                        <div class="upload-zone" id="uploadZone2" onclick="document.getElementById('inputFile2').click()">
-                            📄 Clic para seleccionar archivo
-                        </div>
-                        <input type="file" id="inputFile2" accept=".docx" style="display:none" onchange="archivoPrograma(this)">
+                        <label class="form-label">Importar DOCX</label>
+                        <div class="upload-zone" id="uploadZone" onclick="document.getElementById('inputFile').click()">📄 Toca para seleccionar</div>
+                        <input type="file" id="inputFile" accept=".docx" style="display:none" onchange="archivoPrograma(this)">
                     </div>
                     <div class="form-group">
-                        <label class="form-label">O pegar contenido del programa</label>
-                        <textarea class="form-textarea" id="addProgTexto" placeholder="OBJETIVO 1: ...&#10;Indicadores:&#10;- Indicador 1&#10;Contenidos:&#10;- Contenido 1&#10;Actividades:&#10;- Actividad 1"></textarea>
+                        <label class="form-label">O pegar contenido</label>
+                        <textarea class="form-textarea" id="addProgTexto" placeholder="OBJETIVO 1: ..."></textarea>
                     </div>
-                    <button class="btn btn-secondary btn-sm" onclick="procesarTextoPegado()">🔍 Analizar texto</button>
+                    <button class="btn btn-secondary btn-sm" onclick="analizarTexto()">🔍 Analizar</button>
                 </div>
-
                 <div id="opcionLecto" style="display:none">
                     <div style="background:var(--bg);padding:12px;border-radius:8px;font-size:0.85rem">
-                        <strong>📖 Programa de Lectoescritura Predefinido</strong>
-                        <p style="margin-top:6px;color:var(--text-light)">Enseñanza sistemática:</p>
-                        <ul style="margin:6px 0 0 18px;font-size:0.8rem">
-                            <li>Vocales: A, E, I, O, U</li>
-                            <li>Consonantes en orden didáctico</li>
-                            <li>Cada semana una letra nueva</li>
-                        </ul>
+                        <strong>📖 Programa Predefinido</strong>
+                        <p style="margin-top:6px;color:var(--text-light);font-size:0.8rem">Vocales + consonantes. Una letra por semana.</p>
                     </div>
                 </div>
-
-                <div id="previewProg" style="display:none;margin-top:12px;max-height:120px;overflow-y:auto;background:var(--bg);padding:10px;border-radius:8px;font-size:0.8rem"></div>
+                <div id="previewProg" style="display:none;margin-top:12px;padding:10px;background:var(--bg);border-radius:8px;font-size:0.8rem"></div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="cerrarModal('modalAddPrograma')">Cancelar</button>
@@ -867,54 +335,38 @@
         </div>
     </div>
 
-    <!-- MODAL EDITAR SESIÓN -->
     <div class="modal-overlay" id="modalCelda">
         <div class="modal">
             <div class="modal-header">
-                <h3 class="modal-title" id="celdaTitulo">Editar sesión</h3>
+                <h3 class="modal-title" id="celdaTitulo">Sesión</h3>
                 <button class="modal-close" onclick="cerrarModal('modalCelda')">×</button>
             </div>
             <div class="modal-body">
-                <!-- ASISTENCIA -->
                 <div class="form-group">
-                    <label class="form-label">¿Asistió a clase?</label>
+                    <label class="form-label">¿Asistió?</label>
                     <div class="asistencia-btns">
-                        <button type="button" class="asist-btn asiste" onclick="setAsistencia(true, this)">
-                            <span class="asist-icon">✅</span>
-                            <span class="asist-text">Asistió</span>
-                        </button>
-                        <button type="button" class="asist-btn no-asiste" onclick="setAsistencia(false, this)">
-                            <span class="asist-icon">❌</span>
-                            <span class="asist-text">No asistió</span>
-                        </button>
+                        <button type="button" class="asist-btn asiste" onclick="setAsist(true,this)"><span class="asist-icon">✅</span><span class="asist-text">Sí</span></button>
+                        <button type="button" class="asist-btn no-asiste" onclick="setAsist(false,this)"><span class="asist-icon">❌</span><span class="asist-text">No</span></button>
                     </div>
                 </div>
-
-                <!-- CONTENIDO (solo si asiste) -->
                 <div id="contenidoSesion">
                     <div class="form-group">
                         <label class="form-label">Programa</label>
-                        <select class="form-select" id="selPrograma" onchange="cargarObjetivos()"></select>
+                        <select class="form-select" id="selPrograma" onchange="cargarObjs()"></select>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Objetivo</label>
-                        <select class="form-select" id="selObjetivo" onchange="cargarIndicadores()"></select>
+                        <select class="form-select" id="selObjetivo" onchange="cargarInds()"></select>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Indicador</label>
                         <select class="form-select" id="selIndicador"></select>
                     </div>
-
-                    <!-- RESULTADO -->
                     <div class="form-group">
-                        <label class="form-label">Resultado de la sesión</label>
+                        <label class="form-label">Resultado</label>
                         <div class="resultado-btns">
-                            <button type="button" class="resultado-btn conseguido" onclick="setResultado('conseguido', this)">
-                                ✅ Conseguido
-                            </button>
-                            <button type="button" class="resultado-btn noconseguido" onclick="setResultado('noconseguido', this)">
-                                🔄 Repetir semana siguiente
-                            </button>
+                            <button type="button" class="resultado-btn conseguido" onclick="setRes('conseguido',this)">✅ OK</button>
+                            <button type="button" class="resultado-btn noconseguido" onclick="setRes('noconseguido',this)">🔄 Repetir</button>
                         </div>
                     </div>
                 </div>
@@ -927,7 +379,6 @@
         </div>
     </div>
 
-    <!-- MODAL IMPRIMIR -->
     <div class="modal-overlay" id="modalImprimir">
         <div class="modal">
             <div class="modal-header">
@@ -935,13 +386,12 @@
                 <button class="modal-close" onclick="cerrarModal('modalImprimir')">×</button>
             </div>
             <div class="modal-body">
-                <p style="margin-bottom:12px;font-size:0.9rem">¿Qué quieres imprimir?</p>
                 <div class="btn-group" style="flex-direction:column">
                     <button class="btn btn-primary" onclick="imprimirTodo()">📋 Todo</button>
-                    <button class="btn btn-secondary" onclick="imprimirSeccion('programas')">📄 Solo Programas</button>
-                    <button class="btn btn-secondary" onclick="imprimirSeccion('programacion')">📅 Solo Programación</button>
-                    <button class="btn btn-secondary" onclick="imprimirSeccion('evaluacion')">📊 Solo Evaluación T<span id="trimPrint">1</span></button>
-                    <button class="btn btn-secondary" onclick="imprimirSeccion('asistencia')">📊 Solo Asistencia</button>
+                    <button class="btn btn-secondary" onclick="imprimirSec('programas')">📄 Programas</button>
+                    <button class="btn btn-secondary" onclick="imprimirSec('programacion')">📅 Programación</button>
+                    <button class="btn btn-secondary" onclick="imprimirSec('evaluacion')">📊 Evaluación T<span id="trimPrint">1</span></button>
+                    <button class="btn btn-secondary" onclick="imprimirSec('asistencia')">📈 Asistencia</button>
                 </div>
             </div>
         </div>
@@ -949,59 +399,34 @@
 
     <div class="toast" id="toast"></div>
 
-    <!-- FIREBASE -->
-    <script type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-        import { getDatabase, ref, onValue, set, remove, push } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
-
-        const firebaseConfig = {
-            databaseURL: "https://gestorpt-7946b-default-rtdb.europe-west1.firebasedatabase.app"
-        };
-
-        try {
-            const app = initializeApp(firebaseConfig);
-            const db = getDatabase(app);
-
-            window.db = db;
-            window.dbRef = ref;
-            window.dbSet = set;
-            window.dbRemove = remove;
-            window.dbPush = push;
-            window.dbOnValue = onValue;
-
-            const alumnosRef = ref(db, 'gestorpe/alumnos');
-            onValue(alumnosRef, (snapshot) => {
-                window.alumnos = snapshot.val() || {};
-                window.renderInicio();
-                document.getElementById('statusDot').classList.add('ok');
-                document.getElementById('statusText').textContent = 'Conectado';
-            }, (error) => {
-                console.error('Error Firebase:', error);
-                document.getElementById('statusText').textContent = 'Error';
-            });
-        } catch (err) {
-            console.error('Error init:', err);
-            document.getElementById('statusText').textContent = 'Error';
-        }
-    </script>
-
+    <!-- Firebase COMPAT (síncrono, sin problemas de timing) -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+    
     <script>
-        // ===== DATOS =====
-        window.alumnos = {};
+        // ===== FIREBASE INIT (compat - síncrono) =====
+        firebase.initializeApp({ 
+            databaseURL: "https://gestorpt-7946b-default-rtdb.europe-west1.firebasedatabase.app" 
+        });
+        const db = firebase.database();
+        
+        // ===== DATOS GLOBALES =====
+        let alumnos = {};
         let alumnoActual = null;
         let mesActual = 0;
-        let sesionesNuevo = 3;
+        let diasSel = [1, 3, 4]; // M, J, V por defecto
         let celdaEditando = null;
         let evalTrim = 1;
         let docExtraido = null;
-        let asistenciaActual = true;
-        let resultadoActual = null;
+        let asistActual = true;
+        let resActual = null;
 
         const AREAS = {
             cognitivo: { nombre: 'Estimulación cognitiva', icon: '🧠', color: '#8b5cf6' },
             atencion: { nombre: 'Atención', icon: '👁️', color: '#f59e0b' },
             memoria: { nombre: 'Memoria', icon: '💾', color: '#06b6d4' },
-            comunicacion: { nombre: 'Comunicación y lenguaje', icon: '💬', color: '#10b981' },
+            comunicacion: { nombre: 'Comunicación', icon: '💬', color: '#10b981' },
             lectoescritura: { nombre: 'Lectoescritura', icon: '📖', color: '#3b82f6' },
             matematico: { nombre: 'Razonamiento matemático', icon: '🔢', color: '#ef4444' },
             social: { nombre: 'Habilidades sociales', icon: '🤝', color: '#ec4899' },
@@ -1022,111 +447,93 @@
             { nombre: 'Mayo', semanas: 4, trimestre: 3 },
             { nombre: 'Junio', semanas: 3, trimestre: 3 }
         ];
-
         const DIAS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
+        const DIAS_C = ['L', 'M', 'X', 'J', 'V'];
 
-        // Programa de Lectoescritura predefinido
-        const LECTO_PROGRAMA = generarProgramaLecto();
+        const LECTO = ['A','E','I','O','U','M','P','S','L','T','N','D','F','B','V','J','R','C','Q','G','H','CH','Ñ','Y','LL','Z','X','K','W'].map((l,i) => ({
+            numero: i+1, descripcion: `Letra ${l}`, trimestre: i<10?1:i<20?2:3,
+            indicadores: [`Reconoce ${l}`, `Traza ${l}`, `Lee sílabas con ${l}`],
+            contenidos: [`Letra ${l}`, `Sílabas con ${l}`],
+            actividades: [`Presentación ${l}`, `Trazo ${l}`, `Lectura con ${l}`]
+        }));
 
-        function generarProgramaLecto() {
-            const letras = [
-                { letra: 'A', tipo: 'vocal' }, { letra: 'E', tipo: 'vocal' }, { letra: 'I', tipo: 'vocal' },
-                { letra: 'O', tipo: 'vocal' }, { letra: 'U', tipo: 'vocal' },
-                { letra: 'M', tipo: 'consonante' }, { letra: 'P', tipo: 'consonante' }, { letra: 'S', tipo: 'consonante' },
-                { letra: 'L', tipo: 'consonante' }, { letra: 'T', tipo: 'consonante' }, { letra: 'N', tipo: 'consonante' },
-                { letra: 'D', tipo: 'consonante' }, { letra: 'F', tipo: 'consonante' }, { letra: 'B', tipo: 'consonante' },
-                { letra: 'V', tipo: 'consonante' }, { letra: 'J', tipo: 'consonante' }, { letra: 'R', tipo: 'consonante' },
-                { letra: 'C', tipo: 'consonante' }, { letra: 'Q', tipo: 'consonante' }, { letra: 'G', tipo: 'consonante' },
-                { letra: 'H', tipo: 'consonante' }, { letra: 'CH', tipo: 'consonante' }, { letra: 'Ñ', tipo: 'consonante' },
-                { letra: 'Y', tipo: 'consonante' }, { letra: 'LL', tipo: 'consonante' }, { letra: 'Z', tipo: 'consonante' },
-                { letra: 'X', tipo: 'consonante' }, { letra: 'K', tipo: 'consonante' }, { letra: 'W', tipo: 'consonante' }
-            ];
-
-            return letras.map((l, idx) => ({
-                numero: idx + 1,
-                descripcion: `Aprender la ${l.tipo === 'vocal' ? 'vocal' : 'letra'} ${l.letra}`,
-                trimestre: idx < 10 ? 1 : idx < 20 ? 2 : 3,
-                indicadores: [
-                    `Reconoce la letra ${l.letra} mayúscula y minúscula`,
-                    `Asocia la letra ${l.letra} con su sonido`,
-                    `Traza correctamente la letra ${l.letra}`,
-                    `Lee sílabas con la letra ${l.letra}`
-                ],
-                contenidos: [
-                    `Letra ${l.letra} mayúscula y minúscula`,
-                    `Sonido de la letra ${l.letra}`,
-                    `Sílabas con ${l.letra}`
-                ],
-                actividades: [
-                    `Presentación de la letra ${l.letra}`,
-                    `Trazo en arena/pizarra/papel`,
-                    `Lectura de sílabas`,
-                    `Juegos de identificación`
-                ]
-            }));
-        }
+        // ===== FIREBASE LISTENER =====
+        db.ref('gestorpe/alumnos').on('value', function(snapshot) {
+            alumnos = snapshot.val() || {};
+            renderInicio();
+            document.getElementById('statusDot').classList.add('ok');
+            document.getElementById('statusText').textContent = 'Conectado';
+        }, function(error) {
+            console.error('Firebase error:', error);
+            document.getElementById('statusText').textContent = 'Error';
+        });
 
         // ===== INICIO =====
-        window.renderInicio = function() {
-            const grid = document.getElementById('alumnosGrid');
-            const ids = Object.keys(window.alumnos);
-
-            if (ids.length === 0) {
-                grid.innerHTML = `<div class="alumno-card alumno-card-add" onclick="abrirModalNuevoAlumno()">
-                    <span style="font-size:1.3rem">➕</span><span style="font-size:0.8rem">Añadir</span>
-                </div>`;
+        function renderInicio() {
+            const g = document.getElementById('alumnosGrid');
+            const ids = Object.keys(alumnos);
+            if (!ids.length) {
+                g.innerHTML = '<div class="alumno-card alumno-card-add" onclick="abrirModalNuevoAlumno()"><span style="font-size:1.3rem">➕</span><span style="font-size:0.8rem">Añadir</span></div>';
                 return;
             }
-
-            let html = '';
-            ids.forEach(id => {
-                const a = window.alumnos[id];
-                const numProgs = a.programas ? Object.keys(a.programas).length : 0;
-                html += `<div class="alumno-card" onclick="abrirAlumno('${id}')">
-                    <div class="alumno-siglas">${a.siglas}</div>
-                    <div class="alumno-curso">${a.curso}</div>
-                    <div class="alumno-programas">${numProgs} prog.</div>
-                </div>`;
-            });
-            html += `<div class="alumno-card alumno-card-add" onclick="abrirModalNuevoAlumno()">
-                <span style="font-size:1.3rem">➕</span><span style="font-size:0.8rem">Añadir</span>
-            </div>`;
-            grid.innerHTML = html;
-        };
+            g.innerHTML = ids.map(function(id) {
+                const a = alumnos[id];
+                const n = a.programas ? Object.keys(a.programas).length : 0;
+                return '<div class="alumno-card" onclick="abrirAlumno(\'' + id + '\')"><div class="alumno-siglas">' + a.siglas + '</div><div class="alumno-curso">' + a.curso + '</div><div class="alumno-programas">' + n + ' prog.</div></div>';
+            }).join('') + '<div class="alumno-card alumno-card-add" onclick="abrirModalNuevoAlumno()"><span style="font-size:1.3rem">➕</span></div>';
+        }
 
         // ===== NUEVO ALUMNO =====
         function abrirModalNuevoAlumno() {
             document.getElementById('nuevoSiglas').value = '';
-            sesionesNuevo = 3;
-            document.querySelectorAll('#modalNuevoAlumno .sesion-btn').forEach((b, i) => b.classList.toggle('active', i === 2));
+            diasSel = [1, 3, 4];
+            actualizarDiasBtns();
             abrirModal('modalNuevoAlumno');
         }
 
-        function selSesiones(n, btn) {
-            sesionesNuevo = n;
-            btn.parentElement.querySelectorAll('.sesion-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
+        function toggleDia(d) {
+            const idx = diasSel.indexOf(d);
+            if (idx > -1) {
+                if (diasSel.length > 1) diasSel.splice(idx, 1);
+            } else {
+                diasSel.push(d);
+                diasSel.sort(function(a, b) { return a - b; });
+            }
+            actualizarDiasBtns();
+        }
+
+        function actualizarDiasBtns() {
+            document.querySelectorAll('#diasBtns .dia-btn').forEach(function(btn) {
+                const dia = parseInt(btn.getAttribute('data-dia'));
+                btn.classList.toggle('active', diasSel.indexOf(dia) !== -1);
+            });
+            document.getElementById('diasSelCount').textContent = diasSel.length;
         }
 
         function crearAlumno() {
             const siglas = document.getElementById('nuevoSiglas').value.trim().toUpperCase();
-            if (!siglas) { toast('Introduce las siglas', 'error'); return; }
+            if (!siglas) { toast('Introduce siglas', 'error'); return; }
+            if (!diasSel.length) { toast('Selecciona días', 'error'); return; }
 
             const alumno = {
-                siglas,
+                siglas: siglas,
                 curso: document.getElementById('nuevoCurso').value,
-                sesionesSemana: sesionesNuevo,
+                diasSesion: diasSel.slice(),
                 programas: {},
                 programacion: {},
                 evaluaciones: {},
-                ausencias: {}
+                ausencias: {},
+                resultados: {}
             };
 
-            const newRef = window.dbPush(window.dbRef(window.db, 'gestorpe/alumnos'));
-            window.dbSet(newRef, alumno).then(() => {
-                cerrarModal('modalNuevoAlumno');
-                toast(`${siglas} creado ✓`, 'success');
-            });
+            db.ref('gestorpe/alumnos').push().set(alumno)
+                .then(function() {
+                    cerrarModal('modalNuevoAlumno');
+                    toast(siglas + ' creado ✓', 'success');
+                })
+                .catch(function(e) {
+                    toast('Error: ' + e.message, 'error');
+                });
         }
 
         // ===== ABRIR ALUMNO =====
@@ -1139,45 +546,36 @@
             document.getElementById('screenAlumno').classList.add('active');
             document.getElementById('btnVolver').style.display = 'block';
 
-            const a = window.alumnos[id];
+            const a = alumnos[id];
+            const st = calcAus(a);
+            const diasArr = a.diasSesion || [0, 2, 4];
+            const diasStr = diasArr.map(function(d) { return DIAS_C[d]; }).join('-');
 
-            document.getElementById('printHeader').innerHTML = `
-                <h1>Programa Específico - ${a.siglas}</h1>
-                <p>${a.curso} · ${a.sesionesSemana} sesiones/semana</p>
-            `;
+            document.getElementById('printHeader').innerHTML = '<h1>PE - ' + a.siglas + '</h1><p>' + a.curso + '</p>';
 
-            let progsList = '';
+            let progs = '';
             if (a.programas) {
-                Object.keys(a.programas).forEach(pId => {
-                    const p = a.programas[pId];
-                    const info = AREAS[p.tipo] || { icon: '📄', nombre: p.tipo };
-                    progsList += `<span class="area-badge" style="background:${info.color}20;color:${info.color}"><span class="area-dot" style="background:${info.color}"></span>${info.icon}</span> `;
+                Object.keys(a.programas).forEach(function(pId) {
+                    const info = AREAS[a.programas[pId].tipo] || { icon: '📄', color: '#666' };
+                    progs += '<span class="area-badge" style="background:' + info.color + '20;color:' + info.color + '">' + info.icon + '</span> ';
                 });
             }
 
-            // Calcular ausencias
-            const stats = calcularAusencias(a);
+            document.getElementById('alumnoHeader').innerHTML = 
+                '<div class="alumno-header-siglas">' + a.siglas + '</div>' +
+                '<div class="alumno-header-info"><h2>' + a.curso + '</h2><p>' + diasStr + ' · ' + st.total + ' ausencias</p><div style="margin-top:4px">' + (progs || '') + '</div></div>' +
+                '<div style="margin-left:auto" class="btn-group no-print">' +
+                    '<button class="btn btn-secondary btn-sm" onclick="abrirModalImprimir()">🖨️</button>' +
+                    '<button class="btn btn-danger btn-sm" onclick="eliminarAlumno(\'' + id + '\')">🗑️</button>' +
+                '</div>';
 
-            document.getElementById('alumnoHeader').innerHTML = `
-                <div class="alumno-header-siglas">${a.siglas}</div>
-                <div class="alumno-header-info">
-                    <h2>${a.curso}</h2>
-                    <p>${a.sesionesSemana} ses/sem · ${stats.totalAusencias} ausencias</p>
-                    <div style="margin-top:4px">${progsList || '<span style="color:var(--text-light);font-size:0.75rem">Sin programas</span>'}</div>
-                </div>
-                <div style="margin-left:auto" class="btn-group no-print">
-                    <button class="btn btn-secondary btn-sm" onclick="abrirModalImprimir()">🖨️</button>
-                    <button class="btn btn-danger btn-sm" onclick="eliminarAlumno('${id}')">🗑️</button>
-                </div>
-            `;
+            document.querySelectorAll('.tab').forEach(function(t, i) { t.classList.toggle('active', i === 0); });
+            document.querySelectorAll('.tab-content').forEach(function(c, i) { c.classList.toggle('active', i === 0); });
 
-            document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', i === 0));
-            document.querySelectorAll('.tab-content').forEach((c, i) => c.classList.toggle('active', i === 0));
-
-            renderProgramas();
-            renderProgramacion();
-            renderEvaluacion();
-            renderAsistencia();
+            renderProgs();
+            renderProg();
+            renderEval();
+            renderAsis();
         }
 
         function volverInicio() {
@@ -1187,735 +585,634 @@
             document.getElementById('btnVolver').style.display = 'none';
         }
 
-        function cambiarTab(tab) {
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        function cambiarTab(t) {
+            document.querySelectorAll('.tab').forEach(function(b) { b.classList.remove('active'); });
             event.target.classList.add('active');
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
+            document.querySelectorAll('.tab-content').forEach(function(c) { c.classList.remove('active'); });
+            document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1)).classList.add('active');
         }
 
         function eliminarAlumno(id) {
-            if (confirm('¿Eliminar este alumno?')) {
-                window.dbRemove(window.dbRef(window.db, `gestorpe/alumnos/${id}`));
+            if (confirm('¿Eliminar?')) {
+                db.ref('gestorpe/alumnos/' + id).remove();
                 volverInicio();
                 toast('Eliminado', 'success');
             }
         }
 
-        // ===== CALCULAR AUSENCIAS =====
-        function calcularAusencias(alumno) {
-            const ausencias = alumno.ausencias || {};
-            let totalAusencias = 0;
-            let ausenciasMes = {};
-            let ausenciasTrim = { 1: 0, 2: 0, 3: 0 };
-
-            MESES.forEach((mes, mIdx) => {
-                ausenciasMes[mIdx] = 0;
-                for (let sem = 1; sem <= mes.semanas; sem++) {
-                    [0, 1, 2, 3, 4].forEach(dia => {
-                        const key = `${mIdx}_${sem}_${dia}`;
-                        if (ausencias[key] === false) {
-                            totalAusencias++;
-                            ausenciasMes[mIdx]++;
-                            ausenciasTrim[mes.trimestre]++;
+        // ===== AUSENCIAS =====
+        function calcAus(a) {
+            const aus = a.ausencias || {};
+            let total = 0;
+            const porMes = {};
+            const porTrim = { 1: 0, 2: 0, 3: 0 };
+            const dias = a.diasSesion || [0, 2, 4];
+            
+            MESES.forEach(function(m, mi) {
+                porMes[mi] = 0;
+                for (let s = 1; s <= m.semanas; s++) {
+                    dias.forEach(function(d) {
+                        if (aus[mi + '_' + s + '_' + d] === false) {
+                            total++;
+                            porMes[mi]++;
+                            porTrim[m.trimestre]++;
                         }
                     });
                 }
             });
-
-            return { totalAusencias, ausenciasMes, ausenciasTrim };
+            return { total: total, porMes: porMes, porTrim: porTrim };
         }
 
         // ===== PROGRAMAS =====
-        function renderProgramas() {
-            const a = window.alumnos[alumnoActual];
-            const container = document.getElementById('tabProgramas');
+        function renderProgs() {
+            const a = alumnos[alumnoActual];
+            let h = '<div class="card"><div class="card-header"><h3 class="card-title">📄 Programas</h3><button class="btn btn-primary btn-sm no-print" onclick="abrirModalAddProg()">➕</button></div>';
 
-            let html = `<div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">📄 Programas</h3>
-                    <button class="btn btn-primary btn-sm no-print" onclick="abrirModalAddPrograma()">➕ Añadir</button>
-                </div>`;
-
-            if (!a.programas || Object.keys(a.programas).length === 0) {
-                html += `<div class="empty-state"><div class="empty-icon">📄</div><p>Sin programas</p></div>`;
+            if (!a.programas || !Object.keys(a.programas).length) {
+                h += '<div class="empty-state"><div class="empty-icon">📄</div><p>Sin programas</p></div>';
             } else {
-                Object.keys(a.programas).forEach(pId => {
+                Object.keys(a.programas).forEach(function(pId) {
                     const p = a.programas[pId];
                     const info = AREAS[p.tipo] || { icon: '📄', nombre: p.tipo, color: '#666' };
-
-                    html += `<div class="programa-card print-section" style="border-left-color:${info.color}">
-                        <div class="programa-header">
-                            <span class="programa-titulo">${info.icon} ${info.nombre}</span>
-                            <button class="btn btn-danger btn-sm no-print" onclick="eliminarPrograma('${pId}')">🗑️</button>
-                        </div>`;
-
-                    (p.objetivos || []).forEach(obj => {
-                        html += `<div class="objetivo-card">
-                            <div class="objetivo-header">
-                                <span class="objetivo-num">O${obj.numero}</span>
-                                <span class="trimestre-badge t${obj.trimestre}">T${obj.trimestre}</span>
-                            </div>
-                            <div class="objetivo-desc">${obj.descripcion}</div>`;
-
-                        if (obj.indicadores?.length) {
-                            html += `<div class="objetivo-section">
-                                <div class="objetivo-section-title">Indicadores</div>
-                                <ul class="item-list">${obj.indicadores.map(i => `<li>${i}</li>`).join('')}</ul>
-                            </div>`;
+                    h += '<div class="programa-card" style="border-left-color:' + info.color + '"><div class="programa-header"><span class="programa-titulo">' + info.icon + ' ' + info.nombre + '</span><button class="btn btn-danger btn-sm no-print" onclick="elimProg(\'' + pId + '\')">🗑️</button></div>';
+                    (p.objetivos || []).forEach(function(obj) {
+                        h += '<div class="objetivo-card"><div class="objetivo-header"><span class="objetivo-num">O' + obj.numero + '</span><span class="trimestre-badge t' + obj.trimestre + '">T' + obj.trimestre + '</span></div><div class="objetivo-desc">' + obj.descripcion + '</div>';
+                        if (obj.indicadores && obj.indicadores.length) {
+                            h += '<div class="objetivo-section"><div class="objetivo-section-title">Indicadores</div><ul class="item-list">' + obj.indicadores.map(function(x) { return '<li>' + x + '</li>'; }).join('') + '</ul></div>';
                         }
-                        if (obj.contenidos?.length) {
-                            html += `<div class="objetivo-section">
-                                <div class="objetivo-section-title">Contenidos</div>
-                                <ul class="item-list">${obj.contenidos.map(c => `<li>${c}</li>`).join('')}</ul>
-                            </div>`;
+                        if (obj.contenidos && obj.contenidos.length) {
+                            h += '<div class="objetivo-section"><div class="objetivo-section-title">Contenidos</div><ul class="item-list">' + obj.contenidos.map(function(x) { return '<li>' + x + '</li>'; }).join('') + '</ul></div>';
                         }
-                        if (obj.actividades?.length) {
-                            html += `<div class="objetivo-section">
-                                <div class="objetivo-section-title">Actividades</div>
-                                <ul class="item-list">${obj.actividades.map(ac => `<li>${ac}</li>`).join('')}</ul>
-                            </div>`;
+                        if (obj.actividades && obj.actividades.length) {
+                            h += '<div class="objetivo-section"><div class="objetivo-section-title">Actividades</div><ul class="item-list">' + obj.actividades.map(function(x) { return '<li>' + x + '</li>'; }).join('') + '</ul></div>';
                         }
-                        html += '</div>';
+                        h += '</div>';
                     });
-                    html += '</div>';
+                    h += '</div>';
                 });
             }
-
-            html += `<div class="btn-group no-print" style="margin-top:10px">
-                <button class="btn btn-secondary btn-sm" onclick="regenerarProgramacion()">🔄 Regenerar</button>
-            </div></div>`;
-
-            container.innerHTML = html;
+            h += '<button class="btn btn-secondary btn-sm no-print" onclick="regenerar()" style="margin-top:8px">🔄 Regenerar programación</button></div>';
+            document.getElementById('tabProgramas').innerHTML = h;
         }
 
-        function abrirModalAddPrograma() {
+        function abrirModalAddProg() {
             document.getElementById('addProgTipo').value = '';
             document.getElementById('addProgTexto').value = '';
-            document.getElementById('uploadZone2').innerHTML = '📄 Clic para seleccionar archivo';
-            document.getElementById('uploadZone2').classList.remove('has-file');
+            document.getElementById('uploadZone').innerHTML = '📄 Toca para seleccionar';
+            document.getElementById('uploadZone').classList.remove('has-file');
             document.getElementById('previewProg').style.display = 'none';
             document.getElementById('opcionDocx').style.display = 'block';
             document.getElementById('opcionLecto').style.display = 'none';
             document.getElementById('btnAddProg').disabled = true;
-            document.getElementById('inputFile2').value = '';
+            document.getElementById('inputFile').value = '';
             docExtraido = null;
             abrirModal('modalAddPrograma');
         }
 
-        function cambioTipoPrograma() {
-            const tipo = document.getElementById('addProgTipo').value;
-            if (tipo === 'lectoescritura') {
-                document.getElementById('opcionDocx').style.display = 'none';
-                document.getElementById('opcionLecto').style.display = 'block';
-                document.getElementById('btnAddProg').disabled = false;
-            } else if (tipo) {
-                document.getElementById('opcionDocx').style.display = 'block';
-                document.getElementById('opcionLecto').style.display = 'none';
-                document.getElementById('btnAddProg').disabled = true;
-            }
+        function cambioTipo() {
+            const t = document.getElementById('addProgTipo').value;
+            document.getElementById('opcionDocx').style.display = t === 'lectoescritura' ? 'none' : 'block';
+            document.getElementById('opcionLecto').style.display = t === 'lectoescritura' ? 'block' : 'none';
+            document.getElementById('btnAddProg').disabled = t !== 'lectoescritura' && !docExtraido;
         }
 
-        async function archivoPrograma(input) {
-            const file = input.files[0];
-            if (!file) return;
-            document.getElementById('uploadZone2').innerHTML = '📄 ' + file.name;
-            document.getElementById('uploadZone2').classList.add('has-file');
-            try {
-                const buffer = await file.arrayBuffer();
-                const result = await mammoth.extractRawText({ arrayBuffer: buffer });
-                procesarTexto(result.value);
-            } catch (err) { toast('Error: ' + err.message, 'error'); }
+        function archivoPrograma(inp) {
+            const f = inp.files[0];
+            if (!f) return;
+            document.getElementById('uploadZone').innerHTML = '📄 ' + f.name;
+            document.getElementById('uploadZone').classList.add('has-file');
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                mammoth.extractRawText({ arrayBuffer: e.target.result })
+                    .then(function(result) {
+                        procesarTexto(result.value);
+                    })
+                    .catch(function() {
+                        toast('Error al leer archivo', 'error');
+                    });
+            };
+            reader.readAsArrayBuffer(f);
         }
 
-        function procesarTextoPegado() {
-            const texto = document.getElementById('addProgTexto').value;
-            if (texto.trim().length < 20) { toast('Pega más contenido', 'error'); return; }
-            procesarTexto(texto);
+        function analizarTexto() {
+            const t = document.getElementById('addProgTexto').value;
+            if (t.length < 20) { toast('Más contenido', 'error'); return; }
+            procesarTexto(t);
         }
 
-        function procesarTexto(texto) {
-            const objetivos = extraerObjetivos(texto);
-            if (objetivos.length === 0) { toast('No se encontraron objetivos', 'error'); return; }
-            docExtraido = objetivos;
-            document.getElementById('previewProg').innerHTML = `<strong>✓ ${objetivos.length} objetivos extraídos</strong>`;
+        function procesarTexto(txt) {
+            const objs = extraerObjs(txt);
+            if (!objs.length) { toast('Sin objetivos', 'error'); return; }
+            docExtraido = objs;
+            document.getElementById('previewProg').innerHTML = '✓ ' + objs.length + ' objetivos';
             document.getElementById('previewProg').style.display = 'block';
             document.getElementById('btnAddProg').disabled = false;
         }
 
-        function extraerObjetivos(texto) {
-            const objetivos = [];
-            const lineas = texto.split('\n').map(l => l.trim()).filter(l => l);
-            let actual = null, seccion = null;
-
-            for (const linea of lineas) {
-                const upper = linea.toUpperCase();
-                const match = linea.match(/^OBJETIVO\s*(\d+)[.:\s]*(.+)?/i);
-
-                if (match) {
-                    if (actual) objetivos.push(actual);
-                    actual = { numero: parseInt(match[1]), descripcion: (match[2] || '').trim(), indicadores: [], contenidos: [], actividades: [] };
-                    seccion = null;
-                    continue;
+        function extraerObjs(txt) {
+            const objs = [];
+            const ls = txt.split('\n').map(function(l) { return l.trim(); }).filter(function(l) { return l; });
+            let ac = null;
+            let sec = null;
+            
+            ls.forEach(function(l) {
+                const u = l.toUpperCase();
+                const m = l.match(/^OBJETIVO\s*(\d+)[.:\s]*(.+)?/i);
+                if (m) {
+                    if (ac) objs.push(ac);
+                    ac = { numero: parseInt(m[1]), descripcion: (m[2] || '').trim(), indicadores: [], contenidos: [], actividades: [] };
+                    sec = null;
+                    return;
                 }
-
-                if (upper.includes('INDICADOR')) { seccion = 'indicadores'; continue; }
-                if (upper === 'CONTENIDOS' || upper.startsWith('CONTENIDOS')) { seccion = 'contenidos'; continue; }
-                if (upper.includes('ACTIVIDADES')) { seccion = 'actividades'; continue; }
-                if (upper.includes('ORGANIZACIÓN') || upper.startsWith('SESIÓN')) continue;
-
-                if (actual && seccion && linea.length > 5) {
-                    let txt = linea.replace(/^[-•·▪►]\s*/, '').replace(/^[""]|[""]$/g, '').trim();
-                    if (txt.length > 5) actual[seccion].push(txt);
+                if (u.indexOf('INDICADOR') !== -1) { sec = 'indicadores'; return; }
+                if (u === 'CONTENIDOS' || u.indexOf('CONTENIDOS') === 0) { sec = 'contenidos'; return; }
+                if (u.indexOf('ACTIVIDADES') !== -1) { sec = 'actividades'; return; }
+                if (ac && sec && l.length > 5) {
+                    let x = l.replace(/^[-•·▪►]\s*/, '').trim();
+                    if (x.length > 5) ac[sec].push(x);
                 }
-            }
-            if (actual) objetivos.push(actual);
-
-            objetivos.forEach(obj => {
-                if (obj.indicadores.length === 0) obj.indicadores = ['Indicador general'];
-                if (obj.actividades.length === 0) obj.actividades = ['Actividad general'];
             });
-
-            const total = objetivos.length, porT = Math.ceil(total / 3);
-            objetivos.forEach((obj, idx) => { obj.trimestre = idx < porT ? 1 : idx < porT * 2 ? 2 : 3; });
-
-            return objetivos;
+            if (ac) objs.push(ac);
+            
+            objs.forEach(function(o) {
+                if (!o.indicadores.length) o.indicadores = ['Indicador general'];
+                if (!o.actividades.length) o.actividades = ['Actividad general'];
+            });
+            
+            const n = objs.length;
+            const p = Math.ceil(n / 3);
+            objs.forEach(function(o, i) {
+                o.trimestre = i < p ? 1 : i < p * 2 ? 2 : 3;
+            });
+            return objs;
         }
 
         function addPrograma() {
             const tipo = document.getElementById('addProgTipo').value;
             if (!tipo) { toast('Selecciona tipo', 'error'); return; }
+            const objetivos = tipo === 'lectoescritura' ? LECTO : docExtraido;
+            if (!objetivos) { toast('Sin contenido', 'error'); return; }
 
-            let objetivos = tipo === 'lectoescritura' ? LECTO_PROGRAMA : docExtraido;
-            if (!objetivos) { toast('Sube o pega el programa', 'error'); return; }
-
-            const programa = { tipo, objetivos };
-            const a = window.alumnos[alumnoActual];
-            if (!a.programas) a.programas = {};
-
+            const a = alumnos[alumnoActual];
             const pId = 'p_' + Date.now();
-            a.programas[pId] = programa;
+            const prog = { tipo: tipo, objetivos: objetivos };
 
-            window.dbSet(window.dbRef(window.db, `gestorpe/alumnos/${alumnoActual}/programas/${pId}`), programa).then(() => {
-                a.programacion = generarProgramacionMultiple(a);
-                window.dbSet(window.dbRef(window.db, `gestorpe/alumnos/${alumnoActual}/programacion`), a.programacion);
-                cerrarModal('modalAddPrograma');
-                abrirAlumno(alumnoActual);
-                toast('Programa añadido ✓', 'success');
-            });
+            db.ref('gestorpe/alumnos/' + alumnoActual + '/programas/' + pId).set(prog)
+                .then(function() {
+                    a.programas = a.programas || {};
+                    a.programas[pId] = prog;
+                    const nuevaProg = genProg(a);
+                    return db.ref('gestorpe/alumnos/' + alumnoActual + '/programacion').set(nuevaProg);
+                })
+                .then(function() {
+                    cerrarModal('modalAddPrograma');
+                    abrirAlumno(alumnoActual);
+                    toast('Añadido ✓', 'success');
+                })
+                .catch(function(e) {
+                    toast('Error: ' + e.message, 'error');
+                });
         }
 
-        function eliminarPrograma(pId) {
-            if (!confirm('¿Eliminar este programa?')) return;
-            window.dbRemove(window.dbRef(window.db, `gestorpe/alumnos/${alumnoActual}/programas/${pId}`));
-            delete window.alumnos[alumnoActual].programas[pId];
-            const a = window.alumnos[alumnoActual];
-            a.programacion = generarProgramacionMultiple(a);
-            window.dbSet(window.dbRef(window.db, `gestorpe/alumnos/${alumnoActual}/programacion`), a.programacion);
-            abrirAlumno(alumnoActual);
-            toast('Eliminado', 'success');
+        function elimProg(pId) {
+            if (!confirm('¿Eliminar?')) return;
+            db.ref('gestorpe/alumnos/' + alumnoActual + '/programas/' + pId).remove()
+                .then(function() {
+                    delete alumnos[alumnoActual].programas[pId];
+                    return db.ref('gestorpe/alumnos/' + alumnoActual + '/programacion').set(genProg(alumnos[alumnoActual]));
+                })
+                .then(function() {
+                    abrirAlumno(alumnoActual);
+                    toast('Eliminado', 'success');
+                });
         }
 
-        // ===== PROGRAMACIÓN MÚLTIPLE =====
-        function generarProgramacionMultiple(alumno) {
+        function regenerar() {
+            if (!confirm('¿Regenerar?')) return;
+            const a = alumnos[alumnoActual];
+            db.ref('gestorpe/alumnos/' + alumnoActual + '/programacion').set(genProg(a))
+                .then(function() {
+                    a.programacion = genProg(a);
+                    renderProg();
+                    toast('Regenerado ✓', 'success');
+                });
+        }
+
+        function genProg(a) {
             const prog = {};
-            if (!alumno.programas) return prog;
-
-            const sesiones = alumno.sesionesSemana;
-            let dias;
-            if (sesiones === 1) dias = [2];
-            else if (sesiones === 2) dias = [1, 3];
-            else dias = [0, 2, 4];
-
-            let poolGlobal = [];
-            Object.keys(alumno.programas).forEach(pId => {
-                const p = alumno.programas[pId];
-                (p.objetivos || []).forEach((obj, oIdx) => {
-                    (obj.indicadores || []).forEach((ind, iIdx) => {
-                        poolGlobal.push({ pId, oIdx, iIdx, trimestre: obj.trimestre });
+            if (!a.programas) return prog;
+            const dias = a.diasSesion || [0, 2, 4];
+            const pool = [];
+            
+            Object.keys(a.programas).forEach(function(pId) {
+                const p = a.programas[pId];
+                (p.objetivos || []).forEach(function(o, oi) {
+                    (o.indicadores || []).forEach(function(_, ii) {
+                        pool.push({ pId: pId, oIdx: oi, iIdx: ii, trim: o.trimestre });
                     });
                 });
             });
-
-            if (poolGlobal.length === 0) return prog;
-
-            MESES.forEach((mes, mIdx) => {
-                const trim = mes.trimestre;
-                const poolTrim = poolGlobal.filter(item => item.trimestre === trim);
-                if (poolTrim.length === 0) return;
-
-                let pIdx = 0;
-                for (let sem = 1; sem <= mes.semanas; sem++) {
-                    dias.forEach(dia => {
-                        const key = `${mIdx}_${sem}_${dia}`;
-                        const item = poolTrim[pIdx % poolTrim.length];
-                        prog[key] = { pId: item.pId, oIdx: item.oIdx, iIdx: item.iIdx };
-                        pIdx++;
+            
+            if (!pool.length) return prog;
+            
+            MESES.forEach(function(m, mi) {
+                const pt = pool.filter(function(x) { return x.trim === m.trimestre; });
+                if (!pt.length) return;
+                let idx = 0;
+                for (let s = 1; s <= m.semanas; s++) {
+                    dias.forEach(function(d) {
+                        const k = mi + '_' + s + '_' + d;
+                        prog[k] = { pId: pt[idx % pt.length].pId, oIdx: pt[idx % pt.length].oIdx, iIdx: pt[idx % pt.length].iIdx };
+                        idx++;
                     });
                 }
             });
-
             return prog;
         }
 
-        function regenerarProgramacion() {
-            if (!confirm('¿Regenerar programación?')) return;
-            const a = window.alumnos[alumnoActual];
-            a.programacion = generarProgramacionMultiple(a);
-            window.dbSet(window.dbRef(window.db, `gestorpe/alumnos/${alumnoActual}/programacion`), a.programacion);
-            renderProgramacion();
-            toast('Regenerado ✓', 'success');
-        }
-
-        // ===== RENDER PROGRAMACIÓN =====
-        function renderProgramacion() {
-            const a = window.alumnos[alumnoActual];
-            const container = document.getElementById('tabProgramacion');
-            const sesiones = a.sesionesSemana;
-
-            let dias, nombres;
-            if (sesiones === 1) { dias = [2]; nombres = ['Mié']; }
-            else if (sesiones === 2) { dias = [1, 3]; nombres = ['Mar', 'Jue']; }
-            else { dias = [0, 2, 4]; nombres = ['Lun', 'Mié', 'Vie']; }
-
+        // ===== PROGRAMACIÓN =====
+        function renderProg() {
+            const a = alumnos[alumnoActual];
+            const dias = a.diasSesion || [0, 2, 4];
+            const noms = dias.map(function(d) { return DIAS_C[d]; });
             const mes = MESES[mesActual];
-            const stats = calcularAusencias(a);
+            const st = calcAus(a);
 
-            let html = `<div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">📅 Programación</h3>
-                </div>
-
-                <div class="stats-box no-print">
-                    <div class="stat-item">
-                        <div class="stat-num ausencias">${stats.ausenciasMes[mesActual] || 0}</div>
-                        <div class="stat-label">Ausencias ${mes.nombre}</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-num ausencias">${stats.ausenciasTrim[mes.trimestre] || 0}</div>
-                        <div class="stat-label">Ausencias T${mes.trimestre}</div>
-                    </div>
-                </div>
-
-                <div class="cuadrante-nav no-print">
-                    <button class="nav-btn" onclick="cambiarMes(-1)">◀</button>
-                    <select class="form-select" style="width:auto;font-size:0.8rem" onchange="mesActual=parseInt(this.value);renderProgramacion()">
-                        ${MESES.map((m, i) => `<option value="${i}" ${i === mesActual ? 'selected' : ''}>${m.nombre}</option>`).join('')}
-                    </select>
-                    <button class="nav-btn" onclick="cambiarMes(1)">▶</button>
-                    <span class="trimestre-badge t${mes.trimestre}">T${mes.trimestre}</span>
-                </div>
-
-                <div style="overflow-x:auto">
-                    <table class="cuadrante-table">
-                        <thead><tr><th>Sem</th>${nombres.map(n => `<th>${n}</th>`).join('')}</tr></thead>
-                        <tbody>
-                            ${Array.from({length: mes.semanas}, (_, sIdx) => {
-                                const sem = sIdx + 1;
-                                return `<tr><td>${sem}</td>${dias.map(dia => renderCeldaHTML(a, `${mesActual}_${sem}_${dia}`, dia)).join('')}</tr>`;
-                            }).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            </div>`;
-
-            container.innerHTML = html;
+            let h = '<div class="card">' +
+                '<div class="stats-box no-print"><div class="stat-item"><div class="stat-num ausencias">' + (st.porMes[mesActual] || 0) + '</div><div class="stat-label">' + mes.nombre + '</div></div><div class="stat-item"><div class="stat-num ausencias">' + st.porTrim[mes.trimestre] + '</div><div class="stat-label">T' + mes.trimestre + '</div></div></div>' +
+                '<div class="cuadrante-nav no-print">' +
+                    '<button class="nav-btn" onclick="cambiarMes(-1)">◀</button>' +
+                    '<select class="form-select" style="width:auto;font-size:0.85rem" onchange="mesActual=parseInt(this.value);renderProg()">' +
+                        MESES.map(function(m, i) { return '<option value="' + i + '"' + (i === mesActual ? ' selected' : '') + '>' + m.nombre + '</option>'; }).join('') +
+                    '</select>' +
+                    '<button class="nav-btn" onclick="cambiarMes(1)">▶</button>' +
+                    '<span class="trimestre-badge t' + mes.trimestre + '">T' + mes.trimestre + '</span>' +
+                '</div>' +
+                '<div style="overflow-x:auto"><table class="cuadrante-table">' +
+                    '<thead><tr><th>Sem</th>' + noms.map(function(n) { return '<th>' + n + '</th>'; }).join('') + '</tr></thead>' +
+                    '<tbody>';
+            
+            for (let si = 0; si < mes.semanas; si++) {
+                const sem = si + 1;
+                h += '<tr><td>' + sem + '</td>';
+                dias.forEach(function(d) {
+                    h += renderCelda(a, mesActual + '_' + sem + '_' + d, d);
+                });
+                h += '</tr>';
+            }
+            
+            h += '</tbody></table></div></div>';
+            document.getElementById('tabProgramacion').innerHTML = h;
         }
 
-        function renderCeldaHTML(alumno, key, dia) {
-            const c = alumno.programacion?.[key];
-            const ausencia = alumno.ausencias?.[key] === false;
-            const resultado = alumno.resultados?.[key];
-
-            let claseExtra = '';
-            if (ausencia) claseExtra = ' celda-ausencia';
-            else if (resultado === 'conseguido') claseExtra = ' celda-conseguido';
-            else if (resultado === 'noconseguido') claseExtra = ' celda-noconseguido';
-
-            if (!c || !alumno.programas?.[c.pId]) {
-                return `<td class="celda celda-vacia${claseExtra}" onclick="editarCelda('${key}', ${dia})">+</td>`;
+        function renderCelda(a, k, d) {
+            const c = a.programacion ? a.programacion[k] : null;
+            const aus = a.ausencias && a.ausencias[k] === false;
+            const res = a.resultados ? a.resultados[k] : null;
+            let cls = 'celda';
+            let icon = '';
+            
+            if (aus) { cls += ' celda-ausencia'; icon = '❌'; }
+            else if (res === 'conseguido') icon = '✅';
+            else if (res === 'noconseguido') icon = '🔄';
+            
+            if (!c || !a.programas || !a.programas[c.pId]) {
+                return '<td class="' + cls + ' celda-vacia" onclick="editarCelda(\'' + k + '\',' + d + ')">' + (icon ? '<span class="celda-icon">' + icon + '</span>' : '') + '+</td>';
             }
-
-            const p = alumno.programas[c.pId];
-            const obj = p.objetivos?.[c.oIdx];
-            if (!obj) return `<td class="celda celda-vacia${claseExtra}">?</td>`;
-
+            
+            const p = a.programas[c.pId];
+            const obj = p.objetivos ? p.objetivos[c.oIdx] : null;
+            if (!obj) return '<td class="' + cls + '">?</td>';
+            
             const info = AREAS[p.tipo] || { color: '#666' };
-            const ind = obj.indicadores?.[c.iIdx] || '';
-
-            return `<td class="celda${claseExtra}" onclick="editarCelda('${key}', ${dia})">
-                <div class="celda-obj"><span class="celda-area" style="background:${info.color}"></span>O${obj.numero}</div>
-                <div class="celda-ind">${ind.substring(0, 25)}${ind.length > 25 ? '...' : ''}</div>
-            </td>`;
+            const ind = obj.indicadores && obj.indicadores[c.iIdx] ? obj.indicadores[c.iIdx] : '';
+            
+            return '<td class="' + cls + '" onclick="editarCelda(\'' + k + '\',' + d + ')">' +
+                (icon ? '<span class="celda-icon">' + icon + '</span>' : '') +
+                '<div class="celda-obj"><span class="celda-area" style="background:' + info.color + '"></span>O' + obj.numero + '</div>' +
+                '<div class="celda-ind">' + ind.substring(0, 22) + (ind.length > 22 ? '...' : '') + '</div></td>';
         }
 
         function cambiarMes(dir) {
-            mesActual = Math.max(0, Math.min(MESES.length - 1, mesActual + dir));
-            renderProgramacion();
+            mesActual = Math.max(0, Math.min(9, mesActual + dir));
+            renderProg();
         }
 
         // ===== EDITAR CELDA =====
-        function editarCelda(key, dia) {
-            celdaEditando = key;
-            asistenciaActual = true;
-            resultadoActual = null;
-
-            const a = window.alumnos[alumnoActual];
-            const c = a.programacion?.[key] || {};
-
-            document.getElementById('celdaTitulo').textContent = DIAS[dia];
-
-            // Resetear botones asistencia
-            document.querySelectorAll('.asist-btn').forEach(b => b.classList.remove('selected'));
-
-            // Cargar estado actual
-            if (a.ausencias?.[key] === false) {
-                asistenciaActual = false;
+        function editarCelda(k, d) {
+            celdaEditando = k;
+            asistActual = true;
+            resActual = null;
+            
+            const a = alumnos[alumnoActual];
+            const c = a.programacion ? a.programacion[k] : null;
+            
+            document.getElementById('celdaTitulo').textContent = DIAS[d];
+            document.querySelectorAll('.asist-btn').forEach(function(b) { b.classList.remove('selected'); });
+            document.querySelectorAll('.resultado-btn').forEach(function(b) { b.classList.remove('selected'); });
+            
+            if (a.ausencias && a.ausencias[k] === false) {
+                asistActual = false;
                 document.querySelector('.asist-btn.no-asiste').classList.add('selected');
                 document.getElementById('contenidoSesion').style.display = 'none';
             } else {
                 document.querySelector('.asist-btn.asiste').classList.add('selected');
                 document.getElementById('contenidoSesion').style.display = 'block';
             }
-
-            // Resultado
-            resultadoActual = a.resultados?.[key] || null;
-            document.querySelectorAll('.resultado-btn').forEach(b => b.classList.remove('selected'));
-            if (resultadoActual) {
-                document.querySelector(`.resultado-btn.${resultadoActual}`)?.classList.add('selected');
+            
+            resActual = a.resultados ? a.resultados[k] : null;
+            if (resActual) {
+                const btn = document.querySelector('.resultado-btn.' + resActual);
+                if (btn) btn.classList.add('selected');
             }
-
-            // Programas
-            const selP = document.getElementById('selPrograma');
-            selP.innerHTML = '<option value="">Seleccionar...</option>';
+            
+            const sel = document.getElementById('selPrograma');
+            sel.innerHTML = '<option value="">-</option>';
             if (a.programas) {
-                Object.keys(a.programas).forEach(pId => {
+                Object.keys(a.programas).forEach(function(pId) {
                     const p = a.programas[pId];
-                    const info = AREAS[p.tipo] || { icon: '📄', nombre: p.tipo };
-                    selP.innerHTML += `<option value="${pId}" ${c.pId === pId ? 'selected' : ''}>${info.icon} ${info.nombre}</option>`;
+                    const info = AREAS[p.tipo] || { icon: '📄' };
+                    sel.innerHTML += '<option value="' + pId + '"' + (c && c.pId === pId ? ' selected' : '') + '>' + info.icon + ' ' + (info.nombre || p.tipo) + '</option>';
                 });
             }
-
-            if (c.pId) {
-                cargarObjetivos();
-                setTimeout(() => {
-                    document.getElementById('selObjetivo').value = c.oIdx ?? '';
-                    cargarIndicadores();
-                    setTimeout(() => {
-                        document.getElementById('selIndicador').value = c.iIdx ?? '';
+            
+            if (c && c.pId) {
+                cargarObjs();
+                setTimeout(function() {
+                    document.getElementById('selObjetivo').value = c.oIdx !== undefined ? c.oIdx : '';
+                    cargarInds();
+                    setTimeout(function() {
+                        document.getElementById('selIndicador').value = c.iIdx !== undefined ? c.iIdx : '';
                     }, 30);
                 }, 30);
             } else {
                 document.getElementById('selObjetivo').innerHTML = '<option value="">-</option>';
                 document.getElementById('selIndicador').innerHTML = '<option value="">-</option>';
             }
-
+            
             abrirModal('modalCelda');
         }
 
-        function setAsistencia(asiste, btn) {
-            asistenciaActual = asiste;
-            document.querySelectorAll('.asist-btn').forEach(b => b.classList.remove('selected'));
+        function setAsist(v, btn) {
+            asistActual = v;
+            document.querySelectorAll('.asist-btn').forEach(function(b) { b.classList.remove('selected'); });
             btn.classList.add('selected');
-            document.getElementById('contenidoSesion').style.display = asiste ? 'block' : 'none';
+            document.getElementById('contenidoSesion').style.display = v ? 'block' : 'none';
         }
 
-        function setResultado(resultado, btn) {
-            if (resultadoActual === resultado) {
-                resultadoActual = null;
+        function setRes(v, btn) {
+            if (resActual === v) {
+                resActual = null;
                 btn.classList.remove('selected');
             } else {
-                resultadoActual = resultado;
-                document.querySelectorAll('.resultado-btn').forEach(b => b.classList.remove('selected'));
+                resActual = v;
+                document.querySelectorAll('.resultado-btn').forEach(function(b) { b.classList.remove('selected'); });
                 btn.classList.add('selected');
             }
         }
 
-        function cargarObjetivos() {
-            const a = window.alumnos[alumnoActual];
+        function cargarObjs() {
+            const a = alumnos[alumnoActual];
             const pId = document.getElementById('selPrograma').value;
             const sel = document.getElementById('selObjetivo');
-            sel.innerHTML = '<option value="">Seleccionar...</option>';
+            sel.innerHTML = '<option value="">-</option>';
             document.getElementById('selIndicador').innerHTML = '<option value="">-</option>';
-
-            if (!pId || !a.programas?.[pId]) return;
-
-            a.programas[pId].objetivos.forEach((obj, idx) => {
-                sel.innerHTML += `<option value="${idx}">O${obj.numero}: ${obj.descripcion.substring(0, 25)}...</option>`;
+            
+            if (!pId || !a.programas || !a.programas[pId]) return;
+            
+            a.programas[pId].objetivos.forEach(function(o, i) {
+                sel.innerHTML += '<option value="' + i + '">O' + o.numero + ': ' + o.descripcion.substring(0, 20) + '...</option>';
             });
         }
 
-        function cargarIndicadores() {
-            const a = window.alumnos[alumnoActual];
+        function cargarInds() {
+            const a = alumnos[alumnoActual];
             const pId = document.getElementById('selPrograma').value;
             const oIdx = document.getElementById('selObjetivo').value;
             const sel = document.getElementById('selIndicador');
-            sel.innerHTML = '<option value="">Seleccionar...</option>';
-
-            if (!pId || oIdx === '' || !a.programas?.[pId]) return;
-
-            const obj = a.programas[pId].objetivos[parseInt(oIdx)];
-            (obj.indicadores || []).forEach((ind, idx) => {
-                sel.innerHTML += `<option value="${idx}">${ind.substring(0, 35)}...</option>`;
+            sel.innerHTML = '<option value="">-</option>';
+            
+            if (!pId || oIdx === '' || !a.programas || !a.programas[pId]) return;
+            
+            const inds = a.programas[pId].objetivos[parseInt(oIdx)].indicadores || [];
+            inds.forEach(function(x, i) {
+                sel.innerHTML += '<option value="' + i + '">' + x.substring(0, 30) + '...</option>';
             });
         }
 
         function guardarCelda() {
-            const a = window.alumnos[alumnoActual];
+            const a = alumnos[alumnoActual];
+            a.ausencias = a.ausencias || {};
+            a.resultados = a.resultados || {};
+            const updates = {};
 
-            // Guardar ausencia
-            if (!a.ausencias) a.ausencias = {};
-            if (!asistenciaActual) {
+            if (!asistActual) {
+                updates['gestorpe/alumnos/' + alumnoActual + '/ausencias/' + celdaEditando] = false;
                 a.ausencias[celdaEditando] = false;
-                window.dbSet(window.dbRef(window.db, `gestorpe/alumnos/${alumnoActual}/ausencias/${celdaEditando}`), false);
-
-                // Mover contenido a siguiente sesión disponible
-                moverASiguienteSesion(celdaEditando);
+                moverSes(celdaEditando);
             } else {
                 if (a.ausencias[celdaEditando] === false) {
+                    updates['gestorpe/alumnos/' + alumnoActual + '/ausencias/' + celdaEditando] = null;
                     delete a.ausencias[celdaEditando];
-                    window.dbRemove(window.dbRef(window.db, `gestorpe/alumnos/${alumnoActual}/ausencias/${celdaEditando}`));
                 }
-
-                // Guardar programación
+                
                 const pId = document.getElementById('selPrograma').value;
                 const oIdx = document.getElementById('selObjetivo').value;
                 const iIdx = document.getElementById('selIndicador').value;
-
+                
                 if (pId && oIdx !== '') {
-                    const data = { pId, oIdx: parseInt(oIdx), iIdx: iIdx !== '' ? parseInt(iIdx) : 0 };
-                    window.dbSet(window.dbRef(window.db, `gestorpe/alumnos/${alumnoActual}/programacion/${celdaEditando}`), data);
+                    const data = { pId: pId, oIdx: parseInt(oIdx), iIdx: iIdx !== '' ? parseInt(iIdx) : 0 };
+                    updates['gestorpe/alumnos/' + alumnoActual + '/programacion/' + celdaEditando] = data;
+                    a.programacion = a.programacion || {};
                     a.programacion[celdaEditando] = data;
                 }
-
-                // Guardar resultado
-                if (!a.resultados) a.resultados = {};
-                if (resultadoActual) {
-                    a.resultados[celdaEditando] = resultadoActual;
-                    window.dbSet(window.dbRef(window.db, `gestorpe/alumnos/${alumnoActual}/resultados/${celdaEditando}`), resultadoActual);
-
-                    // Si no conseguido, programar para siguiente semana
-                    if (resultadoActual === 'noconseguido') {
-                        programarSiguienteSemana(celdaEditando);
-                    }
+                
+                if (resActual) {
+                    updates['gestorpe/alumnos/' + alumnoActual + '/resultados/' + celdaEditando] = resActual;
+                    a.resultados[celdaEditando] = resActual;
+                    if (resActual === 'noconseguido') repetirSem(celdaEditando);
                 } else if (a.resultados[celdaEditando]) {
+                    updates['gestorpe/alumnos/' + alumnoActual + '/resultados/' + celdaEditando] = null;
                     delete a.resultados[celdaEditando];
-                    window.dbRemove(window.dbRef(window.db, `gestorpe/alumnos/${alumnoActual}/resultados/${celdaEditando}`));
                 }
             }
-
-            cerrarModal('modalCelda');
-            renderProgramacion();
-            renderAsistencia();
-            toast('Guardado ✓', 'success');
+            
+            db.ref().update(updates)
+                .then(function() {
+                    cerrarModal('modalCelda');
+                    renderProg();
+                    renderAsis();
+                    toast('Guardado ✓', 'success');
+                })
+                .catch(function(e) {
+                    toast('Error: ' + e.message, 'error');
+                });
         }
 
-        function moverASiguienteSesion(key) {
-            const a = window.alumnos[alumnoActual];
-            const contenido = a.programacion[key];
-            if (!contenido) return;
-
-            const [mIdx, sem, dia] = key.split('_').map(Number);
-            const siguiente = encontrarSiguienteSesion(mIdx, sem, dia, a.sesionesSemana);
-
-            if (siguiente) {
-                a.programacion[siguiente] = { ...contenido };
-                window.dbSet(window.dbRef(window.db, `gestorpe/alumnos/${alumnoActual}/programacion/${siguiente}`), a.programacion[siguiente]);
+        function moverSes(k) {
+            const a = alumnos[alumnoActual];
+            const c = a.programacion ? a.programacion[k] : null;
+            if (!c) return;
+            
+            const partes = k.split('_');
+            const mi = parseInt(partes[0]);
+            const sem = parseInt(partes[1]);
+            const dia = parseInt(partes[2]);
+            const dias = a.diasSesion || [0, 2, 4];
+            const di = dias.indexOf(dia);
+            
+            // Buscar siguiente día en la misma semana
+            for (let i = di + 1; i < dias.length; i++) {
+                const nk = mi + '_' + sem + '_' + dias[i];
+                a.programacion = a.programacion || {};
+                a.programacion[nk] = { pId: c.pId, oIdx: c.oIdx, iIdx: c.iIdx };
+                db.ref('gestorpe/alumnos/' + alumnoActual + '/programacion/' + nk).set(a.programacion[nk]);
+                return;
+            }
+            
+            // Si no hay más días, ir a la siguiente semana
+            let ns = sem + 1;
+            let nm = mi;
+            if (ns > MESES[nm].semanas) { ns = 1; nm++; }
+            if (nm < 10) {
+                const nk = nm + '_' + ns + '_' + dias[0];
+                a.programacion = a.programacion || {};
+                a.programacion[nk] = { pId: c.pId, oIdx: c.oIdx, iIdx: c.iIdx };
+                db.ref('gestorpe/alumnos/' + alumnoActual + '/programacion/' + nk).set(a.programacion[nk]);
             }
         }
 
-        function programarSiguienteSemana(key) {
-            const a = window.alumnos[alumnoActual];
-            const contenido = a.programacion[key];
-            if (!contenido) return;
-
-            const [mIdx, sem, dia] = key.split('_').map(Number);
-
-            // Buscar misma sesión de la semana siguiente
-            let nextSem = sem + 1;
-            let nextMIdx = mIdx;
-
-            if (nextSem > MESES[nextMIdx].semanas) {
-                nextSem = 1;
-                nextMIdx++;
+        function repetirSem(k) {
+            const a = alumnos[alumnoActual];
+            const c = a.programacion ? a.programacion[k] : null;
+            if (!c) return;
+            
+            const partes = k.split('_');
+            const mi = parseInt(partes[0]);
+            const sem = parseInt(partes[1]);
+            const dia = parseInt(partes[2]);
+            
+            let ns = sem + 1;
+            let nm = mi;
+            if (ns > MESES[nm].semanas) { ns = 1; nm++; }
+            if (nm < 10) {
+                const nk = nm + '_' + ns + '_' + dia;
+                a.programacion = a.programacion || {};
+                a.programacion[nk] = { pId: c.pId, oIdx: c.oIdx, iIdx: c.iIdx };
+                db.ref('gestorpe/alumnos/' + alumnoActual + '/programacion/' + nk).set(a.programacion[nk]);
             }
-
-            if (nextMIdx < MESES.length) {
-                const nextKey = `${nextMIdx}_${nextSem}_${dia}`;
-                a.programacion[nextKey] = { ...contenido };
-                window.dbSet(window.dbRef(window.db, `gestorpe/alumnos/${alumnoActual}/programacion/${nextKey}`), a.programacion[nextKey]);
-                toast('Reprogramado para semana siguiente', 'success');
-            }
-        }
-
-        function encontrarSiguienteSesion(mIdx, sem, dia, sesiones) {
-            let dias;
-            if (sesiones === 1) dias = [2];
-            else if (sesiones === 2) dias = [1, 3];
-            else dias = [0, 2, 4];
-
-            const diaActualIdx = dias.indexOf(dia);
-
-            // Buscar siguiente día de la misma semana
-            for (let d = diaActualIdx + 1; d < dias.length; d++) {
-                return `${mIdx}_${sem}_${dias[d]}`;
-            }
-
-            // Buscar primera sesión de la semana siguiente
-            let nextSem = sem + 1;
-            let nextMIdx = mIdx;
-
-            if (nextSem > MESES[nextMIdx].semanas) {
-                nextSem = 1;
-                nextMIdx++;
-            }
-
-            if (nextMIdx < MESES.length) {
-                return `${nextMIdx}_${nextSem}_${dias[0]}`;
-            }
-
-            return null;
         }
 
         function borrarCelda() {
-            const a = window.alumnos[alumnoActual];
-            window.dbRemove(window.dbRef(window.db, `gestorpe/alumnos/${alumnoActual}/programacion/${celdaEditando}`));
-            window.dbRemove(window.dbRef(window.db, `gestorpe/alumnos/${alumnoActual}/ausencias/${celdaEditando}`));
-            window.dbRemove(window.dbRef(window.db, `gestorpe/alumnos/${alumnoActual}/resultados/${celdaEditando}`));
-            delete a.programacion?.[celdaEditando];
-            delete a.ausencias?.[celdaEditando];
-            delete a.resultados?.[celdaEditando];
-            cerrarModal('modalCelda');
-            renderProgramacion();
-            toast('Eliminado', 'success');
+            const a = alumnos[alumnoActual];
+            const updates = {};
+            
+            ['programacion', 'ausencias', 'resultados'].forEach(function(t) {
+                updates['gestorpe/alumnos/' + alumnoActual + '/' + t + '/' + celdaEditando] = null;
+                if (a[t]) delete a[t][celdaEditando];
+            });
+            
+            db.ref().update(updates)
+                .then(function() {
+                    cerrarModal('modalCelda');
+                    renderProg();
+                    toast('Eliminado', 'success');
+                });
         }
 
         // ===== EVALUACIÓN =====
-        function renderEvaluacion() {
-            const a = window.alumnos[alumnoActual];
-            const container = document.getElementById('tabEvaluacion');
-
-            let html = `<div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">📊 Evaluación</h3>
-                </div>
-                <div class="btn-group no-print" style="margin-bottom:12px">
-                    <button class="btn ${evalTrim === 1 ? 'btn-primary' : 'btn-secondary'} btn-sm" onclick="setTrim(1)">T1</button>
-                    <button class="btn ${evalTrim === 2 ? 'btn-primary' : 'btn-secondary'} btn-sm" onclick="setTrim(2)">T2</button>
-                    <button class="btn ${evalTrim === 3 ? 'btn-primary' : 'btn-secondary'} btn-sm" onclick="setTrim(3)">T3</button>
-                </div>
-                <div id="evalList"></div>
-            </div>`;
-
-            container.innerHTML = html;
+        function renderEval() {
+            const a = alumnos[alumnoActual];
+            let h = '<div class="card"><div class="card-header"><h3 class="card-title">📊 Evaluación</h3></div>' +
+                '<div class="btn-group no-print" style="margin-bottom:12px">' +
+                    '<button class="btn ' + (evalTrim === 1 ? 'btn-primary' : 'btn-secondary') + ' btn-sm" onclick="setTrim(1)">T1</button>' +
+                    '<button class="btn ' + (evalTrim === 2 ? 'btn-primary' : 'btn-secondary') + ' btn-sm" onclick="setTrim(2)">T2</button>' +
+                    '<button class="btn ' + (evalTrim === 3 ? 'btn-primary' : 'btn-secondary') + ' btn-sm" onclick="setTrim(3)">T3</button>' +
+                '</div><div id="evalList"></div></div>';
+            document.getElementById('tabEvaluacion').innerHTML = h;
             renderEvalList();
         }
 
         function setTrim(t) {
             evalTrim = t;
             document.getElementById('trimPrint').textContent = t;
-            renderEvaluacion();
+            renderEval();
         }
 
         function renderEvalList() {
-            const a = window.alumnos[alumnoActual];
-            const container = document.getElementById('evalList');
-            let html = '';
+            const a = alumnos[alumnoActual];
+            const c = document.getElementById('evalList');
+            let h = '';
             let hay = false;
-
+            
             if (a.programas) {
-                Object.keys(a.programas).forEach(pId => {
+                Object.keys(a.programas).forEach(function(pId) {
                     const p = a.programas[pId];
                     const info = AREAS[p.tipo] || { icon: '📄', nombre: p.tipo, color: '#666' };
-
-                    const objsTrim = (p.objetivos || []).filter(o => o.trimestre === evalTrim);
-                    if (objsTrim.length === 0) return;
-
+                    const objsT = (p.objetivos || []).filter(function(o) { return o.trimestre === evalTrim; });
+                    if (!objsT.length) return;
+                    
                     hay = true;
-                    html += `<div class="programa-card print-section" style="border-left-color:${info.color}">
-                        <div class="programa-titulo" style="margin-bottom:8px">${info.icon} ${info.nombre}</div>`;
-
-                    objsTrim.forEach(obj => {
-                        const oIdx = p.objetivos.indexOf(obj);
-                        html += `<div style="margin-bottom:8px">
-                            <div style="font-weight:600;font-size:0.8rem;margin-bottom:4px">O${obj.numero}: ${obj.descripcion.substring(0, 35)}...</div>`;
-
-                        (obj.indicadores || []).forEach((ind, iIdx) => {
-                            const key = `${pId}_${oIdx}_${iIdx}_T${evalTrim}`;
-                            const estado = a.evaluaciones?.[key] || '';
-
-                            html += `<div class="eval-item">
-                                <span class="eval-text">${ind}</span>
-                                <button class="eval-btn c ${estado === 'C' ? 'active' : ''}" onclick="setEval('${pId}',${oIdx},${iIdx},'C')">✓</button>
-                                <button class="eval-btn p ${estado === 'P' ? 'active' : ''}" onclick="setEval('${pId}',${oIdx},${iIdx},'P')">◐</button>
-                                <button class="eval-btn n ${estado === 'N' ? 'active' : ''}" onclick="setEval('${pId}',${oIdx},${iIdx},'N')">○</button>
-                            </div>`;
+                    h += '<div class="programa-card" style="border-left-color:' + info.color + '"><div class="programa-titulo" style="margin-bottom:8px">' + info.icon + ' ' + info.nombre + '</div>';
+                    
+                    objsT.forEach(function(obj) {
+                        const oi = p.objetivos.indexOf(obj);
+                        h += '<div style="margin-bottom:8px"><div style="font-weight:600;font-size:0.8rem;margin-bottom:4px">O' + obj.numero + ': ' + obj.descripcion.substring(0, 30) + '...</div>';
+                        
+                        (obj.indicadores || []).forEach(function(ind, ii) {
+                            const k = pId + '_' + oi + '_' + ii + '_T' + evalTrim;
+                            const e = a.evaluaciones ? a.evaluaciones[k] : '';
+                            h += '<div class="eval-item"><span class="eval-text">' + ind + '</span>' +
+                                '<button class="eval-btn c ' + (e === 'C' ? 'active' : '') + '" onclick="setEval(\'' + pId + '\',' + oi + ',' + ii + ',\'C\')">✓</button>' +
+                                '<button class="eval-btn p ' + (e === 'P' ? 'active' : '') + '" onclick="setEval(\'' + pId + '\',' + oi + ',' + ii + ',\'P\')">◐</button>' +
+                                '<button class="eval-btn n ' + (e === 'N' ? 'active' : '') + '" onclick="setEval(\'' + pId + '\',' + oi + ',' + ii + ',\'N\')">○</button></div>';
                         });
-                        html += '</div>';
+                        h += '</div>';
                     });
-                    html += '</div>';
+                    h += '</div>';
                 });
             }
-
-            container.innerHTML = hay ? html : '<p style="text-align:center;color:var(--text-light)">No hay indicadores en T' + evalTrim + '</p>';
+            
+            c.innerHTML = hay ? h : '<p style="text-align:center;color:var(--text-light)">Sin indicadores en T' + evalTrim + '</p>';
         }
 
-        function setEval(pId, oIdx, iIdx, estado) {
-            const a = window.alumnos[alumnoActual];
-            const key = `${pId}_${oIdx}_${iIdx}_T${evalTrim}`;
-
-            if (!a.evaluaciones) a.evaluaciones = {};
-
-            if (a.evaluaciones[key] === estado) {
-                delete a.evaluaciones[key];
-                window.dbRemove(window.dbRef(window.db, `gestorpe/alumnos/${alumnoActual}/evaluaciones/${key}`));
+        function setEval(pId, oi, ii, e) {
+            const a = alumnos[alumnoActual];
+            const k = pId + '_' + oi + '_' + ii + '_T' + evalTrim;
+            a.evaluaciones = a.evaluaciones || {};
+            
+            if (a.evaluaciones[k] === e) {
+                db.ref('gestorpe/alumnos/' + alumnoActual + '/evaluaciones/' + k).remove();
+                delete a.evaluaciones[k];
             } else {
-                a.evaluaciones[key] = estado;
-                window.dbSet(window.dbRef(window.db, `gestorpe/alumnos/${alumnoActual}/evaluaciones/${key}`), estado);
+                db.ref('gestorpe/alumnos/' + alumnoActual + '/evaluaciones/' + k).set(e);
+                a.evaluaciones[k] = e;
             }
             renderEvalList();
         }
 
         // ===== ASISTENCIA =====
-        function renderAsistencia() {
-            const a = window.alumnos[alumnoActual];
-            const container = document.getElementById('tabAsistencia');
-            const stats = calcularAusencias(a);
-
-            let html = `<div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">📊 Resumen de Asistencia</h3>
-                </div>
-
-                <div class="stats-box">
-                    <div class="stat-item">
-                        <div class="stat-num ausencias">${stats.totalAusencias}</div>
-                        <div class="stat-label">Total Ausencias</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-num ausencias">${stats.ausenciasTrim[1]}</div>
-                        <div class="stat-label">T1</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-num ausencias">${stats.ausenciasTrim[2]}</div>
-                        <div class="stat-label">T2</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-num ausencias">${stats.ausenciasTrim[3]}</div>
-                        <div class="stat-label">T3</div>
-                    </div>
-                </div>
-
-                <h4 style="margin:12px 0 8px;font-size:0.9rem">Por mes:</h4>
-                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px">
-                    ${MESES.map((m, i) => `<div class="stat-item" style="padding:6px">
-                        <div class="stat-num ausencias" style="font-size:1.1rem">${stats.ausenciasMes[i] || 0}</div>
-                        <div class="stat-label">${m.nombre.substring(0, 3)}</div>
-                    </div>`).join('')}
-                </div>
-            </div>`;
-
-            container.innerHTML = html;
+        function renderAsis() {
+            const a = alumnos[alumnoActual];
+            const st = calcAus(a);
+            
+            let h = '<div class="card"><div class="card-header"><h3 class="card-title">📈 Asistencia</h3></div>' +
+                '<div class="stats-box">' +
+                    '<div class="stat-item"><div class="stat-num ausencias">' + st.total + '</div><div class="stat-label">Total</div></div>' +
+                    '<div class="stat-item"><div class="stat-num ausencias">' + st.porTrim[1] + '</div><div class="stat-label">T1</div></div>' +
+                    '<div class="stat-item"><div class="stat-num ausencias">' + st.porTrim[2] + '</div><div class="stat-label">T2</div></div>' +
+                    '<div class="stat-item"><div class="stat-num ausencias">' + st.porTrim[3] + '</div><div class="stat-label">T3</div></div>' +
+                '</div>' +
+                '<h4 style="margin:10px 0 6px;font-size:0.85rem">Por mes:</h4>' +
+                '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px">';
+            
+            MESES.forEach(function(m, i) {
+                h += '<div class="stat-item" style="padding:5px"><div class="stat-num ausencias" style="font-size:1rem">' + (st.porMes[i] || 0) + '</div><div class="stat-label">' + m.nombre.substring(0, 3) + '</div></div>';
+            });
+            
+            h += '</div></div>';
+            document.getElementById('tabAsistencia').innerHTML = h;
         }
 
         // ===== IMPRIMIR =====
@@ -1926,42 +1223,35 @@
 
         function imprimirTodo() {
             cerrarModal('modalImprimir');
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('active'));
-            document.querySelectorAll('.print-only').forEach(c => c.style.display = 'block');
-            setTimeout(() => {
+            document.querySelectorAll('.tab-content').forEach(function(c) { c.classList.add('active'); });
+            setTimeout(function() {
                 window.print();
-                setTimeout(() => {
-                    document.querySelectorAll('.print-only').forEach(c => c.style.display = 'none');
-                    cambiarTab('programas');
-                }, 300);
+                setTimeout(function() { cambiarTab('programas'); }, 200);
             }, 100);
         }
 
-        function imprimirSeccion(seccion) {
+        function imprimirSec(s) {
             cerrarModal('modalImprimir');
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            document.getElementById('tab' + seccion.charAt(0).toUpperCase() + seccion.slice(1)).classList.add('active');
-            if (seccion === 'programacion') {
-                document.querySelectorAll('.print-only').forEach(c => c.style.display = 'block');
-            }
-            setTimeout(() => {
-                window.print();
-                setTimeout(() => {
-                    document.querySelectorAll('.print-only').forEach(c => c.style.display = 'none');
-                }, 300);
-            }, 100);
+            document.querySelectorAll('.tab-content').forEach(function(c) { c.classList.remove('active'); });
+            document.getElementById('tab' + s.charAt(0).toUpperCase() + s.slice(1)).classList.add('active');
+            setTimeout(function() { window.print(); }, 100);
         }
 
         // ===== UTILS =====
-        function abrirModal(id) { document.getElementById(id).classList.add('active'); }
-        function cerrarModal(id) { document.getElementById(id).classList.remove('active'); }
+        function abrirModal(id) {
+            document.getElementById(id).classList.add('active');
+        }
 
-        function toast(msg, tipo = '') {
+        function cerrarModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        function toast(msg, tipo) {
             const t = document.getElementById('toast');
             t.textContent = msg;
-            t.className = 'toast ' + tipo;
-            setTimeout(() => t.classList.add('show'), 10);
-            setTimeout(() => t.classList.remove('show'), 3000);
+            t.className = 'toast ' + (tipo || '');
+            setTimeout(function() { t.classList.add('show'); }, 10);
+            setTimeout(function() { t.classList.remove('show'); }, 2500);
         }
     </script>
 </body>
