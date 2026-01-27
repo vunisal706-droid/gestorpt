@@ -612,7 +612,6 @@
                 <div class="alumno-header-siglas">${a.siglas}</div>
                 <div class="alumno-header-info"><h2>${a.curso}</h2><p>${diasStr} · ${st.ausencias} aus. · ${st.sinCole} sin cole</p><div style="margin-top:4px">${progs||''}</div></div>
                 <div style="margin-left:auto" class="btn-group no-print">
-                    <button class="btn btn-secondary btn-sm" onclick="window.print()">🖨️</button>
                     <button class="btn btn-danger btn-sm" onclick="eliminarAlumno('${id}')">🗑️</button>
                 </div>`;
 
@@ -1226,8 +1225,7 @@ IMPORTANTE: Responde ÚNICAMENTE con JSON, sin explicaciones:
                     <button class="btn ${evalTrim===1?'btn-primary':'btn-secondary'} btn-sm" onclick="setTrim(1)">T1</button>
                     <button class="btn ${evalTrim===2?'btn-primary':'btn-secondary'} btn-sm" onclick="setTrim(2)">T2</button>
                     <button class="btn ${evalTrim===3?'btn-primary':'btn-secondary'} btn-sm" onclick="setTrim(3)">T3</button>
-                    <button class="btn btn-warning btn-sm" onclick="abrirModalInforme()">📄 Informe</button>
-                    <button class="btn btn-ai btn-sm" onclick="pasarNoConseguidos()">📤 Pasar a T${evalTrim<3?evalTrim+1:3}</button>
+                    <button class="btn btn-warning btn-sm" onclick="abrirModalInforme()">📄 Crear Informe</button>
                 </div>
                 <div class="chart-container no-print"><canvas id="chartProgreso"></canvas></div>
                 <div id="evalList"></div>
@@ -1316,96 +1314,19 @@ IMPORTANTE: Responde ÚNICAMENTE con JSON, sin explicaciones:
             setTimeout(renderEvalCharts, 100);
         }
 
-        // Pasar indicadores no conseguidos (P o N) al siguiente trimestre
-        function pasarNoConseguidos() {
-            if (evalTrim >= 3) {
-                toast('Ya estás en T3', 'error');
-                return;
-            }
-
-            const a = alumnos[alumnoActual];
-            if (!a.programas) { toast('Sin programas', 'error'); return; }
-
-            const siguienteTrim = evalTrim + 1;
-            const updates = {};
-            let countInds = 0, countObjs = 0;
-
-            Object.keys(a.programas).forEach(pId => {
-                const p = a.programas[pId];
-                (p.objetivos || []).forEach((obj, oi) => {
-                    if (obj.trimestre !== evalTrim) return;
-
-                    let todoConseguido = true;
-                    const inds = obj.indicadores || [];
-                    
-                    inds.forEach((_, ii) => {
-                        const k = `${pId}_${oi}_${ii}_T${evalTrim}`;
-                        const e = a.evaluaciones?.[k] || '';
-                        
-                        if (e !== 'C') {
-                            todoConseguido = false;
-                            // Copiar evaluación al siguiente trimestre
-                            const kNuevo = `${pId}_${oi}_${ii}_T${siguienteTrim}`;
-                            updates[`gestorpe/alumnos/${alumnoActual}/evaluaciones/${kNuevo}`] = e || 'N';
-                            countInds++;
-                        }
-                    });
-
-                    // Si el objetivo no está todo conseguido, cambiar su trimestre
-                    if (!todoConseguido) {
-                        updates[`gestorpe/alumnos/${alumnoActual}/programas/${pId}/objetivos/${oi}/trimestre`] = siguienteTrim;
-                        countObjs++;
-                    }
-                });
-            });
-
-            if (countInds === 0) {
-                toast('¡Todo conseguido en T' + evalTrim + '!', 'success');
-                return;
-            }
-
-            db.ref().update(updates).then(() => {
-                // Regenerar programación
-                const nueva = genProgRotacion(alumnos[alumnoActual]);
-                return db.ref(`gestorpe/alumnos/${alumnoActual}/programacion`).set(nueva);
-            }).then(() => {
-                toast(`${countObjs} obj. y ${countInds} ind. → T${siguienteTrim}`, 'success');
-                evalTrim = siguienteTrim;
-                abrirAlumno(alumnoActual);
-            });
-        }
-
         // ===== ASISTENCIA =====
         function renderAsis() {
             const a = alumnos[alumnoActual], st = calcStats(a);
-            
-            // Calcular totales de evaluación
-            let totalC = 0, totalP = 0, totalN = 0;
-            if (a.programas && a.evaluaciones) {
-                Object.keys(a.evaluaciones).forEach(k => {
-                    const e = a.evaluaciones[k];
-                    if (e === 'C') totalC++;
-                    else if (e === 'P') totalP++;
-                    else if (e === 'N') totalN++;
-                });
-            }
-            
             document.getElementById('tabAsistencia').innerHTML = `<div class="card">
-                <div class="card-header"><h3 class="card-title">📈 Resumen General</h3></div>
+                <div class="card-header"><h3 class="card-title">📈 Asistencia</h3></div>
                 <div class="stats-box">
                     <div class="stat-item"><div class="stat-num ausencias">${st.ausencias}</div><div class="stat-label">Ausencias</div></div>
                     <div class="stat-item"><div class="stat-num sincole">${st.sinCole}</div><div class="stat-label">Sin cole</div></div>
-                    <div class="stat-item"><div class="stat-num" style="color:var(--success)">${st.conseguidos}</div><div class="stat-label">Sesiones OK</div></div>
+                    <div class="stat-item"><div class="stat-num" style="color:var(--success)">${st.conseguidos}</div><div class="stat-label">Conseguidos</div></div>
                     <div class="stat-item"><div class="stat-num" style="color:var(--warning)">${st.noConseguidos}</div><div class="stat-label">Repetir</div></div>
-                </div>
-                <div class="stats-box" style="margin-top:8px">
-                    <div class="stat-item"><div class="stat-num" style="color:var(--success)">${totalC}</div><div class="stat-label">Ind. Conseguidos</div></div>
-                    <div class="stat-item"><div class="stat-num" style="color:var(--proceso)">${totalP}</div><div class="stat-label">Ind. En proceso</div></div>
-                    <div class="stat-item"><div class="stat-num" style="color:gray">${totalN}</div><div class="stat-label">Ind. No iniciados</div></div>
                 </div>
                 <div class="chart-container"><canvas id="chartAsistencia"></canvas></div>
                 <div class="chart-container"><canvas id="chartEvolucion"></canvas></div>
-                <div class="chart-container"><canvas id="chartResultados"></canvas></div>
             </div>`;
             setTimeout(renderAsisCharts, 100);
         }
@@ -1426,7 +1347,7 @@ IMPORTANTE: Responde ÚNICAMENTE con JSON, sin explicaciones:
                             { label: 'Sin cole', data: [st.porTrim[1].sc, st.porTrim[2].sc, st.porTrim[3].sc], backgroundColor: '#f59e0b' }
                         ]
                     },
-                    options: { responsive: true, plugins: { legend: { position: 'bottom' }, title: { display: true, text: 'Asistencia por trimestre' } } }
+                    options: { responsive: true, plugins: { legend: { position: 'bottom' }, title: { display: true, text: 'Por trimestre' } } }
                 });
             }
 
@@ -1444,23 +1365,6 @@ IMPORTANTE: Responde ÚNICAMENTE con JSON, sin explicaciones:
                         ]
                     },
                     options: { responsive: true, plugins: { legend: { position: 'bottom' }, title: { display: true, text: 'Evolución mensual' } } }
-                });
-            }
-            
-            // Gráfica de resultados de sesiones
-            const ctx3 = document.getElementById('chartResultados');
-            if (ctx3) {
-                if (charts.resultados) charts.resultados.destroy();
-                charts.resultados = new Chart(ctx3, {
-                    type: 'doughnut',
-                    data: {
-                        labels: ['Conseguidos', 'Repetir', 'Sin evaluar'],
-                        datasets: [{
-                            data: [st.conseguidos, st.noConseguidos, Math.max(0, 100 - st.conseguidos - st.noConseguidos - st.ausencias - st.sinCole)],
-                            backgroundColor: ['#22c55e', '#f59e0b', '#d1d5db']
-                        }]
-                    },
-                    options: { responsive: true, plugins: { legend: { position: 'bottom' }, title: { display: true, text: 'Resultados de sesiones' } } }
                 });
             }
         }
