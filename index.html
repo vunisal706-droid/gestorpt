@@ -557,21 +557,25 @@
             ]}
         ];
         
+        // Cargar plantillas base inmediatamente (sin esperar Firebase)
+        PLANTILLAS_BASE.forEach((p,i)=>{
+            const id='base_'+p.ciclo+'_'+p.tipo;
+            plantillas[id]={...p,esBase:true};
+        });
+        
         // Firebase listeners
         db.ref('gestorpe/alumnos').on('value',snap=>{alumnos=snap.val()||{};renderInicio();if(alumnoActual&&alumnos[alumnoActual]){renderProgs();renderProg();renderEval();renderAsis();}document.getElementById('statusDot').classList.add('ok');document.getElementById('statusText').textContent='Conectado';});
         db.ref('gestorpe/plantillas').on('value',snap=>{
             const customPlantillas=snap.val()||{};
-            // Combinar plantillas base (locales) + personalizadas (Firebase)
-            plantillas={};
-            PLANTILLAS_BASE.forEach((p,i)=>{
-                const id='base_'+p.ciclo+'_'+p.tipo;
-                plantillas[id]={...p,esBase:true};
-            });
+            // Añadir plantillas personalizadas de Firebase
             Object.keys(customPlantillas).forEach(id=>{
                 plantillas[id]=customPlantillas[id];
             });
             renderBiblioteca();
         });
+        
+        // Renderizar biblioteca aunque Firebase no conecte
+        renderBiblioteca();
 
         function cambiarSeccion(s,btn){document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');document.getElementById('seccionAlumnos').style.display=s==='alumnos'?'block':'none';document.getElementById('seccionBiblioteca').style.display=s==='biblioteca'?'block':'none';}
         function renderInicio(){const g=document.getElementById('alumnosGrid'),ids=Object.keys(alumnos);if(!ids.length){g.innerHTML='<div class="alumno-card alumno-card-add" onclick="abrirModalNuevo()"><span style="font-size:1.3rem">➕</span><span style="font-size:.8rem">Añadir</span></div>';return;}let h=ids.map(id=>{const a=alumnos[id],n=a.programas?Object.keys(a.programas).length:0;return'<div class="alumno-card" onclick="abrirAlumno(\''+id+'\')"><div class="alumno-siglas">'+a.siglas+'</div><div class="alumno-curso">'+a.curso+'</div><div class="alumno-progs">'+n+' prog.</div></div>';}).join('');h+='<div class="alumno-card alumno-card-add" onclick="abrirModalNuevo()"><span style="font-size:1.3rem">➕</span></div>';g.innerHTML=h;}
