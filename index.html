@@ -177,7 +177,6 @@
                     <div class="card-header">
                         <h2 class="card-title">📚 Biblioteca de Plantillas</h2>
                         <div class="btn-group">
-                            <button class="btn btn-warning btn-sm" onclick="cargarPlantillasBase()">📥 Cargar base</button>
                             <button class="btn btn-primary btn-sm" onclick="abrirModalNuevaPlantilla()">➕ Nueva</button>
                         </div>
                     </div>
@@ -560,15 +559,27 @@
         
         // Firebase listeners
         db.ref('gestorpe/alumnos').on('value',snap=>{alumnos=snap.val()||{};renderInicio();if(alumnoActual&&alumnos[alumnoActual]){renderProgs();renderProg();renderEval();renderAsis();}document.getElementById('statusDot').classList.add('ok');document.getElementById('statusText').textContent='Conectado';});
-        db.ref('gestorpe/plantillas').on('value',snap=>{plantillas=snap.val()||{};renderBiblioteca();});
+        db.ref('gestorpe/plantillas').on('value',snap=>{
+            const customPlantillas=snap.val()||{};
+            // Combinar plantillas base (locales) + personalizadas (Firebase)
+            plantillas={};
+            PLANTILLAS_BASE.forEach((p,i)=>{
+                const id='base_'+p.ciclo+'_'+p.tipo;
+                plantillas[id]={...p,esBase:true};
+            });
+            Object.keys(customPlantillas).forEach(id=>{
+                plantillas[id]=customPlantillas[id];
+            });
+            renderBiblioteca();
+        });
 
         function cambiarSeccion(s,btn){document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');document.getElementById('seccionAlumnos').style.display=s==='alumnos'?'block':'none';document.getElementById('seccionBiblioteca').style.display=s==='biblioteca'?'block':'none';}
         function renderInicio(){const g=document.getElementById('alumnosGrid'),ids=Object.keys(alumnos);if(!ids.length){g.innerHTML='<div class="alumno-card alumno-card-add" onclick="abrirModalNuevo()"><span style="font-size:1.3rem">➕</span><span style="font-size:.8rem">Añadir</span></div>';return;}let h=ids.map(id=>{const a=alumnos[id],n=a.programas?Object.keys(a.programas).length:0;return'<div class="alumno-card" onclick="abrirAlumno(\''+id+'\')"><div class="alumno-siglas">'+a.siglas+'</div><div class="alumno-curso">'+a.curso+'</div><div class="alumno-progs">'+n+' prog.</div></div>';}).join('');h+='<div class="alumno-card alumno-card-add" onclick="abrirModalNuevo()"><span style="font-size:1.3rem">➕</span></div>';g.innerHTML=h;}
         
         // BIBLIOTECA
-        function renderBiblioteca(){const c=document.getElementById('bibliotecaGrid');const cicloF=document.getElementById('filtroCiclo').value;const areaF=document.getElementById('filtroArea').value;const lista=Object.keys(plantillas).map(id=>({id,...plantillas[id]}));const filtrada=lista.filter(p=>{if(cicloF&&p.ciclo!==cicloF)return false;if(areaF&&p.tipo!==areaF)return false;return true;});if(!filtrada.length){c.innerHTML='<div class="empty-state"><p>No hay plantillas</p><p style="font-size:.8rem;margin-top:8px">Pulsa "📥 Cargar base" para importar plantillas predefinidas</p></div>';return;}c.innerHTML=filtrada.map(p=>{const ciclo=CICLOS[p.ciclo]||{nombre:p.ciclo};const area=AREAS[p.tipo]||{nombre:p.tipo,icon:'📄'};const nObj=p.objetivos?p.objetivos.length:0;const nInd=p.objetivos?p.objetivos.reduce((s,o)=>s+(o.indicadores?o.indicadores.length:0),0):0;return'<div class="plantilla-card" onclick="verPlantilla(\''+p.id+'\')"><div class="plantilla-header"><span class="plantilla-titulo">'+area.icon+' '+p.nombre+'</span></div><div class="plantilla-meta"><span class="plantilla-badge ciclo-'+p.ciclo+'">'+ciclo.nombre+'</span><span class="plantilla-badge badge-area">'+area.nombre+'</span></div><div class="plantilla-stats">'+nObj+' objetivos · '+nInd+' indicadores</div></div>';}).join('');}
+        function renderBiblioteca(){const c=document.getElementById('bibliotecaGrid');const cicloF=document.getElementById('filtroCiclo').value;const areaF=document.getElementById('filtroArea').value;const lista=Object.keys(plantillas).map(id=>({id,...plantillas[id]}));const filtrada=lista.filter(p=>{if(cicloF&&p.ciclo!==cicloF)return false;if(areaF&&p.tipo!==areaF)return false;return true;});if(!filtrada.length){c.innerHTML='<div class="empty-state"><p>No hay plantillas con estos filtros</p></div>';return;}c.innerHTML=filtrada.map(p=>{const ciclo=CICLOS[p.ciclo]||{nombre:p.ciclo};const area=AREAS[p.tipo]||{nombre:p.tipo,icon:'📄'};const nObj=p.objetivos?p.objetivos.length:0;const nInd=p.objetivos?p.objetivos.reduce((s,o)=>s+(o.indicadores?o.indicadores.length:0),0):0;const baseBadge=p.esBase?'<span style="font-size:.6rem;background:#e0e7ff;color:#4338ca;padding:2px 6px;border-radius:8px;margin-left:4px">BASE</span>':'';return'<div class="plantilla-card" onclick="verPlantilla(\''+p.id+'\')"><div class="plantilla-header"><span class="plantilla-titulo">'+area.icon+' '+p.nombre+baseBadge+'</span></div><div class="plantilla-meta"><span class="plantilla-badge ciclo-'+p.ciclo+'">'+ciclo.nombre+'</span><span class="plantilla-badge badge-area">'+area.nombre+'</span></div><div class="plantilla-stats">'+nObj+' objetivos · '+nInd+' indicadores</div></div>';}).join('');}
         
-        function verPlantilla(id){const p=plantillas[id];if(!p)return;const area=AREAS[p.tipo]||{nombre:p.tipo,icon:'📄'};const ciclo=CICLOS[p.ciclo]||{nombre:p.ciclo};document.getElementById('modalPlantillaTitulo').textContent=area.icon+' '+p.nombre;let h='<div class="plantilla-meta" style="margin-bottom:12px"><span class="plantilla-badge ciclo-'+p.ciclo+'">'+ciclo.nombre+'</span><span class="plantilla-badge badge-area">'+area.nombre+'</span></div>';(p.objetivos||[]).forEach(o=>{h+='<div class="objetivo-card"><div class="objetivo-header"><span class="objetivo-num">O'+o.numero+'</span><span class="trimestre-badge t'+o.trimestre+'">T'+o.trimestre+'</span></div><div class="objetivo-desc">'+o.descripcion+'</div>';if(o.indicadores&&o.indicadores.length){h+='<ul class="indicadores-list">'+o.indicadores.map(x=>'<li>• '+x+'</li>').join('')+'</ul>';}h+='</div>';});document.getElementById('modalPlantillaBody').innerHTML=h;document.getElementById('modalPlantillaFooter').innerHTML='<button class="btn btn-danger btn-sm" onclick="eliminarPlantilla(\''+id+'\')">🗑️</button><button class="btn btn-secondary" onclick="cerrarModal(\'modalPlantilla\')">Cerrar</button><button class="btn btn-primary" onclick="usarPlantilla(\''+id+'\')">📥 Usar</button>';abrirModal('modalPlantilla');}
+        function verPlantilla(id){const p=plantillas[id];if(!p)return;const area=AREAS[p.tipo]||{nombre:p.tipo,icon:'📄'};const ciclo=CICLOS[p.ciclo]||{nombre:p.ciclo};document.getElementById('modalPlantillaTitulo').textContent=area.icon+' '+p.nombre;let h='<div class="plantilla-meta" style="margin-bottom:12px"><span class="plantilla-badge ciclo-'+p.ciclo+'">'+ciclo.nombre+'</span><span class="plantilla-badge badge-area">'+area.nombre+'</span>'+(p.esBase?'<span style="font-size:.7rem;background:#e0e7ff;color:#4338ca;padding:3px 8px;border-radius:8px">Plantilla base</span>':'')+'</div>';(p.objetivos||[]).forEach(o=>{h+='<div class="objetivo-card"><div class="objetivo-header"><span class="objetivo-num">O'+o.numero+'</span><span class="trimestre-badge t'+o.trimestre+'">T'+o.trimestre+'</span></div><div class="objetivo-desc">'+o.descripcion+'</div>';if(o.indicadores&&o.indicadores.length){h+='<ul class="indicadores-list">'+o.indicadores.map(x=>'<li>• '+x+'</li>').join('')+'</ul>';}h+='</div>';});document.getElementById('modalPlantillaBody').innerHTML=h;const deleteBtn=p.esBase?'':'<button class="btn btn-danger btn-sm" onclick="eliminarPlantilla(\''+id+'\')">🗑️</button>';document.getElementById('modalPlantillaFooter').innerHTML=deleteBtn+'<button class="btn btn-secondary" onclick="cerrarModal(\'modalPlantilla\')">Cerrar</button><button class="btn btn-primary" onclick="usarPlantilla(\''+id+'\')">📥 Usar</button>';abrirModal('modalPlantilla');}
         
         function usarPlantilla(id){cerrarModal('modalPlantilla');if(!alumnoActual){const ids=Object.keys(alumnos);if(!ids.length){toast('Crea un alumno primero','error');return;}let h='<div class="form-group"><label class="form-label">Selecciona alumno:</label><select class="form-select" id="selAlumnoPlantilla">';ids.forEach(aid=>{h+='<option value="'+aid+'">'+alumnos[aid].siglas+' - '+alumnos[aid].curso+'</option>';});h+='</select></div>';document.getElementById('modalPlantillaBody').innerHTML=h;document.getElementById('modalPlantillaTitulo').textContent='Seleccionar alumno';document.getElementById('modalPlantillaFooter').innerHTML='<button class="btn btn-secondary" onclick="cerrarModal(\'modalPlantilla\')">Cancelar</button><button class="btn btn-primary" onclick="asignarPlantillaAlumno(\''+id+'\')">Asignar</button>';abrirModal('modalPlantilla');}else{asignarPlantilla(id,alumnoActual);}}
         
@@ -576,24 +587,7 @@
         
         function asignarPlantilla(pid,aid){const p=plantillas[pid],a=alumnos[aid];if(!p||!a)return;const newPid='p_'+Date.now();const programa={tipo:p.tipo,objetivos:JSON.parse(JSON.stringify(p.objetivos))};db.ref('gestorpe/alumnos/'+aid+'/programas/'+newPid).set(programa).then(()=>{a.programas=a.programas||{};a.programas[newPid]=programa;const nueva=generarProgramacion(a);return db.ref('gestorpe/alumnos/'+aid+'/programacion').set(nueva);}).then(()=>{toast('Plantilla asignada a '+a.siglas,'success');if(alumnoActual===aid){renderProgs();renderProg();}});}
         
-        function eliminarPlantilla(id){if(!confirm('¿Eliminar plantilla?'))return;db.ref('gestorpe/plantillas/'+id).remove().then(()=>{cerrarModal('modalPlantilla');toast('Eliminada','success');});}
-        
-        // CARGAR PLANTILLAS BASE - CORREGIDO
-        async function cargarPlantillasBase(){
-            if(!confirm('¿Cargar '+PLANTILLAS_BASE.length+' plantillas predefinidas?\nSe añadirán a tu biblioteca.'))return;
-            toast('Cargando...','');
-            let count = 0;
-            for(const p of PLANTILLAS_BASE){
-                const id = 'pl_' + p.ciclo + '_' + p.tipo + '_' + Date.now() + '_' + Math.random().toString(36).substr(2,4);
-                try {
-                    await db.ref('gestorpe/plantillas/' + id).set(p);
-                    count++;
-                } catch(e) {
-                    console.error('Error:', e);
-                }
-            }
-            toast(count + ' plantillas cargadas ✓','success');
-        }
+        function eliminarPlantilla(id){if(plantillas[id]&&plantillas[id].esBase){toast('No se pueden eliminar plantillas base','error');return;}if(!confirm('¿Eliminar plantilla?'))return;db.ref('gestorpe/plantillas/'+id).remove().then(()=>{cerrarModal('modalPlantilla');toast('Eliminada','success');});}
         
         function abrirModalNuevaPlantilla(){document.getElementById('plantillaNombre').value='';document.getElementById('plantillaTexto').value='';document.getElementById('uploadZonePlantilla').innerHTML='📄 Toca para seleccionar';document.getElementById('uploadZonePlantilla').classList.remove('has-file');document.getElementById('previewPlantillaNueva').style.display='none';document.getElementById('btnGuardarPlantilla').disabled=true;docExtraidoPlantilla=null;abrirModal('modalNuevaPlantilla');}
         async function cargarDocxPlantilla(inp){const f=inp.files[0];if(!f)return;document.getElementById('uploadZonePlantilla').innerHTML='📄 '+f.name;document.getElementById('uploadZonePlantilla').classList.add('has-file');try{const r=await mammoth.extractRawText({arrayBuffer:await f.arrayBuffer()});document.getElementById('plantillaTexto').value=r.value;}catch(e){toast('Error','error');}}
