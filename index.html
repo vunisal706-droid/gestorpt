@@ -122,6 +122,10 @@
         .chart-container canvas{max-height:200px}
         .informe-preview{background:#fff;border:1px solid var(--border);border-radius:var(--radius-sm);padding:16px;margin-top:12px;font-size:.85rem;max-height:400px;overflow-y:auto}
         .pasado-badge{font-size:.6rem;background:#fef3c7;color:#92400e;padding:1px 4px;border-radius:3px;margin-left:4px}
+        .print-option{padding:12px;border:2px solid var(--border);border-radius:var(--radius-sm);margin-bottom:8px;cursor:pointer;transition:all .2s}
+        .print-option:hover{border-color:var(--primary);background:rgba(26,95,74,.05)}
+        .print-option h4{margin-bottom:4px;color:var(--primary)}
+        .print-option p{font-size:.8rem;color:var(--text-light)}
         @media print{.no-print{display:none!important}body{background:#fff}.card{box-shadow:none;border:1px solid #ddd}}
     </style>
 </head>
@@ -135,7 +139,13 @@
     <div id="screenInicio" class="screen active">
         <div class="container">
             <div class="card">
-                <div class="card-header"><h2 class="card-title">👥 Mis Alumnos</h2><button class="btn btn-primary btn-sm" onclick="abrirModalNuevo()">➕ Nuevo</button></div>
+                <div class="card-header">
+                    <h2 class="card-title">👥 Mis Alumnos</h2>
+                    <div class="btn-group">
+                        <button class="btn btn-secondary btn-sm" onclick="abrirModalImprimir()">🖨️ Imprimir</button>
+                        <button class="btn btn-primary btn-sm" onclick="abrirModalNuevo()">➕ Nuevo</button>
+                    </div>
+                </div>
                 <div class="alumnos-grid" id="alumnosGrid"></div>
             </div>
         </div>
@@ -216,6 +226,34 @@
             <div class="modal-footer"><button class="btn btn-secondary" onclick="cerrarModal('modalImportJSON')">Cancelar</button><button class="btn btn-primary" onclick="importarJSON()">📥 Importar</button></div>
         </div>
     </div>
+    <div class="modal-overlay" id="modalImprimir">
+        <div class="modal" style="max-width:500px">
+            <div class="modal-header"><h3 class="modal-title">🖨️ Imprimir Programaciones</h3><button class="modal-close" onclick="cerrarModal('modalImprimir')">×</button></div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Selecciona el mes</label>
+                    <select class="form-select" id="printMes">
+                        <option value="-1">📅 Todo el curso (todos los meses)</option>
+                        <option value="0">Septiembre</option>
+                        <option value="1">Octubre</option>
+                        <option value="2">Noviembre</option>
+                        <option value="3">Diciembre</option>
+                        <option value="4">Enero</option>
+                        <option value="5">Febrero</option>
+                        <option value="6">Marzo</option>
+                        <option value="7">Abril</option>
+                        <option value="8">Mayo</option>
+                        <option value="9">Junio</option>
+                    </select>
+                </div>
+                <div class="print-option" onclick="imprimirTodos()">
+                    <h4>🖨️ Imprimir</h4>
+                    <p>Genera un documento con las programaciones de todos los alumnos</p>
+                </div>
+            </div>
+            <div class="modal-footer"><button class="btn btn-secondary" onclick="cerrarModal('modalImprimir')">Cerrar</button></div>
+        </div>
+    </div>
     <div class="toast" id="toast"></div>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
@@ -226,15 +264,14 @@
         const db=firebase.database();
         let alumnos={},alumnoActual=null,mesActual=0,diasSel=[1,3,4],celdaEditando=null,docExtraido=null,estadoCelda='asiste',resultadoCelda=null,evalTrim=1,charts={},informeData=null;
         const AREAS={cognitivo:{nombre:'Estimulación cognitiva',icon:'🧠',color:'#8b5cf6'},atencion:{nombre:'Atención',icon:'👁️',color:'#f59e0b'},memoria:{nombre:'Memoria',icon:'💾',color:'#06b6d4'},comunicacion:{nombre:'Comunicación',icon:'💬',color:'#10b981'},lectoescritura:{nombre:'Lectoescritura',icon:'📖',color:'#3b82f6'},matematico:{nombre:'Razonamiento matemático',icon:'🔢',color:'#ef4444'},social:{nombre:'Habilidades sociales',icon:'🤝',color:'#ec4899'},emocional:{nombre:'Gestión emocional',icon:'❤️',color:'#f97316'},ejecutivas:{nombre:'Funciones ejecutivas',icon:'🎯',color:'#6366f1'},autonomia:{nombre:'Autonomía',icon:'🏃',color:'#14b8a6'}};
-        // CALENDARIO GRANADA 25/26
         const MESES=[
             {nombre:'Septiembre',semanas:3,trim:1,inicio:'10 sept',fin:'30 sept'},
             {nombre:'Octubre',semanas:4,trim:1,inicio:'1 oct',fin:'31 oct'},
             {nombre:'Noviembre',semanas:4,trim:1,inicio:'3 nov',fin:'28 nov'},
-            {nombre:'Diciembre',semanas:2,trim:1,inicio:'1 dic',fin:'19 dic'},// Vacaciones Navidad 22dic-7ene
+            {nombre:'Diciembre',semanas:2,trim:1,inicio:'1 dic',fin:'19 dic'},
             {nombre:'Enero',semanas:3,trim:2,inicio:'8 ene',fin:'31 ene'},
-            {nombre:'Febrero',semanas:4,trim:2,inicio:'2 feb',fin:'27 feb'},// 28 feb festivo Andalucía
-            {nombre:'Marzo',semanas:3,trim:2,inicio:'2 mar',fin:'27 mar'},// Semana Santa aprox 28mar-6abr
+            {nombre:'Febrero',semanas:4,trim:2,inicio:'2 feb',fin:'27 feb'},
+            {nombre:'Marzo',semanas:3,trim:2,inicio:'2 mar',fin:'27 mar'},
             {nombre:'Abril',semanas:3,trim:3,inicio:'7 abr',fin:'30 abr'},
             {nombre:'Mayo',semanas:4,trim:3,inicio:'4 may',fin:'29 may'},
             {nombre:'Junio',semanas:3,trim:3,inicio:'2 jun',fin:'22 jun'}
@@ -269,7 +306,6 @@
         
         function getIndicadoresPasados(a,trim){const pasados=a.pasados||{},result=[];Object.keys(pasados).forEach(k=>{if(pasados[k]===trim){const parts=k.split('_');result.push({pId:parts[0],oIdx:parseInt(parts[1]),iIdx:parseInt(parts[2]),key:k});}});return result;}
         
-        // Obtener todas las claves de sesión ordenadas
         function getTodasLasSesiones(a){
             const dias=a.diasSesion||[1,3,4],keys=[];
             for(let mi=0;mi<MESES.length;mi++){
@@ -283,234 +319,52 @@
             return keys;
         }
         
-        // GENERACIÓN ROTATIVA MEJORADA
         function generarProgramacion(a){
             const prog={};if(!a.programas)return prog;
             const pIds=Object.keys(a.programas);if(!pIds.length)return prog;
             const todasSesiones=getTodasLasSesiones(a);
-            
-            // Contar sesiones por trimestre
             const sesionesPorTrim={1:0,2:0,3:0};
-            todasSesiones.forEach(k=>{
-                const mi=parseInt(k.split('_')[0]);
-                sesionesPorTrim[MESES[mi].trim]++;
-            });
-            
-            // Crear pools por trimestre
+            todasSesiones.forEach(k=>{const mi=parseInt(k.split('_')[0]);sesionesPorTrim[MESES[mi].trim]++;});
             const poolT={1:[],2:[],3:[]};
-            pIds.forEach(pId=>{
-                const p=a.programas[pId];
-                (p.objetivos||[]).forEach((o,oi)=>{
-                    const trim=o.trimestre||1;
-                    (o.indicadores||['Indicador']).forEach((_,ii)=>{
-                        poolT[trim].push({pId:pId,oIdx:oi,iIdx:ii});
-                    });
-                });
-            });
-            
-            // Añadir indicadores pasados
-            [2,3].forEach(t=>{
-                getIndicadoresPasados(a,t).forEach(p=>poolT[t].push({pId:p.pId,oIdx:p.oIdx,iIdx:p.iIdx}));
-            });
-            
-            // Intercalar programas en cada pool
-            [1,2,3].forEach(t=>{
-                if(poolT[t].length<2)return;
-                const porProg={};
-                poolT[t].forEach(item=>{
-                    if(!porProg[item.pId])porProg[item.pId]=[];
-                    porProg[item.pId].push(item);
-                });
-                const pIdsEnPool=Object.keys(porProg);
-                if(pIdsEnPool.length<2)return;
-                const nuevo=[];
-                let maxLen=Math.max(...pIdsEnPool.map(id=>porProg[id].length));
-                for(let i=0;i<maxLen;i++){
-                    pIdsEnPool.forEach(id=>{
-                        if(porProg[id][i])nuevo.push(porProg[id][i]);
-                    });
-                }
-                poolT[t]=nuevo;
-            });
-            
-            // Expandir pools para cubrir todas las sesiones del trimestre
-            [1,2,3].forEach(t=>{
-                if(!poolT[t].length)return;
-                const sesiones=sesionesPorTrim[t];
-                while(poolT[t].length<sesiones){
-                    const original=[...poolT[t]];
-                    for(let i=0;i<original.length&&poolT[t].length<sesiones;i++){
-                        poolT[t].push({...original[i]});
-                    }
-                }
-            });
-            
-            // Asignar
+            pIds.forEach(pId=>{const p=a.programas[pId];(p.objetivos||[]).forEach((o,oi)=>{const trim=o.trimestre||1;(o.indicadores||['Indicador']).forEach((_,ii)=>{poolT[trim].push({pId:pId,oIdx:oi,iIdx:ii});});});});
+            [2,3].forEach(t=>{getIndicadoresPasados(a,t).forEach(p=>poolT[t].push({pId:p.pId,oIdx:p.oIdx,iIdx:p.iIdx}));});
+            [1,2,3].forEach(t=>{if(poolT[t].length<2)return;const porProg={};poolT[t].forEach(item=>{if(!porProg[item.pId])porProg[item.pId]=[];porProg[item.pId].push(item);});const pIdsEnPool=Object.keys(porProg);if(pIdsEnPool.length<2)return;const nuevo=[];let maxLen=Math.max(...pIdsEnPool.map(id=>porProg[id].length));for(let i=0;i<maxLen;i++){pIdsEnPool.forEach(id=>{if(porProg[id][i])nuevo.push(porProg[id][i]);});}poolT[t]=nuevo;});
+            [1,2,3].forEach(t=>{if(!poolT[t].length)return;const sesiones=sesionesPorTrim[t];while(poolT[t].length<sesiones){const original=[...poolT[t]];for(let i=0;i<original.length&&poolT[t].length<sesiones;i++){poolT[t].push({...original[i]});}}});
             let idxT={1:0,2:0,3:0};
-            todasSesiones.forEach(k=>{
-                const mi=parseInt(k.split('_')[0]);
-                const trim=MESES[mi].trim;
-                const pool=poolT[trim];
-                if(!pool.length)return;
-                prog[k]=pool[idxT[trim]%pool.length];
-                idxT[trim]++;
-            });
-            
+            todasSesiones.forEach(k=>{const mi=parseInt(k.split('_')[0]);const trim=MESES[mi].trim;const pool=poolT[trim];if(!pool.length)return;prog[k]=pool[idxT[trim]%pool.length];idxT[trim]++;});
             return prog;
         }
         
         function regenerarProg(){const a=alumnos[alumnoActual];if(!a.programas||!Object.keys(a.programas).length){toast('Añade un programa','error');return;}const nueva=generarProgramacion(a);db.ref('gestorpe/alumnos/'+alumnoActual+'/programacion').set(nueva).then(()=>{a.programacion=nueva;renderProg();toast('Regenerado: '+Object.keys(nueva).length+' sesiones','success');});}
         
-        // REAJUSTAR PROGRAMACIÓN (desplazar desde una celda)
         function reajustarDesde(a,desdeClave){
-            const todasSesiones=getTodasLasSesiones(a);
-            const idx=todasSesiones.indexOf(desdeClave);
-            if(idx<0)return a.programacion;
-            
+            const todasSesiones=getTodasLasSesiones(a);const idx=todasSesiones.indexOf(desdeClave);if(idx<0)return a.programacion;
             const nueva={...a.programacion};
-            // Desplazar hacia adelante desde idx
-            for(let i=todasSesiones.length-1;i>idx;i--){
-                const keyActual=todasSesiones[i];
-                const keyAnterior=todasSesiones[i-1];
-                if(nueva[keyAnterior]){
-                    nueva[keyActual]=nueva[keyAnterior];
-                }
-            }
-            // La celda actual queda vacía (ausencia/sin cole)
-            delete nueva[desdeClave];
-            return nueva;
+            for(let i=todasSesiones.length-1;i>idx;i--){const keyActual=todasSesiones[i];const keyAnterior=todasSesiones[i-1];if(nueva[keyAnterior]){nueva[keyActual]=nueva[keyAnterior];}}
+            delete nueva[desdeClave];return nueva;
         }
         
-        // INSERTAR REPETICIÓN (la semana siguiente)
         function insertarRepeticion(a,clave,contenido){
-            const todasSesiones=getTodasLasSesiones(a);
-            const idx=todasSesiones.indexOf(clave);
-            if(idx<0)return a.programacion;
-            
-            const dias=a.diasSesion||[1,3,4];
-            // Buscar la misma posición la semana siguiente
-            let idxRepetir=idx+dias.length;
-            if(idxRepetir>=todasSesiones.length)idxRepetir=todasSesiones.length-1;
-            const claveRepetir=todasSesiones[idxRepetir];
-            
+            const todasSesiones=getTodasLasSesiones(a);const idx=todasSesiones.indexOf(clave);if(idx<0)return a.programacion;
+            const dias=a.diasSesion||[1,3,4];let idxRepetir=idx+dias.length;if(idxRepetir>=todasSesiones.length)idxRepetir=todasSesiones.length-1;const claveRepetir=todasSesiones[idxRepetir];
             const nueva={...a.programacion};
-            // Desplazar desde idxRepetir hacia adelante
-            for(let i=todasSesiones.length-1;i>idxRepetir;i--){
-                const keyActual=todasSesiones[i];
-                const keyAnterior=todasSesiones[i-1];
-                if(nueva[keyAnterior]){
-                    nueva[keyActual]=nueva[keyAnterior];
-                }
-            }
-            // Insertar repetición
-            nueva[claveRepetir]=contenido;
-            return nueva;
+            for(let i=todasSesiones.length-1;i>idxRepetir;i--){const keyActual=todasSesiones[i];const keyAnterior=todasSesiones[i-1];if(nueva[keyAnterior]){nueva[keyActual]=nueva[keyAnterior];}}
+            nueva[claveRepetir]=contenido;return nueva;
         }
         
-        // PROMPT IA MEJORADO CON CALENDARIO GRANADA
         function generarPromptIA(){
-            const a=alumnos[alumnoActual];
-            if(!a.programas||!Object.keys(a.programas).length){toast('Añade programas primero','error');return;}
-            const dias=a.diasSesion||[1,3,4];
-            const todasSesiones=getTodasLasSesiones(a);
-            
-            let prompt=`Eres un experto en Pedagogía Terapéutica. Genera una programación COMPLETA para TODO el curso escolar 2025/2026 de Granada (septiembre a junio).
-
-📅 CALENDARIO ESCOLAR GRANADA 25/26:
-- Septiembre: 10 sept - 30 sept (3 semanas lectivas)
-- Octubre: 1 oct - 31 oct (4 semanas)
-- Noviembre: 3 nov - 28 nov (4 semanas)
-- Diciembre: 1 dic - 19 dic (2 semanas) - Vacaciones Navidad 22 dic
-- Enero: 8 ene - 31 ene (3 semanas) - Vuelta 8 enero
-- Febrero: 2 feb - 27 feb (4 semanas) - 28F festivo Andalucía
-- Marzo: 2 mar - 27 mar (3 semanas) - Semana Santa aprox 28 mar
-- Abril: 7 abr - 30 abr (3 semanas) - Vuelta Semana Santa
-- Mayo: 4 may - 29 may (4 semanas)
-- Junio: 2 jun - 22 jun (3 semanas) - Fin de curso
-
-👤 ALUMNO: ${a.siglas} (${a.curso})
-📆 DÍAS DE SESIÓN: ${dias.map(d=>DIAS_C[d]).join(', ')}
-📊 TOTAL SESIONES: ${todasSesiones.length}
-
-📚 PROGRAMAS Y CONTENIDOS:\n`;
-
-            Object.keys(a.programas).forEach(pId=>{
-                const p=a.programas[pId],info=AREAS[p.tipo]||{nombre:p.tipo};
-                prompt+=`\n🔷 PROGRAMA: ${info.nombre}\n`;
-                prompt+=`   ID: "${pId}"\n`;
-                (p.objetivos||[]).forEach((obj,oi)=>{
-                    prompt+=`   📌 Objetivo ${obj.numero} (oIdx:${oi}, T${obj.trimestre}): ${obj.descripcion}\n`;
-                    (obj.indicadores||[]).forEach((ind,ii)=>{
-                        prompt+=`      - Indicador (iIdx:${ii}): ${ind}\n`;
-                    });
-                });
-            });
-
-            prompt+=`\n📋 SESIONES A PROGRAMAR (${todasSesiones.length} sesiones):\n`;
-            MESES.forEach((m,mi)=>{
-                const sesionesDelMes=todasSesiones.filter(k=>k.startsWith(mi+'_')).length;
-                prompt+=`${m.nombre} (mes ${mi}, T${m.trim}): ${sesionesDelMes} sesiones - Claves: `;
-                for(let s=1;s<=m.semanas;s++){
-                    dias.forEach(d=>{
-                        prompt+=`${mi}_${s}_${d}, `;
-                    });
-                }
-                prompt+='\n';
-            });
-
-            prompt+=`
-⚙️ REGLAS IMPORTANTES:
-1. ALTERNAR entre programas en cada sesión (50%-50% si hay 2 programas)
-2. RESPETAR trimestres: T1 solo en sept-dic, T2 en ene-mar, T3 en abr-jun
-3. REPETIR indicadores si hay más sesiones que indicadores (distribuir equilibradamente)
-4. PROGRESIÓN lógica: de más simple a más complejo
-5. No repetir el mismo indicador en 2 sesiones consecutivas
-6. Cubrir TODO el curso: las ${todasSesiones.length} sesiones
-
-📤 FORMATO DE RESPUESTA:
-Devuelve SOLO un JSON válido con TODAS las ${todasSesiones.length} sesiones:
-{
-  "0_1_${dias[0]}": {"pId": "p_xxx", "oIdx": 0, "iIdx": 0},
-  "0_1_${dias[1]||dias[0]}": {"pId": "p_yyy", "oIdx": 0, "iIdx": 0},
-  ...hasta...
-  "9_3_${dias[dias.length-1]}": {"pId": "...", "oIdx": ..., "iIdx": ...}
-}
-
-⚠️ USA LOS IDs DE PROGRAMA EXACTOS QUE TE HE DADO.
-⚠️ GENERA EL JSON COMPLETO PARA TODO EL CURSO (${todasSesiones.length} entradas).
-⚠️ NO incluyas texto adicional, SOLO el JSON.`;
-
-            navigator.clipboard.writeText(prompt).then(()=>{
-                toast('Prompt copiado - Pega en ChatGPT','success');
-                window.open('https://chat.openai.com/','_blank');
-            }).catch(()=>{
-                const ta=document.createElement('textarea');ta.value=prompt;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
-                toast('Prompt copiado - Pega en ChatGPT','success');
-                window.open('https://chat.openai.com/','_blank');
-            });
+            const a=alumnos[alumnoActual];if(!a.programas||!Object.keys(a.programas).length){toast('Añade programas primero','error');return;}
+            const dias=a.diasSesion||[1,3,4];const todasSesiones=getTodasLasSesiones(a);
+            let prompt=`Eres un experto en Pedagogía Terapéutica. Genera una programación COMPLETA para TODO el curso escolar 2025/2026 de Granada (septiembre a junio).\n\n📅 CALENDARIO ESCOLAR GRANADA 25/26:\n- Septiembre: 10 sept - 30 sept (3 semanas lectivas)\n- Octubre: 1 oct - 31 oct (4 semanas)\n- Noviembre: 3 nov - 28 nov (4 semanas)\n- Diciembre: 1 dic - 19 dic (2 semanas) - Vacaciones Navidad 22 dic\n- Enero: 8 ene - 31 ene (3 semanas) - Vuelta 8 enero\n- Febrero: 2 feb - 27 feb (4 semanas) - 28F festivo Andalucía\n- Marzo: 2 mar - 27 mar (3 semanas) - Semana Santa aprox 28 mar\n- Abril: 7 abr - 30 abr (3 semanas) - Vuelta Semana Santa\n- Mayo: 4 may - 29 may (4 semanas)\n- Junio: 2 jun - 22 jun (3 semanas) - Fin de curso\n\n👤 ALUMNO: ${a.siglas} (${a.curso})\n📆 DÍAS DE SESIÓN: ${dias.map(d=>DIAS_C[d]).join(', ')}\n📊 TOTAL SESIONES: ${todasSesiones.length}\n\n📚 PROGRAMAS Y CONTENIDOS:\n`;
+            Object.keys(a.programas).forEach(pId=>{const p=a.programas[pId],info=AREAS[p.tipo]||{nombre:p.tipo};prompt+=`\n🔷 PROGRAMA: ${info.nombre}\n   ID: "${pId}"\n`;(p.objetivos||[]).forEach((obj,oi)=>{prompt+=`   📌 Objetivo ${obj.numero} (oIdx:${oi}, T${obj.trimestre}): ${obj.descripcion}\n`;(obj.indicadores||[]).forEach((ind,ii)=>{prompt+=`      - Indicador (iIdx:${ii}): ${ind}\n`;});});});
+            prompt+=`\n📋 SESIONES A PROGRAMAR (${todasSesiones.length} sesiones):\n`;MESES.forEach((m,mi)=>{const sesionesDelMes=todasSesiones.filter(k=>k.startsWith(mi+'_')).length;prompt+=`${m.nombre} (mes ${mi}, T${m.trim}): ${sesionesDelMes} sesiones\n`;});
+            prompt+=`\n⚙️ REGLAS IMPORTANTES:\n1. ALTERNAR entre programas en cada sesión (50%-50% si hay 2 programas)\n2. RESPETAR trimestres: T1 solo en sept-dic, T2 en ene-mar, T3 en abr-jun\n3. REPETIR indicadores si hay más sesiones que indicadores (distribuir equilibradamente)\n4. PROGRESIÓN lógica: de más simple a más complejo\n5. No repetir el mismo indicador en 2 sesiones consecutivas\n6. Cubrir TODO el curso: las ${todasSesiones.length} sesiones\n\n📤 FORMATO DE RESPUESTA:\nDevuelve SOLO un JSON válido con TODAS las ${todasSesiones.length} sesiones:\n{\n  "0_1_${dias[0]}": {"pId": "p_xxx", "oIdx": 0, "iIdx": 0},\n  ...\n  "9_3_${dias[dias.length-1]}": {"pId": "...", "oIdx": ..., "iIdx": ...}\n}\n\n⚠️ USA LOS IDs DE PROGRAMA EXACTOS QUE TE HE DADO.\n⚠️ GENERA EL JSON COMPLETO PARA TODO EL CURSO (${todasSesiones.length} entradas).\n⚠️ NO incluyas texto adicional, SOLO el JSON.`;
+            navigator.clipboard.writeText(prompt).then(()=>{toast('Prompt copiado - Pega en ChatGPT','success');window.open('https://chat.openai.com/','_blank');}).catch(()=>{const ta=document.createElement('textarea');ta.value=prompt;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);toast('Prompt copiado - Pega en ChatGPT','success');window.open('https://chat.openai.com/','_blank');});
         }
         
         function importarJSON(){
-            const txt=document.getElementById('jsonInput').value.trim();
-            if(!txt){toast('Pega el JSON','error');return;}
-            try{
-                let cleanJSON=txt;
-                if(cleanJSON.includes('```')){
-                    cleanJSON=cleanJSON.replace(/```json?\n?/g,'').replace(/```/g,'').trim();
-                }
-                const prog=JSON.parse(cleanJSON);
-                const keys=Object.keys(prog);
-                if(!keys.length)throw new Error('JSON vacío');
-                db.ref('gestorpe/alumnos/'+alumnoActual+'/programacion').set(prog).then(()=>{
-                    alumnos[alumnoActual].programacion=prog;
-                    cerrarModal('modalImportJSON');
-                    document.getElementById('jsonInput').value='';
-                    renderProg();
-                    toast('Importado: '+keys.length+' sesiones','success');
-                });
-            }catch(e){
-                toast('Error JSON: '+e.message,'error');
-            }
+            const txt=document.getElementById('jsonInput').value.trim();if(!txt){toast('Pega el JSON','error');return;}
+            try{let cleanJSON=txt;if(cleanJSON.includes('```')){cleanJSON=cleanJSON.replace(/```json?\n?/g,'').replace(/```/g,'').trim();}const prog=JSON.parse(cleanJSON);const keys=Object.keys(prog);if(!keys.length)throw new Error('JSON vacío');db.ref('gestorpe/alumnos/'+alumnoActual+'/programacion').set(prog).then(()=>{alumnos[alumnoActual].programacion=prog;cerrarModal('modalImportJSON');document.getElementById('jsonInput').value='';renderProg();toast('Importado: '+keys.length+' sesiones','success');});}catch(e){toast('Error JSON: '+e.message,'error');}
         }
         
         function renderProg(){const a=alumnos[alumnoActual],dias=a.diasSesion||[1,3,4],noms=dias.map(d=>DIAS_C[d]),mes=MESES[mesActual],st=calcStats(a);let h='<div class="card"><div class="stats-box no-print"><div class="stat-item"><div class="stat-num" style="color:var(--danger)">'+(st.porMes[mesActual]?st.porMes[mesActual].aus:0)+'</div><div class="stat-label">Ausencias</div></div></div><div class="cuadrante-nav no-print"><button class="nav-btn" onclick="cambiarMes(-1)">◀</button><select class="form-select" style="width:auto" onchange="mesActual=parseInt(this.value);renderProg()">';for(let i=0;i<MESES.length;i++){h+='<option value="'+i+'"'+(i===mesActual?' selected':'')+'>'+MESES[i].nombre+'</option>';}h+='</select><button class="nav-btn" onclick="cambiarMes(1)">▶</button><span class="trimestre-badge t'+mes.trim+'">T'+mes.trim+'</span><button class="btn btn-ai btn-sm" onclick="abrirChatGPTCuadrante()">🤖 ChatGPT</button></div>';h+='<div class="leyenda no-print"><div class="leyenda-item"><div class="leyenda-color" style="background:#fee2e2"></div>Ausencia</div><div class="leyenda-item"><div class="leyenda-color" style="background:#e0e7ff"></div>Sin cole</div><div class="leyenda-item"><div class="leyenda-color" style="background:#dcfce7"></div>Conseguido</div><div class="leyenda-item"><div class="leyenda-color" style="background:#fef3c7"></div>Repetir</div></div>';h+='<div style="overflow-x:auto;margin-top:8px"><table class="cuadrante-table"><thead><tr><th>S</th>';for(let i=0;i<noms.length;i++){h+='<th>'+noms[i]+'</th>';}h+='</tr></thead><tbody>';for(let si=0;si<mes.semanas;si++){const sem=si+1;h+='<tr><td>'+sem+'</td>';for(let di=0;di<dias.length;di++){h+=renderCelda(a,mesActual+'_'+sem+'_'+dias[di],dias[di]);}h+='</tr>';}h+='</tbody></table></div></div>';document.getElementById('tabProgramacion').innerHTML=h;}
@@ -526,55 +380,18 @@ Devuelve SOLO un JSON válido con TODAS las ${todasSesiones.length} sesiones:
         function cargarIndicadores(){const a=alumnos[alumnoActual],pId=document.getElementById('selPrograma').value,oIdx=document.getElementById('selObjetivo').value,sel=document.getElementById('selIndicador');sel.innerHTML='<option value="">-</option>';if(!pId||oIdx==='')return;const inds=a.programas[pId].objetivos[parseInt(oIdx)].indicadores||[];inds.forEach((x,i)=>{sel.innerHTML+='<option value="'+i+'">'+x.substring(0,30)+'...</option>';});}
         
         function guardarCelda(){
-            const a=alumnos[alumnoActual];
-            const updates={};
-            const contenidoActual=a.programacion?a.programacion[celdaEditando]:null;
-            
-            // Limpiar estados anteriores
-            updates['gestorpe/alumnos/'+alumnoActual+'/ausencias/'+celdaEditando]=null;
-            updates['gestorpe/alumnos/'+alumnoActual+'/sincole/'+celdaEditando]=null;
-            updates['gestorpe/alumnos/'+alumnoActual+'/resultados/'+celdaEditando]=null;
-            
+            const a=alumnos[alumnoActual];const updates={};const contenidoActual=a.programacion?a.programacion[celdaEditando]:null;
+            updates['gestorpe/alumnos/'+alumnoActual+'/ausencias/'+celdaEditando]=null;updates['gestorpe/alumnos/'+alumnoActual+'/sincole/'+celdaEditando]=null;updates['gestorpe/alumnos/'+alumnoActual+'/resultados/'+celdaEditando]=null;
             if(estadoCelda==='ausencia'||estadoCelda==='sincole'){
-                // Marcar ausencia/sin cole
-                const tipo=estadoCelda==='ausencia'?'ausencias':'sincole';
-                updates['gestorpe/alumnos/'+alumnoActual+'/'+tipo+'/'+celdaEditando]=true;
-                
-                // REAJUSTAR: desplazar programación hacia adelante
-                if(contenidoActual){
-                    const nuevaProg=reajustarDesde(a,celdaEditando);
-                    updates['gestorpe/alumnos/'+alumnoActual+'/programacion']=nuevaProg;
-                    toast('Sesión desplazada ✓','success');
-                }
+                const tipo=estadoCelda==='ausencia'?'ausencias':'sincole';updates['gestorpe/alumnos/'+alumnoActual+'/'+tipo+'/'+celdaEditando]=true;
+                if(contenidoActual){const nuevaProg=reajustarDesde(a,celdaEditando);updates['gestorpe/alumnos/'+alumnoActual+'/programacion']=nuevaProg;toast('Sesión desplazada ✓','success');}
             }else{
-                // Asiste normalmente
-                const pId=document.getElementById('selPrograma').value;
-                const oIdx=document.getElementById('selObjetivo').value;
-                const iIdx=document.getElementById('selIndicador').value;
-                
-                if(pId&&oIdx!==''){
-                    const nuevoContenido={pId:pId,oIdx:parseInt(oIdx),iIdx:iIdx!==''?parseInt(iIdx):0};
-                    updates['gestorpe/alumnos/'+alumnoActual+'/programacion/'+celdaEditando]=nuevoContenido;
-                    
-                    // Si marca REPETIR, insertar la sesión la semana siguiente
-                    if(resultadoCelda==='repetir'){
-                        const nuevaProg=insertarRepeticion(a,celdaEditando,nuevoContenido);
-                        updates['gestorpe/alumnos/'+alumnoActual+'/programacion']=nuevaProg;
-                        toast('Sesión repetida la próxima semana ✓','success');
-                    }
-                }
-                
-                if(resultadoCelda){
-                    updates['gestorpe/alumnos/'+alumnoActual+'/resultados/'+celdaEditando]=resultadoCelda;
-                }
+                const pId=document.getElementById('selPrograma').value;const oIdx=document.getElementById('selObjetivo').value;const iIdx=document.getElementById('selIndicador').value;
+                if(pId&&oIdx!==''){const nuevoContenido={pId:pId,oIdx:parseInt(oIdx),iIdx:iIdx!==''?parseInt(iIdx):0};updates['gestorpe/alumnos/'+alumnoActual+'/programacion/'+celdaEditando]=nuevoContenido;
+                if(resultadoCelda==='repetir'){const nuevaProg=insertarRepeticion(a,celdaEditando,nuevoContenido);updates['gestorpe/alumnos/'+alumnoActual+'/programacion']=nuevaProg;toast('Sesión repetida la próxima semana ✓','success');}}
+                if(resultadoCelda){updates['gestorpe/alumnos/'+alumnoActual+'/resultados/'+celdaEditando]=resultadoCelda;}
             }
-            
-            db.ref().update(updates).then(()=>{
-                cerrarModal('modalCelda');
-                if(!updates['gestorpe/alumnos/'+alumnoActual+'/programacion']){
-                    toast('Guardado ✓','success');
-                }
-            });
+            db.ref().update(updates).then(()=>{cerrarModal('modalCelda');if(!updates['gestorpe/alumnos/'+alumnoActual+'/programacion']){toast('Guardado ✓','success');}});
         }
         
         function borrarCelda(){const updates={};['programacion','ausencias','sincole','resultados'].forEach(t=>{updates['gestorpe/alumnos/'+alumnoActual+'/'+t+'/'+celdaEditando]=null;});db.ref().update(updates).then(()=>{cerrarModal('modalCelda');toast('Eliminado','success');});}
@@ -605,6 +422,84 @@ Devuelve SOLO un JSON válido con TODAS las ${todasSesiones.length} sesiones:
         function abrirChatGPTCuadrante(){const a=alumnos[alumnoActual],dias=a.diasSesion||[1,3,4],mes=MESES[mesActual];let tabla='ALUMNO: '+a.siglas+' ('+a.curso+')\nMES: '+mes.nombre+' - T'+mes.trim+'\n\nPROGRAMACIÓN MENSUAL:\n\n';tabla+='| Semana | '+dias.map(d=>DIAS_C[d]).join(' | ')+' |\n';tabla+='|--------|'+dias.map(()=>'---').join('|')+'|\n';for(let si=0;si<mes.semanas;si++){const sem=si+1;let fila='| S'+sem+' |';dias.forEach(d=>{const k=mesActual+'_'+sem+'_'+d,c=a.programacion?a.programacion[k]:null;if(c&&a.programas&&a.programas[c.pId]){const p=a.programas[c.pId],obj=p.objetivos?p.objetivos[c.oIdx]:null;if(obj){const ind=obj.indicadores?(obj.indicadores[c.iIdx]||''):'';fila+=' O'+obj.numero+': '+ind.substring(0,15)+' |';}else{fila+=' - |';}}else{fila+=' - |';}});tabla+=fila+'\n';}const prompt='Crea un cuadrante/tabla bonito y profesional para imprimir con esta programación de Pedagogía Terapéutica. Incluye espacio para notas a mano en cada celda. Formato visual atractivo.\n\n'+tabla;navigator.clipboard.writeText(prompt).then(()=>{toast('Copiado - Pega en ChatGPT','success');window.open('https://chat.openai.com/','_blank');}).catch(()=>{const ta=document.createElement('textarea');ta.value=prompt;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);toast('Copiado - Pega en ChatGPT','success');window.open('https://chat.openai.com/','_blank');});}
         
         function imprimirInforme(){if(!informeData){toast('Genera el informe primero','error');return;}const a=informeData.alumno,win=window.open('','_blank');win.document.write('<!DOCTYPE html><html><head><title>Informe '+a.siglas+' T'+informeData.trim+'</title><style>body{font-family:Arial,sans-serif;padding:30px;max-width:800px;margin:0 auto}h1{color:#1a5f4a;border-bottom:2px solid #1a5f4a;padding-bottom:10px}h2{color:#333;margin-top:20px}.dato{margin:8px 0}.indicador{margin:5px 0 5px 20px}.stats{display:flex;gap:30px;margin:20px 0}.stat{text-align:center}.stat-num{font-size:2em;font-weight:bold}.stat-label{font-size:.9em;color:#666}@media print{body{padding:0}}</style></head><body><h1>INFORME DE SEGUIMIENTO - '+informeData.trim+'º TRIMESTRE</h1><p class="dato"><strong>Alumno/a:</strong> '+a.siglas+' | <strong>Curso:</strong> '+a.curso+'</p><p class="dato"><strong>Fecha:</strong> '+new Date().toLocaleDateString('es-ES')+'</p><div class="stats"><div class="stat"><div class="stat-num" style="color:#22c55e">'+informeData.conseguidos.length+'</div><div class="stat-label">Conseguidos</div></div><div class="stat"><div class="stat-num" style="color:#3b82f6">'+informeData.proceso.length+'</div><div class="stat-label">En proceso</div></div><div class="stat"><div class="stat-num" style="color:#888">'+informeData.noIniciados.length+'</div><div class="stat-label">No iniciados</div></div><div class="stat"><div class="stat-num" style="color:#ef4444">'+informeData.ausencias+'</div><div class="stat-label">Ausencias</div></div></div><h2>✅ Indicadores Conseguidos</h2>'+(informeData.conseguidos.length?informeData.conseguidos.map(x=>'<p class="indicador">• <strong>'+x.programa+'</strong>: '+x.indicador+'</p>').join(''):'<p><em>Ninguno</em></p>')+'<h2>🔄 Indicadores En Proceso</h2>'+(informeData.proceso.length?informeData.proceso.map(x=>'<p class="indicador">• <strong>'+x.programa+'</strong>: '+x.indicador+'</p>').join(''):'<p><em>Ninguno</em></p>')+'<h2>⭕ Indicadores No Iniciados</h2>'+(informeData.noIniciados.length?informeData.noIniciados.map(x=>'<p class="indicador">• <strong>'+x.programa+'</strong>: '+x.indicador+'</p>').join(''):'<p><em>Ninguno</em></p>')+'<div style="margin-top:60px;text-align:right"><p>Fdo: _______________________</p><p>Maestro/a de PT/AL</p></div></body></html>');win.document.close();setTimeout(()=>{win.print();},300);}
+        
+        // IMPRESIÓN MASIVA
+        function abrirModalImprimir(){
+            if(!Object.keys(alumnos).length){toast('No hay alumnos','error');return;}
+            abrirModal('modalImprimir');
+        }
+        
+        function imprimirTodos(){
+            const mesSeleccionado=parseInt(document.getElementById('printMes').value);
+            const ids=Object.keys(alumnos);
+            if(!ids.length){toast('No hay alumnos','error');return;}
+            
+            let html='<!DOCTYPE html><html><head><title>Programaciones PE</title><style>body{font-family:Arial,sans-serif;padding:20px;font-size:11px}h1{color:#1a5f4a;font-size:16px;margin-bottom:5px}h2{color:#1a5f4a;font-size:14px;margin:15px 0 8px;border-bottom:2px solid #1a5f4a;padding-bottom:5px}h3{font-size:12px;margin:10px 0 5px;color:#333}.alumno-section{page-break-after:always;margin-bottom:30px}.alumno-section:last-child{page-break-after:avoid}table{width:100%;border-collapse:collapse;margin-bottom:15px}th,td{border:1px solid #ccc;padding:6px;text-align:left}th{background:#1a5f4a;color:#fff;text-align:center}td:first-child{background:#2d8a6e;color:#fff;text-align:center;width:50px}.celda-content{min-height:40px}.obj{font-weight:bold;color:#1a5f4a}.ind{font-size:10px;color:#333}.ausencia{background:#fee2e2!important}.sincole{background:#e0e7ff!important}.info{margin-bottom:10px;color:#666}@media print{body{padding:10px}.alumno-section{page-break-after:always}}</style></head><body>';
+            
+            ids.forEach(id=>{
+                const a=alumnos[id];
+                const dias=a.diasSesion||[1,3,4];
+                const diasNombres=dias.map(d=>DIAS_C[d]);
+                
+                html+='<div class="alumno-section">';
+                html+='<h1>📋 '+a.siglas+' - '+a.curso+'</h1>';
+                html+='<p class="info">Días: '+diasNombres.join(', ')+' | Generado: '+new Date().toLocaleDateString('es-ES')+'</p>';
+                
+                const mesesAImprimir=mesSeleccionado===-1?MESES.map((_,i)=>i):[mesSeleccionado];
+                
+                mesesAImprimir.forEach(mi=>{
+                    const mes=MESES[mi];
+                    html+='<h2>'+mes.nombre+' (T'+mes.trim+')</h2>';
+                    html+='<table><thead><tr><th>Sem</th>';
+                    diasNombres.forEach(d=>{html+='<th>'+d+'</th>';});
+                    html+='</tr></thead><tbody>';
+                    
+                    for(let s=1;s<=mes.semanas;s++){
+                        html+='<tr><td>S'+s+'</td>';
+                        dias.forEach(d=>{
+                            const k=mi+'_'+s+'_'+d;
+                            const c=a.programacion?a.programacion[k]:null;
+                            const aus=a.ausencias?a.ausencias[k]:false;
+                            const sc=a.sincole?a.sincole[k]:false;
+                            let cls='';
+                            if(sc)cls='sincole';else if(aus)cls='ausencia';
+                            
+                            html+='<td class="'+cls+'">';
+                            if(sc){
+                                html+='<div class="celda-content">🏫 Sin cole</div>';
+                            }else if(aus){
+                                html+='<div class="celda-content">❌ Ausencia</div>';
+                            }else if(c&&a.programas&&a.programas[c.pId]){
+                                const p=a.programas[c.pId];
+                                const obj=p.objetivos?p.objetivos[c.oIdx]:null;
+                                if(obj){
+                                    const ind=obj.indicadores?(obj.indicadores[c.iIdx]||''):'';
+                                    html+='<div class="celda-content"><div class="obj">O'+obj.numero+'</div><div class="ind">'+ind+'</div></div>';
+                                }else{
+                                    html+='<div class="celda-content">-</div>';
+                                }
+                            }else{
+                                html+='<div class="celda-content">-</div>';
+                            }
+                            html+='</td>';
+                        });
+                        html+='</tr>';
+                    }
+                    html+='</tbody></table>';
+                });
+                
+                html+='</div>';
+            });
+            
+            html+='</body></html>';
+            
+            const win=window.open('','_blank');
+            win.document.write(html);
+            win.document.close();
+            setTimeout(()=>{win.print();},500);
+            cerrarModal('modalImprimir');
+            toast('Documento generado ✓','success');
+        }
         
         function abrirModal(id){document.getElementById(id).classList.add('active');}
         function cerrarModal(id){document.getElementById(id).classList.remove('active');}
