@@ -277,8 +277,18 @@
         <div class="modal" style="max-width:600px">
             <div class="modal-header"><h3 class="modal-title">📄 Generar Informe</h3><button class="modal-close" onclick="cerrarModal('modalInforme')">×</button></div>
             <div class="modal-body">
-                <div class="form-group"><label class="form-label">Trimestre</label><select class="form-select" id="informeTrim"><option value="1">1º Trimestre</option><option value="2">2º Trimestre</option><option value="3">3º Trimestre</option></select></div>
-                <div class="btn-group" style="flex-direction:column;gap:8px"><button class="btn btn-primary" onclick="generarInforme()">📄 Generar Informe</button><button class="btn btn-ai" onclick="abrirChatGPTInforme()">🤖 ChatGPT - Valoración</button></div>
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">Trimestre</label><select class="form-select" id="informeTrim"><option value="1">1º Trimestre</option><option value="2">2º Trimestre</option><option value="3">3º Trimestre</option></select></div>
+                    <div class="form-group"><label class="form-label">Período</label><select class="form-select" id="informePeriodo"><option value="trimestral">Trimestral</option><option value="mensual">Mensual</option></select></div>
+                </div>
+                <div class="form-group" id="grupoMes" style="display:none"><label class="form-label">Mes</label><select class="form-select" id="informeMes"></select></div>
+                <div class="btn-group" style="flex-direction:column;gap:8px">
+                    <button class="btn btn-primary" onclick="generarInforme()">📄 Generar Informe PT</button>
+                    <button class="btn btn-ai" onclick="abrirChatGPTInforme('pt')">🤖 ChatGPT - Valoración PT</button>
+                    <hr style="border:none;border-top:1px solid var(--border);margin:4px 0">
+                    <button class="btn btn-ai" onclick="abrirChatGPTInforme('familia')" style="background:#8b5cf6">👨‍👩‍👧 ChatGPT - Informe Familias</button>
+                    <button class="btn btn-ai" onclick="abrirChatGPTInforme('tutor')" style="background:#06b6d4">👩‍🏫 ChatGPT - Informe Tutor</button>
+                </div>
                 <div id="informePreview" class="informe-preview" style="display:none"></div>
             </div>
             <div class="modal-footer"><button class="btn btn-secondary" onclick="cerrarModal('modalInforme')">Cerrar</button><button class="btn btn-primary" id="btnImprimirInforme" onclick="imprimirInforme()" style="display:none">🖨️ Imprimir</button></div>
@@ -745,7 +755,11 @@
         function setResultado(r,btn){if(resultadoCelda===r){resultadoCelda=null;btn.classList.remove('selected');}else{resultadoCelda=r;document.querySelectorAll('.resultado-btn').forEach(b=>b.classList.remove('selected'));btn.classList.add('selected');}}
         function cargarObjetivos(){const a=alumnos[alumnoActual],pId=document.getElementById('selPrograma').value,sel=document.getElementById('selObjetivo');sel.innerHTML='<option value="">-</option>';document.getElementById('selIndicador').innerHTML='<option value="">-</option>';if(!pId||!a.programas||!a.programas[pId])return;a.programas[pId].objetivos.forEach((o,i)=>{sel.innerHTML+='<option value="'+i+'">O'+o.numero+': '+o.descripcion.substring(0,20)+'...</option>';});}
         function cargarIndicadores(){const a=alumnos[alumnoActual],pId=document.getElementById('selPrograma').value,oIdx=document.getElementById('selObjetivo').value,sel=document.getElementById('selIndicador');sel.innerHTML='<option value="">-</option>';if(!pId||oIdx==='')return;const inds=a.programas[pId].objetivos[parseInt(oIdx)].indicadores||[];inds.forEach((x,i)=>{sel.innerHTML+='<option value="'+i+'">'+x.substring(0,30)+'...</option>';});}
-        function guardarCelda(){const a=alumnos[alumnoActual];const updates={};const contenidoActual=a.programacion?a.programacion[celdaEditando]:null;updates['gestorpe/alumnos/'+alumnoActual+'/ausencias/'+celdaEditando]=null;updates['gestorpe/alumnos/'+alumnoActual+'/sincole/'+celdaEditando]=null;updates['gestorpe/alumnos/'+alumnoActual+'/resultados/'+celdaEditando]=null;if(estadoCelda==='ausencia'||estadoCelda==='sincole'){const tipo=estadoCelda==='ausencia'?'ausencias':'sincole';updates['gestorpe/alumnos/'+alumnoActual+'/'+tipo+'/'+celdaEditando]=true;if(contenidoActual){const nuevaProg=reajustarDesde(a,celdaEditando);updates['gestorpe/alumnos/'+alumnoActual+'/programacion']=nuevaProg;}}else{const pId=document.getElementById('selPrograma').value;const oIdx=document.getElementById('selObjetivo').value;const iIdx=document.getElementById('selIndicador').value;if(pId&&oIdx!==''){const nuevoContenido={pId:pId,oIdx:parseInt(oIdx),iIdx:iIdx!==''?parseInt(iIdx):0};updates['gestorpe/alumnos/'+alumnoActual+'/programacion/'+celdaEditando]=nuevoContenido;if(resultadoCelda==='repetir'){const nuevaProg=insertarRepeticion(a,celdaEditando,nuevoContenido);updates['gestorpe/alumnos/'+alumnoActual+'/programacion']=nuevaProg;}}if(resultadoCelda){updates['gestorpe/alumnos/'+alumnoActual+'/resultados/'+celdaEditando]=resultadoCelda;}}db.ref().update(updates).then(()=>{cerrarModal('modalCelda');toast('Guardado ✓','success');});}
+        function guardarCelda(){const a=alumnos[alumnoActual];const updates={};const contenidoActual=a.programacion?a.programacion[celdaEditando]:null;updates['gestorpe/alumnos/'+alumnoActual+'/ausencias/'+celdaEditando]=null;updates['gestorpe/alumnos/'+alumnoActual+'/sincole/'+celdaEditando]=null;updates['gestorpe/alumnos/'+alumnoActual+'/resultados/'+celdaEditando]=null;if(estadoCelda==='ausencia'||estadoCelda==='sincole'){const tipo=estadoCelda==='ausencia'?'ausencias':'sincole';updates['gestorpe/alumnos/'+alumnoActual+'/'+tipo+'/'+celdaEditando]=true;if(contenidoActual){const nuevaProg=reajustarDesde(a,celdaEditando);updates['gestorpe/alumnos/'+alumnoActual+'/programacion']=nuevaProg;}}else{const pId=document.getElementById('selPrograma').value;const oIdx=document.getElementById('selObjetivo').value;const iIdx=document.getElementById('selIndicador').value;if(pId&&oIdx!==''){const nuevoContenido={pId:pId,oIdx:parseInt(oIdx),iIdx:iIdx!==''?parseInt(iIdx):0};if(resultadoCelda==='repetir'){// Primero actualizar la celda actual en el objeto local
+                    a.programacion=a.programacion||{};a.programacion[celdaEditando]=nuevoContenido;
+                    // Luego insertar repetición (que desplaza todo)
+                    const nuevaProg=insertarRepeticion(a,celdaEditando,nuevoContenido);
+                    updates['gestorpe/alumnos/'+alumnoActual+'/programacion']=nuevaProg;}else{updates['gestorpe/alumnos/'+alumnoActual+'/programacion/'+celdaEditando]=nuevoContenido;}}if(resultadoCelda){updates['gestorpe/alumnos/'+alumnoActual+'/resultados/'+celdaEditando]=resultadoCelda;}}db.ref().update(updates).then(()=>{cerrarModal('modalCelda');toast(resultadoCelda==='repetir'?'Repetición insertada ✓':'Guardado ✓','success');});}
         function borrarCelda(){const updates={};['programacion','ausencias','sincole','resultados'].forEach(t=>{updates['gestorpe/alumnos/'+alumnoActual+'/'+t+'/'+celdaEditando]=null;});db.ref().update(updates).then(()=>{cerrarModal('modalCelda');toast('Eliminado','success');});}
         function calcStats(a){const aus=a.ausencias||{},res=a.resultados||{};let ausencias=0,conseguidos=0,repetir=0;const dias=a.diasSesion||[1,3,4],porMes={},porTrim={1:{aus:0},2:{aus:0},3:{aus:0}};for(let mi=0;mi<MESES.length;mi++){const m=MESES[mi];porMes[mi]={aus:0};for(let s=1;s<=m.semanas;s++){for(let di=0;di<dias.length;di++){const k=mi+'_'+s+'_'+dias[di];if(aus[k]){ausencias++;porMes[mi].aus++;porTrim[m.trim].aus++;}if(res[k]==='conseguido')conseguidos++;if(res[k]==='repetir')repetir++;}}}return{ausencias:ausencias,conseguidos:conseguidos,repetir:repetir,porMes:porMes,porTrim:porTrim};}
 
@@ -762,9 +776,48 @@
         function renderAsisCharts(){const a=alumnos[alumnoActual],st=calcStats(a);const ctx1=document.getElementById('chartAusTrim');if(ctx1){if(charts.ausTrim)charts.ausTrim.destroy();charts.ausTrim=new Chart(ctx1,{type:'bar',data:{labels:['T1','T2','T3'],datasets:[{label:'Ausencias',data:[st.porTrim[1].aus,st.porTrim[2].aus,st.porTrim[3].aus],backgroundColor:'#ef4444'}]},options:{responsive:true,plugins:{legend:{display:false},title:{display:true,text:'Ausencias por trimestre'}}}});}}
 
         // INFORMES
-        function abrirModalInforme(){document.getElementById('informeTrim').value=evalTrim;document.getElementById('informePreview').style.display='none';document.getElementById('btnImprimirInforme').style.display='none';informeData=null;abrirModal('modalInforme');}
+        function abrirModalInforme(){document.getElementById('informeTrim').value=evalTrim;document.getElementById('informePeriodo').value='trimestral';document.getElementById('grupoMes').style.display='none';document.getElementById('informePreview').style.display='none';document.getElementById('btnImprimirInforme').style.display='none';informeData=null;
+            // Configurar selector de periodo
+            document.getElementById('informePeriodo').onchange=function(){
+                const esMensual=this.value==='mensual';
+                document.getElementById('grupoMes').style.display=esMensual?'block':'none';
+                if(esMensual){
+                    const trim=parseInt(document.getElementById('informeTrim').value);
+                    const mesesTrim=MESES.map((m,i)=>({idx:i,...m})).filter(m=>m.trim===trim);
+                    const sel=document.getElementById('informeMes');
+                    sel.innerHTML=mesesTrim.map(m=>'<option value="'+m.idx+'">'+m.nombre+'</option>').join('');
+                }
+            };
+            document.getElementById('informeTrim').onchange=function(){
+                if(document.getElementById('informePeriodo').value==='mensual'){
+                    document.getElementById('informePeriodo').onchange();
+                }
+            };
+            abrirModal('modalInforme');}
         function generarInforme(){const trim=parseInt(document.getElementById('informeTrim').value),a=alumnos[alumnoActual],st=calcStats(a);const conseguidos=[],proceso=[],noIniciados=[];if(a.programas){Object.keys(a.programas).forEach(pId=>{const p=a.programas[pId],info=AREAS[p.tipo]||{nombre:p.tipo};(p.objetivos||[]).forEach((obj,oi)=>{(obj.indicadores||[]).forEach((ind,ii)=>{const k=pId+'_'+oi+'_'+ii+'_T'+trim,e=a.evaluaciones?a.evaluaciones[k]:null,item={programa:info.nombre,objetivo:'O'+obj.numero,indicador:ind};if(e==='C')conseguidos.push(item);else if(e==='P')proceso.push(item);else noIniciados.push(item);});});});}informeData={alumno:a,trim:trim,conseguidos:conseguidos,proceso:proceso,noIniciados:noIniciados,ausencias:st.porTrim[trim]?st.porTrim[trim].aus:0};const total=conseguidos.length+proceso.length+noIniciados.length,porcC=total?Math.round(conseguidos.length/total*100):0;document.getElementById('informePreview').innerHTML='<h4>T'+trim+' - '+a.siglas+'</h4><p>✅ '+conseguidos.length+' ('+porcC+'%) | 🔄 '+proceso.length+' | ⭕ '+noIniciados.length+' | ❌ '+informeData.ausencias+' aus.</p>';document.getElementById('informePreview').style.display='block';document.getElementById('btnImprimirInforme').style.display='inline-flex';toast('Generado','success');}
-        function abrirChatGPTInforme(){const trim=parseInt(document.getElementById('informeTrim').value),a=alumnos[alumnoActual],st=calcStats(a);const conseguidos=[],proceso=[],noIniciados=[];if(a.programas){Object.keys(a.programas).forEach(pId=>{const p=a.programas[pId],info=AREAS[p.tipo]||{nombre:p.tipo};(p.objetivos||[]).forEach((obj,oi)=>{(obj.indicadores||[]).forEach((ind,ii)=>{const k=pId+'_'+oi+'_'+ii+'_T'+trim,e=a.evaluaciones?a.evaluaciones[k]:null,item=info.nombre+': '+ind;if(e==='C')conseguidos.push(item);else if(e==='P')proceso.push(item);else noIniciados.push(item);});});});}const prompt='Valoración PT para informe.\n\nALUMNO: '+a.siglas+' ('+a.curso+')\nTRIMESTRE: '+trim+'\n\nCONSEGUIDOS ('+conseguidos.length+'):\n'+(conseguidos.slice(0,10).join('\n')||'Ninguno')+'\n\nEN PROCESO ('+proceso.length+'):\n'+(proceso.slice(0,10).join('\n')||'Ninguno')+'\n\nAUSENCIAS: '+(st.porTrim[trim]?st.porTrim[trim].aus:0)+'\n\nEscribe 2-3 párrafos profesionales.';navigator.clipboard.writeText(prompt).then(()=>{toast('Copiado','success');window.open('https://chat.openai.com/','_blank');});}
+        function abrirChatGPTInforme(tipo){
+            const trim=parseInt(document.getElementById('informeTrim').value);
+            const periodo=document.getElementById('informePeriodo').value;
+            const a=alumnos[alumnoActual],st=calcStats(a);
+            
+            // Recopilar datos
+            const conseguidos=[],proceso=[],noIniciados=[];
+            if(a.programas){Object.keys(a.programas).forEach(pId=>{const p=a.programas[pId],info=AREAS[p.tipo]||{nombre:p.tipo};(p.objetivos||[]).forEach((obj,oi)=>{(obj.indicadores||[]).forEach((ind,ii)=>{const k=pId+'_'+oi+'_'+ii+'_T'+trim,e=a.evaluaciones?a.evaluaciones[k]:null,item=info.nombre+': '+ind;if(e==='C')conseguidos.push(item);else if(e==='P')proceso.push(item);else noIniciados.push(item);});});});}
+            
+            let prompt='';
+            const periodoTexto=periodo==='mensual'?'MES: '+MESES[document.getElementById('informeMes').value].nombre:'TRIMESTRE: '+trim;
+            const datosBase='ALUMNO: '+a.siglas+' ('+a.curso+')\n'+periodoTexto+'\n\nCONSEGUIDOS ('+conseguidos.length+'):\n'+(conseguidos.slice(0,10).join('\n')||'Ninguno')+'\n\nEN PROCESO ('+proceso.length+'):\n'+(proceso.slice(0,10).join('\n')||'Ninguno')+'\n\nAUSENCIAS: '+(st.porTrim[trim]?st.porTrim[trim].aus:0);
+            
+            if(tipo==='pt'){
+                prompt='Valoración PT para informe.\n\n'+datosBase+'\n\nEscribe 2-3 párrafos profesionales para el informe de PT.';
+            }else if(tipo==='familia'){
+                prompt='Informe para FAMILIAS de alumno con necesidades educativas especiales.\n\n'+datosBase+'\n\nREQUISITOS:\n- Lenguaje cercano y positivo, evita tecnicismos\n- Destaca logros y avances del alumno\n- Incluye orientaciones prácticas para trabajar en casa\n- Tono motivador y esperanzador\n- 3-4 párrafos\n\nEscribe el informe para entregar a la familia.';
+            }else if(tipo==='tutor'){
+                prompt='Informe para el TUTOR/A sobre alumno con necesidades educativas especiales.\n\n'+datosBase+'\n\nREQUISITOS:\n- Lenguaje técnico-pedagógico\n- Resumen de objetivos trabajados y grado de consecución\n- Orientaciones para la coordinación en el aula ordinaria\n- Propuestas de adaptación metodológica\n- Recomendaciones para reforzar en clase\n- 3-4 párrafos\n\nEscribe el informe de coordinación con el tutor/a.';
+            }
+            
+            navigator.clipboard.writeText(prompt).then(()=>{toast('Copiado para ChatGPT','success');window.open('https://chat.openai.com/','_blank');});
+        }
         function imprimirInforme(){if(!informeData)return;const a=informeData.alumno,win=window.open('','_blank');win.document.write('<!DOCTYPE html><html><head><title>Informe</title><style>body{font-family:Arial;padding:30px;max-width:800px;margin:0 auto}h1{color:#1a5f4a}h2{margin-top:20px}.indicador{margin:5px 0 5px 20px}</style></head><body><h1>INFORME T'+informeData.trim+' - '+a.siglas+'</h1><p>Curso: '+a.curso+' | Fecha: '+new Date().toLocaleDateString('es-ES')+'</p><h2>✅ Conseguidos ('+informeData.conseguidos.length+')</h2>'+(informeData.conseguidos.map(x=>'<p class="indicador">• '+x.programa+': '+x.indicador+'</p>').join('')||'<p>Ninguno</p>')+'<h2>🔄 En Proceso ('+informeData.proceso.length+')</h2>'+(informeData.proceso.map(x=>'<p class="indicador">• '+x.programa+': '+x.indicador+'</p>').join('')||'<p>Ninguno</p>')+'<h2>⭕ No Iniciados ('+informeData.noIniciados.length+')</h2>'+(informeData.noIniciados.map(x=>'<p class="indicador">• '+x.programa+': '+x.indicador+'</p>').join('')||'<p>Ninguno</p>')+'<p style="margin-top:40px">Fdo: _______________</p></body></html>');win.document.close();setTimeout(()=>{win.print();},300);}
 
         // IMPRESIÓN MASIVA
