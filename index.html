@@ -144,6 +144,26 @@
         .ciclo-ciclo2{background:#d1fae5;color:#065f46}
         .ciclo-ciclo3{background:#fef3c7;color:#92400e}
         @media print{.no-print{display:none!important}body{background:#fff}.card{box-shadow:none;border:1px solid #ddd}}
+        /* SÉNECA STYLES */
+        .seneca-programa{background:var(--bg-card);border-radius:var(--radius);padding:16px;margin-bottom:16px;box-shadow:var(--shadow);border-left:5px solid var(--primary)}
+        .seneca-programa-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid var(--primary)}
+        .seneca-programa-titulo{font-size:1.1rem;font-weight:700;color:var(--primary)}
+        .seneca-objetivo{background:var(--bg);border-radius:var(--radius-sm);padding:14px;margin-bottom:12px}
+        .seneca-objetivo-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+        .seneca-objetivo-titulo{font-weight:600;color:var(--text)}
+        .seneca-seccion{background:#fff;border-radius:8px;padding:12px;margin-bottom:8px;border:1px solid var(--border)}
+        .seneca-seccion-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+        .seneca-seccion-titulo{font-weight:600;font-size:.85rem;color:var(--primary-dark)}
+        .seneca-contenido{font-size:.8rem;color:var(--text);line-height:1.5;white-space:pre-wrap}
+        .btn-copiar{padding:5px 10px;font-size:.7rem;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:4px}
+        .btn-copiar:hover{background:var(--primary-dark)}
+        .btn-copiar.copiado{background:var(--success)}
+        .btn-copiar-sm{padding:4px 8px;font-size:.65rem;min-width:32px}
+        .seneca-indicadores-lista{display:flex;flex-direction:column;gap:6px}
+        .seneca-indicador-item{display:flex;align-items:center;gap:8px;padding:8px 10px;background:#fff;border-radius:6px;border:1px solid var(--border)}
+        .seneca-indicador-num{font-weight:700;color:var(--primary);min-width:20px;text-align:center;font-size:.8rem}
+        .seneca-indicador-texto{flex:1;font-size:.8rem;color:var(--text)}
+        .seneca-info{background:#e0f2fe;padding:12px;border-radius:8px;font-size:.8rem;color:#0369a1;margin-bottom:16px}
     </style>
 </head>
 <body>
@@ -212,11 +232,13 @@
                 <button class="tab" onclick="cambiarTab('programacion')">📅 Programación</button>
                 <button class="tab" onclick="cambiarTab('evaluacion')">📊 Evaluación</button>
                 <button class="tab" onclick="cambiarTab('asistencia')">📈 Resumen</button>
+                <button class="tab" onclick="cambiarTab('seneca')">🏛️ Séneca</button>
             </div>
             <div id="tabProgramas" class="tab-content active"></div>
             <div id="tabProgramacion" class="tab-content"></div>
             <div id="tabEvaluacion" class="tab-content"></div>
             <div id="tabAsistencia" class="tab-content"></div>
+            <div id="tabSeneca" class="tab-content"></div>
         </div>
     </div>
 
@@ -656,6 +678,114 @@
                 {numero:14,descripcion:'Preparar exigencias comunicativas de ESO',trimestre:3,indicadores:['Lee textos más extensos','Toma apuntes de explicaciones','Expresa ideas con precisión','Trabaja con múltiples fuentes']},
                 {numero:15,descripcion:'Consolidar competencia comunicativa',trimestre:3,indicadores:['Comunica con eficacia en cualquier contexto','Lee comprensivamente todo tipo de textos','Escribe con corrección y coherencia','Muestra gusto por la comunicación']}
             ]},
+            // MOTOR 3º CICLO
+            {nombre:'Desarrollo Motor',ciclo:'ciclo3',tipo:'motor',objetivos:[
+                {numero:1,descripcion:'Consolidar escritura automatizada y eficiente',trimestre:1,indicadores:['Escribe con velocidad adecuada al nivel','Mantiene legibilidad en textos extensos','Toma apuntes sin perder información','Adapta letra según contexto']},
+                {numero:2,descripcion:'Desarrollar precisión en trabajos manuales',trimestre:1,indicadores:['Realiza trabajos con alta precisión','Maneja herramientas especializadas','Ejecuta tareas de detalle','Presenta trabajos de calidad']},
+                {numero:3,descripcion:'Mejorar coordinación fina en tecnología',trimestre:1,indicadores:['Teclea con velocidad y precisión','Usa dispositivos táctiles con destreza','Maneja programas de diseño básico','Coordina acciones en pantalla']},
+                {numero:4,descripcion:'Ampliar técnicas artísticas avanzadas',trimestre:1,indicadores:['Domina técnicas plásticas variadas','Combina materiales creativamente','Ejecuta proyectos artísticos complejos','Muestra estilo personal']},
+                {numero:5,descripcion:'Desarrollar destrezas para la vida diaria',trimestre:1,indicadores:['Realiza tareas domésticas manuales','Manipula herramientas del hogar','Ejecuta pequeñas reparaciones','Muestra autonomía práctica']},
+                {numero:6,descripcion:'Consolidar habilidades instrumentales',trimestre:2,indicadores:['Usa instrumentos de medición','Maneja compás y reglas','Ejecuta dibujo técnico básico','Trabaja con precisión matemática']},
+                {numero:7,descripcion:'Mejorar coordinación en deportes',trimestre:2,indicadores:['Muestra destreza en deportes de raqueta','Coordina en deportes de equipo','Maneja implementos deportivos','Ejecuta técnicas específicas']},
+                {numero:8,descripcion:'Desarrollar expresión plástica elaborada',trimestre:2,indicadores:['Crea obras con intención artística','Planifica proyectos visuales','Combina técnicas de forma innovadora','Expresa ideas complejas visualmente']},
+                {numero:9,descripcion:'Ampliar uso de tecnología creativa',trimestre:2,indicadores:['Crea contenido digital básico','Edita imágenes y vídeo','Usa herramientas de diseño','Presenta trabajos multimedia']},
+                {numero:10,descripcion:'Mejorar autonomía en proyectos manuales',trimestre:2,indicadores:['Planifica proyectos completos','Ejecuta sin supervisión continua','Resuelve problemas técnicos','Evalúa resultados críticamente']},
+                {numero:11,descripcion:'Preparar habilidades para ESO',trimestre:3,indicadores:['Toma apuntes eficientemente','Organiza información visual','Presenta trabajos con rigor','Gestiona materiales múltiples']},
+                {numero:12,descripcion:'Consolidar destrezas deportivas',trimestre:3,indicadores:['Muestra competencia en varios deportes','Ejecuta técnicas con corrección','Mejora rendimiento personal','Disfruta de la práctica deportiva']},
+                {numero:13,descripcion:'Desarrollar proyectos tecnológicos',trimestre:3,indicadores:['Participa en proyectos STEM','Construye prototipos básicos','Resuelve retos técnicos','Muestra pensamiento maker']},
+                {numero:14,descripcion:'Ampliar autonomía creativa',trimestre:3,indicadores:['Desarrolla proyectos propios','Muestra iniciativa artística','Explora nuevas técnicas','Comparte creaciones']},
+                {numero:15,descripcion:'Generalizar competencia motora fina',trimestre:3,indicadores:['Muestra destreza manual completa','Aplica habilidades en contextos variados','Transfiere a situaciones nuevas','Autonomía motora funcional']}
+            ]},
+            // PSICOMOTOR 3º CICLO
+            {nombre:'Desarrollo Psicomotor',ciclo:'ciclo3',tipo:'psicomotor',objetivos:[
+                {numero:1,descripcion:'Consolidar habilidades motrices básicas',trimestre:1,indicadores:['Ejecuta carrera con técnica eficiente','Salta con coordinación y potencia','Lanza con precisión y fuerza','Recepciona en situaciones variadas']},
+                {numero:2,descripcion:'Desarrollar condición física',trimestre:1,indicadores:['Mejora resistencia cardiovascular','Desarrolla fuerza muscular adecuada','Mantiene flexibilidad','Aumenta velocidad de reacción']},
+                {numero:3,descripcion:'Mejorar habilidades gimnásticas avanzadas',trimestre:1,indicadores:['Ejecuta secuencias gimnásticas','Realiza equilibrios complejos','Combina elementos con fluidez','Muestra control corporal']},
+                {numero:4,descripcion:'Ampliar deportes individuales',trimestre:1,indicadores:['Practica atletismo básico','Desarrolla natación','Participa en deportes de raqueta','Mejora marcas personales']},
+                {numero:5,descripcion:'Desarrollar deportes colectivos',trimestre:1,indicadores:['Domina técnicas de fútbol/baloncesto','Participa en juegos de equipo','Asume diferentes posiciones','Colabora tácticamente']},
+                {numero:6,descripcion:'Mejorar expresión corporal elaborada',trimestre:2,indicadores:['Crea coreografías grupales','Expresa emociones complejas','Improvisa con creatividad','Comunica a través del cuerpo']},
+                {numero:7,descripcion:'Consolidar orientación espacial y temporal',trimestre:2,indicadores:['Se orienta en espacios amplios','Anticipa movimientos de otros','Coordina acciones con el tiempo','Ocupa espacios tácticamente']},
+                {numero:8,descripcion:'Desarrollar trabajo en equipo motor',trimestre:2,indicadores:['Lidera actividades grupales','Coordina acciones con compañeros','Comunica durante el juego','Acepta roles diversos']},
+                {numero:9,descripcion:'Ampliar conocimiento corporal',trimestre:2,indicadores:['Conoce capacidades y límites','Adapta esfuerzo a la tarea','Reconoce efectos del ejercicio','Cuida su cuerpo']},
+                {numero:10,descripcion:'Mejorar fair play y deportividad',trimestre:2,indicadores:['Respeta normas y árbitros','Acepta victoria y derrota','Ayuda a compañeros','Rechaza conductas antideportivas']},
+                {numero:11,descripcion:'Preparar actividad física autónoma',trimestre:3,indicadores:['Calienta correctamente','Dosifica el esfuerzo','Recupera adecuadamente','Practica con regularidad']},
+                {numero:12,descripcion:'Consolidar hábitos saludables',trimestre:3,indicadores:['Mantiene vida activa','Equilibra ejercicio y descanso','Conoce beneficios del deporte','Rechaza sedentarismo']},
+                {numero:13,descripcion:'Desarrollar competencias para ESO',trimestre:3,indicadores:['Prepara para educación física de ESO','Conoce deportes del curriculum','Muestra autonomía en actividades','Transfiere aprendizajes']},
+                {numero:14,descripcion:'Ampliar práctica deportiva extraescolar',trimestre:3,indicadores:['Participa en actividades fuera del cole','Muestra interés por deporte','Busca práctica regular','Disfruta de la actividad física']},
+                {numero:15,descripcion:'Generalizar competencia motriz',trimestre:3,indicadores:['Muestra competencia motriz global','Adapta motricidad a cualquier contexto','Mantiene estilo de vida activo','Autonomía motora completa']}
+            ]},
+            // AUTONOMÍA 3º CICLO
+            {nombre:'Autonomía Personal',ciclo:'ciclo3',tipo:'autonomia',objetivos:[
+                {numero:1,descripcion:'Consolidar autonomía en rutinas diarias',trimestre:1,indicadores:['Gestiona rutinas sin supervisión','Organiza su tiempo de forma autónoma','Cumple responsabilidades regularmente','Muestra iniciativa personal']},
+                {numero:2,descripcion:'Desarrollar hábitos de estudio avanzados',trimestre:1,indicadores:['Planifica estudio semanalmente','Usa técnicas de estudio eficaces','Organiza material de varias asignaturas','Prepara exámenes autónomamente']},
+                {numero:3,descripcion:'Mejorar gestión del tiempo',trimestre:1,indicadores:['Usa agenda o planificador','Prioriza tareas','Cumple plazos establecidos','Equilibra obligaciones y ocio']},
+                {numero:4,descripcion:'Ampliar responsabilidad personal',trimestre:1,indicadores:['Asume consecuencias de sus actos','Cumple compromisos adquiridos','Muestra responsabilidad con otros','Actúa con integridad']},
+                {numero:5,descripcion:'Desarrollar autonomía en desplazamientos',trimestre:1,indicadores:['Se desplaza solo por el barrio','Usa transporte público básico','Conoce normas de circulación','Se orienta en entornos conocidos']},
+                {numero:6,descripcion:'Consolidar autocuidado y salud',trimestre:2,indicadores:['Mantiene hábitos saludables','Reconoce señales de su cuerpo','Actúa ante malestar básico','Conoce primeros auxilios básicos']},
+                {numero:7,descripcion:'Mejorar gestión económica básica',trimestre:2,indicadores:['Administra paga o asignación','Ahorra para objetivos','Distingue necesidades de deseos','Valora el dinero']},
+                {numero:8,descripcion:'Desarrollar colaboración en el hogar',trimestre:2,indicadores:['Realiza tareas domésticas regulares','Colabora en organización familiar','Cuida espacios comunes','Ayuda sin que le pidan']},
+                {numero:9,descripcion:'Ampliar seguridad personal',trimestre:2,indicadores:['Identifica situaciones de riesgo','Actúa con prudencia','Conoce recursos de ayuda','Protege datos personales']},
+                {numero:10,descripcion:'Mejorar toma de decisiones',trimestre:2,indicadores:['Evalúa opciones antes de decidir','Considera consecuencias','Asume decisiones tomadas','Aprende de errores']},
+                {numero:11,descripcion:'Preparar transición a ESO',trimestre:3,indicadores:['Conoce funcionamiento de ESO','Prepara cambio de centro','Gestiona incertidumbre','Muestra madurez ante cambios']},
+                {numero:12,descripcion:'Consolidar uso responsable de tecnología',trimestre:3,indicadores:['Usa internet con criterio','Gestiona tiempo de pantallas','Protege privacidad online','Identifica contenidos inadecuados']},
+                {numero:13,descripcion:'Desarrollar proyecto personal',trimestre:3,indicadores:['Identifica intereses y metas','Planifica pasos hacia objetivos','Muestra motivación','Persevera ante dificultades']},
+                {numero:14,descripcion:'Ampliar competencia social autónoma',trimestre:3,indicadores:['Interactúa apropiadamente en contextos nuevos','Pide ayuda cuando la necesita','Se relaciona con adultos correctamente','Muestra habilidades sociales maduras']},
+                {numero:15,descripcion:'Generalizar autonomía personal',trimestre:3,indicadores:['Actúa con autonomía en todos los ámbitos','Toma decisiones responsables','Muestra madurez personal','Preparado para nueva etapa']}
+            ]},
+            // MOTOR 2º CICLO
+            {nombre:'Desarrollo Motor',ciclo:'ciclo2',tipo:'motor',objetivos:[
+                {numero:1,descripcion:'Consolidar grafomotricidad funcional',trimestre:1,indicadores:['Escribe con letra legible y uniforme','Mantiene velocidad sin perder calidad','Respeta márgenes y renglones','Presenta trabajos limpios y ordenados']},
+                {numero:2,descripcion:'Mejorar precisión en recorte',trimestre:1,indicadores:['Recorta figuras complejas con precisión','Recorta materiales de diferentes grosores','Sigue líneas curvas y ángulos','Usa tijeras con destreza']},
+                {numero:3,descripcion:'Desarrollar destrezas manipulativas finas',trimestre:1,indicadores:['Realiza manualidades con pequeños objetos','Ensarta cuentas pequeñas','Hace nudos y lazadas','Manipula herramientas de precisión']},
+                {numero:4,descripcion:'Ampliar coordinación bimanual',trimestre:1,indicadores:['Coordina ambas manos en tareas complejas','Usa mano auxiliar eficientemente','Realiza tareas que requieren ambas manos','Mantiene estabilidad mientras manipula']},
+                {numero:5,descripcion:'Mejorar control del trazo',trimestre:1,indicadores:['Controla presión del lápiz','Traza líneas fluidas','Dibuja con detalle y proporción','Colorea respetando contornos']},
+                {numero:6,descripcion:'Desarrollar velocidad de escritura',trimestre:2,indicadores:['Aumenta velocidad manteniendo legibilidad','Copia textos a ritmo adecuado','Toma dictados sin quedarse atrás','Escribe al ritmo de su pensamiento']},
+                {numero:7,descripcion:'Mejorar organización espacial en papel',trimestre:2,indicadores:['Distribuye espacio en la hoja','Usa correctamente la cuadrícula','Respeta formatos establecidos','Organiza información visualmente']},
+                {numero:8,descripcion:'Ampliar técnicas plásticas',trimestre:2,indicadores:['Domina diferentes técnicas artísticas','Usa materiales variados con destreza','Combina técnicas creativamente','Presenta trabajos cuidados']},
+                {numero:9,descripcion:'Desarrollar dibujo representativo detallado',trimestre:2,indicadores:['Dibuja figuras con proporción','Incluye detalles en sus dibujos','Representa escenas complejas','Usa perspectiva básica']},
+                {numero:10,descripcion:'Mejorar uso de tecnología',trimestre:2,indicadores:['Usa ratón con precisión','Teclea con agilidad','Maneja tablet y stylus','Realiza tareas digitales con destreza']},
+                {numero:11,descripcion:'Consolidar escritura automatizada',trimestre:3,indicadores:['Escribe sin pensar en el trazo','Mantiene calidad en textos largos','Muestra mínimo cansancio','Escribe con fluidez']},
+                {numero:12,descripcion:'Ampliar expresión plástica creativa',trimestre:3,indicadores:['Crea trabajos originales','Combina técnicas con creatividad','Expresa ideas a través del arte','Muestra estilo personal']},
+                {numero:13,descripcion:'Desarrollar habilidades para deportes',trimestre:3,indicadores:['Maneja implementos deportivos','Coordina ojo-mano en juegos','Lanza y recepciona con precisión','Participa en actividades deportivas']},
+                {numero:14,descripcion:'Mejorar autonomía en tareas manuales',trimestre:3,indicadores:['Prepara materiales sin ayuda','Ejecuta proyectos completos','Limpia y organiza su espacio','Cuida herramientas y materiales']},
+                {numero:15,descripcion:'Generalizar destrezas motoras finas',trimestre:3,indicadores:['Aplica habilidades en diferentes contextos','Transfiere destrezas a nuevas tareas','Muestra confianza manipulativa','Autonomía motora fina completa']}
+            ]},
+            // PSICOMOTOR 2º CICLO
+            {nombre:'Desarrollo Psicomotor',ciclo:'ciclo2',tipo:'psicomotor',objetivos:[
+                {numero:1,descripcion:'Consolidar habilidades locomotrices',trimestre:1,indicadores:['Corre con técnica eficiente','Salta con coordinación','Realiza desplazamientos variados','Combina movimientos con fluidez']},
+                {numero:2,descripcion:'Mejorar equilibrio dinámico',trimestre:1,indicadores:['Mantiene equilibrio en movimiento','Camina sobre superficies estrechas','Realiza giros sin perder estabilidad','Equilibrio en situaciones cambiantes']},
+                {numero:3,descripcion:'Desarrollar coordinación óculo-manual',trimestre:1,indicadores:['Lanza con precisión a diana','Atrapa objetos en movimiento','Golpea objetos con implementos','Coordina vista y manos eficientemente']},
+                {numero:4,descripcion:'Ampliar coordinación óculo-pédica',trimestre:1,indicadores:['Conduce balón con control','Golpea balón con precisión','Combina carrera y golpeo','Coordina vista y pies']},
+                {numero:5,descripcion:'Mejorar control corporal',trimestre:1,indicadores:['Controla movimientos globales','Ajusta fuerza según tarea','Frena y arranca con control','Adapta movimiento al espacio']},
+                {numero:6,descripcion:'Desarrollar habilidades gimnásticas',trimestre:2,indicadores:['Realiza volteretas con técnica','Ejecuta equilibrios invertidos','Combina elementos gimnásticos','Muestra control en aparatos']},
+                {numero:7,descripcion:'Mejorar expresión corporal',trimestre:2,indicadores:['Expresa emociones con el cuerpo','Crea secuencias de movimiento','Sigue ritmos con coordinación','Improvisa movimientos creativos']},
+                {numero:8,descripcion:'Ampliar juegos predeportivos',trimestre:2,indicadores:['Participa en juegos de equipo','Aplica reglas deportivas','Colabora con compañeros','Acepta victoria y derrota']},
+                {numero:9,descripcion:'Desarrollar orientación espacial dinámica',trimestre:2,indicadores:['Se orienta en espacios amplios','Calcula trayectorias de objetos','Anticipa movimientos de otros','Ocupa espacios estratégicamente']},
+                {numero:10,descripcion:'Mejorar condición física básica',trimestre:2,indicadores:['Muestra resistencia en actividades','Desarrolla fuerza apropiada','Mantiene flexibilidad','Mejora velocidad de reacción']},
+                {numero:11,descripcion:'Consolidar deportes colectivos',trimestre:3,indicadores:['Practica deportes de equipo','Conoce y aplica reglas','Asume diferentes roles','Muestra deportividad']},
+                {numero:12,descripcion:'Ampliar deportes individuales',trimestre:3,indicadores:['Practica deportes individuales','Mejora marcas personales','Muestra constancia en práctica','Disfruta de la actividad']},
+                {numero:13,descripcion:'Desarrollar autonomía en actividad física',trimestre:3,indicadores:['Calienta antes de actividad','Estira después del ejercicio','Cuida su higiene deportiva','Practica actividad regularmente']},
+                {numero:14,descripcion:'Mejorar trabajo en equipo motor',trimestre:3,indicadores:['Colabora en actividades grupales','Comunica durante el juego','Ayuda a compañeros','Acepta diferentes niveles']},
+                {numero:15,descripcion:'Generalizar competencia motriz',trimestre:3,indicadores:['Muestra competencia motriz global','Disfruta del movimiento','Mantiene hábitos activos','Transfiere a vida cotidiana']}
+            ]},
+            // AUTONOMÍA 2º CICLO
+            {nombre:'Autonomía Personal',ciclo:'ciclo2',tipo:'autonomia',objetivos:[
+                {numero:1,descripcion:'Consolidar higiene personal',trimestre:1,indicadores:['Realiza aseo diario autónomo','Cuida su imagen personal','Mantiene higiene dental correcta','Reconoce necesidades de higiene']},
+                {numero:2,descripcion:'Mejorar organización de materiales',trimestre:1,indicadores:['Prepara mochila correctamente','Organiza su espacio de trabajo','Cuida y mantiene materiales','Encuentra lo que necesita']},
+                {numero:3,descripcion:'Desarrollar gestión del tiempo',trimestre:1,indicadores:['Sigue horarios establecidos','Calcula tiempo para tareas','Llega puntual','Aprovecha el tiempo']},
+                {numero:4,descripcion:'Ampliar responsabilidad personal',trimestre:1,indicadores:['Cumple con sus obligaciones','Asume consecuencias de actos','Recuerda tareas sin ayuda','Muestra iniciativa']},
+                {numero:5,descripcion:'Mejorar autonomía en tareas escolares',trimestre:1,indicadores:['Inicia tareas sin que le digan','Trabaja de forma independiente','Busca información necesaria','Pide ayuda apropiadamente']},
+                {numero:6,descripcion:'Desarrollar hábitos de estudio',trimestre:2,indicadores:['Tiene lugar fijo de estudio','Organiza tiempo de deberes','Prepara material antes','Mantiene concentración']},
+                {numero:7,descripcion:'Mejorar autocuidado',trimestre:2,indicadores:['Reconoce síntomas de malestar','Comunica necesidades de salud','Conoce hábitos saludables','Se protege del sol y frío']},
+                {numero:8,descripcion:'Ampliar colaboración en hogar',trimestre:2,indicadores:['Realiza tareas domésticas','Colabora sin que le pidan','Cuida espacios comunes','Ayuda a la familia']},
+                {numero:9,descripcion:'Desarrollar seguridad personal',trimestre:2,indicadores:['Conoce normas de seguridad','Actúa con prudencia','Identifica situaciones de riesgo','Sabe pedir ayuda']},
+                {numero:10,descripcion:'Mejorar desplazamientos autónomos',trimestre:2,indicadores:['Se desplaza por el centro solo','Conoce el camino a lugares','Sigue normas de circulación','Se orienta en entorno conocido']},
+                {numero:11,descripcion:'Consolidar alimentación saludable',trimestre:3,indicadores:['Elige alimentos saludables','Come de forma equilibrada','Conoce grupos de alimentos','Evita excesos de dulces']},
+                {numero:12,descripcion:'Ampliar gestión del ocio',trimestre:3,indicadores:['Organiza su tiempo libre','Elige actividades variadas','Equilibra pantallas y otras actividades','Propone planes']},
+                {numero:13,descripcion:'Desarrollar resolución de problemas cotidianos',trimestre:3,indicadores:['Resuelve pequeños problemas solo','Busca alternativas','Toma decisiones adecuadas','Pide ayuda cuando la necesita']},
+                {numero:14,descripcion:'Mejorar gestión de pertenencias',trimestre:3,indicadores:['Cuida sus cosas','Ahorra y administra dinero','Valora lo que tiene','Comparte apropiadamente']},
+                {numero:15,descripcion:'Generalizar autonomía personal',trimestre:3,indicadores:['Muestra autonomía en rutinas','Actúa con responsabilidad','Toma iniciativas apropiadas','Transfiere habilidades a nuevos contextos']}
+            ]},
             {nombre:'Desarrollo Psicomotor',ciclo:'ciclo1',tipo:'psicomotor',objetivos:[
                 {numero:1,descripcion:'Consolidar carrera',trimestre:1,indicadores:['Corre con técnica','Cambia dirección','Acelera/frena','Carrera continuada']},
                 {numero:2,descripcion:'Mejorar salto',trimestre:1,indicadores:['Salta longitud','Salta altura','Salto alternando','Triple salto básico']},
@@ -723,7 +853,7 @@
         function crearAlumno(){const siglas=document.getElementById('nuevoSiglas').value.trim().toUpperCase();if(!siglas){toast('Introduce siglas','error');return;}const cursoSel=document.getElementById('nuevoCurso'),cursoTexto=cursoSel.options[cursoSel.selectedIndex].text,ciclo=cursoSel.value;db.ref('gestorpe/alumnos').push().set({siglas:siglas,curso:cursoTexto,ciclo:ciclo,diasSesion:diasSel.slice(),programas:{},programacion:{},evaluaciones:{},ausencias:{},sincole:{},resultados:{},pasados:{}}).then(()=>{cerrarModal('modalNuevo');toast(siglas+' creado ✓','success');});}
         function abrirAlumno(id){alumnoActual=id;mesActual=0;evalTrim=1;document.getElementById('screenInicio').classList.remove('active');document.getElementById('screenAlumno').classList.add('active');const a=alumnos[id],diasStr=(a.diasSesion||[0,2,4]).map(d=>DIAS_C[d]).join('-');document.getElementById('alumnoHeader').innerHTML='<div class="alumno-header-siglas">'+a.siglas+'</div><div><h2 style="font-size:.95rem">'+a.curso+'</h2><p style="color:var(--text-light);font-size:.75rem">'+diasStr+'</p></div><div style="margin-left:auto" class="btn-group no-print"><button class="btn btn-secondary btn-sm" onclick="volverInicio()">← Volver</button><button class="btn btn-secondary btn-sm" onclick="window.print()">🖨️</button><button class="btn btn-danger btn-sm" onclick="eliminarAlumno(\''+id+'\')">🗑️</button></div>';document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===0));document.querySelectorAll('.tab-content').forEach((c,i)=>c.classList.toggle('active',i===0));renderProgs();renderProg();renderEval();renderAsis();}
         function volverInicio(){alumnoActual=null;document.getElementById('screenAlumno').classList.remove('active');document.getElementById('screenInicio').classList.add('active');}
-        function cambiarTab(t){document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));event.target.classList.add('active');document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));document.getElementById('tab'+t.charAt(0).toUpperCase()+t.slice(1)).classList.add('active');if(t==='asistencia')setTimeout(renderAsisCharts,100);if(t==='evaluacion')setTimeout(renderEvalCharts,100);}
+        function cambiarTab(t){document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));event.target.classList.add('active');document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));document.getElementById('tab'+t.charAt(0).toUpperCase()+t.slice(1)).classList.add('active');if(t==='asistencia')setTimeout(renderAsisCharts,100);if(t==='evaluacion')setTimeout(renderEvalCharts,100);if(t==='seneca')renderSeneca();}
         function eliminarAlumno(id){if(confirm('¿Eliminar alumno?')){db.ref('gestorpe/alumnos/'+id).remove();volverInicio();toast('Eliminado','success');}}
 
         // PROGRAMAS
@@ -774,6 +904,311 @@
         // RESUMEN
         function renderAsis(){const a=alumnos[alumnoActual],st=calcStats(a);let totalC=0,totalP=0,totalN=0;if(a.evaluaciones){Object.keys(a.evaluaciones).forEach(k=>{const e=a.evaluaciones[k];if(e==='C')totalC++;else if(e==='P')totalP++;else if(e==='N')totalN++;});}document.getElementById('tabAsistencia').innerHTML='<div class="card"><div class="card-header"><h3 class="card-title">📈 Resumen</h3></div><div class="stats-box"><div class="stat-item"><div class="stat-num" style="color:var(--danger)">'+st.ausencias+'</div><div class="stat-label">Ausencias</div></div><div class="stat-item"><div class="stat-num" style="color:var(--success)">'+st.conseguidos+'</div><div class="stat-label">Sesiones OK</div></div><div class="stat-item"><div class="stat-num" style="color:var(--warning)">'+st.repetir+'</div><div class="stat-label">Repetir</div></div></div><div class="stats-box"><div class="stat-item"><div class="stat-num" style="color:var(--success)">'+totalC+'</div><div class="stat-label">Conseguidos</div></div><div class="stat-item"><div class="stat-num" style="color:var(--proceso)">'+totalP+'</div><div class="stat-label">En proceso</div></div><div class="stat-item"><div class="stat-num" style="color:gray">'+totalN+'</div><div class="stat-label">No iniciados</div></div></div><div class="chart-container"><canvas id="chartAusTrim"></canvas></div></div>';setTimeout(renderAsisCharts,100);}
         function renderAsisCharts(){const a=alumnos[alumnoActual],st=calcStats(a);const ctx1=document.getElementById('chartAusTrim');if(ctx1){if(charts.ausTrim)charts.ausTrim.destroy();charts.ausTrim=new Chart(ctx1,{type:'bar',data:{labels:['T1','T2','T3'],datasets:[{label:'Ausencias',data:[st.porTrim[1].aus,st.porTrim[2].aus,st.porTrim[3].aus],backgroundColor:'#ef4444'}]},options:{responsive:true,plugins:{legend:{display:false},title:{display:true,text:'Ausencias por trimestre'}}}});}}
+
+        // SÉNECA
+        function renderSeneca(){
+            const a=alumnos[alumnoActual];
+            let h='<div class="card"><div class="card-header"><h3 class="card-title">🏛️ Exportar a Séneca</h3></div>';
+            h+='<div class="seneca-info">ℹ️ Esta sección organiza los datos del programa específico para copiarlos fácilmente a Séneca. Usa los botones de copiar para trasladar cada parte.</div>';
+            
+            if(!a.programas||!Object.keys(a.programas).length){
+                h+='<div class="empty-state">Sin programas creados</div></div>';
+                document.getElementById('tabSeneca').innerHTML=h;
+                return;
+            }
+            
+            let progNum=1;
+            Object.keys(a.programas).forEach(pId=>{
+                const p=a.programas[pId];
+                const info=AREAS[p.tipo]||{icon:'📄',nombre:p.tipo};
+                const nombrePrograma='PROGRAMA ESPECÍFICO PARA EL DESARROLLO '+info.nombre.toUpperCase();
+                
+                h+='<div class="seneca-programa">';
+                h+='<div class="seneca-programa-header">';
+                h+='<span class="seneca-programa-titulo">'+info.icon+' Programa '+progNum+': '+info.nombre+'</span>';
+                h+='</div>';
+                
+                // Nombre del programa
+                h+='<div class="seneca-seccion">';
+                h+='<div class="seneca-seccion-header">';
+                h+='<span class="seneca-seccion-titulo">📋 Nombre del Programa</span>';
+                h+='<button class="btn-copiar" onclick="copiarSeneca(this,\''+nombrePrograma+'\')">📋 Copiar</button>';
+                h+='</div>';
+                h+='<div class="seneca-contenido">'+nombrePrograma+'</div>';
+                h+='</div>';
+                
+                // Agrupar objetivos similares
+                const objetivosAgrupados=agruparObjetivos(p.objetivos||[]);
+                
+                objetivosAgrupados.forEach((objAgrupado,idx)=>{
+                    h+='<div class="seneca-objetivo">';
+                    h+='<div class="seneca-objetivo-header">';
+                    h+='<span class="seneca-objetivo-titulo">🎯 Objetivo '+(idx+1)+'</span>';
+                    h+='</div>';
+                    
+                    // Definición del objetivo
+                    h+='<div class="seneca-seccion">';
+                    h+='<div class="seneca-seccion-header">';
+                    h+='<span class="seneca-seccion-titulo">Definición del objetivo</span>';
+                    h+='<button class="btn-copiar" onclick="copiarSeneca(this,`'+escaparTexto(objAgrupado.descripcion)+'`)">📋 Copiar</button>';
+                    h+='</div>';
+                    h+='<div class="seneca-contenido">'+objAgrupado.descripcion+'</div>';
+                    h+='</div>';
+                    
+                    // Indicadores - cada uno con su botón de copiar
+                    h+='<div class="seneca-seccion">';
+                    h+='<div class="seneca-seccion-header">';
+                    h+='<span class="seneca-seccion-titulo">📊 Indicadores</span>';
+                    h+='</div>';
+                    h+='<div class="seneca-indicadores-lista">';
+                    objAgrupado.indicadores.forEach((ind,i)=>{
+                        h+='<div class="seneca-indicador-item">';
+                        h+='<span class="seneca-indicador-num">'+(i+1)+'</span>';
+                        h+='<span class="seneca-indicador-texto">'+ind+'</span>';
+                        h+='<button class="btn-copiar btn-copiar-sm" onclick="copiarSeneca(this,\''+escaparTexto(ind)+'\')">📋</button>';
+                        h+='</div>';
+                    });
+                    h+='</div>';
+                    h+='</div>';
+                    
+                    // Contenidos
+                    const contenidos=generarContenidos(objAgrupado,p.tipo);
+                    h+='<div class="seneca-seccion">';
+                    h+='<div class="seneca-seccion-header">';
+                    h+='<span class="seneca-seccion-titulo">📚 Contenidos</span>';
+                    h+='<button class="btn-copiar" onclick="copiarSeneca(this,`'+escaparTexto(contenidos)+'`)">📋 Copiar</button>';
+                    h+='</div>';
+                    h+='<div class="seneca-contenido">'+contenidos+'</div>';
+                    h+='</div>';
+                    
+                    // Actividades
+                    const actividades=generarActividades(objAgrupado,p.tipo);
+                    h+='<div class="seneca-seccion">';
+                    h+='<div class="seneca-seccion-header">';
+                    h+='<span class="seneca-seccion-titulo">🎮 Actividades</span>';
+                    h+='<button class="btn-copiar" onclick="copiarSeneca(this,`'+escaparTexto(actividades)+'`)">📋 Copiar</button>';
+                    h+='</div>';
+                    h+='<div class="seneca-contenido">'+actividades+'</div>';
+                    h+='</div>';
+                    
+                    // Competencias
+                    const competencias=generarCompetencias(p.tipo);
+                    h+='<div class="seneca-seccion">';
+                    h+='<div class="seneca-seccion-header">';
+                    h+='<span class="seneca-seccion-titulo">🏆 Competencias</span>';
+                    h+='<button class="btn-copiar" onclick="copiarSeneca(this,`'+escaparTexto(competencias)+'`)">📋 Copiar</button>';
+                    h+='</div>';
+                    h+='<div class="seneca-contenido">'+competencias+'</div>';
+                    h+='</div>';
+                    
+                    h+='</div>'; // cierre seneca-objetivo
+                });
+                
+                h+='</div>'; // cierre seneca-programa
+                progNum++;
+            });
+            
+            h+='</div>'; // cierre card
+            document.getElementById('tabSeneca').innerHTML=h;
+        }
+        
+        function agruparObjetivos(objetivos){
+            if(!objetivos.length)return[];
+            
+            // Mínimo 3 objetivos, máximo 6
+            const MIN_OBJETIVOS=3;
+            const MAX_OBJETIVOS=6;
+            
+            // Si hay 3 o menos objetivos, no agrupar
+            if(objetivos.length<=MIN_OBJETIVOS){
+                return objetivos.map(obj=>({
+                    descripcion:obj.descripcion,
+                    indicadores:[...(obj.indicadores||[])],
+                    trimestres:[obj.trimestre]
+                }));
+            }
+            
+            // Agrupar por trimestre primero
+            const porTrimestre={1:[],2:[],3:[]};
+            objetivos.forEach(obj=>{
+                const t=obj.trimestre||1;
+                porTrimestre[t].push(obj);
+            });
+            
+            const grupos=[];
+            
+            // Para cada trimestre, crear 1-2 objetivos agrupados
+            [1,2,3].forEach(trim=>{
+                const objsTrim=porTrimestre[trim];
+                if(!objsTrim.length)return;
+                
+                if(objsTrim.length<=2){
+                    // Pocos objetivos en este trimestre, crear uno por cada uno
+                    objsTrim.forEach(obj=>{
+                        grupos.push({
+                            descripcion:obj.descripcion,
+                            indicadores:[...(obj.indicadores||[])],
+                            trimestres:[trim]
+                        });
+                    });
+                }else if(objsTrim.length<=4){
+                    // 3-4 objetivos: crear 2 grupos
+                    const mitad=Math.ceil(objsTrim.length/2);
+                    const grupo1=objsTrim.slice(0,mitad);
+                    const grupo2=objsTrim.slice(mitad);
+                    
+                    grupos.push(crearGrupoObjetivos(grupo1,trim));
+                    grupos.push(crearGrupoObjetivos(grupo2,trim));
+                }else{
+                    // 5+ objetivos: crear 2 grupos
+                    const tercio=Math.ceil(objsTrim.length/2);
+                    const grupo1=objsTrim.slice(0,tercio);
+                    const grupo2=objsTrim.slice(tercio);
+                    
+                    grupos.push(crearGrupoObjetivos(grupo1,trim));
+                    grupos.push(crearGrupoObjetivos(grupo2,trim));
+                }
+            });
+            
+            // Asegurar mínimo 3 objetivos
+            if(grupos.length<MIN_OBJETIVOS){
+                // Si hay menos de 3, desagrupar hasta tener 3
+                const resultado=[];
+                for(let i=0;i<grupos.length&&resultado.length<MIN_OBJETIVOS;i++){
+                    resultado.push(grupos[i]);
+                }
+                // Añadir objetivos individuales si aún faltan
+                let idx=0;
+                while(resultado.length<MIN_OBJETIVOS&&idx<objetivos.length){
+                    const obj=objetivos[idx];
+                    const yaIncluido=resultado.some(g=>g.descripcion.includes(obj.descripcion.split(' ')[0]));
+                    if(!yaIncluido){
+                        resultado.push({
+                            descripcion:obj.descripcion,
+                            indicadores:[...(obj.indicadores||[])],
+                            trimestres:[obj.trimestre]
+                        });
+                    }
+                    idx++;
+                }
+                return resultado;
+            }
+            
+            // Asegurar máximo 6 objetivos
+            if(grupos.length>MAX_OBJETIVOS){
+                return grupos.slice(0,MAX_OBJETIVOS);
+            }
+            
+            return grupos;
+        }
+        
+        function crearGrupoObjetivos(objs,trimestre){
+            if(objs.length===1){
+                return{
+                    descripcion:objs[0].descripcion,
+                    indicadores:[...(objs[0].indicadores||[])],
+                    trimestres:[trimestre]
+                };
+            }
+            
+            // Combinar descripciones de forma inteligente
+            const verbos=[];
+            const temas=[];
+            objs.forEach(obj=>{
+                const palabras=obj.descripcion.split(' ');
+                const verbo=palabras[0];
+                const tema=palabras.slice(1).join(' ');
+                if(!verbos.includes(verbo))verbos.push(verbo);
+                temas.push(tema);
+            });
+            
+            // Crear descripción combinada
+            let descripcion='';
+            if(verbos.length===1){
+                descripcion=verbos[0]+' '+temas.join(', ');
+            }else{
+                descripcion=objs.map(o=>o.descripcion).join('; ');
+            }
+            
+            // Combinar todos los indicadores (sin duplicados)
+            const todosIndicadores=objs.flatMap(o=>o.indicadores||[]);
+            const indicadoresUnicos=[...new Set(todosIndicadores)];
+            
+            return{
+                descripcion:descripcion,
+                indicadores:indicadoresUnicos,
+                trimestres:[trimestre]
+            };
+        }
+        
+        function generarContenidos(objAgrupado,tipo){
+            const contenidosBase={
+                'comunicativo':['Vocabulario funcional y expresivo','Estructuras gramaticales básicas','Habilidades pragmáticas del lenguaje','Comprensión y expresión oral','Conciencia fonológica'],
+                'cognitivo':['Atención y concentración','Memoria de trabajo','Razonamiento lógico-matemático','Resolución de problemas','Funciones ejecutivas'],
+                'psicomotor':['Esquema corporal','Coordinación dinámica general','Equilibrio y control postural','Orientación espacial y temporal','Lateralidad'],
+                'motor':['Motricidad fina','Coordinación óculo-manual','Grafomotricidad','Manipulación de objetos','Precisión y destreza manual'],
+                'social':['Habilidades sociales básicas','Regulación emocional','Interacción con iguales','Normas de convivencia','Empatía y asertividad'],
+                'autonomia':['Hábitos de autonomía personal','Autocuidado e higiene','Organización y planificación','Responsabilidad en tareas','Independencia funcional']
+            };
+            
+            const base=contenidosBase[tipo]||['Contenidos específicos del área','Habilidades funcionales','Generalización de aprendizajes'];
+            
+            // Personalizar según indicadores
+            const palabrasClave=objAgrupado.indicadores.join(' ').toLowerCase();
+            let contenidos=[...base];
+            
+            if(palabrasClave.includes('vocabulario')||palabrasClave.includes('palabra'))contenidos.push('Ampliación del léxico');
+            if(palabrasClave.includes('comprens'))contenidos.push('Comprensión de instrucciones');
+            if(palabrasClave.includes('escrib')||palabrasClave.includes('lectura'))contenidos.push('Iniciación a la lectoescritura');
+            if(palabrasClave.includes('número')||palabrasClave.includes('contar'))contenidos.push('Conceptos numéricos básicos');
+            if(palabrasClave.includes('atención'))contenidos.push('Estrategias atencionales');
+            
+            return contenidos.slice(0,5).map((c,i)=>(i+1)+'. '+c).join('\n');
+        }
+        
+        function generarActividades(objAgrupado,tipo){
+            const actividadesBase={
+                'comunicativo':['Juegos de denominación y descripción de imágenes','Actividades de comprensión de órdenes y narraciones','Ejercicios de conciencia fonológica (rimas, segmentación)','Diálogos guiados y role-playing comunicativo'],
+                'cognitivo':['Actividades de atención visual y auditiva','Juegos de memoria y secuenciación','Resolución de problemas manipulativos','Tareas de clasificación y seriación'],
+                'psicomotor':['Circuitos motrices y juegos de movimiento','Actividades de equilibrio y coordinación','Ejercicios de esquema corporal','Juegos de orientación espacial'],
+                'motor':['Actividades de recorte, picado y pegado','Ejercicios de grafomotricidad','Manipulación de plastilina y materiales','Juegos de ensartado y encaje'],
+                'social':['Role-playing de situaciones sociales','Juegos cooperativos en pequeño grupo','Actividades de identificación emocional','Dinámicas de turnos y normas'],
+                'autonomia':['Rutinas de autocuidado guiadas','Tareas de organización del material','Actividades de responsabilidad','Secuencias de autonomía personal']
+            };
+            
+            return(actividadesBase[tipo]||['Actividades manipulativas','Juegos estructurados','Tareas funcionales','Generalización en contextos naturales']).slice(0,4).map((a,i)=>(i+1)+'. '+a).join('\n');
+        }
+        
+        function generarCompetencias(tipo){
+            const competenciasMap={
+                'comunicativo':'CCL (Competencia en Comunicación Lingüística)',
+                'cognitivo':'STEM (Competencia Matemática y en Ciencia, Tecnología e Ingeniería)',
+                'psicomotor':'CPSAA (Competencia Personal, Social y de Aprender a Aprender)',
+                'motor':'CPSAA (Competencia Personal, Social y de Aprender a Aprender)',
+                'social':'CPSAA (Competencia Personal, Social y de Aprender a Aprender)\nCC (Competencia Ciudadana)',
+                'autonomia':'CPSAA (Competencia Personal, Social y de Aprender a Aprender)'
+            };
+            return competenciasMap[tipo]||'CPSAA (Competencia Personal, Social y de Aprender a Aprender)';
+        }
+        
+        function escaparTexto(texto){
+            return texto.replace(/`/g,"'").replace(/\\/g,'\\\\').replace(/\n/g,'\\n');
+        }
+        
+        function copiarSeneca(btn,texto){
+            const textoReal=texto.replace(/\\n/g,'\n');
+            navigator.clipboard.writeText(textoReal).then(()=>{
+                const textoOriginal=btn.innerHTML;
+                btn.innerHTML='✓ Copiado';
+                btn.classList.add('copiado');
+                setTimeout(()=>{
+                    btn.innerHTML=textoOriginal;
+                    btn.classList.remove('copiado');
+                },1500);
+            }).catch(()=>{
+                toast('Error al copiar','error');
+            });
+        }
 
         // INFORMES
         function abrirModalInforme(){document.getElementById('informeTrim').value=evalTrim;document.getElementById('informePeriodo').value='trimestral';document.getElementById('grupoMes').style.display='none';document.getElementById('informePreview').style.display='none';document.getElementById('btnImprimirInforme').style.display='none';informeData=null;
