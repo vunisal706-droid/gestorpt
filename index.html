@@ -332,8 +332,8 @@
             <div class="modal-header"><h3 class="modal-title">🖨️ Imprimir</h3><button class="modal-close" onclick="cerrarModal('modalImprimir')">×</button></div>
             <div class="modal-body">
                 <div class="form-group"><label class="form-label">Mes</label><select class="form-select" id="printMes"><option value="-1">📅 Todo el curso</option><option value="0">Septiembre</option><option value="1">Octubre</option><option value="2">Noviembre</option><option value="3">Diciembre</option><option value="4">Enero</option><option value="5">Febrero</option><option value="6">Marzo</option><option value="7">Abril</option><option value="8">Mayo</option><option value="9">Junio</option></select></div>
-                <div class="print-option" onclick="generarWord()"><h4>📥 Descargar Word</h4><p>Programaciones + hoja de valoración de indicadores</p></div>
-                <div class="print-option" onclick="imprimirTodos()"><h4>🖨️ Imprimir separado</h4><p>Cada alumno en una página distinta (PDF)</p></div>
+                <div class="print-option" onclick="imprimirCompacto()"><h4>📄 Imprimir compacto + valoración</h4><p>Programaciones juntas + hoja de indicadores para valorar</p></div>
+                <div class="print-option" onclick="imprimirTodos()"><h4>🖨️ Imprimir separado</h4><p>Cada alumno en una página distinta</p></div>
             </div>
             <div class="modal-footer"><button class="btn btn-secondary" onclick="cerrarModal('modalImprimir')">Cerrar</button></div>
         </div>
@@ -371,7 +371,6 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://unpkg.com/docx@9.5.1/build/index.umd.js"></script>
     <script>
         firebase.initializeApp({databaseURL:"https://gestorpt-7946b-default-rtdb.europe-west1.firebasedatabase.app"});
         const db=firebase.database();
@@ -1261,80 +1260,153 @@
         function abrirModalImprimir(){if(!Object.keys(alumnos).length){toast('No hay alumnos','error');return;}abrirModal('modalImprimir');}
         function imprimirTodos(){const mesSeleccionado=parseInt(document.getElementById('printMes').value);const ids=Object.keys(alumnos);let html='<!DOCTYPE html><html><head><title>Programaciones</title><style>body{font-family:Arial;padding:20px;font-size:11px}h1{color:#1a5f4a;font-size:16px}h2{font-size:14px;border-bottom:2px solid #1a5f4a}table{width:100%;border-collapse:collapse;margin-bottom:15px}th,td{border:1px solid #ccc;padding:6px}th{background:#1a5f4a;color:#fff}td:first-child{background:#2d8a6e;color:#fff;text-align:center;width:50px}.page-break{page-break-after:always}</style></head><body>';ids.forEach((id,idx)=>{const a=alumnos[id],dias=a.diasSesion||[1,3,4];html+='<div'+(idx<ids.length-1?' class="page-break"':'')+'><h1>'+a.siglas+' - '+a.curso+'</h1>';const mesesAImprimir=mesSeleccionado===-1?MESES.map((_,i)=>i):[mesSeleccionado];mesesAImprimir.forEach(mi=>{const mes=MESES[mi];html+='<h2>'+mes.nombre+' (T'+mes.trim+')</h2><table><tr><th>S</th>';dias.forEach(d=>{html+='<th>'+DIAS_C[d]+'</th>';});html+='</tr>';for(let s=1;s<=mes.semanas;s++){html+='<tr><td>'+s+'</td>';dias.forEach(d=>{const k=mi+'_'+s+'_'+d,c=a.programacion?a.programacion[k]:null;if(c&&a.programas&&a.programas[c.pId]){const p=a.programas[c.pId],obj=p.objetivos?p.objetivos[c.oIdx]:null;if(obj){const ind=obj.indicadores?(obj.indicadores[c.iIdx]||''):'';html+='<td><b>O'+obj.numero+'</b><br>'+ind.substring(0,20)+'</td>';}else{html+='<td>-</td>';}}else{html+='<td>-</td>';}});html+='</tr>';}html+='</table>';});html+='</div>';});html+='</body></html>';const win=window.open('','_blank');win.document.write(html);win.document.close();setTimeout(()=>{win.print();},500);cerrarModal('modalImprimir');}
 
-        function generarWord(){
+        function imprimirCompacto(){
             const mesSeleccionado=parseInt(document.getElementById('printMes').value);
             const ids=Object.keys(alumnos);
             if(!ids.length){toast('No hay alumnos','error');return;}
 
-            const {Document,Packer,Paragraph,TextRun,Table,TableRow,TableCell,
-                   Header,Footer,AlignmentType,BorderStyle,WidthType,
-                   ShadingType,VerticalAlign,PageNumber,PageBreak}=docx;
-
-            const ACCENT='1a5f4a', LIGHT_ACCENT='e8f5f1', LIGHT_GRAY='f8f9fa', WHITE='ffffff';
-            const PAGE_W=11906,ML=1134,MR=1134,CW=PAGE_W-ML-MR;
-            const brd={style:BorderStyle.SINGLE,size:1,color:'d0d0d0'};
-            const brds={top:brd,bottom:brd,left:brd,right:brd};
-
-            function hCell(t,w){return new TableCell({width:{size:w,type:WidthType.DXA},borders:brds,shading:{fill:ACCENT,type:ShadingType.CLEAR},verticalAlign:VerticalAlign.CENTER,margins:{top:50,bottom:50,left:80,right:80},children:[new Paragraph({alignment:AlignmentType.CENTER,spacing:{before:0,after:0},children:[new TextRun({text:t,bold:true,color:WHITE,font:'Arial',size:18})]})]})}
-            function dCell(t,w,alt){return new TableCell({width:{size:w,type:WidthType.DXA},borders:brds,shading:alt?{fill:LIGHT_GRAY,type:ShadingType.CLEAR}:undefined,verticalAlign:VerticalAlign.CENTER,margins:{top:40,bottom:40,left:80,right:80},children:[new Paragraph({spacing:{before:0,after:0},children:[new TextRun({text:t,font:'Arial',size:17})]})]})}
-            function nCell(n,w,alt){return new TableCell({width:{size:w,type:WidthType.DXA},borders:brds,shading:alt?{fill:LIGHT_GRAY,type:ShadingType.CLEAR}:{fill:LIGHT_ACCENT,type:ShadingType.CLEAR},verticalAlign:VerticalAlign.CENTER,margins:{top:40,bottom:40,left:80,right:80},children:[new Paragraph({alignment:AlignmentType.CENTER,spacing:{before:0,after:0},children:[new TextRun({text:String(n),bold:true,color:ACCENT,font:'Arial',size:17})]})]})}
-            function secTitle(t){return new Paragraph({spacing:{before:240,after:30},children:[new TextRun({text:t,bold:true,font:'Arial',size:22,color:ACCENT})]})}
-            function secSub(t){return new Paragraph({spacing:{before:20,after:60},border:{bottom:{style:BorderStyle.SINGLE,size:1,color:ACCENT}},children:[new TextRun({text:t,bold:true,font:'Arial',size:18,color:'555555'})]})}
-
-            // --- SECTION 1: PROGRAMACIONES ---
-            const children=[];
             let tituloMes='Todo el curso';
-            if(mesSeleccionado!==-1) tituloMes=MESES[mesSeleccionado].nombre+' (T'+MESES[mesSeleccionado].trim+')';
+            let mesTexto='Curso completo';
+            let trimTexto='';
+            if(mesSeleccionado!==-1){
+                tituloMes=MESES[mesSeleccionado].nombre+' (T'+MESES[mesSeleccionado].trim+')';
+                mesTexto=MESES[mesSeleccionado].nombre;
+                trimTexto='Trimestre '+MESES[mesSeleccionado].trim;
+            }
 
-            children.push(new Paragraph({alignment:AlignmentType.CENTER,spacing:{before:0,after:40},children:[new TextRun({text:'Programaciones',bold:true,font:'Arial',size:32,color:ACCENT})]}));
-            children.push(new Paragraph({alignment:AlignmentType.CENTER,spacing:{before:0,after:140},children:[new TextRun({text:tituloMes,font:'Arial',size:22,color:'888888'})]}));
-            children.push(new Paragraph({spacing:{before:0,after:140},border:{bottom:{style:BorderStyle.SINGLE,size:2,color:ACCENT}},children:[]}));
+            const cursoEscolar=new Date().getMonth()>=8?new Date().getFullYear()+'/'+(new Date().getFullYear()+1):(new Date().getFullYear()-1)+'/'+new Date().getFullYear();
+
+            let html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Programaciones</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:Arial,sans-serif;font-size:10px;color:#333}
+
+/* PORTADA */
+.portada{
+    height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    background:linear-gradient(160deg,#f0faf6 0%,#e0f2ec 40%,#d0eae2 100%);
+    position:relative;overflow:hidden;text-align:center;padding:40px;
+}
+.portada::before{
+    content:'';position:absolute;top:-80px;right:-80px;width:300px;height:300px;
+    border-radius:50%;background:rgba(26,95,74,0.07);
+}
+.portada::after{
+    content:'';position:absolute;bottom:-60px;left:-60px;width:250px;height:250px;
+    border-radius:50%;background:rgba(26,95,74,0.05);
+}
+.portada-linea-top{position:absolute;top:0;left:0;right:0;height:8px;background:linear-gradient(90deg,#1a5f4a,#2d8a6e,#22c55e)}
+.portada-icono{font-size:60px;margin-bottom:20px;filter:drop-shadow(0 4px 8px rgba(26,95,74,0.2))}
+.portada-titulo{font-size:28px;font-weight:800;color:#1a5f4a;letter-spacing:1px;margin-bottom:6px;line-height:1.3}
+.portada-subtitulo{font-size:18px;font-weight:600;color:#2d8a6e;margin-bottom:30px}
+.portada-mes{
+    font-size:38px;font-weight:800;color:#1a5f4a;
+    background:white;padding:16px 50px;border-radius:16px;
+    box-shadow:0 6px 24px rgba(26,95,74,0.15);margin-bottom:12px;
+    border:2px solid rgba(26,95,74,0.1);
+}
+.portada-trim{font-size:16px;color:#5a8a7a;font-weight:600;margin-bottom:40px}
+.portada-centro{font-size:14px;color:#1a5f4a;font-weight:700;margin-bottom:4px}
+.portada-curso{font-size:13px;color:#5a8a7a;margin-bottom:6px}
+.portada-linea{width:60px;height:3px;background:#2d8a6e;border-radius:2px;margin:16px auto}
+.portada-footer{position:absolute;bottom:30px;font-size:11px;color:#8aab9e}
+
+/* CONTENIDO */
+.contenido{padding:20px 25px}
+.titulo{text-align:center;color:#1a5f4a;font-size:18px;font-weight:700;margin-bottom:2px}
+.subtitulo{text-align:center;color:#888;font-size:12px;margin-bottom:8px}
+.sep{border:none;border-bottom:2px solid #1a5f4a;margin-bottom:12px}
+.sec{color:#1a5f4a;font-size:12px;font-weight:700;margin:10px 0 2px 0}
+.sub{font-size:10px;color:#555;font-weight:700;margin-bottom:4px;padding-bottom:2px;border-bottom:1px solid #1a5f4a;display:inline-block}
+table{width:100%;border-collapse:collapse;margin-bottom:10px}
+th{background:#1a5f4a;color:#fff;padding:4px 6px;font-size:9px;text-align:center;border:1px solid #bbb}
+td{border:1px solid #d0d0d0;padding:3px 6px;font-size:9px;vertical-align:middle}
+td:first-child{background:#e8f5f1;color:#1a5f4a;text-align:center;font-weight:700;width:28px}
+tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
+.ob{font-weight:700;color:#1a5f4a}
+.page-break{page-break-before:always}
+.eval-titulo{text-align:center;color:#1a5f4a;font-size:18px;font-weight:700;margin-bottom:2px}
+.eval-sub{text-align:center;color:#888;font-size:12px;margin-bottom:8px}
+.eval-sec{color:#1a5f4a;font-size:12px;font-weight:700;margin:10px 0 4px 0}
+.eval-table th{font-size:9px;padding:4px 5px}
+.eval-table td{font-size:9px;padding:4px 5px}
+.eval-table td:first-child{width:35px}
+.eval-table .col-c,.eval-table .col-ep,.eval-table .col-ni{width:30px;text-align:center}
+.eval-table th.col-val{background:#1a5f4a;color:#fff;width:30px;text-align:center;font-size:8px}
+.check{color:#22c55e;font-weight:700}
+.check-ep{color:#3b82f6;font-weight:700}
+.check-ni{color:#999;font-weight:700}
+@media print{
+    body{padding:0}
+    .portada{height:100vh;page-break-after:always}
+    @page{margin:0}
+    .contenido{padding:1.2cm}
+    @page:not(:first){margin:1.2cm}
+}
+</style></head><body>`;
+
+            // === PORTADA ===
+            html+='<div class="portada">';
+            html+='<div class="portada-linea-top"></div>';
+            html+='<div class="portada-icono">📋</div>';
+            html+='<div class="portada-titulo">PROGRAMACI\u00D3N MENSUAL</div>';
+            html+='<div class="portada-subtitulo">Alumnado PT</div>';
+            html+='<div class="portada-linea"></div>';
+            html+='<div class="portada-mes">'+mesTexto+'</div>';
+            if(trimTexto) html+='<div class="portada-trim">'+trimTexto+'</div>';
+            else html+='<div class="portada-trim">&nbsp;</div>';
+            html+='<div class="portada-linea"></div>';
+            html+='<div class="portada-centro">CEIP Capitulaciones de Santa Fe</div>';
+            html+='<div class="portada-curso">Curso escolar '+cursoEscolar+'</div>';
+            html+='<div class="portada-footer">Pedagog\u00EDa Terap\u00E9utica</div>';
+            html+='</div>';
+
+            // === PARTE 1: PROGRAMACIONES ===
+            html+='<div class="contenido page-break">';
+            html+='<div class="titulo">Programaciones</div>';
+            html+='<div class="subtitulo">'+tituloMes+'</div>';
+            html+='<hr class="sep">';
 
             ids.forEach(id=>{
                 const a=alumnos[id],dias=a.diasSesion||[1,3,4];
+                html+='<div class="sec">'+a.siglas+' - '+a.curso+'</div>';
                 const mesesAImprimir=mesSeleccionado===-1?MESES.map((_,i)=>i):[mesSeleccionado];
-
-                children.push(secTitle(a.siglas+' - '+a.curso));
-
                 mesesAImprimir.forEach(mi=>{
                     const mes=MESES[mi];
-                    if(mesSeleccionado===-1) children.push(secSub(mes.nombre+' (T'+mes.trim+')'));
-
-                    const sW=700;const colW=Math.floor((CW-sW)/dias.length);
-                    const lastW=CW-sW-colW*(dias.length-1);
-                    const colWidths=[sW,...dias.map((_,i)=>i<dias.length-1?colW:lastW)];
-
-                    const headerRow=new TableRow({children:[hCell('S',sW),...dias.map((d,i)=>hCell(DIAS_C[d],colWidths[i+1]))]});
-                    const dataRows=[];
+                    if(mesSeleccionado===-1) html+='<div class="sub">'+mes.nombre+' (T'+mes.trim+')</div>';
+                    html+='<table><tr><th>S</th>';
+                    dias.forEach(d=>{html+='<th>'+DIAS_C[d]+'</th>';});
+                    html+='</tr>';
                     for(let s=1;s<=mes.semanas;s++){
-                        const alt=s%2===0;
-                        const cells=[nCell(s,sW,alt)];
-                        dias.forEach((d,i)=>{
+                        html+='<tr><td>'+s+'</td>';
+                        dias.forEach(d=>{
                             const k=mi+'_'+s+'_'+d,c=a.programacion?a.programacion[k]:null;
-                            let txt='-';
                             if(c&&a.programas&&a.programas[c.pId]){
                                 const p=a.programas[c.pId],obj=p.objetivos?p.objetivos[c.oIdx]:null;
-                                if(obj){const ind=obj.indicadores?(obj.indicadores[c.iIdx]||''):'';txt='O'+obj.numero+' '+ind.substring(0,22);}
-                            }
-                            cells.push(dCell(txt,colWidths[i+1],alt));
+                                if(obj){
+                                    const ind=obj.indicadores?(obj.indicadores[c.iIdx]||''):'';
+                                    html+='<td><span class="ob">O'+obj.numero+'</span> '+ind.substring(0,25)+'</td>';
+                                }else html+='<td>-</td>';
+                            }else html+='<td>-</td>';
                         });
-                        dataRows.push(new TableRow({children:cells}));
+                        html+='</tr>';
                     }
-                    children.push(new Table({width:{size:CW,type:WidthType.DXA},columnWidths:colWidths,rows:[headerRow,...dataRows]}));
+                    html+='</table>';
                 });
             });
+            html+='</div>';
 
-            // --- SECTION 2: INDICADORES PARA VALORAR ---
-            children.push(new Paragraph({pageBreakBefore:true,alignment:AlignmentType.CENTER,spacing:{before:0,after:40},children:[new TextRun({text:'Valoraci\u00F3n de Indicadores',bold:true,font:'Arial',size:32,color:ACCENT})]}));
-            children.push(new Paragraph({alignment:AlignmentType.CENTER,spacing:{before:0,after:140},children:[new TextRun({text:tituloMes,font:'Arial',size:22,color:'888888'})]}));
-            children.push(new Paragraph({spacing:{before:0,after:100},border:{bottom:{style:BorderStyle.SINGLE,size:2,color:ACCENT}},children:[]}));
+            // === PARTE 2: VALORACIÓN DE INDICADORES ===
+            html+='<div class="contenido page-break">';
+            html+='<div class="eval-titulo">Valoraci\u00F3n de Indicadores</div>';
+            html+='<div class="eval-sub">'+tituloMes+'</div>';
+            html+='<hr class="sep">';
 
             ids.forEach(id=>{
                 const a=alumnos[id],dias=a.diasSesion||[1,3,4];
                 const mesesAImprimir=mesSeleccionado===-1?MESES.map((_,i)=>i):[mesSeleccionado];
 
-                // Collect unique indicators used in the selected month(s)
-                const indicadoresUsados=new Map(); // key => {obj, ind, pId, oIdx, iIdx, area}
+                const indMap=new Map();
                 mesesAImprimir.forEach(mi=>{
                     const mes=MESES[mi];
                     for(let s=1;s<=mes.semanas;s++){
@@ -1345,13 +1417,11 @@
                                 if(obj){
                                     const ind=obj.indicadores?(obj.indicadores[c.iIdx]||''):'';
                                     const uKey=c.pId+'_'+c.oIdx+'_'+c.iIdx;
-                                    if(!indicadoresUsados.has(uKey)){
-                                        const info=AREAS[p.tipo]||{nombre:p.tipo};
-                                        // Check current eval for the trimestre of this month
+                                    if(!indMap.has(uKey)){
                                         const trim=MESES[mi].trim;
                                         const eKey=c.pId+'_'+c.oIdx+'_'+c.iIdx+'_T'+trim;
                                         const ev=a.evaluaciones?a.evaluaciones[eKey]:null;
-                                        indicadoresUsados.set(uKey,{objNum:obj.numero,indicador:ind,area:info.nombre,eval:ev});
+                                        indMap.set(uKey,{objNum:obj.numero,indicador:ind,eval:ev});
                                     }
                                 }
                             }
@@ -1359,60 +1429,28 @@
                     }
                 });
 
-                if(!indicadoresUsados.size) return;
+                if(!indMap.size) return;
 
-                children.push(secTitle(a.siglas+' - '+a.curso));
-
-                // Table: Obj | Indicador | C | EP | NI
-                const wObj=700,wC=600,wEP=600,wNI=600;
-                const wInd=CW-wObj-wC-wEP-wNI;
-                const evalColWidths=[wObj,wInd,wC,wEP,wNI];
-
-                const evalHeader=new TableRow({children:[
-                    hCell('Obj',wObj),hCell('Indicador',wInd),
-                    hCell('C',wC),hCell('EP',wEP),hCell('NI',wNI)
-                ]});
-
-                const evalRows=[];let ri=0;
-                indicadoresUsados.forEach((v)=>{
-                    const alt=ri%2===1;
-                    // Mark with symbol if already evaluated
-                    const cMark=v.eval==='C'?'\u2713':'';
-                    const epMark=v.eval==='P'?'\u2713':'';
-                    const niMark=v.eval==='N'?'\u2713':'';
-                    evalRows.push(new TableRow({children:[
-                        nCell('O'+v.objNum,wObj,alt),
-                        dCell(v.indicador,wInd,alt),
-                        new TableCell({width:{size:wC,type:WidthType.DXA},borders:brds,shading:alt?{fill:LIGHT_GRAY,type:ShadingType.CLEAR}:undefined,verticalAlign:VerticalAlign.CENTER,margins:{top:40,bottom:40,left:40,right:40},children:[new Paragraph({alignment:AlignmentType.CENTER,spacing:{before:0,after:0},children:[new TextRun({text:cMark,font:'Arial',size:17,color:'22c55e'})]})]}),
-                        new TableCell({width:{size:wEP,type:WidthType.DXA},borders:brds,shading:alt?{fill:LIGHT_GRAY,type:ShadingType.CLEAR}:undefined,verticalAlign:VerticalAlign.CENTER,margins:{top:40,bottom:40,left:40,right:40},children:[new Paragraph({alignment:AlignmentType.CENTER,spacing:{before:0,after:0},children:[new TextRun({text:epMark,font:'Arial',size:17,color:'3b82f6'})]})]}),
-                        new TableCell({width:{size:wNI,type:WidthType.DXA},borders:brds,shading:alt?{fill:LIGHT_GRAY,type:ShadingType.CLEAR}:undefined,verticalAlign:VerticalAlign.CENTER,margins:{top:40,bottom:40,left:40,right:40},children:[new Paragraph({alignment:AlignmentType.CENTER,spacing:{before:0,after:0},children:[new TextRun({text:niMark,font:'Arial',size:17,color:'888888'})]})]})
-                    ]}));
+                html+='<div class="eval-sec">'+a.siglas+' - '+a.curso+'</div>';
+                html+='<table class="eval-table"><tr><th>Obj</th><th>Indicador</th><th class="col-val">C</th><th class="col-val">EP</th><th class="col-val">NI</th></tr>';
+                let ri=0;
+                indMap.forEach(v=>{
+                    const bg=ri%2===0?'':'style="background:#f8f9fa"';
+                    const cMark=v.eval==='C'?'<span class="check">\u2713</span>':'';
+                    const epMark=v.eval==='P'?'<span class="check-ep">\u2713</span>':'';
+                    const niMark=v.eval==='N'?'<span class="check-ni">\u2713</span>':'';
+                    html+='<tr '+bg+'><td><span class="ob">O'+v.objNum+'</span></td><td>'+v.indicador+'</td><td class="col-c">'+cMark+'</td><td class="col-ep">'+epMark+'</td><td class="col-ni">'+niMark+'</td></tr>';
                     ri++;
                 });
-
-                children.push(new Table({width:{size:CW,type:WidthType.DXA},columnWidths:evalColWidths,rows:[evalHeader,...evalRows]}));
+                html+='</table>';
             });
+            html+='</div>';
 
-            // Build document
-            const doc=new Document({
-                styles:{default:{document:{run:{font:'Arial',size:18}}}},
-                sections:[{
-                    properties:{page:{size:{width:11906,height:16838},margin:{top:1134,right:1134,bottom:1134,left:1134}}},
-                    headers:{default:new Header({children:[new Paragraph({alignment:AlignmentType.RIGHT,children:[new TextRun({text:'Programaciones - '+tituloMes,font:'Arial',size:14,color:'999999',italics:true})]})]})},
-                    footers:{default:new Footer({children:[new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:'P\u00E1gina ',font:'Arial',size:14,color:'999999'}),new TextRun({children:[PageNumber.CURRENT],font:'Arial',size:14,color:'999999'})]})]})},
-                    children:children
-                }]
-            });
-
-            Packer.toBlob(doc).then(blob=>{
-                const url=URL.createObjectURL(blob);
-                const a2=document.createElement('a');
-                a2.href=url;
-                a2.download='Programaciones_'+(mesSeleccionado===-1?'Curso':MESES[mesSeleccionado].nombre)+'.docx';
-                a2.click();
-                URL.revokeObjectURL(url);
-                toast('Word descargado \u2713','success');
-            }).catch(e=>{console.error(e);toast('Error al generar Word','error');});
+            html+='</body></html>';
+            const win=window.open('','_blank');
+            win.document.write(html);
+            win.document.close();
+            setTimeout(()=>{win.print();},500);
             cerrarModal('modalImprimir');
         }
 
