@@ -178,6 +178,7 @@
         <div class="container">
             <div class="nav-tabs no-print">
                 <button class="nav-tab active" onclick="cambiarSeccion('alumnos',this)">👥 Alumnos</button>
+                <button class="nav-tab" onclick="cambiarSeccion('estadisticas',this)">📊 Estadísticas</button>
                 <button class="nav-tab" onclick="cambiarSeccion('biblioteca',this)">📚 Biblioteca</button>
             </div>
             <div id="seccionAlumnos">
@@ -190,6 +191,13 @@
                         </div>
                     </div>
                     <div class="alumnos-grid" id="alumnosGrid"></div>
+                </div>
+            </div>
+            <div id="seccionEstadisticas" style="display:none">
+                <div class="card">
+                    <div class="card-header"><h2 class="card-title">📊 Estadísticas Globales</h2></div>
+                    <div class="chart-container"><canvas id="chartRanking"></canvas></div>
+                    <div class="chart-container" style="margin-top:12px"><canvas id="chartDistAreas"></canvas></div>
                 </div>
             </div>
             <div id="seccionBiblioteca" style="display:none">
@@ -216,6 +224,7 @@
                             <option value="cognitivo">Desarrollo Cognitivo</option>
                             <option value="social">Desarrollo Social-Emocional</option>
                             <option value="autonomia">Autonomía Personal</option>
+                            <option value="tdah">TDAH</option>
                         </select>
                     </div>
                     <div id="bibliotecaGrid"></div>
@@ -270,7 +279,7 @@
                 <div id="previewPlantilla" style="display:none;margin-top:12px;padding:12px;background:var(--bg);border-radius:8px;font-size:.8rem;max-height:200px;overflow-y:auto"></div>
                 <hr style="margin:16px 0;border:none;border-top:1px solid var(--border)">
                 <p style="font-size:.8rem;color:var(--text-light);margin-bottom:10px">O crear manualmente:</p>
-                <div class="form-group"><label class="form-label">Tipo de programa</label><select class="form-select" id="addProgTipo" onchange="cambioTipoProg()"><option value="">Seleccionar...</option><option value="psicomotor">🏃 Desarrollo Psicomotor</option><option value="motor">✋ Desarrollo Motor</option><option value="comunicativo">💬 Desarrollo Comunicativo</option><option value="cognitivo">🧠 Desarrollo Cognitivo</option><option value="social">❤️ Desarrollo Social-Emocional</option><option value="autonomia">🎯 Autonomía Personal</option><option value="lectoescritura">📖 Lectoescritura (predefinido)</option></select></div>
+                <div class="form-group"><label class="form-label">Tipo de programa</label><select class="form-select" id="addProgTipo" onchange="cambioTipoProg()"><option value="">Seleccionar...</option><option value="psicomotor">🏃 Desarrollo Psicomotor</option><option value="motor">✋ Desarrollo Motor</option><option value="comunicativo">💬 Desarrollo Comunicativo</option><option value="cognitivo">🧠 Desarrollo Cognitivo</option><option value="social">❤️ Desarrollo Social-Emocional</option><option value="autonomia">🎯 Autonomía Personal</option><option value="tdah">⚡ TDAH</option><option value="lectoescritura">📖 Lectoescritura (predefinido)</option></select></div>
                 <div id="zonaDocx"><div class="form-group"><label class="form-label">Importar DOCX</label><div class="upload-zone" id="uploadZone" onclick="document.getElementById('inputFile').click()">📄 Toca para seleccionar</div><input type="file" id="inputFile" accept=".docx" style="display:none" onchange="cargarDocx(this)"></div><div class="form-group"><label class="form-label">O pegar texto</label><textarea class="form-input" id="addProgTexto" rows="3" placeholder="OBJETIVO 1: ..."></textarea></div><button class="btn btn-secondary btn-sm" onclick="analizarTexto()">🔍 Analizar</button></div>
                 <div id="zonaLecto" style="display:none"><div style="background:var(--bg);padding:12px;border-radius:8px"><strong>📖 Programa predefinido</strong><p style="font-size:.8rem;color:var(--text-light)">Vocales y consonantes</p></div></div>
                 <div id="previewProg" style="display:none;margin-top:12px;padding:10px;background:var(--bg);border-radius:8px;font-size:.8rem"></div>
@@ -355,7 +364,7 @@
                     <div class="form-group"><label class="form-label">Nombre *</label><input type="text" class="form-input" id="plantillaNombre"></div>
                     <div class="form-group"><label class="form-label">Ciclo *</label><select class="form-select" id="plantillaCiclo"><option value="infantil">Infantil</option><option value="ciclo1">1º Ciclo</option><option value="ciclo2">2º Ciclo</option><option value="ciclo3">3º Ciclo</option></select></div>
                 </div>
-                <div class="form-group"><label class="form-label">Área *</label><select class="form-select" id="plantillaArea"><option value="psicomotor">Desarrollo Psicomotor</option><option value="motor">Desarrollo Motor</option><option value="comunicativo">Desarrollo Comunicativo</option><option value="cognitivo">Desarrollo Cognitivo</option><option value="social">Desarrollo Social-Emocional</option><option value="autonomia">Autonomía Personal</option></select></div>
+                <div class="form-group"><label class="form-label">Área *</label><select class="form-select" id="plantillaArea"><option value="psicomotor">Desarrollo Psicomotor</option><option value="motor">Desarrollo Motor</option><option value="comunicativo">Desarrollo Comunicativo</option><option value="cognitivo">Desarrollo Cognitivo</option><option value="social">Desarrollo Social-Emocional</option><option value="autonomia">Autonomía Personal</option><option value="tdah">TDAH</option></select></div>
                 <div class="form-group"><label class="form-label">Importar DOCX o pegar texto</label><div class="upload-zone" id="uploadZonePlantilla" onclick="document.getElementById('inputFilePlantilla').click()">📄 Toca para seleccionar</div><input type="file" id="inputFilePlantilla" accept=".docx" style="display:none" onchange="cargarDocxPlantilla(this)"></div>
                 <div class="form-group"><textarea class="form-input" id="plantillaTexto" rows="5" placeholder="OBJETIVO 1: ..."></textarea></div>
                 <button class="btn btn-secondary btn-sm" onclick="analizarTextoPlantilla()">🔍 Analizar</button>
@@ -377,7 +386,7 @@
         let alumnos={},plantillas={},alumnoActual=null,mesActual=0,diasSel=[1,3,4],celdaEditando=null,docExtraido=null,docExtraidoPlantilla=null,estadoCelda='asiste',resultadoCelda=null,evalTrim=1,charts={},informeData=null;
         
         const CICLOS={infantil:{nombre:'Infantil',icon:'💒'},ciclo1:{nombre:'1º Ciclo',icon:'🔵'},ciclo2:{nombre:'2º Ciclo',icon:'🟢'},ciclo3:{nombre:'3º Ciclo',icon:'🟠'}};
-        const AREAS={psicomotor:{nombre:'Desarrollo Psicomotor',icon:'🏃',color:'#8b5cf6'},motor:{nombre:'Desarrollo Motor',icon:'✋',color:'#06b6d4'},comunicativo:{nombre:'Desarrollo Comunicativo',icon:'💬',color:'#10b981'},cognitivo:{nombre:'Desarrollo Cognitivo',icon:'🧠',color:'#3b82f6'},social:{nombre:'Desarrollo Social-Emocional',icon:'❤️',color:'#ec4899'},autonomia:{nombre:'Autonomía Personal',icon:'🎯',color:'#f59e0b'},lectoescritura:{nombre:'Lectoescritura',icon:'📖',color:'#6366f1'}};
+        const AREAS={psicomotor:{nombre:'Desarrollo Psicomotor',icon:'🏃',color:'#8b5cf6'},motor:{nombre:'Desarrollo Motor',icon:'✋',color:'#06b6d4'},comunicativo:{nombre:'Desarrollo Comunicativo',icon:'💬',color:'#10b981'},cognitivo:{nombre:'Desarrollo Cognitivo',icon:'🧠',color:'#3b82f6'},social:{nombre:'Desarrollo Social-Emocional',icon:'❤️',color:'#ec4899'},autonomia:{nombre:'Autonomía Personal',icon:'🎯',color:'#f59e0b'},lectoescritura:{nombre:'Lectoescritura',icon:'📖',color:'#6366f1'},tdah:{nombre:'TDAH',icon:'⚡',color:'#f97316'}};
         const MESES=[{nombre:'Septiembre',semanas:3,trim:1},{nombre:'Octubre',semanas:4,trim:1},{nombre:'Noviembre',semanas:4,trim:1},{nombre:'Diciembre',semanas:2,trim:1},{nombre:'Enero',semanas:3,trim:2},{nombre:'Febrero',semanas:4,trim:2},{nombre:'Marzo',semanas:3,trim:2},{nombre:'Abril',semanas:3,trim:3},{nombre:'Mayo',semanas:4,trim:3},{nombre:'Junio',semanas:3,trim:3}];
         const DIAS=['Lunes','Martes','Miércoles','Jueves','Viernes'],DIAS_C=['L','M','X','J','V'];
         const LECTO=['A','E','I','O','U','M','P','S','L','T','N','D','F','B','V','J','R','C','Q','G','H','CH','Ñ','Y','LL','Z','X','K','W'].map((l,i)=>({numero:i+1,descripcion:'Letra '+l,trimestre:i<10?1:(i<20?2:3),indicadores:['Reconoce '+l,'Traza '+l,'Lee sílabas con '+l]}));
@@ -803,6 +812,40 @@
                 {numero:13,descripcion:'Ampliar deportes',trimestre:3,indicadores:['Practica varios deportes','Conoce reglas básicas','Participa competiciones','Deportividad']},
                 {numero:14,descripcion:'Mejorar orientación espacial',trimestre:3,indicadores:['Se orienta espacio','Calcula trayectorias','Anticipa compañeros','Ocupa espacios']},
                 {numero:15,descripcion:'Generalizar competencia motriz',trimestre:3,indicadores:['Competencia motriz general','Disfruta movimiento','Hábitos actividad','Autonomía motora']}
+            ]},
+            {nombre:'TDAH',ciclo:'ciclo1',tipo:'tdah',objetivos:[
+                {numero:1,descripcion:'Mejorar atención sostenida',trimestre:1,indicadores:['Mantiene atención 5 min en tarea','Finaliza actividad corta sin levantarse','Sigue instrucciones de 2 pasos','Escucha explicación breve completa']},
+                {numero:2,descripcion:'Desarrollar atención selectiva',trimestre:1,indicadores:['Localiza información en una ficha','Discrimina estímulos relevantes','Filtra distracciones auditivas','Completa búsqueda visual']},
+                {numero:3,descripcion:'Mejorar control de impulsos',trimestre:1,indicadores:['Espera turno para hablar','Levanta la mano antes de intervenir','Piensa antes de responder','Espera en fila sin empujar']},
+                {numero:4,descripcion:'Desarrollar autorregulación conductual',trimestre:1,indicadores:['Permanece sentado durante la tarea','Controla movimientos en asamblea','Reduce interrupciones','Acepta correcciones sin enfado']},
+                {numero:5,descripcion:'Mejorar memoria de trabajo',trimestre:1,indicadores:['Retiene instrucción de 2 pasos','Recuerda material de la sesión anterior','Mantiene información mientras trabaja','Sigue secuencia de actividad']},
+                {numero:6,descripcion:'Desarrollar planificación de tareas',trimestre:2,indicadores:['Identifica pasos de una actividad','Prepara material antes de empezar','Sigue orden en la tarea','Revisa trabajo antes de entregar']},
+                {numero:7,descripcion:'Ampliar flexibilidad cognitiva',trimestre:2,indicadores:['Cambia de actividad sin resistencia','Acepta cambios en la rutina','Busca alternativas ante bloqueo','Adapta estrategia si no funciona']},
+                {numero:8,descripcion:'Mejorar organización personal',trimestre:2,indicadores:['Organiza material en la mesa','Encuentra sus cosas en la mochila','Sigue rutina de inicio de sesión','Recoge materiales al terminar']},
+                {numero:9,descripcion:'Desarrollar regulación emocional',trimestre:2,indicadores:['Identifica cuando se frustra','Usa estrategia de calma','Expresa enfado con palabras','Recupera la calma con apoyo']},
+                {numero:10,descripcion:'Mejorar habilidades sociales',trimestre:2,indicadores:['Respeta turno en juego','Escucha al compañero','Coopera en actividad de pareja','Resuelve conflicto con palabras']},
+                {numero:11,descripcion:'Consolidar atención en tareas académicas',trimestre:3,indicadores:['Mantiene atención 10 min','Completa tarea con mínima supervisión','Atiende a explicación grupal','Trabaja sin distraer a otros']},
+                {numero:12,descripcion:'Ampliar autocontrol',trimestre:3,indicadores:['Inhibe respuesta impulsiva','Espera sin necesidad de recordatorio','Regula volumen de voz','Controla movimientos en clase']},
+                {numero:13,descripcion:'Desarrollar autonomía en el trabajo',trimestre:3,indicadores:['Inicia tarea solo','Sigue pasos sin ayuda continua','Pide ayuda de forma adecuada','Gestiona su tiempo con apoyo visual']},
+                {numero:14,descripcion:'Mejorar autoestima y motivación',trimestre:3,indicadores:['Verbaliza logros propios','Acepta errores sin frustración excesiva','Muestra iniciativa','Se esfuerza ante dificultad']},
+                {numero:15,descripcion:'Generalizar estrategias',trimestre:3,indicadores:['Aplica estrategias en aula ordinaria','Usa autoinstrucciones','Transfiere hábitos a casa','Mantiene mejoras sin apoyo constante']}
+            ]},
+            {nombre:'TDAH',ciclo:'ciclo2',tipo:'tdah',objetivos:[
+                {numero:1,descripcion:'Mejorar atención sostenida y concentración',trimestre:1,indicadores:['Mantiene atención 15 min en tarea','Completa actividad sin interrupciones frecuentes','Se concentra con distracciones ambientales','Retoma tarea tras distracción']},
+                {numero:2,descripcion:'Desarrollar atención dividida',trimestre:1,indicadores:['Escucha y toma notas simultáneamente','Alterna entre dos tareas','Atiende a instrucciones mientras trabaja','Gestiona varios estímulos']},
+                {numero:3,descripcion:'Mejorar control inhibitorio',trimestre:1,indicadores:['Piensa antes de actuar','Controla respuestas impulsivas verbales','Respeta turnos en debate','Espera instrucción completa antes de empezar']},
+                {numero:4,descripcion:'Desarrollar autorregulación emocional',trimestre:1,indicadores:['Identifica señales de frustración','Aplica técnica de relajación','Gestiona enfado sin conducta disruptiva','Tolera espera y demora de recompensa']},
+                {numero:5,descripcion:'Ampliar memoria de trabajo',trimestre:1,indicadores:['Retiene instrucciones de 3 pasos','Opera mentalmente con información','Recuerda y aplica normas de clase','Mantiene hilo en conversación']},
+                {numero:6,descripcion:'Mejorar planificación y organización',trimestre:2,indicadores:['Planifica pasos antes de una tarea','Usa agenda o checklist','Organiza cuaderno por asignaturas','Prioriza tareas por importancia']},
+                {numero:7,descripcion:'Desarrollar gestión del tiempo',trimestre:2,indicadores:['Estima tiempo necesario para tarea','Usa temporizador como apoyo','Distribuye trabajo en sesión','Finaliza dentro del tiempo previsto']},
+                {numero:8,descripcion:'Ampliar flexibilidad cognitiva',trimestre:2,indicadores:['Acepta cambios de plan sin desregularse','Considera diferentes puntos de vista','Cambia de estrategia cuando falla','Resuelve problemas de forma flexible']},
+                {numero:9,descripcion:'Mejorar habilidades sociales avanzadas',trimestre:2,indicadores:['Participa en trabajo grupal equitativamente','Negocia y llega a acuerdos','Interpreta señales sociales','Adapta conducta al contexto']},
+                {numero:10,descripcion:'Desarrollar metacognición',trimestre:2,indicadores:['Identifica qué le cuesta más','Elige estrategia adecuada','Evalúa su propio trabajo','Detecta y corrige errores']},
+                {numero:11,descripcion:'Consolidar estrategias de autocontrol',trimestre:3,indicadores:['Usa autoinstrucciones de forma autónoma','Aplica parada de pensamiento','Autorregula nivel de activación','Mantiene conducta adecuada toda la sesión']},
+                {numero:12,descripcion:'Ampliar autonomía académica',trimestre:3,indicadores:['Trabaja de forma independiente 20 min','Gestiona deberes con apoyo mínimo','Organiza material sin recordatorio','Revisa y corrige trabajo autónomamente']},
+                {numero:13,descripcion:'Mejorar autoconcepto y motivación',trimestre:3,indicadores:['Reconoce sus fortalezas','Afronta retos sin evitación','Persevera ante dificultad','Valora su esfuerzo y progreso']},
+                {numero:14,descripcion:'Desarrollar resolución de problemas',trimestre:3,indicadores:['Analiza situación antes de actuar','Genera varias soluciones posibles','Evalúa consecuencias de opciones','Elige y ejecuta la mejor opción']},
+                {numero:15,descripcion:'Generalizar competencias',trimestre:3,indicadores:['Aplica estrategias en todas las áreas','Mantiene hábitos sin supervisión','Transfiere aprendizajes a contexto familiar','Muestra progreso sostenido']}
             ]}
         ];
         
@@ -826,7 +869,7 @@
         // Renderizar biblioteca aunque Firebase no conecte
         renderBiblioteca();
 
-        function cambiarSeccion(s,btn){document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');document.getElementById('seccionAlumnos').style.display=s==='alumnos'?'block':'none';document.getElementById('seccionBiblioteca').style.display=s==='biblioteca'?'block':'none';}
+        function cambiarSeccion(s,btn){document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');document.getElementById('seccionAlumnos').style.display=s==='alumnos'?'block':'none';document.getElementById('seccionEstadisticas').style.display=s==='estadisticas'?'block':'none';document.getElementById('seccionBiblioteca').style.display=s==='biblioteca'?'block':'none';if(s==='estadisticas')renderEstadisticasGlobal();}
         function renderInicio(){const g=document.getElementById('alumnosGrid'),ids=Object.keys(alumnos);if(!ids.length){g.innerHTML='<div class="alumno-card alumno-card-add" onclick="abrirModalNuevo()"><span style="font-size:1.3rem">➕</span><span style="font-size:.8rem">Añadir</span></div>';return;}let h=ids.map(id=>{const a=alumnos[id],n=a.programas?Object.keys(a.programas).length:0;return'<div class="alumno-card" onclick="abrirAlumno(\''+id+'\')"><div class="alumno-siglas">'+a.siglas+'</div><div class="alumno-curso">'+a.curso+'</div><div class="alumno-progs">'+n+' prog.</div></div>';}).join('');h+='<div class="alumno-card alumno-card-add" onclick="abrirModalNuevo()"><span style="font-size:1.3rem">➕</span></div>';g.innerHTML=h;}
         
         // BIBLIOTECA
@@ -895,16 +938,112 @@
         function calcStats(a){const aus=a.ausencias||{},res=a.resultados||{};let ausencias=0,conseguidos=0,repetir=0;const dias=a.diasSesion||[1,3,4],porMes={},porTrim={1:{aus:0},2:{aus:0},3:{aus:0}};for(let mi=0;mi<MESES.length;mi++){const m=MESES[mi];porMes[mi]={aus:0};for(let s=1;s<=m.semanas;s++){for(let di=0;di<dias.length;di++){const k=mi+'_'+s+'_'+dias[di];if(aus[k]){ausencias++;porMes[mi].aus++;porTrim[m.trim].aus++;}if(res[k]==='conseguido')conseguidos++;if(res[k]==='repetir')repetir++;}}}return{ausencias:ausencias,conseguidos:conseguidos,repetir:repetir,porMes:porMes,porTrim:porTrim};}
 
         // EVALUACIÓN
-        function renderEval(){const a=alumnos[alumnoActual];let h='<div class="card"><div class="card-header"><h3 class="card-title">📊 Evaluación</h3></div><div class="btn-group no-print" style="margin-bottom:12px"><button class="btn '+(evalTrim===1?'btn-primary':'btn-secondary')+' btn-sm" onclick="setTrim(1)">T1</button><button class="btn '+(evalTrim===2?'btn-primary':'btn-secondary')+' btn-sm" onclick="setTrim(2)">T2</button><button class="btn '+(evalTrim===3?'btn-primary':'btn-secondary')+' btn-sm" onclick="setTrim(3)">T3</button><button class="btn btn-warning btn-sm" onclick="abrirModalInforme()">📄 Informe</button>';if(evalTrim<3){h+='<button class="btn btn-ai btn-sm" onclick="pasarNoConseguidos()">📤 P/N→T'+(evalTrim+1)+'</button>';}h+='</div><div class="chart-container no-print"><canvas id="chartProgreso"></canvas></div><div id="evalList"></div></div>';document.getElementById('tabEvaluacion').innerHTML=h;renderEvalList();setTimeout(renderEvalCharts,100);}
+        function renderEval(){const a=alumnos[alumnoActual];let h='<div class="card"><div class="card-header"><h3 class="card-title">📊 Evaluación</h3></div><div class="btn-group no-print" style="margin-bottom:12px"><button class="btn '+(evalTrim===1?'btn-primary':'btn-secondary')+' btn-sm" onclick="setTrim(1)">T1</button><button class="btn '+(evalTrim===2?'btn-primary':'btn-secondary')+' btn-sm" onclick="setTrim(2)">T2</button><button class="btn '+(evalTrim===3?'btn-primary':'btn-secondary')+' btn-sm" onclick="setTrim(3)">T3</button><button class="btn btn-warning btn-sm" onclick="abrirModalInforme()">📄 Informe</button>';if(evalTrim<3){h+='<button class="btn btn-ai btn-sm" onclick="pasarNoConseguidos()">📤 P/N→T'+(evalTrim+1)+'</button>';}h+='</div><div class="chart-container no-print"><canvas id="chartProgreso"></canvas></div><div id="pctArea" class="no-print"></div><div id="evalList"></div></div>';document.getElementById('tabEvaluacion').innerHTML=h;renderEvalList();setTimeout(renderEvalCharts,100);}
         function setTrim(t){evalTrim=t;renderEval();}
-        function renderEvalCharts(){const a=alumnos[alumnoActual];if(!a.programas)return;const ctx=document.getElementById('chartProgreso');if(!ctx)return;if(charts.progreso)charts.progreso.destroy();const labels=[],conseguidos=[],proceso=[],noIniciados=[];Object.keys(a.programas).forEach(pId=>{const p=a.programas[pId],info=AREAS[p.tipo]||{nombre:p.tipo};labels.push(info.nombre.substring(0,12));let c=0,pr=0,n=0;(p.objetivos||[]).forEach((obj,oi)=>{(obj.indicadores||[]).forEach((_,ii)=>{let found=false;for(let t=1;t<=3;t++){const k=pId+'_'+oi+'_'+ii+'_T'+t,e=a.evaluaciones?a.evaluaciones[k]:null;if(e==='C'){c++;found=true;break;}else if(e==='P'){pr++;found=true;break;}else if(e==='N'){n++;found=true;break;}}if(!found)n++;});});conseguidos.push(c);proceso.push(pr);noIniciados.push(n);});charts.progreso=new Chart(ctx,{type:'bar',data:{labels:labels,datasets:[{label:'Conseguido',data:conseguidos,backgroundColor:'#22c55e'},{label:'En proceso',data:proceso,backgroundColor:'#3b82f6'},{label:'No iniciado',data:noIniciados,backgroundColor:'#d1d5db'}]},options:{responsive:true,plugins:{legend:{position:'bottom'}},scales:{x:{stacked:true},y:{stacked:true}}}});}
+        function renderEvalCharts(){const a=alumnos[alumnoActual];if(!a.programas)return;const ctx=document.getElementById('chartProgreso');if(!ctx)return;if(charts.progreso)charts.progreso.destroy();const labels=[],conseguidos=[],proceso=[],noIniciados=[];const pasadosAqui=getIndicadoresPasados(a,evalTrim);Object.keys(a.programas).forEach(pId=>{const p=a.programas[pId],info=AREAS[p.tipo]||{nombre:p.tipo};const objsT=(p.objetivos||[]).filter(o=>o.trimestre===evalTrim);const pasadosProg=pasadosAqui.filter(x=>x.pId===pId);if(!objsT.length&&!pasadosProg.length)return;labels.push(info.nombre.substring(0,12));let c=0,pr=0,n=0;objsT.forEach(obj=>{const oi=p.objetivos.indexOf(obj);(obj.indicadores||[]).forEach((_,ii)=>{const k=pId+'_'+oi+'_'+ii+'_T'+evalTrim,e=a.evaluaciones?a.evaluaciones[k]:null;if(e==='C')c++;else if(e==='P')pr++;else n++;});});pasadosProg.forEach(item=>{const k=item.pId+'_'+item.oIdx+'_'+item.iIdx+'_T'+evalTrim,e=a.evaluaciones?a.evaluaciones[k]:null;if(e==='C')c++;else if(e==='P')pr++;else n++;});conseguidos.push(c);proceso.push(pr);noIniciados.push(n);});charts.progreso=new Chart(ctx,{type:'bar',data:{labels:labels,datasets:[{label:'Conseguido',data:conseguidos,backgroundColor:'#22c55e'},{label:'En proceso',data:proceso,backgroundColor:'#3b82f6'},{label:'No iniciado',data:noIniciados,backgroundColor:'#d1d5db'}]},options:{responsive:true,plugins:{legend:{position:'bottom'},title:{display:true,text:'Indicadores T'+evalTrim}},scales:{x:{stacked:true},y:{stacked:true}}}});
+            // % consecución por área
+            let pctHtml='<div style="margin-top:10px">';
+            labels.forEach((lbl,i)=>{const total=conseguidos[i]+proceso[i]+noIniciados[i];const pct=total?Math.round(conseguidos[i]/total*100):0;const pctP=total?Math.round(proceso[i]/total*100):0;const bar=pct+pctP;pctHtml+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:.75rem"><span style="min-width:90px;font-weight:600;color:var(--primary)">'+lbl+'</span><div style="flex:1;background:#e5e7eb;border-radius:6px;height:18px;overflow:hidden;display:flex"><div style="width:'+pct+'%;background:#22c55e;height:100%"></div><div style="width:'+pctP+'%;background:#3b82f6;height:100%"></div></div><span style="min-width:36px;text-align:right;font-weight:700;color:'+(pct>=60?'#22c55e':pct>=30?'#f59e0b':'#ef4444')+'">'+pct+'%</span></div>';});
+            pctHtml+='<div style="display:flex;gap:12px;justify-content:center;margin-top:4px;font-size:.65rem;color:var(--text-light)"><span>🟩 Conseguido</span><span>🟦 En proceso</span><span>⬜ No iniciado</span></div></div>';
+            const pctContainer=document.getElementById('pctArea');
+            if(pctContainer) pctContainer.innerHTML=pctHtml;
+        }
         function renderEvalList(){const a=alumnos[alumnoActual],c=document.getElementById('evalList');let h='',hay=false;if(!a.programas){c.innerHTML='<p style="text-align:center;color:var(--text-light)">Sin programas</p>';return;}const pasadosAqui=getIndicadoresPasados(a,evalTrim);Object.keys(a.programas).forEach(pId=>{const p=a.programas[pId],info=AREAS[p.tipo]||{icon:'📄',nombre:p.tipo,color:'#666'};const objsT=(p.objetivos||[]).filter(o=>o.trimestre===evalTrim);const pasadosProg=pasadosAqui.filter(x=>x.pId===pId);if(!objsT.length&&!pasadosProg.length)return;hay=true;h+='<div class="programa-card" style="border-left-color:'+info.color+'"><div class="programa-titulo" style="margin-bottom:8px">'+info.icon+' '+info.nombre+'</div>';objsT.forEach(obj=>{const oi=p.objetivos.indexOf(obj);h+='<div style="margin-bottom:8px"><div style="font-weight:600;font-size:.8rem;margin-bottom:4px">O'+obj.numero+': '+obj.descripcion.substring(0,30)+'...</div>';(obj.indicadores||[]).forEach((ind,ii)=>{const k=pId+'_'+oi+'_'+ii+'_T'+evalTrim,e=a.evaluaciones?a.evaluaciones[k]:'';h+='<div class="eval-item"><span class="eval-text">'+ind+'</span><button class="eval-btn c '+(e==='C'?'active':'')+'" onclick="setEval(\''+pId+'\','+oi+','+ii+',\'C\')">✓</button><button class="eval-btn p '+(e==='P'?'active':'')+'" onclick="setEval(\''+pId+'\','+oi+','+ii+',\'P\')">◐</button><button class="eval-btn n '+(e==='N'?'active':'')+'" onclick="setEval(\''+pId+'\','+oi+','+ii+',\'N\')">○</button></div>';});h+='</div>';});if(pasadosProg.length){h+='<div style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--border)"><div style="font-size:.75rem;color:var(--warning);margin-bottom:6px">📤 Pasados:</div>';pasadosProg.forEach(item=>{const obj=p.objetivos[item.oIdx];if(!obj)return;const ind=obj.indicadores?obj.indicadores[item.iIdx]:'';const k=pId+'_'+item.oIdx+'_'+item.iIdx+'_T'+evalTrim,e=a.evaluaciones?a.evaluaciones[k]:'';h+='<div class="eval-item"><span class="eval-text">O'+obj.numero+': '+ind+'<span class="pasado-badge">T'+(evalTrim-1)+'</span></span><button class="eval-btn c '+(e==='C'?'active':'')+'" onclick="setEval(\''+pId+'\','+item.oIdx+','+item.iIdx+',\'C\')">✓</button><button class="eval-btn p '+(e==='P'?'active':'')+'" onclick="setEval(\''+pId+'\','+item.oIdx+','+item.iIdx+',\'P\')">◐</button><button class="eval-btn n '+(e==='N'?'active':'')+'" onclick="setEval(\''+pId+'\','+item.oIdx+','+item.iIdx+',\'N\')">○</button></div>';});h+='</div>';}h+='</div>';});c.innerHTML=hay?h:'<p style="text-align:center;color:var(--text-light)">Sin indicadores en T'+evalTrim+'</p>';}
         function setEval(pId,oi,ii,e){const a=alumnos[alumnoActual],k=pId+'_'+oi+'_'+ii+'_T'+evalTrim;a.evaluaciones=a.evaluaciones||{};if(a.evaluaciones[k]===e){db.ref('gestorpe/alumnos/'+alumnoActual+'/evaluaciones/'+k).remove();delete a.evaluaciones[k];}else{db.ref('gestorpe/alumnos/'+alumnoActual+'/evaluaciones/'+k).set(e);a.evaluaciones[k]=e;}renderEvalList();setTimeout(renderEvalCharts,100);}
         function pasarNoConseguidos(){if(evalTrim>=3)return;const a=alumnos[alumnoActual];if(!a.programas)return;const siguienteTrim=evalTrim+1,updates={};let count=0;Object.keys(a.programas).forEach(pId=>{const p=a.programas[pId];(p.objetivos||[]).forEach((obj,oi)=>{if(obj.trimestre!==evalTrim)return;(obj.indicadores||[]).forEach((_,ii)=>{const k=pId+'_'+oi+'_'+ii+'_T'+evalTrim,e=a.evaluaciones?a.evaluaciones[k]:'';if(e!=='C'){const pasadoKey=pId+'_'+oi+'_'+ii;updates['gestorpe/alumnos/'+alumnoActual+'/pasados/'+pasadoKey]=siguienteTrim;count++;}});});});const pasadosActuales=getIndicadoresPasados(a,evalTrim);pasadosActuales.forEach(item=>{const k=item.pId+'_'+item.oIdx+'_'+item.iIdx+'_T'+evalTrim,e=a.evaluaciones?a.evaluaciones[k]:'';if(e!=='C'){updates['gestorpe/alumnos/'+alumnoActual+'/pasados/'+item.key]=siguienteTrim;count++;}});if(count===0){toast('¡Todo conseguido!','success');return;}db.ref().update(updates).then(()=>{const nueva=generarProgramacion(alumnos[alumnoActual]);return db.ref('gestorpe/alumnos/'+alumnoActual+'/programacion').set(nueva);}).then(()=>{toast(count+' → T'+siguienteTrim,'success');evalTrim=siguienteTrim;renderEval();renderProg();});}
 
         // RESUMEN
-        function renderAsis(){const a=alumnos[alumnoActual],st=calcStats(a);let totalC=0,totalP=0,totalN=0;if(a.evaluaciones){Object.keys(a.evaluaciones).forEach(k=>{const e=a.evaluaciones[k];if(e==='C')totalC++;else if(e==='P')totalP++;else if(e==='N')totalN++;});}document.getElementById('tabAsistencia').innerHTML='<div class="card"><div class="card-header"><h3 class="card-title">📈 Resumen</h3></div><div class="stats-box"><div class="stat-item"><div class="stat-num" style="color:var(--danger)">'+st.ausencias+'</div><div class="stat-label">Ausencias</div></div><div class="stat-item"><div class="stat-num" style="color:var(--success)">'+st.conseguidos+'</div><div class="stat-label">Sesiones OK</div></div><div class="stat-item"><div class="stat-num" style="color:var(--warning)">'+st.repetir+'</div><div class="stat-label">Repetir</div></div></div><div class="stats-box"><div class="stat-item"><div class="stat-num" style="color:var(--success)">'+totalC+'</div><div class="stat-label">Conseguidos</div></div><div class="stat-item"><div class="stat-num" style="color:var(--proceso)">'+totalP+'</div><div class="stat-label">En proceso</div></div><div class="stat-item"><div class="stat-num" style="color:gray">'+totalN+'</div><div class="stat-label">No iniciados</div></div></div><div class="chart-container"><canvas id="chartAusTrim"></canvas></div></div>';setTimeout(renderAsisCharts,100);}
-        function renderAsisCharts(){const a=alumnos[alumnoActual],st=calcStats(a);const ctx1=document.getElementById('chartAusTrim');if(ctx1){if(charts.ausTrim)charts.ausTrim.destroy();charts.ausTrim=new Chart(ctx1,{type:'bar',data:{labels:['T1','T2','T3'],datasets:[{label:'Ausencias',data:[st.porTrim[1].aus,st.porTrim[2].aus,st.porTrim[3].aus],backgroundColor:'#ef4444'}]},options:{responsive:true,plugins:{legend:{display:false},title:{display:true,text:'Ausencias por trimestre'}}}});}}
+        function renderAsis(){const a=alumnos[alumnoActual],st=calcStats(a);let totalC=0,totalP=0,totalN=0;if(a.evaluaciones){Object.keys(a.evaluaciones).forEach(k=>{const e=a.evaluaciones[k];if(e==='C')totalC++;else if(e==='P')totalP++;else if(e==='N')totalN++;});}document.getElementById('tabAsistencia').innerHTML='<div class="card"><div class="card-header"><h3 class="card-title">📈 Resumen</h3></div><div class="stats-box"><div class="stat-item"><div class="stat-num" style="color:var(--danger)">'+st.ausencias+'</div><div class="stat-label">Ausencias</div></div><div class="stat-item"><div class="stat-num" style="color:var(--success)">'+st.conseguidos+'</div><div class="stat-label">Sesiones OK</div></div><div class="stat-item"><div class="stat-num" style="color:var(--warning)">'+st.repetir+'</div><div class="stat-label">Repetir</div></div></div><div class="stats-box"><div class="stat-item"><div class="stat-num" style="color:var(--success)">'+totalC+'</div><div class="stat-label">Conseguidos</div></div><div class="stat-item"><div class="stat-num" style="color:var(--proceso)">'+totalP+'</div><div class="stat-label">En proceso</div></div><div class="stat-item"><div class="stat-num" style="color:gray">'+totalN+'</div><div class="stat-label">No iniciados</div></div></div><div class="chart-container"><canvas id="chartAusTrim"></canvas></div><div class="chart-container" style="margin-top:12px"><canvas id="chartCompTrim"></canvas></div><div class="chart-container" style="margin-top:12px"><canvas id="chartRadar"></canvas></div></div>';setTimeout(renderAsisCharts,100);}
+        function renderAsisCharts(){
+            const a=alumnos[alumnoActual],st=calcStats(a);
+            // Ausencias por trimestre
+            const ctx1=document.getElementById('chartAusTrim');
+            if(ctx1){if(charts.ausTrim)charts.ausTrim.destroy();charts.ausTrim=new Chart(ctx1,{type:'bar',data:{labels:['T1','T2','T3'],datasets:[{label:'Ausencias',data:[st.porTrim[1].aus,st.porTrim[2].aus,st.porTrim[3].aus],backgroundColor:'#ef4444'}]},options:{responsive:true,plugins:{legend:{display:false},title:{display:true,text:'Ausencias por trimestre'}}}});}
+
+            if(!a.programas) return;
+
+            // Comparativa trimestres: C/P/N por cada trimestre
+            const trimData={1:{c:0,p:0,n:0,total:0},2:{c:0,p:0,n:0,total:0},3:{c:0,p:0,n:0,total:0}};
+            Object.keys(a.programas).forEach(pId=>{const pr=a.programas[pId];
+                (pr.objetivos||[]).forEach((obj,oi)=>{const t=obj.trimestre||1;
+                    (obj.indicadores||[]).forEach((_,ii)=>{
+                        const k=pId+'_'+oi+'_'+ii+'_T'+t,e=a.evaluaciones?a.evaluaciones[k]:null;
+                        trimData[t].total++;
+                        if(e==='C')trimData[t].c++;else if(e==='P')trimData[t].p++;else trimData[t].n++;
+                    });
+                });
+            });
+            const ctx2=document.getElementById('chartCompTrim');
+            if(ctx2){if(charts.compTrim)charts.compTrim.destroy();
+                const pctC=[1,2,3].map(t=>trimData[t].total?Math.round(trimData[t].c/trimData[t].total*100):0);
+                const pctP=[1,2,3].map(t=>trimData[t].total?Math.round(trimData[t].p/trimData[t].total*100):0);
+                const pctN=[1,2,3].map(t=>trimData[t].total?Math.round(trimData[t].n/trimData[t].total*100):0);
+                charts.compTrim=new Chart(ctx2,{type:'bar',data:{labels:['Trimestre 1','Trimestre 2','Trimestre 3'],datasets:[
+                    {label:'Conseguido %',data:pctC,backgroundColor:'#22c55e'},
+                    {label:'En proceso %',data:pctP,backgroundColor:'#3b82f6'},
+                    {label:'No iniciado %',data:pctN,backgroundColor:'#d1d5db'}
+                ]},options:{responsive:true,plugins:{title:{display:true,text:'Comparativa por trimestres (%)'},legend:{position:'bottom'}},scales:{x:{stacked:true},y:{stacked:true,max:100,ticks:{callback:v=>v+'%'}}}}});
+            }
+
+            // Radar por áreas
+            const areaData={};
+            Object.keys(a.programas).forEach(pId=>{const pr=a.programas[pId],info=AREAS[pr.tipo]||{nombre:pr.tipo};
+                if(!areaData[pr.tipo])areaData[pr.tipo]={nombre:info.nombre,c:0,total:0};
+                (pr.objetivos||[]).forEach((obj,oi)=>{
+                    (obj.indicadores||[]).forEach((_,ii)=>{
+                        areaData[pr.tipo].total++;
+                        for(let t=1;t<=3;t++){const k=pId+'_'+oi+'_'+ii+'_T'+t,e=a.evaluaciones?a.evaluaciones[k]:null;if(e==='C'){areaData[pr.tipo].c++;break;}}
+                    });
+                });
+            });
+            const radarLabels=[],radarData=[];
+            Object.values(areaData).forEach(d=>{radarLabels.push(d.nombre.substring(0,14));radarData.push(d.total?Math.round(d.c/d.total*100):0);});
+            const ctx3=document.getElementById('chartRadar');
+            if(ctx3&&radarLabels.length>=3){if(charts.radar)charts.radar.destroy();
+                charts.radar=new Chart(ctx3,{type:'radar',data:{labels:radarLabels,datasets:[{label:'% Conseguido',data:radarData,backgroundColor:'rgba(34,197,94,0.2)',borderColor:'#22c55e',pointBackgroundColor:'#22c55e',pointRadius:4}]},options:{responsive:true,plugins:{title:{display:true,text:'Consecución por área'},legend:{display:false}},scales:{r:{beginAtZero:true,max:100,ticks:{stepSize:25,callback:v=>v+'%'}}}}});
+            }else if(ctx3&&radarLabels.length<3){
+                ctx3.parentElement.innerHTML='<p style="text-align:center;color:var(--text-light);padding:12px;font-size:.8rem">El radar necesita al menos 3 áreas</p>';
+            }
+        }
+
+        // ESTADÍSTICAS GLOBALES
+        function renderEstadisticasGlobal(){
+            const ids=Object.keys(alumnos);
+            if(!ids.length) return;
+
+            // RANKING DE PROGRESO
+            const ranking=[];
+            ids.forEach(id=>{
+                const a=alumnos[id];let totalInd=0,totalC=0;
+                if(a.programas){Object.keys(a.programas).forEach(pId=>{const pr=a.programas[pId];
+                    (pr.objetivos||[]).forEach((obj,oi)=>{(obj.indicadores||[]).forEach((_,ii)=>{
+                        totalInd++;
+                        for(let t=1;t<=3;t++){const k=pId+'_'+oi+'_'+ii+'_T'+t,e=a.evaluaciones?a.evaluaciones[k]:null;if(e==='C'){totalC++;break;}}
+                    });});
+                });}
+                ranking.push({siglas:a.siglas,pct:totalInd?Math.round(totalC/totalInd*100):0});
+            });
+            ranking.sort((a,b)=>b.pct-a.pct);
+            const ctxR=document.getElementById('chartRanking');
+            if(ctxR){if(charts.ranking)charts.ranking.destroy();
+                const colors=ranking.map(r=>r.pct>=60?'#22c55e':r.pct>=30?'#f59e0b':'#ef4444');
+                charts.ranking=new Chart(ctxR,{type:'bar',data:{labels:ranking.map(r=>r.siglas),datasets:[{label:'% Conseguido',data:ranking.map(r=>r.pct),backgroundColor:colors}]},options:{indexAxis:'y',responsive:true,plugins:{title:{display:true,text:'Ranking de progreso (% indicadores conseguidos)'},legend:{display:false}},scales:{x:{max:100,ticks:{callback:v=>v+'%'}}}}});
+            }
+
+            // DISTRIBUCIÓN POR ÁREAS
+            const areaCounts={};
+            ids.forEach(id=>{const a=alumnos[id];
+                if(a.programas){Object.keys(a.programas).forEach(pId=>{const pr=a.programas[pId],info=AREAS[pr.tipo]||{nombre:pr.tipo};
+                    if(!areaCounts[pr.tipo])areaCounts[pr.tipo]={nombre:info.nombre,color:info.color||'#999',count:0};
+                    areaCounts[pr.tipo].count++;
+                });}
+            });
+            const areaVals=Object.values(areaCounts);
+            const ctxD=document.getElementById('chartDistAreas');
+            if(ctxD&&areaVals.length){if(charts.distAreas)charts.distAreas.destroy();
+                charts.distAreas=new Chart(ctxD,{type:'doughnut',data:{labels:areaVals.map(a=>a.nombre),datasets:[{data:areaVals.map(a=>a.count),backgroundColor:areaVals.map(a=>a.color)}]},options:{responsive:true,plugins:{title:{display:true,text:'Distribución de programas por área'},legend:{position:'bottom'}}}});
+            }
+        }
 
         // SÉNECA
         function renderSeneca(){
