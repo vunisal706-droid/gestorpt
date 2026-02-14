@@ -165,7 +165,27 @@
         .seneca-indicador-num{font-weight:700;color:var(--primary);min-width:20px;text-align:center;font-size:.8rem}
         .seneca-indicador-texto{flex:1;font-size:.8rem;color:var(--text)}
         .seneca-info{background:#e0f2fe;padding:12px;border-radius:8px;font-size:.8rem;color:#0369a1;margin-bottom:16px}
+        /* BANCO DE ACTIVIDADES */
+        .recursos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+        .recurso-card{background:var(--bg-card);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);border:2px solid transparent;transition:all .3s;cursor:pointer}
+        .recurso-card:hover{transform:translateY(-3px);box-shadow:0 8px 30px rgba(26,95,74,0.2);border-color:var(--primary)}
+        .recurso-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+        .recurso-titulo{font-weight:700;color:var(--primary);font-size:.95rem;flex:1}
+        .recurso-badge{padding:4px 10px;border-radius:12px;font-size:.65rem;font-weight:700;margin-left:8px;white-space:nowrap}
+        .recurso-badge.local{background:#22c55e;color:#fff}
+        .recurso-badge.online{background:#3b82f6;color:#fff}
+        .recurso-meta{display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap;font-size:.8rem;color:var(--text-light)}
+        .recurso-meta-item{display:flex;align-items:center;gap:4px}
+        .recurso-desc{font-size:.85rem;color:var(--text);line-height:1.5;margin-bottom:10px}
+        .recurso-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+        .recurso-tag{background:var(--bg);color:var(--primary);padding:3px 8px;border-radius:12px;font-size:.7rem;font-weight:600}
+        .recurso-stats{display:flex;gap:15px;padding:10px 0;border-top:1px solid var(--border);margin-bottom:10px;font-size:.75rem;color:var(--text-light)}
+        .recurso-link{display:flex;align-items:center;gap:6px;color:#3b82f6;text-decoration:none;font-size:.8rem;margin-bottom:10px;font-weight:600}
+        .recurso-link:hover{text-decoration:underline}
+        .recurso-actions{display:flex;gap:6px}
+        .recurso-actions .btn{flex:1;padding:8px;font-size:.8rem}
     </style>
+
 </head>
 <body>
     <header class="header no-print">
@@ -181,6 +201,7 @@
                 <button class="nav-tab active" onclick="cambiarSeccion('alumnos',this)">👥 Alumnos</button>
                 <button class="nav-tab" onclick="cambiarSeccion('estadisticas',this)">📊 Estadísticas</button>
                 <button class="nav-tab" onclick="cambiarSeccion('biblioteca',this)">📚 Biblioteca</button>
+                <button class="nav-tab" onclick="cambiarSeccion('recursos',this)">🎯 Banco de Actividades</button>
             </div>
             <div id="seccionAlumnos">
                 <div class="card">
@@ -249,6 +270,70 @@
                     <div id="bibliotecaGrid"></div>
                 </div>
             </div>
+            <div id="seccionRecursos" style="display:none">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">🎯 Banco de Actividades</h2>
+                        <button class="btn btn-primary btn-sm" onclick="abrirModalNuevaActividad()">➕ Nueva Actividad</button>
+                    </div>
+                    <div class="filtros">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">🔍 Buscar</label>
+                                <input type="text" class="form-input" id="buscarRecurso" placeholder="Buscar actividades o recursos..." oninput="renderRecursos()">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">📚 Área</label>
+                                <select class="form-select" id="filtroAreaRecurso" onchange="renderRecursos()">
+                                    <option value="">Todas las áreas</option>
+                                    <option value="psicomotor">Desarrollo Psicomotor</option>
+                                    <option value="motor">Desarrollo Motor</option>
+                                    <option value="comunicativo">Desarrollo Comunicativo</option>
+                                    <option value="cognitivo">Desarrollo Cognitivo</option>
+                                    <option value="social">Desarrollo Social-Emocional</option>
+                                    <option value="autonomia">Autonomía Personal</option>
+                                    <option value="atencion">Atención</option>
+                                    <option value="lectoescritura">Lectoescritura</option>
+                                    <option value="matematicas">Matemáticas</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">⭐ Nivel</label>
+                                <select class="form-select" id="filtroNivelRecurso" onchange="renderRecursos()">
+                                    <option value="">Todos los niveles</option>
+                                    <option value="infantil">Infantil</option>
+                                    <option value="ciclo1">1º Ciclo</option>
+                                    <option value="ciclo2">2º Ciclo</option>
+                                    <option value="ciclo3">3º Ciclo</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">🌐 Fuente</label>
+                                <select class="form-select" id="filtroFuenteRecurso" onchange="renderRecursos()">
+                                    <option value="">Todas las fuentes</option>
+                                    <option value="mia">📝 Mis actividades</option>
+                                    <option value="orientacion-andujar">🌍 Orientación Andújar</option>
+                                    <option value="arasaac">🎨 ARASAAC</option>
+                                    <option value="superpt">✨ SuperPT</option>
+                                    <option value="ptyal">📚 PTYAL</option>
+                                    <option value="aulapt">📋 Aula PT</option>
+                                    <option value="liveworksheets">💻 LiveWorksheets</option>
+                                    <option value="otros">🔗 Otros blogs PT</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tabs" style="margin-top:15px">
+                        <button class="tab active" onclick="cambiarTabRecursos('todos')">📋 Todas (<span id="countTodos">0</span>)</button>
+                        <button class="tab" onclick="cambiarTabRecursos('mias')">📝 Mis actividades (<span id="countMias">0</span>)</button>
+                        <button class="tab" onclick="cambiarTabRecursos('online')">🌐 Recursos online (<span id="countOnline">0</span>)</button>
+                        <button class="tab" onclick="cambiarTabRecursos('favoritas')">⭐ Favoritas (<span id="countFavoritas">0</span>)</button>
+                    </div>
+                    <div id="recursosGrid" style="margin-top:20px"></div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -315,7 +400,9 @@
                 <div id="contenidoSesion">
                     <div class="form-group"><label class="form-label">Programa</label><select class="form-select" id="selPrograma" onchange="cargarObjetivos()"></select></div>
                     <div class="form-group"><label class="form-label">Objetivo</label><select class="form-select" id="selObjetivo" onchange="cargarIndicadores()"></select></div>
-                    <div class="form-group"><label class="form-label">Indicador</label><select class="form-select" id="selIndicador"></select></div>
+                    <div class="form-group"><label class="form-label">Indicador</label><select class="form-select" id="selIndicador" onchange="cargarRecursosSugeridos()"></select></div>
+                    <div class="form-group"><label class="form-label">🎯 Recurso vinculado (opcional)</label><select class="form-select" id="selRecurso"><option value="">Sin recurso</option></select></div>
+                    <div id="infoRecurso" style="display:none;background:var(--bg);padding:10px;border-radius:8px;margin-top:8px;font-size:.8rem"></div>
                     <div class="form-group"><label class="form-label">Resultado</label><div class="resultado-btns"><button type="button" class="resultado-btn conseguido" onclick="setResultado('conseguido',this)">✅ Conseguido</button><button type="button" class="resultado-btn repetir" onclick="setResultado('repetir',this)">🔄 Repetir</button></div></div>
                 </div>
             </div>
@@ -402,7 +489,7 @@
     <script>
         firebase.initializeApp({databaseURL:"https://gestorpt-7946b-default-rtdb.europe-west1.firebasedatabase.app"});
         const db=firebase.database();
-        let alumnos={},plantillas={},alumnoActual=null,mesActual=0,diasSel=[1,3,4],celdaEditando=null,docExtraido=null,docExtraidoPlantilla=null,estadoCelda='asiste',resultadoCelda=null,evalTrim=1,charts={},informeData=null;
+        let alumnos={},plantillas={},alumnoActual=null,mesActual=0,diasSel=[1,3,4],celdaEditando=null,docExtraido=null,docExtraidoPlantilla=null,estadoCelda='asiste',resultadoCelda=null,evalTrim=1,charts={},informeData=null,recursos={},recursosFavoritos=[],tabRecursosActual='todos';
         
         const CICLOS={infantil:{nombre:'Infantil',icon:'💒'},ciclo1:{nombre:'1º Ciclo',icon:'🔵'},ciclo2:{nombre:'2º Ciclo',icon:'🟢'},ciclo3:{nombre:'3º Ciclo',icon:'🟠'}};
         const AREAS={psicomotor:{nombre:'Desarrollo Psicomotor',icon:'🏃',color:'#8b5cf6'},motor:{nombre:'Desarrollo Motor',icon:'✋',color:'#06b6d4'},comunicativo:{nombre:'Desarrollo Comunicativo',icon:'💬',color:'#10b981'},cognitivo:{nombre:'Desarrollo Cognitivo',icon:'🧠',color:'#3b82f6'},social:{nombre:'Desarrollo Social-Emocional',icon:'❤️',color:'#ec4899'},autonomia:{nombre:'Autonomía Personal',icon:'🎯',color:'#f59e0b'},lectoescritura:{nombre:'Lectoescritura',icon:'📖',color:'#6366f1'},tdah:{nombre:'TDAH',icon:'⚡',color:'#f97316'}};
@@ -888,7 +975,7 @@
         // Renderizar biblioteca aunque Firebase no conecte
         renderBiblioteca();
 
-        function cambiarSeccion(s,btn){document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');document.getElementById('seccionAlumnos').style.display=s==='alumnos'?'block':'none';document.getElementById('seccionEstadisticas').style.display=s==='estadisticas'?'block':'none';document.getElementById('seccionBiblioteca').style.display=s==='biblioteca'?'block':'none';if(s==='estadisticas')renderEstadisticasGlobal();}
+        function cambiarSeccion(s,btn){document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');document.getElementById('seccionAlumnos').style.display=s==='alumnos'?'block':'none';document.getElementById('seccionEstadisticas').style.display=s==='estadisticas'?'block':'none';document.getElementById('seccionBiblioteca').style.display=s==='biblioteca'?'block':'none';document.getElementById('seccionRecursos').style.display=s==='recursos'?'block':'none';if(s==='estadisticas')renderEstadisticasGlobal();if(s==='recursos')inicializarRecursos();}
         function renderInicio(){const g=document.getElementById('alumnosGrid'),ids=Object.keys(alumnos);if(!ids.length){g.innerHTML='<div class="alumno-card alumno-card-add" onclick="abrirModalNuevo()"><span style="font-size:1.3rem">➕</span><span style="font-size:.8rem">Añadir</span></div>';return;}let h=ids.map(id=>{const a=alumnos[id],n=a.programas?Object.keys(a.programas).length:0;return'<div class="alumno-card" onclick="abrirAlumno(\''+id+'\')"><div class="alumno-siglas">'+a.siglas+'</div><div class="alumno-curso">'+a.curso+'</div><div class="alumno-progs">'+n+' prog.</div></div>';}).join('');h+='<div class="alumno-card alumno-card-add" onclick="abrirModalNuevo()"><span style="font-size:1.3rem">➕</span></div>';g.innerHTML=h;}
         
         // BIBLIOTECA
@@ -941,18 +1028,18 @@
         function generarPromptIA(){const a=alumnos[alumnoActual];if(!a.programas||!Object.keys(a.programas).length){toast('Añade programas','error');return;}const dias=a.diasSesion||[1,3,4];const todasSesiones=getTodasLasSesiones(a);let prompt='Genera programación COMPLETA curso 2025/2026.\n\n👤 '+a.siglas+' ('+a.curso+')\n📆 '+dias.map(d=>DIAS_C[d]).join(', ')+'\n📊 '+todasSesiones.length+' sesiones\n\n📚 PROGRAMAS:\n';Object.keys(a.programas).forEach(pId=>{const p=a.programas[pId],info=AREAS[p.tipo]||{nombre:p.tipo};prompt+='\n🔷 '+info.nombre+' (ID: "'+pId+'")\n';(p.objetivos||[]).forEach((obj,oi)=>{prompt+='  O'+obj.numero+' (oIdx:'+oi+', T'+obj.trimestre+'): '+obj.descripcion+'\n';(obj.indicadores||[]).forEach((ind,ii)=>{prompt+='    - iIdx:'+ii+': '+ind+'\n';});});});prompt+='\n📤 RESPONDE SOLO JSON:\n{"mes_semana_dia": {"pId": "...", "oIdx": N, "iIdx": N}, ...}\n\n⚠️ '+todasSesiones.length+' entradas. Alterna 50-50. Respeta trimestres.';navigator.clipboard.writeText(prompt).then(()=>{toast('Copiado','success');window.open('https://chat.openai.com/','_blank');});}
         function importarJSON(){const txt=document.getElementById('jsonInput').value.trim();if(!txt){toast('Pega JSON','error');return;}try{let cleanJSON=txt.replace(/```json?\n?/g,'').replace(/```/g,'').trim();const prog=JSON.parse(cleanJSON);db.ref('gestorpe/alumnos/'+alumnoActual+'/programacion').set(prog).then(()=>{alumnos[alumnoActual].programacion=prog;cerrarModal('modalImportJSON');document.getElementById('jsonInput').value='';renderProg();toast('Importado ✓','success');});}catch(e){toast('Error JSON','error');}}
         function renderProg(){const a=alumnos[alumnoActual],dias=a.diasSesion||[1,3,4],noms=dias.map(d=>DIAS_C[d]),mes=MESES[mesActual],st=calcStats(a);let h='<div class="card"><div class="stats-box no-print"><div class="stat-item"><div class="stat-num" style="color:var(--danger)">'+(st.porMes[mesActual]?st.porMes[mesActual].aus:0)+'</div><div class="stat-label">Ausencias</div></div></div><div class="cuadrante-nav no-print"><button class="nav-btn" onclick="cambiarMes(-1)">◀</button><select class="form-select" style="width:auto" onchange="mesActual=parseInt(this.value);renderProg()">';for(let i=0;i<MESES.length;i++){h+='<option value="'+i+'"'+(i===mesActual?' selected':'')+'>'+MESES[i].nombre+'</option>';}h+='</select><button class="nav-btn" onclick="cambiarMes(1)">▶</button><span class="trimestre-badge t'+mes.trim+'">T'+mes.trim+'</span></div><div class="leyenda no-print"><div class="leyenda-item"><div class="leyenda-color" style="background:#fee2e2"></div>Ausencia</div><div class="leyenda-item"><div class="leyenda-color" style="background:#e0e7ff"></div>Sin cole</div></div><div style="overflow-x:auto;margin-top:8px"><table class="cuadrante-table"><thead><tr><th>S</th>';for(let i=0;i<noms.length;i++){h+='<th>'+noms[i]+'</th>';}h+='</tr></thead><tbody>';for(let si=0;si<mes.semanas;si++){const sem=si+1;h+='<tr><td>'+sem+'</td>';for(let di=0;di<dias.length;di++){h+=renderCelda(a,mesActual+'_'+sem+'_'+dias[di],dias[di]);}h+='</tr>';}h+='</tbody></table></div></div>';document.getElementById('tabProgramacion').innerHTML=h;}
-        function renderCelda(a,k,d){const c=a.programacion?a.programacion[k]:null,aus=a.ausencias?a.ausencias[k]:false,sc=a.sincole?a.sincole[k]:false,res=a.resultados?a.resultados[k]:null;let cls='celda',icon='';if(sc){cls+=' celda-sincole';icon='🏫';}else if(aus){cls+=' celda-ausencia';icon='❌';}else if(res==='conseguido'){icon='✅';}else if(res==='repetir'){icon='🔄';}if(!c||!a.programas||!a.programas[c.pId]){return'<td class="'+cls+' celda-vacia" onclick="editarCelda(\''+k+'\','+d+')">'+(icon?'<span class="celda-icon">'+icon+'</span>':'')+'+</td>';}const p=a.programas[c.pId],obj=p.objetivos?p.objetivos[c.oIdx]:null;if(!obj)return'<td class="'+cls+'">?</td>';const info=AREAS[p.tipo]||{color:'#666'},ind=obj.indicadores?(obj.indicadores[c.iIdx]||''):'';return'<td class="'+cls+'" onclick="editarCelda(\''+k+'\','+d+')">'+(icon?'<span class="celda-icon">'+icon+'</span>':'')+'<div class="celda-obj" style="color:'+info.color+'">O'+obj.numero+'</div><div class="celda-ind">'+ind.substring(0,25)+(ind.length>25?'...':'')+'</div></td>';}
+        function renderCelda(a,k,d){const c=a.programacion?a.programacion[k]:null,aus=a.ausencias?a.ausencias[k]:false,sc=a.sincole?a.sincole[k]:false,res=a.resultados?a.resultados[k]:null;let cls='celda',icon='';if(sc){cls+=' celda-sincole';icon='🏫';}else if(aus){cls+=' celda-ausencia';icon='❌';}else if(res==='conseguido'){icon='✅';}else if(res==='repetir'){icon='🔄';}if(!c||!a.programas||!a.programas[c.pId]){return'<td class="'+cls+' celda-vacia" onclick="editarCelda(\''+k+'\','+d+')">'+(icon?'<span class="celda-icon">'+icon+'</span>':'')+'+</td>';}const p=a.programas[c.pId],obj=p.objetivos?p.objetivos[c.oIdx]:null;if(!obj)return'<td class="'+cls+'">?</td>';const info=AREAS[p.tipo]||{color:'#666'},ind=obj.indicadores?(obj.indicadores[c.iIdx]||''):'';const recursoIcon=c.recursoId?'<span style="position:absolute;bottom:2px;left:2px;font-size:.6rem" title="Recurso vinculado">🔗</span>':'';return'<td class="'+cls+'" onclick="editarCelda(\''+k+'\','+d+')">'+(icon?'<span class="celda-icon">'+icon+'</span>':'')+recursoIcon+'<div class="celda-obj" style="color:'+info.color+'">O'+obj.numero+'</div><div class="celda-ind">'+ind.substring(0,25)+(ind.length>25?'...':'')+'</div></td>';}
         function cambiarMes(dir){mesActual=Math.max(0,Math.min(9,mesActual+dir));renderProg();}
-        function editarCelda(k,d){celdaEditando=k;estadoCelda='asiste';resultadoCelda=null;const a=alumnos[alumnoActual],c=a.programacion?a.programacion[k]:{};document.getElementById('celdaTitulo').textContent=DIAS[d];document.querySelectorAll('.asist-btn').forEach(b=>b.classList.remove('selected'));document.querySelectorAll('.resultado-btn').forEach(b=>b.classList.remove('selected'));if(a.sincole&&a.sincole[k]){estadoCelda='sincole';document.querySelector('.asist-btn.sincole').classList.add('selected');document.getElementById('contenidoSesion').style.display='none';}else if(a.ausencias&&a.ausencias[k]){estadoCelda='ausencia';document.querySelector('.asist-btn.ausencia').classList.add('selected');document.getElementById('contenidoSesion').style.display='none';}else{document.querySelector('.asist-btn.asiste').classList.add('selected');document.getElementById('contenidoSesion').style.display='block';}resultadoCelda=(a.resultados&&a.resultados[k])?a.resultados[k]:null;if(resultadoCelda){const btn=document.querySelector('.resultado-btn.'+resultadoCelda);if(btn)btn.classList.add('selected');}const sel=document.getElementById('selPrograma');sel.innerHTML='<option value="">-</option>';if(a.programas){Object.keys(a.programas).forEach(pId=>{const p=a.programas[pId],info=AREAS[p.tipo]||{icon:'📄'};sel.innerHTML+='<option value="'+pId+'"'+(c.pId===pId?' selected':'')+'>'+info.icon+' '+(info.nombre||p.tipo)+'</option>';});}if(c.pId){cargarObjetivos();setTimeout(()=>{document.getElementById('selObjetivo').value=c.oIdx!==undefined?c.oIdx:'';cargarIndicadores();setTimeout(()=>{document.getElementById('selIndicador').value=c.iIdx!==undefined?c.iIdx:'';},30);},30);}else{document.getElementById('selObjetivo').innerHTML='<option value="">-</option>';document.getElementById('selIndicador').innerHTML='<option value="">-</option>';}abrirModal('modalCelda');}
+        function editarCelda(k,d){celdaEditando=k;estadoCelda='asiste';resultadoCelda=null;const a=alumnos[alumnoActual],c=a.programacion?a.programacion[k]:{};document.getElementById('celdaTitulo').textContent=DIAS[d];document.querySelectorAll('.asist-btn').forEach(b=>b.classList.remove('selected'));document.querySelectorAll('.resultado-btn').forEach(b=>b.classList.remove('selected'));if(a.sincole&&a.sincole[k]){estadoCelda='sincole';document.querySelector('.asist-btn.sincole').classList.add('selected');document.getElementById('contenidoSesion').style.display='none';}else if(a.ausencias&&a.ausencias[k]){estadoCelda='ausencia';document.querySelector('.asist-btn.ausencia').classList.add('selected');document.getElementById('contenidoSesion').style.display='none';}else{document.querySelector('.asist-btn.asiste').classList.add('selected');document.getElementById('contenidoSesion').style.display='block';}resultadoCelda=(a.resultados&&a.resultados[k])?a.resultados[k]:null;if(resultadoCelda){const btn=document.querySelector('.resultado-btn.'+resultadoCelda);if(btn)btn.classList.add('selected');}const sel=document.getElementById('selPrograma');sel.innerHTML='<option value="">-</option>';if(a.programas){Object.keys(a.programas).forEach(pId=>{const p=a.programas[pId],info=AREAS[p.tipo]||{icon:'📄'};sel.innerHTML+='<option value="'+pId+'"'+(c.pId===pId?' selected':'')+'>'+info.icon+' '+(info.nombre||p.tipo)+'</option>';});}if(c.pId){cargarObjetivos();setTimeout(()=>{document.getElementById('selObjetivo').value=c.oIdx!==undefined?c.oIdx:'';cargarIndicadores();setTimeout(()=>{document.getElementById('selIndicador').value=c.iIdx!==undefined?c.iIdx:'';cargarRecursosSugeridos();setTimeout(()=>{document.getElementById('selRecurso').value=c.recursoId||'';if(c.recursoId)mostrarInfoRecurso(c.recursoId);},30);},30);},30);}else{document.getElementById('selObjetivo').innerHTML='<option value="">-</option>';document.getElementById('selIndicador').innerHTML='<option value="">-</option>';document.getElementById('selRecurso').innerHTML='<option value="">Sin recurso</option>';}abrirModal('modalCelda');}
         function setEstado(e,btn){estadoCelda=e;document.querySelectorAll('.asist-btn').forEach(b=>b.classList.remove('selected'));btn.classList.add('selected');document.getElementById('contenidoSesion').style.display=e==='asiste'?'block':'none';}
         function setResultado(r,btn){if(resultadoCelda===r){resultadoCelda=null;btn.classList.remove('selected');}else{resultadoCelda=r;document.querySelectorAll('.resultado-btn').forEach(b=>b.classList.remove('selected'));btn.classList.add('selected');}}
         function cargarObjetivos(){const a=alumnos[alumnoActual],pId=document.getElementById('selPrograma').value,sel=document.getElementById('selObjetivo');sel.innerHTML='<option value="">-</option>';document.getElementById('selIndicador').innerHTML='<option value="">-</option>';if(!pId||!a.programas||!a.programas[pId])return;a.programas[pId].objetivos.forEach((o,i)=>{sel.innerHTML+='<option value="'+i+'">O'+o.numero+': '+o.descripcion.substring(0,20)+'...</option>';});}
-        function cargarIndicadores(){const a=alumnos[alumnoActual],pId=document.getElementById('selPrograma').value,oIdx=document.getElementById('selObjetivo').value,sel=document.getElementById('selIndicador');sel.innerHTML='<option value="">-</option>';if(!pId||oIdx==='')return;const inds=a.programas[pId].objetivos[parseInt(oIdx)].indicadores||[];inds.forEach((x,i)=>{sel.innerHTML+='<option value="'+i+'">'+x.substring(0,30)+'...</option>';});}
-        function guardarCelda(){const a=alumnos[alumnoActual];const updates={};const contenidoActual=a.programacion?a.programacion[celdaEditando]:null;updates['gestorpe/alumnos/'+alumnoActual+'/ausencias/'+celdaEditando]=null;updates['gestorpe/alumnos/'+alumnoActual+'/sincole/'+celdaEditando]=null;updates['gestorpe/alumnos/'+alumnoActual+'/resultados/'+celdaEditando]=null;if(estadoCelda==='ausencia'||estadoCelda==='sincole'){const tipo=estadoCelda==='ausencia'?'ausencias':'sincole';updates['gestorpe/alumnos/'+alumnoActual+'/'+tipo+'/'+celdaEditando]=true;if(contenidoActual){const nuevaProg=reajustarDesde(a,celdaEditando);updates['gestorpe/alumnos/'+alumnoActual+'/programacion']=nuevaProg;}}else{const pId=document.getElementById('selPrograma').value;const oIdx=document.getElementById('selObjetivo').value;const iIdx=document.getElementById('selIndicador').value;if(pId&&oIdx!==''){const nuevoContenido={pId:pId,oIdx:parseInt(oIdx),iIdx:iIdx!==''?parseInt(iIdx):0};if(resultadoCelda==='repetir'){// Primero actualizar la celda actual en el objeto local
-                    a.programacion=a.programacion||{};a.programacion[celdaEditando]=nuevoContenido;
-                    // Luego insertar repetición (que desplaza todo)
-                    const nuevaProg=insertarRepeticion(a,celdaEditando,nuevoContenido);
-                    updates['gestorpe/alumnos/'+alumnoActual+'/programacion']=nuevaProg;}else{updates['gestorpe/alumnos/'+alumnoActual+'/programacion/'+celdaEditando]=nuevoContenido;}}if(resultadoCelda){updates['gestorpe/alumnos/'+alumnoActual+'/resultados/'+celdaEditando]=resultadoCelda;}}db.ref().update(updates).then(()=>{cerrarModal('modalCelda');toast(resultadoCelda==='repetir'?'Repetición insertada ✓':'Guardado ✓','success');});}
+        function cargarIndicadores(){const a=alumnos[alumnoActual],pId=document.getElementById('selPrograma').value,oIdx=document.getElementById('selObjetivo').value,sel=document.getElementById('selIndicador');sel.innerHTML='<option value="">-</option>';if(!pId||oIdx==='')return;const inds=a.programas[pId].objetivos[parseInt(oIdx)].indicadores||[];inds.forEach((x,i)=>{sel.innerHTML+='<option value="'+i+'">'+x.substring(0,30)+'...</option>';});cargarRecursosSugeridos();}
+        
+        function cargarRecursosSugeridos(){const pId=document.getElementById('selPrograma').value;const sel=document.getElementById('selRecurso');sel.innerHTML='<option value="">Sin recurso</option>';sel.onchange=function(){mostrarInfoRecurso(this.value);};if(!pId)return;const a=alumnos[alumnoActual];if(!a.programas||!a.programas[pId])return;const area=a.programas[pId].tipo;const ciclo=a.curso.includes('Infantil')?'infantil':a.curso.includes('1º')||a.curso.includes('2º')?'ciclo1':a.curso.includes('3º')||a.curso.includes('4º')?'ciclo2':'ciclo3';const recursosFiltrados=RECURSOS_ONLINE.filter(r=>r.area===area&&r.nivel.includes(ciclo));recursosFiltrados.slice(0,10).forEach(r=>{sel.innerHTML+='<option value="'+r.id+'">'+r.titulo+'</option>';});if(recursosFiltrados.length===0){sel.innerHTML+='<option disabled>-- No hay recursos para esta área --</option>';}}
+        
+        function mostrarInfoRecurso(id){const info=document.getElementById('infoRecurso');if(!id){info.style.display='none';return;}const recurso=RECURSOS_ONLINE.find(r=>r.id===id);if(!recurso){info.style.display='none';return;}const fuente=recurso.fuente==='orientacion-andujar'?'🌍 Orientación Andújar':recurso.fuente==='arasaac'?'🎨 ARASAAC':recurso.fuente==='superpt'?'✨ SuperPT':recurso.fuente==='ptyal'?'📚 PTYAL':recurso.fuente==='aulapt'?'📋 AulaPT':recurso.fuente==='liveworksheets'?'💻 LiveWorksheets':'🔗 '+recurso.fuente;info.innerHTML='<strong>'+fuente+'</strong><br>'+recurso.descripcion+'<br><a href="'+recurso.url+'" target="_blank" style="color:#3b82f6;font-size:.75rem">Abrir recurso →</a>';info.style.display='block';}
+        function guardarCelda(){const a=alumnos[alumnoActual];const updates={};const contenidoActual=a.programacion?a.programacion[celdaEditando]:null;updates['gestorpe/alumnos/'+alumnoActual+'/ausencias/'+celdaEditando]=null;updates['gestorpe/alumnos/'+alumnoActual+'/sincole/'+celdaEditando]=null;updates['gestorpe/alumnos/'+alumnoActual+'/resultados/'+celdaEditando]=null;if(estadoCelda==='ausencia'||estadoCelda==='sincole'){const tipo=estadoCelda==='ausencia'?'ausencias':'sincole';updates['gestorpe/alumnos/'+alumnoActual+'/'+tipo+'/'+celdaEditando]=true;if(contenidoActual){const nuevaProg=reajustarDesde(a,celdaEditando);updates['gestorpe/alumnos/'+alumnoActual+'/programacion']=nuevaProg;}}else{const pId=document.getElementById('selPrograma').value;const oIdx=document.getElementById('selObjetivo').value;const iIdx=document.getElementById('selIndicador').value;const recursoId=document.getElementById('selRecurso').value;if(pId&&oIdx!==''){const nuevoContenido={pId:pId,oIdx:parseInt(oIdx),iIdx:iIdx!==''?parseInt(iIdx):0};if(recursoId)nuevoContenido.recursoId=recursoId;if(resultadoCelda==='repetir'){a.programacion=a.programacion||{};a.programacion[celdaEditando]=nuevoContenido;const nuevaProg=insertarRepeticion(a,celdaEditando,nuevoContenido);updates['gestorpe/alumnos/'+alumnoActual+'/programacion']=nuevaProg;}else{updates['gestorpe/alumnos/'+alumnoActual+'/programacion/'+celdaEditando]=nuevoContenido;}}if(resultadoCelda){updates['gestorpe/alumnos/'+alumnoActual+'/resultados/'+celdaEditando]=resultadoCelda;}}db.ref().update(updates).then(()=>{cerrarModal('modalCelda');toast(resultadoCelda==='repetir'?'Repetición insertada ✓':'Guardado ✓','success');});}
         function borrarCelda(){const updates={};['programacion','ausencias','sincole','resultados'].forEach(t=>{updates['gestorpe/alumnos/'+alumnoActual+'/'+t+'/'+celdaEditando]=null;});db.ref().update(updates).then(()=>{cerrarModal('modalCelda');toast('Eliminado','success');});}
         function calcStats(a){const aus=a.ausencias||{},res=a.resultados||{};let ausencias=0,conseguidos=0,repetir=0;const dias=a.diasSesion||[1,3,4],porMes={},porTrim={1:{aus:0},2:{aus:0},3:{aus:0}};for(let mi=0;mi<MESES.length;mi++){const m=MESES[mi];porMes[mi]={aus:0};for(let s=1;s<=m.semanas;s++){for(let di=0;di<dias.length;di++){const k=mi+'_'+s+'_'+dias[di];if(aus[k]){ausencias++;porMes[mi].aus++;porTrim[m.trim].aus++;}if(res[k]==='conseguido')conseguidos++;if(res[k]==='repetir')repetir++;}}}return{ausencias:ausencias,conseguidos:conseguidos,repetir:repetir,porMes:porMes,porTrim:porTrim};}
 
@@ -2127,6 +2214,191 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
         function abrirModal(id){document.getElementById(id).classList.add('active');}
         function cerrarModal(id){document.getElementById(id).classList.remove('active');}
         function toast(msg,tipo){const t=document.getElementById('toast');t.textContent=msg;t.className='toast '+(tipo||'');setTimeout(()=>{t.classList.add('show');},10);setTimeout(()=>{t.classList.remove('show');},2500);}
+        
+        // BANCO DE ACTIVIDADES CON RECURSOS ONLINE
+        const RECURSOS_ONLINE = [
+            // ORIENTACIÓN ANDÚJAR (15 recursos)
+            {id:'r1',titulo:'Fichas de sílabas simples',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/lectoescritura/',descripcion:'Colección completa de fichas para trabajar sílabas simples. Incluye todas las consonantes y vocales.',area:'comunicativo',nivel:['infantil','ciclo1'],etiquetas:['silabas','conciencia-fonologica','fichas'],categoria:'lectoescritura'},
+            {id:'r2',titulo:'Cuaderno de atención',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/tag/fichas-imprimibles/',descripcion:'Cuaderno completo para trabajar habilidades básicas de atención. Ejercicios variados y progresivos.',area:'cognitivo',nivel:['infantil','ciclo1','ciclo2','ciclo3'],etiquetas:['atencion','concentracion','estimulacion'],categoria:'atencion'},
+            {id:'r3',titulo:'Fichas de matemáticas ABN',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/',descripcion:'Fichas de numeración, operaciones básicas con método ABN, problemas y geometría adaptadas.',area:'cognitivo',nivel:['ciclo1','ciclo2','ciclo3'],etiquetas:['matematicas','calculo','abn','numeros'],categoria:'matematicas'},
+            {id:'r4',titulo:'Grafomotricidad progresiva',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/',descripcion:'Fichas progresivas de trazos y grafomotricidad para mejorar escritura. Del trazo libre al controlado.',area:'motor',nivel:['infantil','ciclo1'],etiquetas:['grafomotricidad','trazos','escritura','psicomotor'],categoria:'psicomotor'},
+            {id:'r5',titulo:'Secuencias temporales',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/',descripcion:'Tarjetas de secuencias temporales para ordenar y trabajar causa-efecto. 2, 3 y 4 viñetas.',area:'cognitivo',nivel:['infantil','ciclo1'],etiquetas:['secuencias','temporalidad','ordenar','razonamiento'],categoria:'atencion'},
+            {id:'r6',titulo:'Discriminación visual',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/',descripcion:'Ejercicios de buscar diferencias, encontrar igual, figur-fondo.',area:'cognitivo',nivel:['infantil','ciclo1','ciclo2'],etiquetas:['percepcion','visual','discriminacion'],categoria:'atencion'},
+            {id:'r7',titulo:'Conciencia fonológica',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/',descripcion:'Actividades de rimas, sílabas, fonemas para desarrollar conciencia fonológica.',area:'comunicativo',nivel:['infantil','ciclo1'],etiquetas:['fonologia','silabas','pre-lectura'],categoria:'lectoescritura'},
+            {id:'r8',titulo:'Problemas matemáticos visuales',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/',descripcion:'Problemas con apoyo visual para alumnado con dificultades.',area:'cognitivo',nivel:['ciclo1','ciclo2'],etiquetas:['problemas','matematicas','visual'],categoria:'matematicas'},
+            {id:'r9',titulo:'Comprensión de instrucciones',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/',descripcion:'Fichas para trabajar seguimiento de instrucciones escritas y orales.',area:'comunicativo',nivel:['ciclo1','ciclo2'],etiquetas:['instrucciones','comprension','atencion'],categoria:'lectoescritura'},
+            {id:'r10',titulo:'Series lógicas',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/',descripcion:'Completar series numéricas, de formas, colores y patrones.',area:'cognitivo',nivel:['infantil','ciclo1','ciclo2'],etiquetas:['series','logica','patrones'],categoria:'matematicas'},
+            {id:'r11',titulo:'Laberintos',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/',descripcion:'Laberintos de diferentes niveles para trabajar atención y planificación.',area:'cognitivo',nivel:['infantil','ciclo1','ciclo2'],etiquetas:['laberintos','planificacion','atencion'],categoria:'atencion'},
+            {id:'r12',titulo:'Categorización',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/',descripcion:'Actividades de clasificar objetos por categorías semánticas.',area:'cognitivo',nivel:['infantil','ciclo1'],etiquetas:['categorias','clasificacion','vocabulario'],categoria:'lectoescritura'},
+            {id:'r13',titulo:'Fichas de emociones',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/',descripcion:'Reconocimiento e identificación de emociones básicas.',area:'social',nivel:['infantil','ciclo1'],etiquetas:['emociones','social','inteligencia-emocional'],categoria:'social'},
+            {id:'r14',titulo:'Sopa de letras adaptadas',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/',descripcion:'Sopas de letras por temáticas para reforzar vocabulario.',area:'comunicativo',nivel:['ciclo1','ciclo2','ciclo3'],etiquetas:['vocabulario','sopas','lectura'],categoria:'lectoescritura'},
+            {id:'r15',titulo:'Memory educativo',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/',descripcion:'Fichas para crear juegos de memoria adaptados por temas.',area:'cognitivo',nivel:['infantil','ciclo1'],etiquetas:['memoria','juego','atencion'],categoria:'atencion'},
+            
+            // ARASAAC (10 recursos)
+            {id:'r16',titulo:'Pictogramas de rutinas',tipo:'online',fuente:'arasaac',url:'https://arasaac.org/pictograms/search',descripcion:'Conjunto de pictogramas para crear agendas visuales y anticipar rutinas diarias. Formato editable.',area:'social',nivel:['infantil','ciclo1','ciclo2'],etiquetas:['tea','rutinas','anticipacion','pictogramas'],categoria:'pictogramas'},
+            {id:'r17',titulo:'Material TEACCH',tipo:'online',fuente:'arasaac',url:'https://aulaabierta.arasaac.org/materiales-caa-materiales-teacch',descripcion:'Materiales elaborados con pictogramas para estructuración y anticipación TEA.',area:'social',nivel:['infantil','ciclo1','ciclo2'],etiquetas:['tea','teacch','estructuracion'],categoria:'pictogramas'},
+            {id:'r18',titulo:'Tableros de comunicación',tipo:'online',fuente:'arasaac',url:'https://aulaabierta.arasaac.org/materiales-caa-tableros-de-comunicacion',descripcion:'Tableros de comunicación prediseñados y editables para CAA.',area:'comunicativo',nivel:['infantil','ciclo1','ciclo2','ciclo3'],etiquetas:['caa','comunicacion','tableros'],categoria:'pictogramas'},
+            {id:'r19',titulo:'Lectoescritura con pictogramas',tipo:'online',fuente:'arasaac',url:'https://aulaabierta.arasaac.org/materiales-caa-lectoescritura',descripcion:'Fichas de lectoescritura adaptadas con apoyo visual de pictogramas.',area:'comunicativo',nivel:['infantil','ciclo1'],etiquetas:['lectoescritura','pictogramas','adaptado'],categoria:'lectoescritura'},
+            {id:'r20',titulo:'Cuentos adaptados',tipo:'online',fuente:'arasaac',url:'https://aulaabierta.arasaac.org/',descripcion:'Cuentos clásicos adaptados con pictogramas para facilitar comprensión.',area:'comunicativo',nivel:['infantil','ciclo1'],etiquetas:['cuentos','lectura','pictogramas'],categoria:'lectoescritura'},
+            {id:'r21',titulo:'Vocabulario por temas',tipo:'online',fuente:'arasaac',url:'https://arasaac.org/',descripcion:'Láminas de vocabulario temático con pictogramas (alimentos, animales, ropa...).',area:'comunicativo',nivel:['infantil','ciclo1'],etiquetas:['vocabulario','temas','pictogramas'],categoria:'lectoescritura'},
+            {id:'r22',titulo:'Materiales manipulativos',tipo:'online',fuente:'arasaac',url:'https://aulaabierta.arasaac.org/',descripcion:'Plantillas para crear materiales manipulativos con pictogramas.',area:'cognitivo',nivel:['infantil','ciclo1'],etiquetas:['manipulativo','pictogramas','teacch'],categoria:'pictogramas'},
+            {id:'r23',titulo:'Agendas visuales',tipo:'online',fuente:'arasaac',url:'https://aulaabierta.arasaac.org/',descripcion:'Modelos de agendas visuales personalizables para anticipación.',area:'social',nivel:['infantil','ciclo1','ciclo2'],etiquetas:['agenda','anticipacion','tea'],categoria:'pictogramas'},
+            {id:'r24',titulo:'Juegos adaptados',tipo:'online',fuente:'arasaac',url:'https://aulaabierta.arasaac.org/',descripcion:'Juegos de mesa adaptados con pictogramas (oca, parchís, bingo...).',area:'social',nivel:['infantil','ciclo1'],etiquetas:['juegos','social','pictogramas'],categoria:'pictogramas'},
+            {id:'r25',titulo:'Horarios visuales',tipo:'online',fuente:'arasaac',url:'https://aulaabierta.arasaac.org/',descripcion:'Horarios de clase y sesiones con pictogramas.',area:'social',nivel:['infantil','ciclo1','ciclo2'],etiquetas:['horario','anticipacion','tea'],categoria:'pictogramas'},
+            
+            // SUPERPT (5 recursos)
+            {id:'r26',titulo:'Juegos silábicos',tipo:'online',fuente:'superpt',url:'https://www.superpt.es/category/materiales-elaboracion-propia/',descripcion:'Juegos descargables para trabajar conciencia silábica de forma lúdica. Incluye tableros y tarjetas.',area:'comunicativo',nivel:['infantil','ciclo1'],etiquetas:['silabas','juego','manipulativo'],categoria:'lectoescritura'},
+            {id:'r27',titulo:'Abecedario móvil Montessori',tipo:'online',fuente:'superpt',url:'https://www.superpt.es/',descripcion:'Abecedario móvil inspiración Montessori con tarjetas autocorrectoras.',area:'comunicativo',nivel:['infantil','ciclo1'],etiquetas:['abecedario','montessori','manipulativo'],categoria:'lectoescritura'},
+            {id:'r28',titulo:'Material ABN matemáticas',tipo:'online',fuente:'superpt',url:'https://www.superpt.es/',descripcion:'Material manipulativo para explicar litros, kilos, medios y cuartos.',area:'cognitivo',nivel:['ciclo1','ciclo2'],etiquetas:['abn','matematicas','manipulativo'],categoria:'matematicas'},
+            {id:'r29',titulo:'Cuaderno organizador PT',tipo:'online',fuente:'superpt',url:'https://www.superpt.es/',descripcion:'Cuaderno de notas y organización para maestros PT.',area:'autonomia',nivel:['ciclo1','ciclo2','ciclo3'],etiquetas:['organizacion','autonomia'],categoria:'autonomia'},
+            {id:'r30',titulo:'Literatura infantil adaptada',tipo:'online',fuente:'superpt',url:'https://www.superpt.es/',descripcion:'Recomendaciones de literatura infantil y actividades.',area:'comunicativo',nivel:['infantil','ciclo1'],etiquetas:['lectura','cuentos','literatura'],categoria:'lectoescritura'},
+            
+            // PTYAL (5 recursos)
+            {id:'r31',titulo:'Comprensión lectora',tipo:'online',fuente:'ptyal',url:'https://ptyalcantabria.com/material-imprimible/',descripcion:'Colección de lecturas comprensivas con preguntas adaptadas por niveles.',area:'comunicativo',nivel:['ciclo1','ciclo2','ciclo3'],etiquetas:['comprension','lectura','textos'],categoria:'lectoescritura'},
+            {id:'r32',titulo:'Estimulación cognitiva',tipo:'online',fuente:'ptyal',url:'https://ptyalcantabria.com/material-imprimible/',descripcion:'Fichas para trabajar memoria, atención y razonamiento.',area:'cognitivo',nivel:['ciclo1','ciclo2','ciclo3'],etiquetas:['estimulacion','memoria','razonamiento'],categoria:'atencion'},
+            {id:'r33',titulo:'Método Llanos',tipo:'online',fuente:'ptyal',url:'https://ptyalcantabria.com/',descripcion:'Método completo de lectoescritura Llanos para NEE.',area:'comunicativo',nivel:['infantil','ciclo1'],etiquetas:['metodo','lectoescritura','globalsíntesis'],categoria:'lectoescritura'},
+            {id:'r34',titulo:'Programa PIAAR',tipo:'online',fuente:'ptyal',url:'https://ptyalcantabria.com/',descripcion:'Programa completo con libro y fichas para atención.',area:'cognitivo',nivel:['ciclo1','ciclo2'],etiquetas:['atencion','programa','estructurado'],categoria:'atencion'},
+            {id:'r35',titulo:'Español L2',tipo:'online',fuente:'ptyal',url:'https://ptyalcantabria.com/',descripcion:'Materiales para alumnado extranjero aprendiendo español.',area:'comunicativo',nivel:['ciclo1','ciclo2','ciclo3'],etiquetas:['español','l2','extranjero'],categoria:'lectoescritura'},
+            
+            // AULA PT (5 recursos)
+            {id:'r36',titulo:'Fichas infantil variadas',tipo:'online',fuente:'aulapt',url:'https://www.aulapt.org/',descripcion:'Gran repositorio de fichas para educación infantil.',area:'cognitivo',nivel:['infantil'],etiquetas:['infantil','fichas','variadas'],categoria:'atencion'},
+            {id:'r37',titulo:'Material logopedia',tipo:'online',fuente:'aulapt',url:'https://www.aulapt.org/',descripcion:'Recursos específicos para audición y lenguaje.',area:'comunicativo',nivel:['infantil','ciclo1','ciclo2'],etiquetas:['logopedia','lenguaje','audicion'],categoria:'lectoescritura'},
+            {id:'r38',titulo:'Juegos populares para lenguaje',tipo:'online',fuente:'aulapt',url:'https://www.aulapt.org/',descripcion:'Adaptación de juegos populares para estimular lenguaje.',area:'comunicativo',nivel:['infantil','ciclo1'],etiquetas:['juegos','lenguaje','popular'],categoria:'lectoescritura'},
+            {id:'r39',titulo:'Fichas de inglés adaptadas',tipo:'online',fuente:'aulapt',url:'https://www.aulapt.org/',descripcion:'Material de inglés adaptado para ACNEAE.',area:'comunicativo',nivel:['ciclo1','ciclo2','ciclo3'],etiquetas:['ingles','adaptado','idiomas'],categoria:'lectoescritura'},
+            {id:'r40',titulo:'Material ESO adaptado',tipo:'online',fuente:'aulapt',url:'https://www.aulapt.org/',descripcion:'Recursos para secundaria con adaptaciones.',area:'cognitivo',nivel:['ciclo3'],etiquetas:['eso','adaptado','secundaria'],categoria:'atencion'},
+            
+            // LIVEWORKSHEETS (3 recursos)
+            {id:'r41',titulo:'Fichas interactivas autocorregibles',tipo:'online',fuente:'liveworksheets',url:'https://www.liveworksheets.com/es',descripcion:'Miles de fichas interactivas en español autocorregibles.',area:'cognitivo',nivel:['infantil','ciclo1','ciclo2','ciclo3'],etiquetas:['interactivo','digital','autocorregible'],categoria:'atencion'},
+            {id:'r42',titulo:'Educación Especial interactiva',tipo:'online',fuente:'liveworksheets',url:'https://es.liveworksheets.com/worksheets/es/Educaci%C3%B3n_Especial',descripcion:'Sección específica de educación especial con fichas interactivas.',area:'cognitivo',nivel:['infantil','ciclo1','ciclo2'],etiquetas:['especial','interactivo','nee'],categoria:'atencion'},
+            {id:'r43',titulo:'Crear fichas propias',tipo:'online',fuente:'liveworksheets',url:'https://www.liveworksheets.com/',descripcion:'Herramienta para convertir tus PDFs en fichas interactivas.',area:'cognitivo',nivel:['infantil','ciclo1','ciclo2','ciclo3'],etiquetas:['herramienta','crear','interactivo'],categoria:'atencion'},
+            
+            // OTROS BLOGS PT (7 recursos)
+            {id:'r44',titulo:'En el aula de apoyo',tipo:'online',fuente:'otros',url:'https://enelauladeapoyo.blogspot.com/',descripcion:'Blog Elena Medina con recursos lectoescritura, ortografía y matemáticas.',area:'comunicativo',nivel:['ciclo1','ciclo2'],etiquetas:['blog','variado','ortografia'],categoria:'lectoescritura'},
+            {id:'r45',titulo:'Maestra Especial PT',tipo:'online',fuente:'otros',url:'https://www.maestraespecialpt.com/',descripcion:'Banco de recursos y materiales adaptados de Almudena Negrete.',area:'cognitivo',nivel:['infantil','ciclo1','ciclo2'],etiquetas:['banco','recursos','variado'],categoria:'atencion'},
+            {id:'r46',titulo:'Mi Mundo de PT',tipo:'online',fuente:'otros',url:'https://mimundodept.blogspot.com/',descripcion:'Blog Eva Macho con gran repositorio organizado por contenidos.',area:'cognitivo',nivel:['infantil','ciclo1','ciclo2','ciclo3'],etiquetas:['blog','organizado','completo'],categoria:'atencion'},
+            {id:'r47',titulo:'El aula de los soles',tipo:'online',fuente:'otros',url:'https://elauladelossoles.blogspot.com/',descripcion:'Aula libre de fichas, aprendizaje manipulativo para TEA.',area:'social',nivel:['infantil','ciclo1'],etiquetas:['tea','manipulativo','sensorial'],categoria:'pictogramas'},
+            {id:'r48',titulo:'La psico-goloteca',tipo:'online',fuente:'otros',url:'https://lapsico-goloteca.blogspot.com/',descripcion:'María José De Luis - Atención temprana, logopedia y psicomotricidad.',area:'motor',nivel:['infantil','ciclo1'],etiquetas:['atencion-temprana','logopedia','psicomotricidad'],categoria:'psicomotor'},
+            {id:'r49',titulo:'Maestros AL',tipo:'online',fuente:'otros',url:'https://maestrosdeaudicionylenguaje.com/',descripcion:'Blog Eugenia Romero con materiales audición y lenguaje.',area:'comunicativo',nivel:['infantil','ciclo1','ciclo2'],etiquetas:['audicion','lenguaje','al'],categoria:'lectoescritura'},
+            {id:'r50',titulo:'Fondo Lector',tipo:'online',fuente:'otros',url:'http://www.ceiploreto.es/',descripcion:'Programa comprensión lectora (básico, intermedio, avanzado).',area:'comunicativo',nivel:['ciclo1','ciclo2','ciclo3'],etiquetas:['comprension','programa','lectora'],categoria:'lectoescritura'}
+        ];
+        
+        function inicializarRecursos() {
+            const stored = localStorage.getItem('recursos');
+            const favs = localStorage.getItem('recursosFavoritos');
+            recursos = stored ? JSON.parse(stored) : {};
+            recursosFavoritos = favs ? JSON.parse(favs) : [];
+            renderRecursos();
+        }
+        
+        function cambiarTabRecursos(tab) {
+            tabRecursosActual = tab;
+            document.querySelectorAll('.tabs .tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            renderRecursos();
+        }
+        
+        function renderRecursos() {
+            const busqueda = document.getElementById('buscarRecurso')?.value.toLowerCase() || '';
+            const filtroArea = document.getElementById('filtroAreaRecurso')?.value || '';
+            const filtroNivel = document.getElementById('filtroNivelRecurso')?.value || '';
+            const filtroFuente = document.getElementById('filtroFuenteRecurso')?.value || '';
+            
+            // Combinar recursos propios y online
+            const recursosArray = Object.values(recursos).map(r => ({...r, tipo: 'local'}));
+            const todosRecursos = [...recursosArray, ...RECURSOS_ONLINE];
+            
+            // Filtrar
+            let filtrados = todosRecursos.filter(r => {
+                if (busqueda && !r.titulo.toLowerCase().includes(busqueda) && !r.descripcion.toLowerCase().includes(busqueda)) return false;
+                if (filtroArea && r.area !== filtroArea) return false;
+                if (filtroNivel && !r.nivel.includes(filtroNivel)) return false;
+                if (filtroFuente === 'mia' && r.tipo !== 'local') return false;
+                if (filtroFuente && filtroFuente !== 'mia' && r.fuente !== filtroFuente) return false;
+                
+                if (tabRecursosActual === 'mias' && r.tipo !== 'local') return false;
+                if (tabRecursosActual === 'online' && r.tipo !== 'online') return false;
+                if (tabRecursosActual === 'favoritas' && !recursosFavoritos.includes(r.id)) return false;
+                
+                return true;
+            });
+            
+            // Actualizar contadores
+            document.getElementById('countTodos').textContent = todosRecursos.length;
+            document.getElementById('countMias').textContent = recursosArray.length;
+            document.getElementById('countOnline').textContent = 50; // Ya sabemos que hay 50
+            document.getElementById('countFavoritas').textContent = recursosFavoritos.length;
+            
+            // Renderizar
+            const grid = document.getElementById('recursosGrid');
+            if (!grid) return;
+            
+            if (filtrados.length === 0) {
+                grid.innerHTML = '<div class="empty-state">No se encontraron recursos con estos filtros</div>';
+                return;
+            }
+            
+            grid.innerHTML = '<div class="recursos-grid">' + filtrados.map(r => {
+                const esFavorito = recursosFavoritos.includes(r.id);
+                const areaInfo = AREAS[r.area] || {nombre: r.area, icon: '📌'};
+                const nivel = r.nivel[0] === 'infantil' ? 'Infantil' : r.nivel[0] === 'ciclo1' ? '1º Ciclo' : r.nivel[0] === 'ciclo2' ? '2º Ciclo' : '3º Ciclo';
+                
+                return `
+                    <div class="recurso-card">
+                        <div class="recurso-header">
+                            <div class="recurso-titulo">${r.titulo}</div>
+                            <div class="recurso-badge ${r.tipo}">${r.tipo === 'local' ? 'MÍA' : 'ONLINE'}</div>
+                        </div>
+                        <div class="recurso-meta">
+                            <div class="recurso-meta-item">${areaInfo.icon} ${areaInfo.nombre}</div>
+                            <div class="recurso-meta-item">⭐ ${nivel}</div>
+                        </div>
+                        <div class="recurso-desc">${r.descripcion}</div>
+                        <div class="recurso-tags">
+                            ${r.etiquetas.slice(0,3).map(t => `<span class="recurso-tag">#${t}</span>`).join('')}
+                        </div>
+                        ${r.tipo === 'online' ? `
+                            <a href="${r.url}" target="_blank" class="recurso-link">
+                                🌍 ${r.fuente === 'orientacion-andujar' ? 'Orientación Andújar' : 
+                                    r.fuente === 'arasaac' ? 'ARASAAC' : 
+                                    r.fuente === 'superpt' ? 'SuperPT' : 'PTYAL'} →
+                            </a>
+                        ` : r.usadas ? `
+                            <div class="recurso-stats">
+                                <div>📊 Usada ${r.usadas} veces</div>
+                            </div>
+                        ` : ''}
+                        <div class="recurso-actions">
+                            ${r.tipo === 'online' ? `
+                                <button class="btn btn-primary" onclick="window.open('${r.url}','_blank')">🔗 Abrir</button>
+                            ` : `
+                                <button class="btn btn-primary" onclick="verRecurso('${r.id}')">👁️ Ver</button>
+                            `}
+                            <button class="btn btn-secondary" onclick="toggleFavorito('${r.id}')">${esFavorito ? '⭐' : '☆'}</button>
+                        </div>
+                    </div>
+                `;
+            }).join('') + '</div>';
+        }
+        
+        function toggleFavorito(id) {
+            const idx = recursosFavoritos.indexOf(id);
+            if (idx > -1) {
+                recursosFavoritos.splice(idx, 1);
+            } else {
+                recursosFavoritos.push(id);
+            }
+            localStorage.setItem('recursosFavoritos', JSON.stringify(recursosFavoritos));
+            renderRecursos();
+            toast(idx > -1 ? 'Quitado de favoritos' : 'Añadido a favoritos', 'success');
+        }
+        
+        function abrirModalNuevaActividad() {
+            toast('Próximamente: Crear actividades propias', 'success');
+        }
+        
+        function verRecurso(id) {
+            toast('Próximamente: Vista detallada de actividad', 'success');
+        }
     </script>
 </body>
 </html>
