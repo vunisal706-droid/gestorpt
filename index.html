@@ -7,6 +7,7 @@
     <meta name="theme-color" content="#1a5f4a">
     <title>Gestor PE v3</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='110' fill='%231a5f4a'/%3E%3Crect x='100' y='70' width='220' height='300' rx='20' fill='white'/%3E%3Ccircle cx='160' cy='140' r='16' fill='%2322c55e'/%3E%3Ccircle cx='370' cy='350' r='100' fill='%23f59e0b'/%3E%3Ccircle cx='370' cy='350' r='80' fill='white'/%3E%3Cpath d='M370 290v60h50' stroke='%231a5f4a' stroke-width='12' stroke-linecap='round' fill='none'/%3E%3C/svg%3E">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
         :root{--primary:#1a5f4a;--primary-light:#2d8a6e;--primary-dark:#134536;--bg:#f5f7f6;--bg-card:#fff;--text:#1a2a24;--text-light:#5a6b64;--border:#d4ddd9;--success:#22c55e;--warning:#f59e0b;--danger:#ef4444;--proceso:#3b82f6;--shadow:0 4px 20px rgba(26,95,74,0.1);--radius:16px;--radius-sm:10px}
         *{margin:0;padding:0;box-sizing:border-box}
@@ -195,7 +196,10 @@
             </div>
             <div id="seccionEstadisticas" style="display:none">
                 <div class="card">
-                    <div class="card-header"><h2 class="card-title">📊 Estadísticas Globales</h2></div>
+                    <div class="card-header">
+                        <h2 class="card-title">📊 Estadísticas Globales</h2>
+                        <button class="btn btn-primary btn-sm" onclick="imprimirInformeEvaluacion()">🖨️ Imprimir Informe de Evaluación</button>
+                    </div>
                     <div class="chart-container"><canvas id="chartRanking"></canvas></div>
                     <div class="chart-container" style="margin-top:12px"><canvas id="chartDistAreas"></canvas></div>
                 </div>
@@ -1397,9 +1401,319 @@
 
         // IMPRESIÓN MASIVA
         function abrirModalImprimir(){if(!Object.keys(alumnos).length){toast('No hay alumnos','error');return;}abrirModal('modalImprimir');}
+        
+        // Función auxiliar para generar gráficas de evaluación
+        async function generarGraficasEvaluacion(alumnoId) {
+            const a = alumnos[alumnoId];
+            if (!a || !a.programas) return null;
+            
+            // Recopilar datos por trimestre
+            const datosT1 = {C:0, P:0, N:0};
+            const datosT2 = {C:0, P:0, N:0};
+            const datosT3 = {C:0, P:0, N:0};
+            
+            Object.keys(a.programas).forEach(pId => {
+                const p = a.programas[pId];
+                (p.objetivos || []).forEach((obj, oi) => {
+                    (obj.indicadores || []).forEach((ind, ii) => {
+                        [1,2,3].forEach(trim => {
+                            const k = pId+'_'+oi+'_'+ii+'_T'+trim;
+                            const e = a.evaluaciones ? a.evaluaciones[k] : null;
+                            const datos = trim===1 ? datosT1 : trim===2 ? datosT2 : datosT3;
+                            if (e === 'C') datos.C++;
+                            else if (e === 'P') datos.P++;
+                            else if (e === 'N') datos.N++;
+                        });
+                    });
+                });
+            });
+            
+            // Crear canvas temporal para gráfico de barras
+            const canvas1 = document.createElement('canvas');
+            canvas1.width = 800;
+            canvas1.height = 400;
+            const ctx1 = canvas1.getContext('2d');
+            
+            const chart1 = new Chart(ctx1, {
+                type: 'bar',
+                data: {
+                    labels: ['Trimestre 1', 'Trimestre 2', 'Trimestre 3'],
+                    datasets: [
+                        {
+                            label: 'Conseguido',
+                            data: [datosT1.C, datosT2.C, datosT3.C],
+                            backgroundColor: '#22c55e'
+                        },
+                        {
+                            label: 'En Proceso',
+                            data: [datosT1.P, datosT2.P, datosT3.P],
+                            backgroundColor: '#3b82f6'
+                        },
+                        {
+                            label: 'No Iniciado',
+                            data: [datosT1.N, datosT2.N, datosT3.N],
+                            backgroundColor: '#999'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: false,
+                    animation: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Evolución por Trimestres - ' + a.siglas,
+                            font: {size: 18, weight: 'bold'},
+                            color: '#1a5f4a'
+                        },
+                        legend: {
+                            position: 'bottom',
+                            labels: {font: {size: 14}}
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {stepSize: 1, font: {size: 12}}
+                        },
+                        x: {
+                            ticks: {font: {size: 12}}
+                        }
+                    }
+                }
+            });
+            
+            await new Promise(resolve => setTimeout(resolve, 200));
+            const imgBarras = canvas1.toDataURL('image/png');
+            chart1.destroy();
+            
+            // Crear canvas para gráfico circular
+            const trimActual = evalTrim || 1;
+            const datosActual = trimActual===1 ? datosT1 : trimActual===2 ? datosT2 : datosT3;
+            const total = datosActual.C + datosActual.P + datosActual.N;
+            
+            let imgCircular = null;
+            
+            if (total > 0) {
+                const canvas2 = document.createElement('canvas');
+                canvas2.width = 800;
+                canvas2.height = 400;
+                const ctx2 = canvas2.getContext('2d');
+                
+                const chart2 = new Chart(ctx2, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Conseguido', 'En Proceso', 'No Iniciado'],
+                        datasets: [{
+                            data: [datosActual.C, datosActual.P, datosActual.N],
+                            backgroundColor: ['#22c55e', '#3b82f6', '#999']
+                        }]
+                    },
+                    options: {
+                        responsive: false,
+                        animation: false,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Distribución Trimestre ' + trimActual + ' - ' + a.siglas,
+                                font: {size: 18, weight: 'bold'},
+                                color: '#1a5f4a'
+                            },
+                            legend: {
+                                position: 'bottom',
+                                labels: {font: {size: 14}}
+                            }
+                        }
+                    }
+                });
+                
+                await new Promise(resolve => setTimeout(resolve, 200));
+                imgCircular = canvas2.toDataURL('image/png');
+                chart2.destroy();
+            }
+            
+            return {barras: imgBarras, circular: imgCircular};
+        }
+        
+        // Función para imprimir informe de evaluación con gráficas
+        async function imprimirInformeEvaluacion() {
+            const ids = Object.keys(alumnos);
+            if(!ids.length){toast('No hay alumnos','error');return;}
+            
+            toast('Generando informe con gráficas...', 'success');
+            
+            // Generar gráficas para todos los alumnos
+            const graficas = {};
+            for (const id of ids) {
+                const graficasAlumno = await generarGraficasEvaluacion(id);
+                graficas[id] = graficasAlumno;
+            }
+            
+            const cursoEscolar = new Date().getMonth()>=8 ? new Date().getFullYear()+'/'+(new Date().getFullYear()+1) : (new Date().getFullYear()-1)+'/'+new Date().getFullYear();
+            
+            let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Informe de Evaluación</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:Arial,sans-serif;font-size:10px;color:#333}
+
+/* PORTADA */
+.portada{
+    height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    background:linear-gradient(160deg,#f0faf6 0%,#e0f2ec 40%,#d0eae2 100%);
+    position:relative;overflow:hidden;text-align:center;padding:40px;
+}
+.portada::before{
+    content:'';position:absolute;top:-80px;right:-80px;width:300px;height:300px;
+    border-radius:50%;background:rgba(26,95,74,0.07);
+}
+.portada::after{
+    content:'';position:absolute;bottom:-60px;left:-60px;width:250px;height:250px;
+    border-radius:50%;background:rgba(26,95,74,0.05);
+}
+.portada-linea-top{position:absolute;top:0;left:0;right:0;height:8px;background:linear-gradient(90deg,#1a5f4a,#2d8a6e,#22c55e)}
+.portada-icono{font-size:60px;margin-bottom:20px;filter:drop-shadow(0 4px 8px rgba(26,95,74,0.2))}
+.portada-titulo{font-size:28px;font-weight:800;color:#1a5f4a;letter-spacing:1px;margin-bottom:6px;line-height:1.3}
+.portada-subtitulo{font-size:18px;font-weight:600;color:#2d8a6e;margin-bottom:30px}
+.portada-centro{font-size:14px;color:#1a5f4a;font-weight:700;margin-bottom:4px}
+.portada-curso{font-size:13px;color:#5a8a7a;margin-bottom:6px}
+.portada-linea{width:60px;height:3px;background:#2d8a6e;border-radius:2px;margin:16px auto}
+.portada-footer{position:absolute;bottom:30px;font-size:11px;color:#8aab9e}
+
+/* CONTENIDO */
+.contenido{padding:30px 25px}
+.titulo{text-align:center;color:#1a5f4a;font-size:20px;font-weight:700;margin-bottom:10px}
+.subtitulo{text-align:center;color:#888;font-size:13px;margin-bottom:20px}
+.sep{border:none;border-bottom:2px solid #1a5f4a;margin-bottom:20px}
+
+/* GRÁFICAS */
+.bloque-alumno{page-break-inside:avoid;margin-bottom:30px}
+.eval-sec{color:#1a5f4a;font-size:14px;font-weight:700;margin-bottom:12px;padding-bottom:6px;border-bottom:2px solid #e0e0e0}
+.graficas-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}
+.grafica-container{background:#fff;border-radius:8px;padding:10px;border:1px solid #e0e0e0}
+.grafica-img{display:block;margin:0 auto;max-width:100%;height:auto}
+
+/* TABLA DE RESUMEN */
+.tabla-resumen{width:100%;border-collapse:collapse;margin-bottom:20px;font-size:11px}
+.tabla-resumen th{background:#1a5f4a;color:#fff;padding:8px;text-align:center;border:1px solid #bbb}
+.tabla-resumen td{border:1px solid #d0d0d0;padding:8px;text-align:center}
+.tabla-resumen td:first-child{background:#e8f5f1;color:#1a5f4a;font-weight:700;text-align:left}
+
+@media print{
+    body{padding:0}
+    .portada{height:100vh;page-break-after:always}
+    @page{margin:1.8cm 1.5cm}
+    @page:first{margin:0}
+    .contenido{padding:0}
+    .bloque-alumno{page-break-inside:avoid}
+    .graficas-grid{grid-template-columns:1fr}
+    .page-break{page-break-before:always}
+}
+</style></head><body>`;
+
+            // === PORTADA ===
+            html += '<div class="portada">';
+            html += '<div class="portada-linea-top"></div>';
+            html += '<div class="portada-icono">📊</div>';
+            html += '<div class="portada-titulo">INFORME DE EVALUACIÓN</div>';
+            html += '<div class="portada-subtitulo">Resultados Trimestrales</div>';
+            html += '<div class="portada-linea"></div>';
+            html += '<div class="portada-centro">CEIP Capitulaciones de Santa Fe</div>';
+            html += '<div class="portada-curso">Curso escolar '+cursoEscolar+'</div>';
+            html += '<div class="portada-linea"></div>';
+            html += '<div class="portada-footer">Pedagogía Terapéutica</div>';
+            html += '</div>';
+
+            // === GRÁFICAS DE RESULTADOS TRIMESTRALES ===
+            html += '<div class="contenido page-break">';
+            html += '<div class="titulo">Resultados por Alumno</div>';
+            html += '<div class="subtitulo">Gráficas de Evaluación Trimestral</div>';
+            html += '<hr class="sep">';
+            
+            ids.forEach(id => {
+                const a = alumnos[id];
+                const g = graficas[id];
+                
+                html += '<div class="bloque-alumno">';
+                html += '<div class="eval-sec">'+a.siglas+' - '+a.curso+'</div>';
+                
+                if(g && (g.barras || g.circular)){
+                    html += '<div class="graficas-grid">';
+                    if(g.barras){
+                        html += '<div class="grafica-container">';
+                        html += '<img src="'+g.barras+'" class="grafica-img" />';
+                        html += '</div>';
+                    }
+                    if(g.circular){
+                        html += '<div class="grafica-container">';
+                        html += '<img src="'+g.circular+'" class="grafica-img" />';
+                        html += '</div>';
+                    }
+                    html += '</div>';
+                } else {
+                    html += '<p style="color:#888;font-style:italic;padding:20px;text-align:center">No hay datos de evaluación registrados</p>';
+                }
+                html += '</div>';
+            });
+            
+            html += '</div>';
+
+            // === TABLA RESUMEN ===
+            html += '<div class="contenido page-break">';
+            html += '<div class="titulo">Resumen General</div>';
+            html += '<div class="subtitulo">Totales por Trimestre</div>';
+            html += '<hr class="sep">';
+            
+            html += '<table class="tabla-resumen">';
+            html += '<tr><th>Alumno</th><th>T1 Conseguido</th><th>T1 Proceso</th><th>T1 No Iniciado</th>';
+            html += '<th>T2 Conseguido</th><th>T2 Proceso</th><th>T2 No Iniciado</th>';
+            html += '<th>T3 Conseguido</th><th>T3 Proceso</th><th>T3 No Iniciado</th></tr>';
+            
+            ids.forEach(id => {
+                const a = alumnos[id];
+                const datosT1 = {C:0, P:0, N:0};
+                const datosT2 = {C:0, P:0, N:0};
+                const datosT3 = {C:0, P:0, N:0};
+                
+                if(a.programas){
+                    Object.keys(a.programas).forEach(pId => {
+                        const p = a.programas[pId];
+                        (p.objetivos || []).forEach((obj, oi) => {
+                            (obj.indicadores || []).forEach((ind, ii) => {
+                                [1,2,3].forEach(trim => {
+                                    const k = pId+'_'+oi+'_'+ii+'_T'+trim;
+                                    const e = a.evaluaciones ? a.evaluaciones[k] : null;
+                                    const datos = trim===1 ? datosT1 : trim===2 ? datosT2 : datosT3;
+                                    if (e === 'C') datos.C++;
+                                    else if (e === 'P') datos.P++;
+                                    else if (e === 'N') datos.N++;
+                                });
+                            });
+                        });
+                    });
+                }
+                
+                html += '<tr>';
+                html += '<td>'+a.siglas+' - '+a.curso+'</td>';
+                html += '<td>'+datosT1.C+'</td><td>'+datosT1.P+'</td><td>'+datosT1.N+'</td>';
+                html += '<td>'+datosT2.C+'</td><td>'+datosT2.P+'</td><td>'+datosT2.N+'</td>';
+                html += '<td>'+datosT3.C+'</td><td>'+datosT3.P+'</td><td>'+datosT3.N+'</td>';
+                html += '</tr>';
+            });
+            
+            html += '</table>';
+            html += '</div>';
+
+            html += '</body></html>';
+            
+            const win = window.open('','_blank');
+            win.document.write(html);
+            win.document.close();
+            setTimeout(() => {win.print();}, 500);
+        }
+        
         function imprimirTodos(){const mesSeleccionado=parseInt(document.getElementById('printMes').value);const ids=Object.keys(alumnos);let html='<!DOCTYPE html><html><head><title>Programaciones</title><style>body{font-family:Arial;padding:20px;font-size:11px}h1{color:#1a5f4a;font-size:16px}h2{font-size:14px;border-bottom:2px solid #1a5f4a}table{width:100%;border-collapse:collapse;margin-bottom:15px}th,td{border:1px solid #ccc;padding:6px}th{background:#1a5f4a;color:#fff}td:first-child{background:#2d8a6e;color:#fff;text-align:center;width:50px}.page-break{page-break-after:always}</style></head><body>';ids.forEach((id,idx)=>{const a=alumnos[id],dias=a.diasSesion||[1,3,4];html+='<div'+(idx<ids.length-1?' class="page-break"':'')+'><h1>'+a.siglas+' - '+a.curso+'</h1>';const mesesAImprimir=mesSeleccionado===-1?MESES.map((_,i)=>i):[mesSeleccionado];mesesAImprimir.forEach(mi=>{const mes=MESES[mi];html+='<h2>'+mes.nombre+' (T'+mes.trim+')</h2><table><tr><th>S</th>';dias.forEach(d=>{html+='<th>'+DIAS_C[d]+'</th>';});html+='</tr>';for(let s=1;s<=mes.semanas;s++){html+='<tr><td>'+s+'</td>';dias.forEach(d=>{const k=mi+'_'+s+'_'+d,c=a.programacion?a.programacion[k]:null;if(c&&a.programas&&a.programas[c.pId]){const p=a.programas[c.pId],obj=p.objetivos?p.objetivos[c.oIdx]:null;if(obj){const ind=obj.indicadores?(obj.indicadores[c.iIdx]||''):'';html+='<td><b>O'+obj.numero+'</b><br>'+ind.substring(0,20)+'</td>';}else{html+='<td>-</td>';}}else{html+='<td>-</td>';}});html+='</tr>';}html+='</table>';});html+='</div>';});html+='</body></html>';const win=window.open('','_blank');win.document.write(html);win.document.close();setTimeout(()=>{win.print();},500);cerrarModal('modalImprimir');}
 
-        function imprimirCompacto(){
+        async function imprimirCompacto(){
             const mesSeleccionado=parseInt(document.getElementById('printMes').value);
             const ids=Object.keys(alumnos);
             if(!ids.length){toast('No hay alumnos','error');return;}
@@ -1483,6 +1797,14 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
 .rel-table .rel-obj,.rel-table th:first-child{width:35px}
 .rel-table .rel-area,.rel-table .rel-area-td{width:80px;font-size:8px;color:#1a5f4a}
 .rel-table .rel-desc{width:120px}
+
+/* ESTILOS PARA GRÁFICAS */
+.grafica-container{margin:15px 0;page-break-inside:avoid}
+.grafica-titulo{color:#1a5f4a;font-size:14px;font-weight:700;margin-bottom:8px;text-align:center}
+.grafica-img{display:block;margin:0 auto;max-width:100%;border:1px solid #e0e0e0;border-radius:8px}
+.graficas-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}
+@media print{.graficas-grid{grid-template-columns:1fr}}
+
 @media print{
     body{padding:0}
     .portada{height:100vh;page-break-after:always}
@@ -1493,6 +1815,7 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
     .sec{page-break-inside:avoid}
     .eval-sec,.eval-sec+table{page-break-inside:avoid}
     .bloque-alumno{page-break-inside:avoid}
+    .grafica-container{page-break-inside:avoid}
 }
 </style></head><body>`;
 
