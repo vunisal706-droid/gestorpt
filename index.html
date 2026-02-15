@@ -31,8 +31,9 @@
         .btn-ai{background:#10a37f;color:#fff}
         .btn-sm{padding:7px 10px;font-size:.75rem}
         .btn-group{display:flex;gap:6px;flex-wrap:wrap}
-        .nav-tabs{display:flex;gap:8px;margin-bottom:16px}
-        .nav-tab{padding:12px 20px;border:none;background:var(--bg-card);color:var(--text-light);font-family:inherit;font-size:.9rem;font-weight:600;cursor:pointer;border-radius:var(--radius);box-shadow:var(--shadow)}
+        .nav-tabs{display:flex;gap:8px;margin-bottom:16px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none}
+        .nav-tabs::-webkit-scrollbar{display:none}
+        .nav-tab{flex:0 0 auto;padding:12px 16px;border:none;background:var(--bg-card);color:var(--text-light);font-family:inherit;font-size:.9rem;font-weight:600;cursor:pointer;border-radius:var(--radius);box-shadow:var(--shadow);white-space:nowrap}
         .nav-tab.active{background:var(--primary);color:#fff}
         .alumnos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-top:12px}
         .alumno-card{background:var(--bg-card);border-radius:var(--radius);padding:16px 10px;text-align:center;cursor:pointer;border:2px solid transparent;box-shadow:var(--shadow)}
@@ -41,7 +42,8 @@
         .alumno-curso{font-size:.75rem;color:var(--text-light)}
         .alumno-progs{font-size:.65rem;color:var(--primary);margin-top:4px}
         .alumno-card-add{background:transparent;border:2px dashed var(--primary-light);color:var(--primary);display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:85px}
-        .tabs{display:flex;gap:4px;background:var(--bg-card);padding:4px;border-radius:var(--radius);margin-bottom:14px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+        .tabs{display:flex;gap:4px;background:var(--bg-card);padding:4px;border-radius:var(--radius);margin-bottom:14px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none}
+        .tabs::-webkit-scrollbar{display:none}
         .tab{flex:0 0 auto;min-width:100px;padding:9px 12px;border:none;background:transparent;color:var(--text-light);font-family:inherit;font-size:.75rem;font-weight:600;cursor:pointer;border-radius:var(--radius-sm);white-space:nowrap}
         .tab.active{background:var(--primary);color:#fff}
         .tab-content{display:none}.tab-content.active{display:block}
