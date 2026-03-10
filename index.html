@@ -241,6 +241,40 @@
                     </div>
                     <button class="btn btn-primary" onclick="imprimirInformeEvaluacion()">🖨️ Generar Informe con Gráficas</button>
                 </div>
+
+                <div class="card" style="margin-top:12px">
+                    <div class="card-header">
+                        <h2 class="card-title">📝 Informe Mensual — Todos los Alumnos</h2>
+                    </div>
+                    <p style="font-size:.82rem;color:var(--text-light);margin-bottom:12px">Genera un informe de seguimiento con <strong>todos los alumnos</strong> en un solo documento, uno debajo de otro.</p>
+                    <div class="form-row" style="margin-bottom:12px">
+                        <div class="form-group">
+                            <label class="form-label">Trimestre</label>
+                            <select id="trimestreInformeMensual" class="form-select">
+                                <option value="1">📗 Trimestre 1</option>
+                                <option value="2">📘 Trimestre 2</option>
+                                <option value="3">📙 Trimestre 3</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Mes (para el encabezado)</label>
+                            <select id="mesInformeMensual" class="form-select">
+                                <option value="">— Sin especificar —</option>
+                                <option value="Septiembre">Septiembre</option>
+                                <option value="Octubre">Octubre</option>
+                                <option value="Noviembre">Noviembre</option>
+                                <option value="Diciembre">Diciembre</option>
+                                <option value="Enero">Enero</option>
+                                <option value="Febrero">Febrero</option>
+                                <option value="Marzo">Marzo</option>
+                                <option value="Abril">Abril</option>
+                                <option value="Mayo">Mayo</option>
+                                <option value="Junio">Junio</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="imprimirInformeMensualTodos()">📄 Generar Informe de Todos los Alumnos</button>
+                </div>
             </div>
             <div id="seccionBiblioteca" style="display:none">
                 <div class="card">
@@ -1503,6 +1537,153 @@
         }
         function imprimirInforme(){if(!informeData)return;const a=informeData.alumno,win=window.open('','_blank');win.document.write('<!DOCTYPE html><html><head><title>Informe</title><style>body{font-family:Arial;padding:30px;max-width:800px;margin:0 auto}h1{color:#1a5f4a}h2{margin-top:20px}.indicador{margin:5px 0 5px 20px}</style></head><body><h1>INFORME T'+informeData.trim+' - '+a.siglas+'</h1><p>Curso: '+a.curso+' | Fecha: '+new Date().toLocaleDateString('es-ES')+'</p><h2>✅ Conseguidos ('+informeData.conseguidos.length+')</h2>'+(informeData.conseguidos.map(x=>'<p class="indicador">• '+x.programa+': '+x.indicador+'</p>').join('')||'<p>Ninguno</p>')+'<h2>🔄 En Proceso ('+informeData.proceso.length+')</h2>'+(informeData.proceso.map(x=>'<p class="indicador">• '+x.programa+': '+x.indicador+'</p>').join('')||'<p>Ninguno</p>')+'<h2>⭕ No Iniciados ('+informeData.noIniciados.length+')</h2>'+(informeData.noIniciados.map(x=>'<p class="indicador">• '+x.programa+': '+x.indicador+'</p>').join('')||'<p>Ninguno</p>')+'<p style="margin-top:40px">Fdo: _______________</p></body></html>');win.document.close();setTimeout(()=>{win.print();},300);}
 
+        // INFORME MENSUAL TODOS LOS ALUMNOS
+        function imprimirInformeMensualTodos() {
+            const ids = Object.keys(alumnos);
+            if (!ids.length) { toast('No hay alumnos', 'error'); return; }
+
+            const trim = parseInt(document.getElementById('trimestreInformeMensual').value);
+            const mes = document.getElementById('mesInformeMensual').value;
+            const cursoEscolar = new Date().getMonth() >= 8
+                ? new Date().getFullYear() + '/' + (new Date().getFullYear() + 1)
+                : (new Date().getFullYear() - 1) + '/' + new Date().getFullYear();
+            const periodoTexto = mes ? mes + ' — Trimestre ' + trim : 'Trimestre ' + trim;
+
+            let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Informe Mensual</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:Arial,sans-serif;font-size:10px;color:#222}
+
+/* PORTADA */
+.portada{height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    background:linear-gradient(160deg,#f0faf6,#d0eae2);text-align:center;padding:40px;position:relative}
+.portada-top{position:absolute;top:0;left:0;right:0;height:8px;background:linear-gradient(90deg,#1a5f4a,#2d8a6e,#22c55e)}
+.portada h1{font-size:26px;font-weight:800;color:#1a5f4a;margin-bottom:8px}
+.portada h2{font-size:17px;color:#2d8a6e;margin-bottom:28px}
+.portada .periodo{font-size:20px;font-weight:700;color:#1a5f4a;background:#fff;padding:10px 36px;border-radius:10px;box-shadow:0 4px 14px rgba(26,95,74,.15);margin-bottom:26px;border:2px solid rgba(26,95,74,.1)}
+.portada .centro{font-size:13px;color:#1a5f4a;font-weight:700}
+.portada .curso{font-size:12px;color:#5a8a7a;margin-top:4px}
+.portada .footer{position:absolute;bottom:28px;font-size:11px;color:#8aab9e}
+.linea{width:50px;height:3px;background:#2d8a6e;border-radius:2px;margin:14px auto}
+
+/* ALUMNOS */
+.alumno-bloque{padding:24px 28px;page-break-after:always}
+.alumno-bloque:last-child{page-break-after:avoid}
+.alumno-cabecera{display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid #1a5f4a;padding-bottom:8px;margin-bottom:16px}
+.alumno-nombre{font-size:16px;font-weight:800;color:#1a5f4a}
+.alumno-meta{font-size:10px;color:#5a8a7a;text-align:right}
+.resumen-bar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.resumen-chip{padding:5px 12px;border-radius:20px;font-size:10px;font-weight:700}
+.chip-c{background:#dcfce7;color:#166534}
+.chip-p{background:#dbeafe;color:#1e40af}
+.chip-n{background:#f3f4f6;color:#6b7280}
+.chip-aus{background:#fee2e2;color:#991b1b}
+.seccion-titulo{font-size:11px;font-weight:700;color:#1a5f4a;margin-bottom:6px;padding:4px 8px;background:#f0faf6;border-left:3px solid #1a5f4a;border-radius:0 4px 4px 0}
+.indicador-item{font-size:10px;padding:3px 0 3px 14px;border-bottom:1px solid #f0f0f0;color:#333}
+.indicador-item:last-child{border-bottom:none}
+.area-tag{font-size:9px;color:#888;margin-right:4px}
+.sin-datos{font-style:italic;color:#aaa;font-size:10px;padding:6px 0}
+.firma{margin-top:20px;font-size:10px;color:#aaa}
+
+@media print{
+    .portada{height:100vh;page-break-after:always}
+    @page{margin:1.6cm 1.4cm}
+    @page:first{margin:0}
+    .alumno-bloque{page-break-after:always}
+    .alumno-bloque:last-child{page-break-after:avoid}
+}
+</style></head><body>`;
+
+            // PORTADA
+            html += `<div class="portada">
+                <div class="portada-top"></div>
+                <div style="font-size:50px;margin-bottom:16px">📝</div>
+                <h1>INFORME DE SEGUIMIENTO</h1>
+                <h2>Pedagogía Terapéutica</h2>
+                <div class="linea"></div>
+                <div class="periodo">${periodoTexto}</div>
+                <div class="centro">CEIP Capitulaciones de Santa Fe</div>
+                <div class="curso">Curso escolar ${cursoEscolar}</div>
+                <div class="linea"></div>
+                <div class="footer">Generado el ${new Date().toLocaleDateString('es-ES')}</div>
+            </div>`;
+
+            // UN BLOQUE POR ALUMNO
+            ids.forEach(id => {
+                const a = alumnos[id];
+                const st = calcStats(a);
+                const conseguidos = [], proceso = [], noIniciados = [];
+
+                if (a.programas) {
+                    Object.keys(a.programas).forEach(pId => {
+                        const p = a.programas[pId];
+                        const info = AREAS[p.tipo] || { nombre: p.tipo };
+                        (p.objetivos || []).forEach((obj, oi) => {
+                            (obj.indicadores || []).forEach((ind, ii) => {
+                                const k = pId + '_' + oi + '_' + ii + '_T' + trim;
+                                const e = a.evaluaciones ? a.evaluaciones[k] : null;
+                                const item = { programa: info.nombre, objetivo: 'O' + obj.numero, indicador: ind };
+                                if (e === 'C') conseguidos.push(item);
+                                else if (e === 'P') proceso.push(item);
+                                else noIniciados.push(item);
+                            });
+                        });
+                    });
+                }
+
+                const total = conseguidos.length + proceso.length + noIniciados.length;
+                const porcC = total ? Math.round(conseguidos.length / total * 100) : 0;
+                const ausencias = st.porTrim && st.porTrim[trim] ? st.porTrim[trim].aus : 0;
+
+                html += `<div class="alumno-bloque">
+                    <div class="alumno-cabecera">
+                        <div class="alumno-nombre">📋 ${a.siglas}</div>
+                        <div class="alumno-meta">${a.curso} &nbsp;|&nbsp; T${trim} &nbsp;|&nbsp; ${periodoTexto}<br>Fecha: ${new Date().toLocaleDateString('es-ES')}</div>
+                    </div>
+                    <div class="resumen-bar">
+                        <span class="resumen-chip chip-c">✅ Conseguido: ${conseguidos.length} (${porcC}%)</span>
+                        <span class="resumen-chip chip-p">🔄 En Proceso: ${proceso.length}</span>
+                        <span class="resumen-chip chip-n">⭕ No Iniciado: ${noIniciados.length}</span>
+                        <span class="resumen-chip chip-aus">❌ Ausencias: ${ausencias}</span>
+                    </div>`;
+
+                // Conseguidos
+                html += `<div class="seccion-titulo">✅ CONSEGUIDOS (${conseguidos.length})</div>`;
+                if (conseguidos.length) {
+                    html += conseguidos.map(x => `<div class="indicador-item"><span class="area-tag">${x.programa} ${x.objetivo}:</span> ${x.indicador}</div>`).join('');
+                } else {
+                    html += '<div class="sin-datos">Ninguno registrado</div>';
+                }
+
+                // En proceso
+                html += `<div class="seccion-titulo" style="margin-top:10px">🔄 EN PROCESO (${proceso.length})</div>`;
+                if (proceso.length) {
+                    html += proceso.map(x => `<div class="indicador-item"><span class="area-tag">${x.programa} ${x.objetivo}:</span> ${x.indicador}</div>`).join('');
+                } else {
+                    html += '<div class="sin-datos">Ninguno registrado</div>';
+                }
+
+                // No iniciados
+                html += `<div class="seccion-titulo" style="margin-top:10px">⭕ NO INICIADOS / SIN REGISTRAR (${noIniciados.length})</div>`;
+                if (noIniciados.length) {
+                    html += noIniciados.map(x => `<div class="indicador-item"><span class="area-tag">${x.programa} ${x.objetivo}:</span> ${x.indicador}</div>`).join('');
+                } else {
+                    html += '<div class="sin-datos">Ninguno</div>';
+                }
+
+                html += `<div class="firma">Fdo: _____________________________ &nbsp;&nbsp;&nbsp; PT: _____________________________</div>
+                </div>`;
+            });
+
+            html += '</body></html>';
+
+            const win = window.open('', '_blank');
+            win.document.write(html);
+            win.document.close();
+            setTimeout(() => { win.print(); }, 500);
+            toast('Informe generado con ' + ids.length + ' alumnos', 'success');
+        }
+
         // IMPRESIÓN MASIVA
         function abrirModalImprimir(){if(!Object.keys(alumnos).length){toast('No hay alumnos','error');return;}abrirModal('modalImprimir');}
         
@@ -1929,138 +2110,6 @@ body{font-family:Arial,sans-serif;font-size:10px;color:#333}
             }
             
             html += '</table>';
-            
-            // === VALORACIÓN GENERAL DEL AULA ===
-            html += '<div style="margin-top:30px;background:#f0faf6;border-radius:12px;padding:20px;border-left:4px solid #1a5f4a">';
-            html += '<h3 style="color:#1a5f4a;font-size:16px;margin-bottom:14px;border-bottom:2px solid #2d8a6e;padding-bottom:8px">📝 Valoración General del Aula</h3>';
-            
-            // Calcular estadísticas globales
-            let totalC = 0, totalP = 0, totalN = 0;
-            let alumnosConDatos = 0;
-            const rendimientoAlumnos = [];
-            
-            ids.forEach(id => {
-                const a = alumnos[id];
-                const datos = {C:0, P:0, N:0, total:0};
-                
-                if(a.programas){
-                    Object.keys(a.programas).forEach(pId => {
-                        const p = a.programas[pId];
-                        (p.objetivos || []).forEach((obj, oi) => {
-                            (obj.indicadores || []).forEach((ind, ii) => {
-                                if (trimestreSelec === 'todos') {
-                                    [1,2,3].forEach(trim => {
-                                        const k = pId+'_'+oi+'_'+ii+'_T'+trim;
-                                        const e = a.evaluaciones ? a.evaluaciones[k] : null;
-                                        if (e === 'C') { datos.C++; totalC++; }
-                                        else if (e === 'P') { datos.P++; totalP++; }
-                                        else if (e === 'N') { datos.N++; totalN++; }
-                                    });
-                                } else {
-                                    const trimNum = parseInt(trimestreSelec);
-                                    const k = pId+'_'+oi+'_'+ii+'_T'+trimNum;
-                                    const e = a.evaluaciones ? a.evaluaciones[k] : null;
-                                    if (e === 'C') { datos.C++; totalC++; }
-                                    else if (e === 'P') { datos.P++; totalP++; }
-                                    else if (e === 'N') { datos.N++; totalN++; }
-                                }
-                            });
-                        });
-                    });
-                }
-                
-                datos.total = datos.C + datos.P + datos.N;
-                if(datos.total > 0) {
-                    alumnosConDatos++;
-                    datos.porcentaje = Math.round((datos.C / datos.total) * 100);
-                    datos.siglas = a.siglas;
-                    datos.curso = a.curso;
-                    rendimientoAlumnos.push(datos);
-                }
-            });
-            
-            const totalIndicadores = totalC + totalP + totalN;
-            const porcentajeC = totalIndicadores > 0 ? Math.round((totalC / totalIndicadores) * 100) : 0;
-            const porcentajeP = totalIndicadores > 0 ? Math.round((totalP / totalIndicadores) * 100) : 0;
-            const porcentajeN = totalIndicadores > 0 ? Math.round((totalN / totalIndicadores) * 100) : 0;
-            
-            // Ordenar alumnos por rendimiento
-            rendimientoAlumnos.sort((a, b) => b.porcentaje - a.porcentaje);
-            
-            // Estadísticas numéricas
-            html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px">';
-            html += '<div style="background:white;padding:12px;border-radius:8px;text-align:center;border:2px solid #22c55e">';
-            html += '<div style="font-size:24px;font-weight:700;color:#22c55e">'+totalC+'</div>';
-            html += '<div style="font-size:9px;color:#666">Indicadores conseguidos</div>';
-            html += '<div style="font-size:11px;font-weight:600;color:#22c55e;margin-top:4px">'+porcentajeC+'%</div>';
-            html += '</div>';
-            html += '<div style="background:white;padding:12px;border-radius:8px;text-align:center;border:2px solid #3b82f6">';
-            html += '<div style="font-size:24px;font-weight:700;color:#3b82f6">'+totalP+'</div>';
-            html += '<div style="font-size:9px;color:#666">En proceso</div>';
-            html += '<div style="font-size:11px;font-weight:600;color:#3b82f6;margin-top:4px">'+porcentajeP+'%</div>';
-            html += '</div>';
-            html += '<div style="background:white;padding:12px;border-radius:8px;text-align:center;border:2px solid #888">';
-            html += '<div style="font-size:24px;font-weight:700;color:#888">'+totalN+'</div>';
-            html += '<div style="font-size:9px;color:#666">No iniciados</div>';
-            html += '<div style="font-size:11px;font-weight:600;color:#888;margin-top:4px">'+porcentajeN+'%</div>';
-            html += '</div>';
-            html += '</div>';
-            
-            // Análisis escrito
-            html += '<div style="background:white;padding:14px;border-radius:8px;line-height:1.6;font-size:11px">';
-            html += '<p style="margin-bottom:10px">';
-            html += '<strong>Grupo:</strong> '+ids.length+' alumnos/as en total';
-            if(alumnosConDatos < ids.length) {
-                html += ' ('+alumnosConDatos+' con datos de evaluación registrados)';
-            }
-            html += '.</p>';
-            
-            // Interpretación según porcentajes
-            html += '<p style="margin-bottom:10px">';
-            if(porcentajeC >= 70) {
-                html += '<strong>✅ Valoración general positiva:</strong> El grupo muestra un rendimiento satisfactorio, con un '+porcentajeC+'% de indicadores conseguidos. La mayoría de los alumnos están alcanzando los objetivos propuestos.';
-            } else if(porcentajeC >= 50) {
-                html += '<strong>⚠️ Rendimiento moderado:</strong> El grupo presenta un '+porcentajeC+'% de indicadores conseguidos. Hay margen de mejora, especialmente con los '+totalP+' indicadores que están en proceso.';
-            } else {
-                html += '<strong>📌 Necesita refuerzo:</strong> El grupo presenta un '+porcentajeC+'% de indicadores conseguidos. Se recomienda reforzar los contenidos y adaptar las estrategias metodológicas.';
-            }
-            html += '</p>';
-            
-            // Distribución
-            html += '<p style="margin-bottom:10px">';
-            html += '<strong>Distribución de resultados:</strong> ';
-            if(porcentajeP > porcentajeN) {
-                html += 'La mayoría de los indicadores no conseguidos están en proceso de adquisición ('+porcentajeP+'%), lo que indica una evolución positiva.';
-            } else if(porcentajeN > 20) {
-                html += 'Un '+porcentajeN+'% de los indicadores no están iniciados, lo que requiere atención específica y posible adaptación de objetivos.';
-            } else {
-                html += 'La distribución es equilibrada, mostrando progresión adecuada en la mayoría de áreas trabajadas.';
-            }
-            html += '</p>';
-            
-            // Destacar alumnos con mejor rendimiento (top 3)
-            if(rendimientoAlumnos.length > 0) {
-                html += '<p style="margin-bottom:6px"><strong>Alumnado con mejor rendimiento:</strong> ';
-                const top3 = rendimientoAlumnos.slice(0, Math.min(3, rendimientoAlumnos.length));
-                html += top3.map(a => a.siglas+' ('+a.porcentaje+'%)').join(', ')+'.';
-                html += '</p>';
-                
-                // Alumnos que necesitan más apoyo (bottom 3)
-                if(rendimientoAlumnos.length > 3) {
-                    html += '<p style="margin-bottom:6px"><strong>Alumnado que requiere mayor apoyo:</strong> ';
-                    const bottom3 = rendimientoAlumnos.slice(-Math.min(3, rendimientoAlumnos.length)).reverse();
-                    html += bottom3.map(a => a.siglas+' ('+a.porcentaje+'%)').join(', ')+'.';
-                    html += '</p>';
-                }
-            }
-            
-            html += '<p style="margin-top:12px;font-size:10px;color:#666;font-style:italic;border-top:1px solid #e0e0e0;padding-top:10px">';
-            html += '💡 <strong>Recomendaciones:</strong> Se sugiere continuar con el seguimiento individualizado, reforzar las áreas en proceso mediante metodologías manipulativas y visuales, y mantener la comunicación con las familias y tutores/as.';
-            html += '</p>';
-            
-            html += '</div>'; // cierre div blanco
-            html += '</div>'; // cierre div valoración general
-            
             html += '</div>';
 
             html += '</body></html>';
@@ -2352,21 +2401,21 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
         // BANCO DE ACTIVIDADES CON RECURSOS ONLINE
         const RECURSOS_ONLINE = [
             // ORIENTACIÓN ANDÚJAR (15 recursos)
-            {id:'r1',titulo:'Fichas de sílabas simples',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/2022/05/31/l-p-t-n-m-cuaderno-de-lectoescritura-silabas-directas/',descripcion:'Colección completa de fichas para trabajar sílabas simples. Incluye todas las consonantes y vocales.',area:'comunicativo',nivel:['infantil','ciclo1'],etiquetas:['silabas','conciencia-fonologica','fichas'],categoria:'lectoescritura'},
-            {id:'r2',titulo:'Cuaderno de atención',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/2019/10/10/1001-fichas-de-atencion-super-recopilatorio/',descripcion:'Cuaderno completo con más de 1000 fichas para trabajar atención. Ejercicios variados y progresivos.',area:'cognitivo',nivel:['infantil','ciclo1','ciclo2','ciclo3'],etiquetas:['atencion','concentracion','estimulacion'],categoria:'atencion'},
-            {id:'r3',titulo:'Fichas de matemáticas ABN',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/2018/01/05/abn-recursosep-recopilacion-material-abn-infantil-juegos-fichas-descargables-dinamicas/',descripcion:'Recopilación material ABN: numeración, operaciones, problemas y geometría. Juegos y fichas descargables.',area:'cognitivo',nivel:['ciclo1','ciclo2','ciclo3'],etiquetas:['matematicas','calculo','abn','numeros'],categoria:'matematicas'},
-            {id:'r4',titulo:'Grafomotricidad progresiva',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/2016/06/05/fichas-trabajar-la-atencion-trazo/',descripcion:'Fichas progresivas de trazos y grafomotricidad. Del trazo libre al controlado para mejorar escritura.',area:'motor',nivel:['infantil','ciclo1'],etiquetas:['grafomotricidad','trazos','escritura','psicomotor'],categoria:'psicomotor'},
-            {id:'r5',titulo:'Secuencias temporales',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/tag/secuencias-temporales/',descripcion:'Tarjetas de secuencias temporales para ordenar y trabajar causa-efecto. 2, 3 y 4 viñetas.',area:'cognitivo',nivel:['infantil','ciclo1'],etiquetas:['secuencias','temporalidad','ordenar','razonamiento'],categoria:'atencion'},
-            {id:'r6',titulo:'Discriminación visual',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/tag/discriminacion-visual/',descripcion:'Ejercicios de buscar diferencias, encontrar igual, figura-fondo y atención selectiva.',area:'cognitivo',nivel:['infantil','ciclo1','ciclo2'],etiquetas:['percepcion','visual','discriminacion'],categoria:'atencion'},
-            {id:'r7',titulo:'Conciencia fonológica',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/tag/conciencia-fonologica/',descripcion:'Actividades de rimas, sílabas, fonemas para desarrollar conciencia fonológica. Esencial para lectura.',area:'comunicativo',nivel:['infantil','ciclo1'],etiquetas:['fonologia','silabas','pre-lectura'],categoria:'lectoescritura'},
-            {id:'r8',titulo:'Problemas matemáticos visuales',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/tag/problemas-matematicos/',descripcion:'Problemas con apoyo visual paso a paso para alumnado con NEE. Distintos niveles de dificultad.',area:'cognitivo',nivel:['ciclo1','ciclo2'],etiquetas:['problemas','matematicas','visual'],categoria:'matematicas'},
-            {id:'r9',titulo:'Comprensión de instrucciones',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/tag/comprension-de-instrucciones/',descripcion:'Fichas para trabajar seguimiento de instrucciones escritas y orales. Fundamentales para autonomía.',area:'comunicativo',nivel:['ciclo1','ciclo2'],etiquetas:['instrucciones','comprension','atencion'],categoria:'lectoescritura'},
-            {id:'r10',titulo:'Series lógicas',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/tag/series-numericas/',descripcion:'Completar series numéricas, de formas, colores y patrones. Razonamiento lógico-matemático.',area:'cognitivo',nivel:['infantil','ciclo1','ciclo2'],etiquetas:['series','logica','patrones'],categoria:'matematicas'},
-            {id:'r11',titulo:'Laberintos',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/tag/laberintos/',descripcion:'Laberintos de diferentes niveles para trabajar atención sostenida y planificación motora.',area:'cognitivo',nivel:['infantil','ciclo1','ciclo2'],etiquetas:['laberintos','planificacion','atencion'],categoria:'atencion'},
-            {id:'r12',titulo:'Categorización',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/tag/categorizacion/',descripcion:'Actividades de clasificar objetos por categorías semánticas. Desarrollo del vocabulario.',area:'cognitivo',nivel:['infantil','ciclo1'],etiquetas:['categorias','clasificacion','vocabulario'],categoria:'lectoescritura'},
-            {id:'r13',titulo:'Fichas de emociones',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/tag/educacion-emocional/',descripcion:'Reconocimiento e identificación de emociones básicas. Inteligencia emocional para infantil y primaria.',area:'social',nivel:['infantil','ciclo1'],etiquetas:['emociones','social','inteligencia-emocional'],categoria:'social'},
-            {id:'r14',titulo:'Sopa de letras adaptadas',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/tag/sopa-de-letras/',descripcion:'Sopas de letras por temáticas para reforzar vocabulario. Diferentes niveles de dificultad.',area:'comunicativo',nivel:['ciclo1','ciclo2','ciclo3'],etiquetas:['vocabulario','sopas','lectura'],categoria:'lectoescritura'},
-            {id:'r15',titulo:'Memory educativo',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/tag/memory/',descripcion:'Fichas para crear juegos de memory adaptados por temas. Trabajo de memoria visual y atención.',area:'cognitivo',nivel:['infantil','ciclo1'],etiquetas:['memoria','juego','atencion'],categoria:'atencion'},
+            {id:'r1',titulo:'Fichas de sílabas simples',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/lectoescritura/',descripcion:'Colección completa de fichas para trabajar sílabas simples. Incluye todas las consonantes y vocales.',area:'comunicativo',nivel:['infantil','ciclo1'],etiquetas:['silabas','conciencia-fonologica','fichas'],categoria:'lectoescritura'},
+            {id:'r2',titulo:'Cuaderno de atención',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/tag/fichas-imprimibles/',descripcion:'Cuaderno completo para trabajar habilidades básicas de atención. Ejercicios variados y progresivos.',area:'cognitivo',nivel:['infantil','ciclo1','ciclo2','ciclo3'],etiquetas:['atencion','concentracion','estimulacion'],categoria:'atencion'},
+            {id:'r3',titulo:'Fichas de matemáticas ABN',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/',descripcion:'Fichas de numeración, operaciones básicas con método ABN, problemas y geometría adaptadas.',area:'cognitivo',nivel:['ciclo1','ciclo2','ciclo3'],etiquetas:['matematicas','calculo','abn','numeros'],categoria:'matematicas'},
+            {id:'r4',titulo:'Grafomotricidad progresiva',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/',descripcion:'Fichas progresivas de trazos y grafomotricidad para mejorar escritura. Del trazo libre al controlado.',area:'motor',nivel:['infantil','ciclo1'],etiquetas:['grafomotricidad','trazos','escritura','psicomotor'],categoria:'psicomotor'},
+            {id:'r5',titulo:'Secuencias temporales',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/',descripcion:'Tarjetas de secuencias temporales para ordenar y trabajar causa-efecto. 2, 3 y 4 viñetas.',area:'cognitivo',nivel:['infantil','ciclo1'],etiquetas:['secuencias','temporalidad','ordenar','razonamiento'],categoria:'atencion'},
+            {id:'r6',titulo:'Discriminación visual',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/',descripcion:'Ejercicios de buscar diferencias, encontrar igual, figur-fondo.',area:'cognitivo',nivel:['infantil','ciclo1','ciclo2'],etiquetas:['percepcion','visual','discriminacion'],categoria:'atencion'},
+            {id:'r7',titulo:'Conciencia fonológica',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/',descripcion:'Actividades de rimas, sílabas, fonemas para desarrollar conciencia fonológica.',area:'comunicativo',nivel:['infantil','ciclo1'],etiquetas:['fonologia','silabas','pre-lectura'],categoria:'lectoescritura'},
+            {id:'r8',titulo:'Problemas matemáticos visuales',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/',descripcion:'Problemas con apoyo visual para alumnado con dificultades.',area:'cognitivo',nivel:['ciclo1','ciclo2'],etiquetas:['problemas','matematicas','visual'],categoria:'matematicas'},
+            {id:'r9',titulo:'Comprensión de instrucciones',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/',descripcion:'Fichas para trabajar seguimiento de instrucciones escritas y orales.',area:'comunicativo',nivel:['ciclo1','ciclo2'],etiquetas:['instrucciones','comprension','atencion'],categoria:'lectoescritura'},
+            {id:'r10',titulo:'Series lógicas',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/',descripcion:'Completar series numéricas, de formas, colores y patrones.',area:'cognitivo',nivel:['infantil','ciclo1','ciclo2'],etiquetas:['series','logica','patrones'],categoria:'matematicas'},
+            {id:'r11',titulo:'Laberintos',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/',descripcion:'Laberintos de diferentes niveles para trabajar atención y planificación.',area:'cognitivo',nivel:['infantil','ciclo1','ciclo2'],etiquetas:['laberintos','planificacion','atencion'],categoria:'atencion'},
+            {id:'r12',titulo:'Categorización',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/',descripcion:'Actividades de clasificar objetos por categorías semánticas.',area:'cognitivo',nivel:['infantil','ciclo1'],etiquetas:['categorias','clasificacion','vocabulario'],categoria:'lectoescritura'},
+            {id:'r13',titulo:'Fichas de emociones',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/',descripcion:'Reconocimiento e identificación de emociones básicas.',area:'social',nivel:['infantil','ciclo1'],etiquetas:['emociones','social','inteligencia-emocional'],categoria:'social'},
+            {id:'r14',titulo:'Sopa de letras adaptadas',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/',descripcion:'Sopas de letras por temáticas para reforzar vocabulario.',area:'comunicativo',nivel:['ciclo1','ciclo2','ciclo3'],etiquetas:['vocabulario','sopas','lectura'],categoria:'lectoescritura'},
+            {id:'r15',titulo:'Memory educativo',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/',descripcion:'Fichas para crear juegos de memoria adaptados por temas.',area:'cognitivo',nivel:['infantil','ciclo1'],etiquetas:['memoria','juego','atencion'],categoria:'atencion'},
             
             // ARASAAC (10 recursos)
             {id:'r16',titulo:'Pictogramas de rutinas',tipo:'online',fuente:'arasaac',url:'https://arasaac.org/pictograms/search',descripcion:'Conjunto de pictogramas para crear agendas visuales y anticipar rutinas diarias. Formato editable.',area:'social',nivel:['infantil','ciclo1','ciclo2'],etiquetas:['tea','rutinas','anticipacion','pictogramas'],categoria:'pictogramas'},
@@ -2417,14 +2466,14 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
             
             // RECURSOS ESPECÍFICOS INFANTIL (30 nuevos)
             // Psicomotricidad y sensorial
-            {id:'r51',titulo:'Circuitos de psicomotricidad',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/tag/psicomotricidad/',descripcion:'Tarjetas con circuitos de psicomotricidad para imprimir y organizar sesiones motrices.',area:'psicomotor',nivel:['infantil'],etiquetas:['circuitos','motricidad-gruesa','sesiones'],categoria:'psicomotor'},
-            {id:'r52',titulo:'Yoga para niños',tipo:'online',fuente:'otros',url:'https://www.guiainfantil.com/articulos/ocio/yoga-para-ninos/',descripcion:'Posturas de yoga adaptadas con pictogramas y secuencias para infantil.',area:'psicomotor',nivel:['infantil'],etiquetas:['yoga','relajacion','motricidad'],categoria:'psicomotor'},
-            {id:'r53',titulo:'Juegos de soplo',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/tag/soplo/',descripcion:'Actividades y materiales para trabajar la respiración y el soplo en infantil.',area:'motor',nivel:['infantil'],etiquetas:['soplo','respiracion','praxias'],categoria:'psicomotor'},
-            {id:'r54',titulo:'Motricidad fina progresiva',tipo:'online',fuente:'superpt',url:'https://www.superpt.es/category/materiales-elaboracion-propia/',descripcion:'Actividades graduadas de pinza, ensartado, recortado y pegado para infantil.',area:'motor',nivel:['infantil'],etiquetas:['pinza','ensartar','motricidad-fina'],categoria:'psicomotor'},
-            {id:'r55',titulo:'Masajes y relajación',tipo:'online',fuente:'otros',url:'https://www.educapeques.com/escuela-de-padres/tecnicas-relajacion-ninos.html',descripcion:'Técnicas de masaje infantil y ejercicios de relajación para el aula.',area:'psicomotor',nivel:['infantil'],etiquetas:['masaje','relajacion','sensorial'],categoria:'psicomotor'},
-            {id:'r56',titulo:'Bandejas sensoriales',tipo:'online',fuente:'otros',url:'https://actividadesinfantil.com/archives/tag/bandejas-sensoriales',descripcion:'Ideas y plantillas para crear bandejas sensoriales Montessori (arena, arroz, agua...).',area:'psicomotor',nivel:['infantil'],etiquetas:['sensorial','montessori','manipulativo'],categoria:'psicomotor'},
-            {id:'r57',titulo:'Botellas sensoriales',tipo:'online',fuente:'otros',url:'https://www.pequefelicidad.com/2015/02/botellas-sensoriales-diy.html',descripcion:'Tutoriales para crear botellas de la calma y sensoriales para autorregulación.',area:'psicomotor',nivel:['infantil'],etiquetas:['sensorial','calma','autorregulacion'],categoria:'psicomotor'},
-            {id:'r58',titulo:'Estimulación multisensorial',tipo:'online',fuente:'arasaac',url:'https://aulaabierta.arasaac.org/materiales-teacch-estimulacion-multisensorial',descripcion:'Materiales para estimular todos los sentidos (vista, oído, tacto, olfato, gusto).',area:'psicomotor',nivel:['infantil'],etiquetas:['sentidos','estimulacion','sensorial'],categoria:'psicomotor'},
+            {id:'r51',titulo:'Circuitos de psicomotricidad',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/',descripcion:'Tarjetas con circuitos de psicomotricidad para imprimir y organizar sesiones motrices.',area:'psicomotor',nivel:['infantil'],etiquetas:['circuitos','motricidad-gruesa','sesiones'],categoria:'psicomotor'},
+            {id:'r52',titulo:'Yoga para niños',tipo:'online',fuente:'otros',url:'https://www.yogakiddy.com/',descripcion:'Posturas de yoga adaptadas con pictogramas y secuencias para infantil.',area:'psicomotor',nivel:['infantil'],etiquetas:['yoga','relajacion','motricidad'],categoria:'psicomotor'},
+            {id:'r53',titulo:'Juegos de soplo',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/',descripcion:'Actividades y materiales para trabajar la respiración y el soplo en infantil.',area:'motor',nivel:['infantil'],etiquetas:['soplo','respiracion','praxias'],categoria:'psicomotor'},
+            {id:'r54',titulo:'Motricidad fina progresiva',tipo:'online',fuente:'superpt',url:'https://www.superpt.es/',descripcion:'Actividades graduadas de pinza, ensartado, recortado y pegado para infantil.',area:'motor',nivel:['infantil'],etiquetas:['pinza','ensartar','motricidad-fina'],categoria:'psicomotor'},
+            {id:'r55',titulo:'Masajes y relajación',tipo:'online',fuente:'otros',url:'https://www.educapeques.com/',descripcion:'Técnicas de masaje infantil y ejercicios de relajación para el aula.',area:'psicomotor',nivel:['infantil'],etiquetas:['masaje','relajacion','sensorial'],categoria:'psicomotor'},
+            {id:'r56',titulo:'Bandejas sensoriales',tipo:'online',fuente:'otros',url:'https://www.montessoriencasa.es/',descripcion:'Ideas y plantillas para crear bandejas sensoriales Montessori (arena, arroz, agua...).',area:'psicomotor',nivel:['infantil'],etiquetas:['sensorial','montessori','manipulativo'],categoria:'psicomotor'},
+            {id:'r57',titulo:'Botellas sensoriales',tipo:'online',fuente:'otros',url:'https://actividadesinfantil.com/',descripcion:'Tutoriales para crear botellas de la calma y sensoriales para autorregulación.',area:'psicomotor',nivel:['infantil'],etiquetas:['sensorial','calma','autorregulacion'],categoria:'psicomotor'},
+            {id:'r58',titulo:'Estimulación multisensorial',tipo:'online',fuente:'arasaac',url:'https://aulaabierta.arasaac.org/',descripcion:'Materiales para estimular todos los sentidos (vista, oído, tacto, olfato, gusto).',area:'psicomotor',nivel:['infantil'],etiquetas:['sentidos','estimulacion','sensorial'],categoria:'psicomotor'},
             
             // Autonomía personal
             {id:'r59',titulo:'Rutinas visuales de higiene',tipo:'online',fuente:'arasaac',url:'https://arasaac.org/',descripcion:'Secuencias con pictogramas: lavarse manos, dientes, ir al baño.',area:'autonomia',nivel:['infantil'],etiquetas:['higiene','rutinas','pictogramas'],categoria:'autonomia'},
@@ -2434,19 +2483,19 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
             {id:'r63',titulo:'Tareas del hogar infantil',tipo:'online',fuente:'otros',url:'https://www.montessoriencasa.es/',descripcion:'Actividades de vida práctica Montessori: doblar, verter, limpiar...',area:'autonomia',nivel:['infantil'],etiquetas:['montessori','vida-practica','tareas'],categoria:'autonomia'},
             
             // Comunicación y lenguaje
-            {id:'r64',titulo:'Vocabulario básico por temas',tipo:'online',fuente:'arasaac',url:'https://arasaac.org/materials/search',descripcion:'Láminas temáticas infantiles: familia, colegio, juguetes, colores, formas.',area:'comunicativo',nivel:['infantil'],etiquetas:['vocabulario','temas','pictogramas'],categoria:'lectoescritura'},
-            {id:'r65',titulo:'Praxias bucofonatorias',tipo:'online',fuente:'otros',url:'https://maestrosdeaudicionylenguaje.com/tag/praxias/',descripcion:'Ejercicios de praxias con dibujos animados y vídeos para infantil.',area:'comunicativo',nivel:['infantil'],etiquetas:['praxias','logopedia','boca'],categoria:'lectoescritura'},
-            {id:'r66',titulo:'Onomatopeyas y sonidos',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/tag/onomatopeyas/',descripcion:'Tarjetas de onomatopeyas de animales, vehículos e instrumentos.',area:'comunicativo',nivel:['infantil'],etiquetas:['onomatopeyas','sonidos','discriminacion'],categoria:'lectoescritura'},
-            {id:'r67',titulo:'Cuentos pictográficos',tipo:'online',fuente:'arasaac',url:'https://aulaabierta.arasaac.org/materiales-caa-cuentos-adaptados',descripcion:'Cuentos clásicos infantiles completamente adaptados con pictogramas.',area:'comunicativo',nivel:['infantil'],etiquetas:['cuentos','pictogramas','lectura'],categoria:'lectoescritura'},
-            {id:'r68',titulo:'Bits de inteligencia',tipo:'online',fuente:'otros',url:'https://www.edufichas.com/bits-de-inteligencia/',descripcion:'Bits de vocabulario por categorías para estimulación temprana.',area:'comunicativo',nivel:['infantil'],etiquetas:['bits','vocabulario','estimulacion'],categoria:'lectoescritura'},
-            {id:'r69',titulo:'Canciones infantiles con gestos',tipo:'online',fuente:'otros',url:'https://www.guiainfantil.com/articulos/ocio/canciones-infantiles/',descripcion:'Letras y gestos de canciones motrices tradicionales para infantil.',area:'comunicativo',nivel:['infantil'],etiquetas:['canciones','gestos','lenguaje'],categoria:'lectoescritura'},
+            {id:'r64',titulo:'Vocabulario básico por temas',tipo:'online',fuente:'arasaac',url:'https://arasaac.org/',descripcion:'Láminas temáticas infantiles: familia, colegio, juguetes, colores, formas.',area:'comunicativo',nivel:['infantil'],etiquetas:['vocabulario','temas','pictogramas'],categoria:'lectoescritura'},
+            {id:'r65',titulo:'Praxias bucofonatorias',tipo:'online',fuente:'otros',url:'https://maestrosdeaudicionylenguaje.com/',descripcion:'Ejercicios de praxias con dibujos animados y vídeos para infantil.',area:'comunicativo',nivel:['infantil'],etiquetas:['praxias','logopedia','boca'],categoria:'lectoescritura'},
+            {id:'r66',titulo:'Onomatopeyas y sonidos',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/',descripcion:'Tarjetas de onomatopeyas de animales, vehículos e instrumentos.',area:'comunicativo',nivel:['infantil'],etiquetas:['onomatopeyas','sonidos','discriminacion'],categoria:'lectoescritura'},
+            {id:'r67',titulo:'Cuentos pictográficos',tipo:'online',fuente:'arasaac',url:'https://aulaabierta.arasaac.org/',descripcion:'Cuentos clásicos infantiles completamente adaptados con pictogramas.',area:'comunicativo',nivel:['infantil'],etiquetas:['cuentos','pictogramas','lectura'],categoria:'lectoescritura'},
+            {id:'r68',titulo:'Bits de inteligencia',tipo:'online',fuente:'otros',url:'https://www.edufichas.com/',descripcion:'Bits de vocabulario por categorías para estimulación temprana.',area:'comunicativo',nivel:['infantil'],etiquetas:['bits','vocabulario','estimulacion'],categoria:'lectoescritura'},
+            {id:'r69',titulo:'Canciones infantiles con gestos',tipo:'online',fuente:'otros',url:'https://www.guiainfantil.com/',descripcion:'Letras y gestos de canciones motrices tradicionales para infantil.',area:'comunicativo',nivel:['infantil'],etiquetas:['canciones','gestos','lenguaje'],categoria:'lectoescritura'},
             
             // Social-emocional
-            {id:'r70',titulo:'El monstruo de colores',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/tag/el-monstruo-de-colores/',descripcion:'Actividades basadas en el cuento para trabajar emociones básicas.',area:'social',nivel:['infantil'],etiquetas:['emociones','monstruo','cuento'],categoria:'social'},
-            {id:'r71',titulo:'Tarjetas de emociones básicas',tipo:'online',fuente:'arasaac',url:'https://arasaac.org/materials/search?search=emociones',descripcion:'Pictogramas de alegría, tristeza, enfado, miedo, sorpresa para identificar.',area:'social',nivel:['infantil'],etiquetas:['emociones','expresion','identificar'],categoria:'social'},
-            {id:'r72',titulo:'Habilidades sociales básicas',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/tag/habilidades-sociales/',descripcion:'Fichas de saludar, compartir, esperar turno, pedir ayuda.',area:'social',nivel:['infantil'],etiquetas:['habilidades','social','convivencia'],categoria:'social'},
-            {id:'r73',titulo:'Resolución de conflictos',tipo:'online',fuente:'otros',url:'https://www.educapeques.com/escuela-de-padres/resolucion-de-conflictos.html',descripcion:'Historias sociales y situaciones para trabajar resolución de conflictos.',area:'social',nivel:['infantil'],etiquetas:['conflictos','problemas','social'],categoria:'social'},
-            {id:'r74',titulo:'Rincón de la calma',tipo:'online',fuente:'otros',url:'https://www.pequefelicidad.com/2017/01/el-rincon-de-la-calma.html',descripcion:'Materiales y guía para crear un espacio de autorregulación emocional.',area:'social',nivel:['infantil'],etiquetas:['calma','autorregulacion','emociones'],categoria:'social'},
+            {id:'r70',titulo:'El monstruo de colores',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/',descripcion:'Actividades basadas en el cuento para trabajar emociones básicas.',area:'social',nivel:['infantil'],etiquetas:['emociones','monstruo','cuento'],categoria:'social'},
+            {id:'r71',titulo:'Tarjetas de emociones básicas',tipo:'online',fuente:'arasaac',url:'https://arasaac.org/',descripcion:'Pictogramas de alegría, tristeza, enfado, miedo, sorpresa para identificar.',area:'social',nivel:['infantil'],etiquetas:['emociones','expresion','identificar'],categoria:'social'},
+            {id:'r72',titulo:'Habilidades sociales básicas',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/',descripcion:'Fichas de saludar, compartir, esperar turno, pedir ayuda.',area:'social',nivel:['infantil'],etiquetas:['habilidades','social','convivencia'],categoria:'social'},
+            {id:'r73',titulo:'Resolución de conflictos',tipo:'online',fuente:'otros',url:'https://www.educapeques.com/',descripcion:'Historias sociales y situaciones para trabajar resolución de conflictos.',area:'social',nivel:['infantil'],etiquetas:['conflictos','problemas','social'],categoria:'social'},
+            {id:'r74',titulo:'Rincón de la calma',tipo:'online',fuente:'otros',url:'https://www.pequefelicidad.com/',descripcion:'Materiales y guía para crear un espacio de autorregulación emocional.',area:'social',nivel:['infantil'],etiquetas:['calma','autorregulacion','emociones'],categoria:'social'},
             
             // Cognición básica
             {id:'r75',titulo:'Colores básicos',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/',descripcion:'Actividades progresivas de reconocimiento e identificación de colores.',area:'cognitivo',nivel:['infantil'],etiquetas:['colores','discriminacion','basico'],categoria:'atencion'},
@@ -2462,30 +2511,30 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
             
             // RECURSOS CICLO 1 Y CICLO 2 (16 nuevos - hasta r100)
             // Lectoescritura ciclo 1 y 2
-            {id:'r85',titulo:'Lecturas comprensivas por niveles',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/tag/comprension-lectora/',descripcion:'Textos cortos con preguntas de comprensión graduados por dificultad.',area:'comunicativo',nivel:['ciclo1','ciclo2'],etiquetas:['comprension','lectura','textos'],categoria:'lectoescritura'},
-            {id:'r86',titulo:'Ortografía natural',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/tag/ortografia/',descripcion:'Actividades de ortografía natural: mp, mb, br, bl, mayúsculas, punto.',area:'comunicativo',nivel:['ciclo1','ciclo2'],etiquetas:['ortografia','normas','escritura'],categoria:'lectoescritura'},
-            {id:'r87',titulo:'Expresión escrita guiada',tipo:'online',fuente:'superpt',url:'https://www.superpt.es/category/materiales-elaboracion-propia/',descripcion:'Plantillas con apoyos visuales para iniciarse en la escritura creativa.',area:'comunicativo',nivel:['ciclo1','ciclo2'],etiquetas:['escritura','expresion','creatividad'],categoria:'lectoescritura'},
-            {id:'r88',titulo:'Fichas de caligrafía pauta Montessori',tipo:'online',fuente:'otros',url:'https://actividadesinfantil.com/archives/tag/caligrafia',descripcion:'Cuadernillos de caligrafía con pauta Montessori y letra ligada.',area:'comunicativo',nivel:['ciclo1'],etiquetas:['caligrafia','letra','trazo'],categoria:'lectoescritura'},
+            {id:'r85',titulo:'Lecturas comprensivas por niveles',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/',descripcion:'Textos cortos con preguntas de comprensión graduados por dificultad.',area:'comunicativo',nivel:['ciclo1','ciclo2'],etiquetas:['comprension','lectura','textos'],categoria:'lectoescritura'},
+            {id:'r86',titulo:'Ortografía natural',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/',descripcion:'Actividades de ortografía natural: mp, mb, br, bl, mayúsculas, punto.',area:'comunicativo',nivel:['ciclo1','ciclo2'],etiquetas:['ortografia','normas','escritura'],categoria:'lectoescritura'},
+            {id:'r87',titulo:'Expresión escrita guiada',tipo:'online',fuente:'superpt',url:'https://www.superpt.es/',descripcion:'Plantillas con apoyos visuales para iniciarse en la escritura creativa.',area:'comunicativo',nivel:['ciclo1','ciclo2'],etiquetas:['escritura','expresion','creatividad'],categoria:'lectoescritura'},
+            {id:'r88',titulo:'Fichas de caligrafía pauta Montessori',tipo:'online',fuente:'otros',url:'https://actividadesdeinfantilyprimaria.com/',descripcion:'Cuadernillos de caligrafía con pauta Montessori y letra ligada.',area:'comunicativo',nivel:['ciclo1'],etiquetas:['caligrafia','letra','trazo'],categoria:'lectoescritura'},
             
             // Matemáticas ciclo 1 y 2
-            {id:'r89',titulo:'Tablas de multiplicar manipulativas',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/tag/tablas-de-multiplicar/',descripcion:'Material manipulativo y juegos para aprender las tablas del 1 al 10.',area:'cognitivo',nivel:['ciclo1','ciclo2'],etiquetas:['tablas','multiplicar','calculo'],categoria:'matematicas'},
-            {id:'r90',titulo:'Problemas visuales con dibujos',tipo:'online',fuente:'ptyal',url:'https://www.ptyal.com/problemas-matematicos-paso-a-paso/',descripcion:'Problemas matemáticos con apoyo visual paso a paso para NEE.',area:'cognitivo',nivel:['ciclo1','ciclo2'],etiquetas:['problemas','visual','pasos'],categoria:'matematicas'},
-            {id:'r91',titulo:'Cálculo mental rápido',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/tag/calculo-mental/',descripcion:'Actividades cronometradas de sumas, restas y multiplicaciones.',area:'cognitivo',nivel:['ciclo1','ciclo2'],etiquetas:['calculo','mental','velocidad'],categoria:'matematicas'},
-            {id:'r92',titulo:'Monedas y billetes',tipo:'online',fuente:'superpt',url:'https://www.superpt.es/category/materiales-elaboracion-propia/',descripcion:'Material manipulativo para trabajar euros y céntimos de forma práctica.',area:'cognitivo',nivel:['ciclo1','ciclo2'],etiquetas:['dinero','euros','practico'],categoria:'matematicas'},
-            {id:'r93',titulo:'Relojes analógicos y digitales',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/tag/el-reloj/',descripcion:'Fichas progresivas para aprender las horas, medias y cuartos.',area:'cognitivo',nivel:['ciclo1','ciclo2'],etiquetas:['reloj','tiempo','horas'],categoria:'matematicas'},
+            {id:'r89',titulo:'Tablas de multiplicar manipulativas',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/',descripcion:'Material manipulativo y juegos para aprender las tablas del 1 al 10.',area:'cognitivo',nivel:['ciclo1','ciclo2'],etiquetas:['tablas','multiplicar','calculo'],categoria:'matematicas'},
+            {id:'r90',titulo:'Problemas visuales con dibujos',tipo:'online',fuente:'ptyal',url:'https://www.ptyal.com/',descripcion:'Problemas matemáticos con apoyo visual paso a paso para NEE.',area:'cognitivo',nivel:['ciclo1','ciclo2'],etiquetas:['problemas','visual','pasos'],categoria:'matematicas'},
+            {id:'r91',titulo:'Cálculo mental rápido',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/',descripcion:'Actividades cronometradas de sumas, restas y multiplicaciones.',area:'cognitivo',nivel:['ciclo1','ciclo2'],etiquetas:['calculo','mental','velocidad'],categoria:'matematicas'},
+            {id:'r92',titulo:'Monedas y billetes',tipo:'online',fuente:'superpt',url:'https://www.superpt.es/',descripcion:'Material manipulativo para trabajar euros y céntimos de forma práctica.',area:'cognitivo',nivel:['ciclo1','ciclo2'],etiquetas:['dinero','euros','practico'],categoria:'matematicas'},
+            {id:'r93',titulo:'Relojes analógicos y digitales',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/',descripcion:'Fichas progresivas para aprender las horas, medias y cuartos.',area:'cognitivo',nivel:['ciclo1','ciclo2'],etiquetas:['reloj','tiempo','horas'],categoria:'matematicas'},
             
             // Atención y funciones ejecutivas
-            {id:'r94',titulo:'Encuentra las diferencias',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/tag/encuentra-las-diferencias/',descripcion:'Láminas graduadas para trabajar atención selectiva y visual.',area:'cognitivo',nivel:['ciclo1','ciclo2'],etiquetas:['diferencias','atencion','visual'],categoria:'atencion'},
-            {id:'r95',titulo:'Sudokus infantiles adaptados',tipo:'online',fuente:'aulapt',url:'https://www.aulapt.org/tag/sudokus/',descripcion:'Sudokus con imágenes y números adaptados a primaria.',area:'cognitivo',nivel:['ciclo1','ciclo2'],etiquetas:['sudoku','logica','razonamiento'],categoria:'atencion'},
-            {id:'r96',titulo:'Organizadores gráficos',tipo:'online',fuente:'ptyal',url:'https://www.ptyal.com/organizadores-graficos-mapas-mentales/',descripcion:'Plantillas de mapas mentales, esquemas y organizadores para estudiar.',area:'cognitivo',nivel:['ciclo2','ciclo3'],etiquetas:['esquemas','organizacion','estudio'],categoria:'atencion'},
+            {id:'r94',titulo:'Encuentra las diferencias',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/',descripcion:'Láminas graduadas para trabajar atención selectiva y visual.',area:'cognitivo',nivel:['ciclo1','ciclo2'],etiquetas:['diferencias','atencion','visual'],categoria:'atencion'},
+            {id:'r95',titulo:'Sudokus infantiles adaptados',tipo:'online',fuente:'aulapt',url:'https://www.aulapt.org/',descripcion:'Sudokus con imágenes y números adaptados a primaria.',area:'cognitivo',nivel:['ciclo1','ciclo2'],etiquetas:['sudoku','logica','razonamiento'],categoria:'atencion'},
+            {id:'r96',titulo:'Organizadores gráficos',tipo:'online',fuente:'ptyal',url:'https://www.ptyal.com/',descripcion:'Plantillas de mapas mentales, esquemas y organizadores para estudiar.',area:'cognitivo',nivel:['ciclo2','ciclo3'],etiquetas:['esquemas','organizacion','estudio'],categoria:'atencion'},
             
             // Ciencias y conocimiento del medio
-            {id:'r97',titulo:'Ciencias naturales adaptadas',tipo:'online',fuente:'aulapt',url:'https://www.aulapt.org/tag/conocimiento-del-medio/',descripcion:'Fichas de lectura fácil sobre animales, plantas, cuerpo humano.',area:'cognitivo',nivel:['ciclo1','ciclo2'],etiquetas:['ciencias','naturales','adaptado'],categoria:'atencion'},
-            {id:'r98',titulo:'El cuerpo humano para niños',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/tag/cuerpo-humano/',descripcion:'Láminas y actividades sobre partes del cuerpo, órganos y sentidos.',area:'cognitivo',nivel:['ciclo1','ciclo2'],etiquetas:['cuerpo','anatomia','sentidos'],categoria:'atencion'},
+            {id:'r97',titulo:'Ciencias naturales adaptadas',tipo:'online',fuente:'aulapt',url:'https://www.aulapt.org/',descripcion:'Fichas de lectura fácil sobre animales, plantas, cuerpo humano.',area:'cognitivo',nivel:['ciclo1','ciclo2'],etiquetas:['ciencias','naturales','adaptado'],categoria:'atencion'},
+            {id:'r98',titulo:'El cuerpo humano para niños',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/',descripcion:'Láminas y actividades sobre partes del cuerpo, órganos y sentidos.',area:'cognitivo',nivel:['ciclo1','ciclo2'],etiquetas:['cuerpo','anatomia','sentidos'],categoria:'atencion'},
             
             // Habilidades sociales avanzadas
-            {id:'r99',titulo:'Historias sociales para TEA',tipo:'online',fuente:'arasaac',url:'https://aulaabierta.arasaac.org/materiales-caa-historias-sociales',descripcion:'Colección de historias sociales con pictogramas para situaciones cotidianas.',area:'social',nivel:['ciclo1','ciclo2'],etiquetas:['tea','historias','social'],categoria:'pictogramas'},
-            {id:'r100',titulo:'Teatro y role-playing',tipo:'online',fuente:'otros',url:'https://www.educapeques.com/escuela-de-padres/teatro-infantil.html',descripcion:'Guiones cortos para dramatizar situaciones sociales y emocionales.',area:'social',nivel:['ciclo1','ciclo2','ciclo3'],etiquetas:['teatro','dramatizacion','emociones'],categoria:'social'}
+            {id:'r99',titulo:'Historias sociales para TEA',tipo:'online',fuente:'arasaac',url:'https://aulaabierta.arasaac.org/',descripcion:'Colección de historias sociales con pictogramas para situaciones cotidianas.',area:'social',nivel:['ciclo1','ciclo2'],etiquetas:['tea','historias','social'],categoria:'pictogramas'},
+            {id:'r100',titulo:'Teatro y role-playing',tipo:'online',fuente:'otros',url:'https://www.educapeques.com/',descripcion:'Guiones cortos para dramatizar situaciones sociales y emocionales.',area:'social',nivel:['ciclo1','ciclo2','ciclo3'],etiquetas:['teatro','dramatizacion','emociones'],categoria:'social'}
         ];
         
         function inicializarRecursos() {
