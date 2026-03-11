@@ -128,6 +128,18 @@
         .chart-container canvas{max-height:200px}
         .informe-preview{background:#fff;border:1px solid var(--border);border-radius:var(--radius-sm);padding:16px;margin-top:12px;font-size:.85rem;max-height:400px;overflow-y:auto}
         .pasado-badge{font-size:.6rem;background:#fef3c7;color:#92400e;padding:1px 4px;border-radius:3px;margin-left:4px}
+        .calif-card{background:var(--bg);border-radius:8px;padding:10px 12px;margin-bottom:8px;border-left:3px solid var(--primary)}
+        .calif-criterio-badge{display:inline-block;background:var(--primary);color:#fff;font-size:.68rem;font-weight:700;padding:3px 8px;border-radius:10px;margin-bottom:6px}
+        .calif-inds{font-size:.72rem;color:var(--text-light);margin-bottom:8px;padding-left:4px;line-height:1.5}
+        .calif-meses{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+        .calif-mes-item{display:flex;flex-direction:column;align-items:center;gap:3px}
+        .calif-mes-label{font-size:.62rem;color:var(--text-light);font-weight:600;text-transform:uppercase}
+        .calif-input{width:50px;height:40px;border:2px solid var(--border);border-radius:8px;text-align:center;font-size:1rem;font-weight:700;background:#fff;transition:border-color .2s,color .2s}
+        .calif-input:focus{outline:none;border-color:var(--primary)}
+        .calif-input.nota-alta{border-color:var(--success);color:#166534}
+        .calif-input.nota-media{border-color:#f59e0b;color:#92400e}
+        .calif-input.nota-baja{border-color:var(--danger);color:#991b1b}
+        .calif-sin-criterio{font-size:.75rem;color:#92400e;background:#fef9c3;border-radius:6px;padding:8px 10px;margin-bottom:8px}
         .print-option{padding:12px;border:2px solid var(--border);border-radius:var(--radius-sm);margin-bottom:8px;cursor:pointer;transition:all .2s}
         .print-option:hover{border-color:var(--primary);background:rgba(26,95,74,.05)}
         .print-option h4{margin-bottom:4px;color:var(--primary)}
@@ -225,6 +237,7 @@
                     </div>
                     <div class="chart-container"><canvas id="chartRanking"></canvas></div>
                     <div class="chart-container" style="margin-top:12px"><canvas id="chartDistAreas"></canvas></div>
+                    <div id="tablaCalifGlobal"></div>
                 </div>
                 
                 <div class="card" style="margin-top:12px">
@@ -305,6 +318,10 @@
                                 <option value="ciclo3">3º Ciclo (5º-6º)</option>
                             </select>
                         </div>
+                    </div>
+                    <div class="form-group" style="margin-bottom:14px">
+                        <label class="form-label">Contexto / temática <span style="font-weight:400;color:var(--text-light)">(opcional — si lo dejas vacío, Gemini elige libremente)</span></label>
+                        <input type="text" id="sdaContexto" class="form-input" placeholder="Ej: Las Capitulaciones de 1492, el agua, la convivencia…" style="width:100%">
                     </div>
                     <div id="sdaPreview" style="display:none;background:var(--bg);border-radius:8px;padding:12px;margin-bottom:12px;font-size:.8rem;color:var(--text);max-height:220px;overflow-y:auto;white-space:pre-wrap;font-family:monospace"></div>
                     <div class="btn-group" style="flex-wrap:wrap;gap:8px">
@@ -1171,7 +1188,7 @@
         function calcStats(a){const aus=a.ausencias||{},res=a.resultados||{};let ausencias=0,conseguidos=0,repetir=0;const dias=a.diasSesion||[1,3,4],porMes={},porTrim={1:{aus:0},2:{aus:0},3:{aus:0}};for(let mi=0;mi<MESES.length;mi++){const m=MESES[mi];porMes[mi]={aus:0};for(let s=1;s<=m.semanas;s++){for(let di=0;di<dias.length;di++){const k=mi+'_'+s+'_'+dias[di];if(aus[k]){ausencias++;porMes[mi].aus++;porTrim[m.trim].aus++;}if(res[k]==='conseguido')conseguidos++;if(res[k]==='repetir')repetir++;}}}return{ausencias:ausencias,conseguidos:conseguidos,repetir:repetir,porMes:porMes,porTrim:porTrim};}
 
         // EVALUACIÓN
-        function renderEval(){const a=alumnos[alumnoActual];let h='<div class="card"><div class="card-header"><h3 class="card-title">📊 Evaluación</h3></div><div class="btn-group no-print" style="margin-bottom:12px"><button class="btn '+(evalTrim===1?'btn-primary':'btn-secondary')+' btn-sm" onclick="setTrim(1)">T1</button><button class="btn '+(evalTrim===2?'btn-primary':'btn-secondary')+' btn-sm" onclick="setTrim(2)">T2</button><button class="btn '+(evalTrim===3?'btn-primary':'btn-secondary')+' btn-sm" onclick="setTrim(3)">T3</button><button class="btn btn-warning btn-sm" onclick="abrirModalInforme()">📄 Informe</button>';if(evalTrim<3){h+='<button class="btn btn-ai btn-sm" onclick="pasarNoConseguidos()">📤 P/N→T'+(evalTrim+1)+'</button>';}h+='</div><div class="chart-container no-print"><canvas id="chartProgreso"></canvas></div><div id="pctArea" class="no-print"></div><div id="evalList"></div></div>';document.getElementById('tabEvaluacion').innerHTML=h;renderEvalList();setTimeout(renderEvalCharts,100);}
+        function renderEval(){const a=alumnos[alumnoActual];let h='<div class="card"><div class="card-header"><h3 class="card-title">📊 Evaluación — Indicadores</h3></div><div class="btn-group no-print" style="margin-bottom:12px"><button class="btn '+(evalTrim===1?'btn-primary':'btn-secondary')+' btn-sm" onclick="setTrim(1)">T1</button><button class="btn '+(evalTrim===2?'btn-primary':'btn-secondary')+' btn-sm" onclick="setTrim(2)">T2</button><button class="btn '+(evalTrim===3?'btn-primary':'btn-secondary')+' btn-sm" onclick="setTrim(3)">T3</button><button class="btn btn-warning btn-sm" onclick="abrirModalInforme()">📄 Informe</button>';if(evalTrim<3){h+='<button class="btn btn-ai btn-sm" onclick="pasarNoConseguidos()">📤 P/N→T'+(evalTrim+1)+'</button>';}h+='</div><div class="chart-container no-print"><canvas id="chartProgreso"></canvas></div><div id="pctArea" class="no-print"></div><div id="evalList"></div></div><div class="card" style="margin-top:12px"><div class="card-header"><h3 class="card-title">🔢 Calificación mensual por criterio</h3></div><p style="font-size:.78rem;color:var(--text-light);margin-bottom:12px">Introduce la nota (0-10) por criterio LOMLOE para cada mes del trimestre. Se guarda automáticamente.</p><div id="califList"></div></div>';document.getElementById('tabEvaluacion').innerHTML=h;renderEvalList();renderCalificaciones();setTimeout(renderEvalCharts,100);}
         function setTrim(t){evalTrim=t;renderEval();}
         function renderEvalCharts(){const a=alumnos[alumnoActual];if(!a.programas)return;const ctx=document.getElementById('chartProgreso');if(!ctx)return;if(charts.progreso)charts.progreso.destroy();const labels=[],conseguidos=[],proceso=[],noIniciados=[];const pasadosAqui=getIndicadoresPasados(a,evalTrim);Object.keys(a.programas).forEach(pId=>{const p=a.programas[pId],info=AREAS[p.tipo]||{nombre:p.tipo};const objsT=(p.objetivos||[]).filter(o=>o.trimestre===evalTrim);const pasadosProg=pasadosAqui.filter(x=>x.pId===pId);if(!objsT.length&&!pasadosProg.length)return;labels.push(info.nombre.substring(0,12));let c=0,pr=0,n=0;objsT.forEach(obj=>{const oi=p.objetivos.indexOf(obj);(obj.indicadores||[]).forEach((_,ii)=>{const k=pId+'_'+oi+'_'+ii+'_T'+evalTrim,e=a.evaluaciones?a.evaluaciones[k]:null;if(e==='C')c++;else if(e==='P')pr++;else n++;});});pasadosProg.forEach(item=>{const k=item.pId+'_'+item.oIdx+'_'+item.iIdx+'_T'+evalTrim,e=a.evaluaciones?a.evaluaciones[k]:null;if(e==='C')c++;else if(e==='P')pr++;else n++;});conseguidos.push(c);proceso.push(pr);noIniciados.push(n);});charts.progreso=new Chart(ctx,{type:'bar',data:{labels:labels,datasets:[{label:'Conseguido',data:conseguidos,backgroundColor:'#22c55e'},{label:'En proceso',data:proceso,backgroundColor:'#3b82f6'},{label:'No iniciado',data:noIniciados,backgroundColor:'#d1d5db'}]},options:{responsive:true,plugins:{legend:{position:'bottom'},title:{display:true,text:'Indicadores T'+evalTrim}},scales:{x:{stacked:true},y:{stacked:true}}}});
             // % consecución por área
@@ -1182,6 +1199,254 @@
             if(pctContainer) pctContainer.innerHTML=pctHtml;
         }
         function renderEvalList(){const a=alumnos[alumnoActual],c=document.getElementById('evalList');let h='',hay=false;if(!a.programas){c.innerHTML='<p style="text-align:center;color:var(--text-light)">Sin programas</p>';return;}const pasadosAqui=getIndicadoresPasados(a,evalTrim);Object.keys(a.programas).forEach(pId=>{const p=a.programas[pId],info=AREAS[p.tipo]||{icon:'📄',nombre:p.tipo,color:'#666'};const objsT=(p.objetivos||[]).filter(o=>o.trimestre===evalTrim);const pasadosProg=pasadosAqui.filter(x=>x.pId===pId);if(!objsT.length&&!pasadosProg.length)return;hay=true;h+='<div class="programa-card" style="border-left-color:'+info.color+'"><div class="programa-titulo" style="margin-bottom:8px">'+info.icon+' '+info.nombre+'</div>';objsT.forEach(obj=>{const oi=p.objetivos.indexOf(obj);h+='<div style="margin-bottom:8px"><div style="font-weight:600;font-size:.8rem;margin-bottom:4px">O'+obj.numero+': '+obj.descripcion.substring(0,30)+'...</div>';(obj.indicadores||[]).forEach((ind,ii)=>{const k=pId+'_'+oi+'_'+ii+'_T'+evalTrim,e=a.evaluaciones?a.evaluaciones[k]:'';h+='<div class="eval-item"><span class="eval-text">'+ind+'</span><button class="eval-btn c '+(e==='C'?'active':'')+'" onclick="setEval(\''+pId+'\','+oi+','+ii+',\'C\')">✓</button><button class="eval-btn p '+(e==='P'?'active':'')+'" onclick="setEval(\''+pId+'\','+oi+','+ii+',\'P\')">◐</button><button class="eval-btn n '+(e==='N'?'active':'')+'" onclick="setEval(\''+pId+'\','+oi+','+ii+',\'N\')">○</button></div>';});h+='</div>';});if(pasadosProg.length){h+='<div style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--border)"><div style="font-size:.75rem;color:var(--warning);margin-bottom:6px">📤 Pasados:</div>';pasadosProg.forEach(item=>{const obj=p.objetivos[item.oIdx];if(!obj)return;const ind=obj.indicadores?obj.indicadores[item.iIdx]:'';const k=pId+'_'+item.oIdx+'_'+item.iIdx+'_T'+evalTrim,e=a.evaluaciones?a.evaluaciones[k]:'';h+='<div class="eval-item"><span class="eval-text">O'+obj.numero+': '+ind+'<span class="pasado-badge">T'+(evalTrim-1)+'</span></span><button class="eval-btn c '+(e==='C'?'active':'')+'" onclick="setEval(\''+pId+'\','+item.oIdx+','+item.iIdx+',\'C\')">✓</button><button class="eval-btn p '+(e==='P'?'active':'')+'" onclick="setEval(\''+pId+'\','+item.oIdx+','+item.iIdx+',\'P\')">◐</button><button class="eval-btn n '+(e==='N'?'active':'')+'" onclick="setEval(\''+pId+'\','+item.oIdx+','+item.iIdx+',\'N\')">○</button></div>';});h+='</div>';}h+='</div>';});c.innerHTML=hay?h:'<p style="text-align:center;color:var(--text-light)">Sin indicadores en T'+evalTrim+'</p>';}
+        // ─── CALIFICACIONES 0-10 POR CRITERIO ───────────────────────────────
+
+        // Convierte "LCL.1.3.1" → "LCL_1_3_1" (clave válida para Firebase)
+        function sanitizeCriterioKey(c){ return (c||'sin_criterio').replace(/[.\s/#\[\]$]/g,'_'); }
+
+        // Devuelve los meses del trimestre dado
+        function getMesesTrim(trim){ return MESES.map((m,i)=>({...m,idx:i})).filter(m=>m.trim===trim); }
+
+        // Agrupa los objetivos de un programa por criterio → { criterioKey: { label, indicadores[] } }
+        function agruparPorCriterio(p){
+            const grupos = {};
+            (p.objetivos||[]).forEach(obj=>{
+                const raw = obj.criterio || '';
+                const key = sanitizeCriterioKey(raw);
+                const label = raw || '(sin criterio LOMLOE)';
+                if(!grupos[key]) grupos[key]={ label, indicadores:[] };
+                (obj.indicadores||[]).forEach(ind=>{
+                    if(!grupos[key].indicadores.includes(ind)) grupos[key].indicadores.push(ind);
+                });
+            });
+            return grupos;
+        }
+
+        // Renderiza la tarjeta de calificaciones mensual en la pestaña Evaluación
+        // Calcula C/P/N y nota sugerida para los indicadores de un criterio en un trimestre
+        function calcCriterioStats(a, pId, criterioKey, trim){
+            const p = a.programas[pId];
+            let c=0, pr=0, n=0;
+            (p.objetivos||[]).forEach((obj, oi)=>{
+                if(obj.trimestre !== trim) return;
+                if(sanitizeCriterioKey(obj.criterio||'') !== criterioKey) return;
+                (obj.indicadores||[]).forEach((_,ii)=>{
+                    const k = pId+'_'+oi+'_'+ii+'_T'+trim;
+                    const e = a.evaluaciones ? a.evaluaciones[k] : null;
+                    if(e==='C') c++;
+                    else if(e==='P') pr++;
+                    else n++;
+                });
+            });
+            const total = c+pr+n;
+            const sugerida = total ? Math.round((c*10 + pr*5) / total * 10) / 10 : null;
+            return { c, pr, n, total, sugerida };
+        }
+
+        function renderCalificaciones(){
+            const a = alumnos[alumnoActual];
+            const cont = document.getElementById('califList');
+            if(!cont) return;
+            if(!a || !a.programas){ cont.innerHTML='<p style="text-align:center;color:var(--text-light)">Sin programas</p>'; return; }
+
+            const meses = getMesesTrim(evalTrim);
+            let h = '';
+
+            Object.keys(a.programas).forEach(pId=>{
+                const p = a.programas[pId];
+                const info = AREAS[p.tipo]||{icon:'📄',nombre:p.tipo,color:'#666'};
+                const grupos = agruparPorCriterio(p);
+                const objsTrim = (p.objetivos||[]).filter(o=>o.trimestre===evalTrim);
+                if(!objsTrim.length) return;
+
+                h += '<div class="programa-card" style="border-left-color:'+info.color+';margin-bottom:10px">';
+                h += '<div class="programa-titulo" style="margin-bottom:10px">'+info.icon+' '+info.nombre+'</div>';
+
+                const haySinCriterio = Object.keys(grupos).some(k=>k==='sin_criterio');
+                if(haySinCriterio){
+                    h += '<div class="calif-sin-criterio">⚠️ Algunos objetivos no tienen criterio LOMLOE asignado. Usa el botón <strong>🏷️ Criterios</strong> en la pestaña Programas para asignarlos.</div>';
+                }
+
+                Object.keys(grupos).forEach(criterioKey=>{
+                    const gr = grupos[criterioKey];
+                    const tieneObjTrim = (p.objetivos||[]).some(obj=>
+                        obj.trimestre===evalTrim && sanitizeCriterioKey(obj.criterio||'')===criterioKey
+                    );
+                    if(!tieneObjTrim) return;
+
+                    // Calcular stats C/P/N para este criterio
+                    const st = calcCriterioStats(a, pId, criterioKey, evalTrim);
+                    const pctC  = st.total ? Math.round(st.c  / st.total * 100) : 0;
+                    const pctPr = st.total ? Math.round(st.pr / st.total * 100) : 0;
+                    const pctN  = st.total ? Math.round(st.n  / st.total * 100) : 0;
+                    const fbDataKey = pId+'__'+criterioKey;
+
+                    h += '<div class="calif-card" id="cc_'+fbDataKey+'">';
+                    h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap">';
+                    h += '<span class="calif-criterio-badge">'+gr.label+'</span>';
+                    // Nota sugerida + botón aplicar a todos los meses vacíos
+                    if(st.sugerida !== null){
+                        h += '<span style="font-size:.72rem;color:var(--text-light)">Sugerida: <strong style="color:var(--text)">'+st.sugerida+'</strong></span>';
+                        h += '<button class="btn btn-secondary btn-sm" style="padding:2px 8px;font-size:.68rem" '
+                           + 'onclick="aplicarSugerida(\'' + fbDataKey + '\',' + st.sugerida + ')" title="Rellena los meses vacíos con la nota sugerida">✓ Aplicar</button>';
+                    } else {
+                        h += '<span style="font-size:.7rem;color:var(--text-light)">Sin indicadores evaluados</span>';
+                    }
+                    h += '</div>';
+
+                    // Barra de progreso C/P/N
+                    h += '<div style="margin-bottom:10px">';
+                    h += '<div style="display:flex;border-radius:6px;overflow:hidden;height:10px;background:#e5e7eb;margin-bottom:3px">';
+                    h += '<div style="width:'+pctC+'%;background:#22c55e;transition:width .4s"></div>';
+                    h += '<div style="width:'+pctPr+'%;background:#3b82f6;transition:width .4s"></div>';
+                    h += '<div style="width:'+pctN+'%;background:#d1d5db;transition:width .4s"></div>';
+                    h += '</div>';
+                    h += '<div style="display:flex;gap:10px;font-size:.65rem;color:var(--text-light)">';
+                    h += '<span>🟩 '+st.c+' C</span><span>🟦 '+st.pr+' P</span><span>⬜ '+st.n+' N</span>';
+                    h += '<span style="margin-left:auto">'+st.total+' indicadores</span>';
+                    h += '</div></div>';
+
+                    // Indicadores de referencia (colapsados)
+                    h += '<div class="calif-inds">'+gr.indicadores.slice(0,3).map(i=>'• '+i).join('<br>')+(gr.indicadores.length>3?'<br><span style="color:var(--text-light)">…+'+(gr.indicadores.length-3)+' más</span>':'')+'</div>';
+
+                    // Inputs por mes
+                    h += '<div class="calif-meses">';
+                    meses.forEach(m=>{
+                        const val = (a.calificaciones && a.calificaciones[fbDataKey] && a.calificaciones[fbDataKey][m.nombre]);
+                        const v = (val!==undefined && val!=='') ? val : '';
+                        const notaClass = v===''?'':v>=7?'nota-alta':v>=5?'nota-media':'nota-baja';
+                        h += '<div class="calif-mes-item">';
+                        h += '<span class="calif-mes-label">'+m.nombre.substring(0,3)+'</span>';
+                        h += '<input type="number" min="0" max="10" step="0.1" class="calif-input '+notaClass+'"';
+                        h += ' value="'+v+'"';
+                        h += ' data-key="'+fbDataKey+'" data-mes="'+m.nombre+'"';
+                        h += ' onchange="setCalificacion(this)" oninput="colorCalifInput(this)">';
+                        h += '</div>';
+                    });
+                    h += '</div></div>'; // .calif-meses .calif-card
+                });
+
+                h += '</div>'; // programa-card
+            });
+
+            cont.innerHTML = h || '<p style="text-align:center;color:var(--text-light)">Sin objetivos en T'+evalTrim+'</p>';
+        }
+
+        // Aplica la nota sugerida a todos los meses vacíos del criterio
+        function aplicarSugerida(fbDataKey, sugerida){
+            const a = alumnos[alumnoActual];
+            const meses = getMesesTrim(evalTrim);
+            const updates = {};
+            meses.forEach(m=>{
+                const actual = a.calificaciones && a.calificaciones[fbDataKey] && a.calificaciones[fbDataKey][m.nombre];
+                if(actual===undefined || actual===''){
+                    updates['gestorpe/alumnos/'+alumnoActual+'/calificaciones/'+fbDataKey+'/'+m.nombre] = sugerida;
+                    a.calificaciones = a.calificaciones||{};
+                    a.calificaciones[fbDataKey] = a.calificaciones[fbDataKey]||{};
+                    a.calificaciones[fbDataKey][m.nombre] = sugerida;
+                }
+            });
+            if(Object.keys(updates).length){
+                db.ref().update(updates).then(()=>{ renderCalificaciones(); toast('Nota '+sugerida+' aplicada a meses vacíos','success'); });
+            } else {
+                toast('Todos los meses ya tienen nota','success');
+            }
+        }
+
+        // Colorea el input según el valor al escribir
+        function colorCalifInput(inp){
+            inp.classList.remove('nota-alta','nota-media','nota-baja');
+            const v = parseFloat(inp.value);
+            if(inp.value==='') return;
+            if(v>=7) inp.classList.add('nota-alta');
+            else if(v>=5) inp.classList.add('nota-media');
+            else inp.classList.add('nota-baja');
+        }
+
+        // Guarda calificación en Firebase
+        function setCalificacion(inp){
+            const key = inp.getAttribute('data-key');
+            const mes = inp.getAttribute('data-mes');
+            let val = inp.value.trim();
+            if(val===''){
+                db.ref('gestorpe/alumnos/'+alumnoActual+'/calificaciones/'+key+'/'+mes).remove();
+                if(alumnos[alumnoActual].calificaciones && alumnos[alumnoActual].calificaciones[key])
+                    delete alumnos[alumnoActual].calificaciones[key][mes];
+                return;
+            }
+            val = Math.min(10, Math.max(0, parseFloat(val)));
+            inp.value = val;
+            colorCalifInput(inp);
+            db.ref('gestorpe/alumnos/'+alumnoActual+'/calificaciones/'+key+'/'+mes).set(val);
+            alumnos[alumnoActual].calificaciones = alumnos[alumnoActual].calificaciones||{};
+            alumnos[alumnoActual].calificaciones[key] = alumnos[alumnoActual].calificaciones[key]||{};
+            alumnos[alumnoActual].calificaciones[key][mes] = val;
+        }
+
+        // ─── TABLA CALIFICACIONES PARA ESTADÍSTICAS GLOBALES ────────────────
+
+        function renderTablaCalificacionesGlobal(){
+            const cont = document.getElementById('tablaCalifGlobal');
+            if(!cont) return;
+            const ids = Object.keys(alumnos);
+            if(!ids.length){ cont.innerHTML=''; return; }
+
+            // Recoger todos los criterios únicos usados
+            const criteriosSet = {};
+            ids.forEach(id=>{
+                const a = alumnos[id];
+                if(!a.programas) return;
+                Object.keys(a.programas).forEach(pId=>{
+                    const p = a.programas[pId];
+                    (p.objetivos||[]).forEach(obj=>{
+                        const raw = obj.criterio||'';
+                        if(raw) criteriosSet[sanitizeCriterioKey(raw)] = raw;
+                    });
+                });
+            });
+            const criterios = Object.entries(criteriosSet); // [[key, label], ...]
+            if(!criterios.length){ cont.innerHTML=''; return; }
+
+            let h = '<div class="card" style="margin-top:12px"><div class="card-header"><h2 class="card-title">📋 Calificaciones por criterio</h2></div>';
+            h += '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.72rem">';
+            h += '<thead><tr><th style="text-align:left;padding:6px 8px;background:var(--bg);position:sticky;left:0">Alumno</th>';
+            criterios.forEach(([,lbl])=>{
+                h += '<th style="padding:6px 4px;background:var(--bg);text-align:center;min-width:64px">'+lbl+'</th>';
+            });
+            h += '</tr></thead><tbody>';
+
+            ids.forEach(id=>{
+                const a = alumnos[id];
+                h += '<tr>';
+                h += '<td style="padding:5px 8px;font-weight:600;position:sticky;left:0;background:#fff;white-space:nowrap">'+a.siglas+' <span style="font-weight:400;color:var(--text-light)">'+a.curso+'</span></td>';
+                criterios.forEach(([cKey])=>{
+                    // Media de todas las notas guardadas para este criterio en este alumno
+                    let vals = [];
+                    if(a.calificaciones){
+                        Object.keys(a.calificaciones).forEach(k=>{
+                            if(k.endsWith('__'+cKey)){
+                                const mesObj = a.calificaciones[k];
+                                Object.values(mesObj).forEach(v=>{ if(v!==null && v!=='') vals.push(parseFloat(v)); });
+                            }
+                        });
+                    }
+                    if(vals.length){
+                        const media = (vals.reduce((s,v)=>s+v,0)/vals.length).toFixed(1);
+                        const color = media>=7?'#166534':media>=5?'#92400e':'#991b1b';
+                        const bg = media>=7?'#dcfce7':media>=5?'#fef9c3':'#fee2e2';
+                        h += '<td style="text-align:center;padding:4px;background:'+bg+';color:'+color+';font-weight:700">'+media+'</td>';
+                    } else {
+                        h += '<td style="text-align:center;padding:4px;color:#ccc">—</td>';
+                    }
+                });
+                h += '</tr>';
+            });
+
+            h += '</tbody></table></div></div>';
+            cont.innerHTML = h;
+        }
+
+
         function setEval(pId,oi,ii,e){const a=alumnos[alumnoActual],k=pId+'_'+oi+'_'+ii+'_T'+evalTrim;a.evaluaciones=a.evaluaciones||{};if(a.evaluaciones[k]===e){db.ref('gestorpe/alumnos/'+alumnoActual+'/evaluaciones/'+k).remove();delete a.evaluaciones[k];}else{db.ref('gestorpe/alumnos/'+alumnoActual+'/evaluaciones/'+k).set(e);a.evaluaciones[k]=e;}renderEvalList();setTimeout(renderEvalCharts,100);}
         function pasarNoConseguidos(){if(evalTrim>=3)return;const a=alumnos[alumnoActual];if(!a.programas)return;const siguienteTrim=evalTrim+1,updates={};let count=0;Object.keys(a.programas).forEach(pId=>{const p=a.programas[pId];(p.objetivos||[]).forEach((obj,oi)=>{if(obj.trimestre!==evalTrim)return;(obj.indicadores||[]).forEach((_,ii)=>{const k=pId+'_'+oi+'_'+ii+'_T'+evalTrim,e=a.evaluaciones?a.evaluaciones[k]:'';if(e!=='C'){const pasadoKey=pId+'_'+oi+'_'+ii;updates['gestorpe/alumnos/'+alumnoActual+'/pasados/'+pasadoKey]=siguienteTrim;count++;}});});});const pasadosActuales=getIndicadoresPasados(a,evalTrim);pasadosActuales.forEach(item=>{const k=item.pId+'_'+item.oIdx+'_'+item.iIdx+'_T'+evalTrim,e=a.evaluaciones?a.evaluaciones[k]:'';if(e!=='C'){updates['gestorpe/alumnos/'+alumnoActual+'/pasados/'+item.key]=siguienteTrim;count++;}});if(count===0){toast('¡Todo conseguido!','success');return;}db.ref().update(updates).then(()=>{const nueva=generarProgramacion(alumnos[alumnoActual]);return db.ref('gestorpe/alumnos/'+alumnoActual+'/programacion').set(nueva);}).then(()=>{toast(count+' → T'+siguienteTrim,'success');evalTrim=siguienteTrim;renderEval();renderProg();});}
 
@@ -1276,6 +1541,8 @@
             if(ctxD&&areaVals.length){if(charts.distAreas)charts.distAreas.destroy();
                 charts.distAreas=new Chart(ctxD,{type:'doughnut',data:{labels:areaVals.map(a=>a.nombre),datasets:[{data:areaVals.map(a=>a.count),backgroundColor:areaVals.map(a=>a.color)}]},options:{responsive:true,plugins:{title:{display:true,text:'Distribución de programas por área'},legend:{position:'bottom'}}}});
             }
+            // Tabla calificaciones globales
+            renderTablaCalificacionesGlobal();
         }
 
         // SÉNECA
@@ -1626,7 +1893,53 @@
             
             navigator.clipboard.writeText(prompt).then(()=>{toast('Copiado para ChatGPT','success');window.open('https://chat.openai.com/','_blank');});
         }
-        function imprimirInforme(){if(!informeData)return;const a=informeData.alumno,win=window.open('','_blank');win.document.write('<!DOCTYPE html><html><head><title>Informe</title><style>body{font-family:Arial;padding:30px;max-width:800px;margin:0 auto}h1{color:#1a5f4a}h2{margin-top:20px}.indicador{margin:5px 0 5px 20px}</style></head><body><h1>INFORME T'+informeData.trim+' - '+a.siglas+'</h1><p>Curso: '+a.curso+' | Fecha: '+new Date().toLocaleDateString('es-ES')+'</p><h2>✅ Conseguidos ('+informeData.conseguidos.length+')</h2>'+(informeData.conseguidos.map(x=>'<p class="indicador">• '+x.programa+': '+x.indicador+'</p>').join('')||'<p>Ninguno</p>')+'<h2>🔄 En Proceso ('+informeData.proceso.length+')</h2>'+(informeData.proceso.map(x=>'<p class="indicador">• '+x.programa+': '+x.indicador+'</p>').join('')||'<p>Ninguno</p>')+'<h2>⭕ No Iniciados ('+informeData.noIniciados.length+')</h2>'+(informeData.noIniciados.map(x=>'<p class="indicador">• '+x.programa+': '+x.indicador+'</p>').join('')||'<p>Ninguno</p>')+'<p style="margin-top:40px">Fdo: _______________</p></body></html>');win.document.close();setTimeout(()=>{win.print();},300);}
+        function imprimirInforme(){
+            if(!informeData) return;
+            const a = informeData.alumno;
+            // Construir tabla de calificaciones por criterio
+            let califHtml = '';
+            if(a.calificaciones && Object.keys(a.calificaciones).length){
+                // Recoger todos los meses con datos
+                const allMeses = new Set();
+                Object.values(a.calificaciones).forEach(mesObj=>{ Object.keys(mesObj).forEach(m=>allMeses.add(m)); });
+                const mesesOrdenados = MESES.map(m=>m.nombre).filter(m=>allMeses.has(m));
+                // Recoger criterios (desanitizar)
+                const criterioRows = [];
+                if(a.programas){ Object.keys(a.programas).forEach(pId=>{
+                    const p = a.programas[pId];
+                    (p.objetivos||[]).forEach(obj=>{
+                        if(!obj.criterio) return;
+                        const cKey = sanitizeCriterioKey(obj.criterio);
+                        const fbKey = pId+'__'+cKey;
+                        if(!criterioRows.find(r=>r.fbKey===fbKey))
+                            criterioRows.push({fbKey, label: obj.criterio});
+                    });
+                });}
+                if(criterioRows.length && mesesOrdenados.length){
+                    califHtml = '<h2 style="margin-top:28px;color:#1a5f4a">📋 Calificaciones por criterio LOMLOE</h2>';
+                    califHtml += '<table style="width:100%;border-collapse:collapse;font-size:.85rem;margin-top:8px">';
+                    califHtml += '<thead><tr><th style="text-align:left;padding:6px 8px;background:#f0fdf4;border:1px solid #d1fae5">Criterio</th>';
+                    mesesOrdenados.forEach(m=>{ califHtml += '<th style="text-align:center;padding:6px;background:#f0fdf4;border:1px solid #d1fae5">'+m+'</th>'; });
+                    califHtml += '</tr></thead><tbody>';
+                    criterioRows.forEach(row=>{
+                        califHtml += '<tr><td style="padding:6px 8px;border:1px solid #e5e7eb;font-weight:600">'+row.label+'</td>';
+                        const mesObj = a.calificaciones[row.fbKey] || {};
+                        mesesOrdenados.forEach(m=>{
+                            const v = mesObj[m];
+                            const color = v===undefined||v===''?'#ccc':v>=7?'#166534':v>=5?'#92400e':'#991b1b';
+                            const bg = v===undefined||v===''?'#fff':v>=7?'#dcfce7':v>=5?'#fef9c3':'#fee2e2';
+                            califHtml += '<td style="text-align:center;padding:6px;border:1px solid #e5e7eb;background:'+bg+';color:'+color+';font-weight:700">'+(v!==undefined&&v!==''?v:'—')+'</td>';
+                        });
+                        califHtml += '</tr>';
+                    });
+                    califHtml += '</tbody></table>';
+                }
+            }
+            const win = window.open('','_blank');
+            win.document.write('<!DOCTYPE html><html><head><title>Informe</title><style>body{font-family:Arial;padding:30px;max-width:800px;margin:0 auto}h1{color:#1a5f4a}h2{margin-top:20px}.indicador{margin:5px 0 5px 20px}</style></head><body><h1>INFORME T'+informeData.trim+' - '+a.siglas+'</h1><p>Curso: '+a.curso+' | Fecha: '+new Date().toLocaleDateString('es-ES')+'</p><h2>✅ Conseguidos ('+informeData.conseguidos.length+')</h2>'+(informeData.conseguidos.map(x=>'<p class="indicador">• '+x.programa+': '+x.indicador+'</p>').join('')||'<p>Ninguno</p>')+'<h2>🔄 En Proceso ('+informeData.proceso.length+')</h2>'+(informeData.proceso.map(x=>'<p class="indicador">• '+x.programa+': '+x.indicador+'</p>').join('')||'<p>Ninguno</p>')+'<h2>⭕ No Iniciados ('+informeData.noIniciados.length+')</h2>'+(informeData.noIniciados.map(x=>'<p class="indicador">• '+x.programa+': '+x.indicador+'</p>').join('')||'<p>Ninguno</p>')+califHtml+'<p style="margin-top:40px">Fdo: _______________</p></body></html>');
+            win.document.close();
+            setTimeout(()=>{ win.print(); }, 300);
+        }
 
         // INFORME MENSUAL TODOS LOS ALUMNOS
         function imprimirInformeMensualTodos() {
@@ -1889,45 +2202,226 @@ body{font-family:Arial,sans-serif;font-size:10px;color:#222}
         function generarPromptSDA() {
             const { grupos, trimSel, sesionesTotales } = _recopilarDatosSDA();
             if (!Object.keys(grupos).length) { toast('Sin alumnos con ese filtro', 'error'); return; }
-            const CICLOS_N = { infantil: 'Infantil', ciclo1: '1º Ciclo', ciclo2: '2º Ciclo', ciclo3: '3º Ciclo' };
+            const CICLOS_N = { infantil: 'Infantil (3-6 años)', ciclo1: '1.er Ciclo de Primaria (1.º-2.º)', ciclo2: '2.º Ciclo de Primaria (3.º-4.º)', ciclo3: '3.er Ciclo de Primaria (5.º-6.º)' };
+            const TRIMESTRES_N = { 1: 'Primer trimestre', 2: 'Segundo trimestre', 3: 'Tercer trimestre' };
+            const contextoInput = (document.getElementById('sdaContexto').value || '').trim();
+            const contextoLinea = contextoInput
+                ? 'Contexto / temática elegida por el docente: "' + contextoInput + '". Úsala como hilo conductor coherente con el área y los objetivos.'
+                : 'Contexto: el docente no ha especificado temática. Elige tú un contexto motivador y adecuado a la edad del alumnado y al área trabajada.';
 
-            let datosAlumnado = '';
+            // --- Construir bloque de datos por ciclo ---
+            let bloquesTexto = '';
+            let areasPrincipales = new Set();
+            let cursosImplicados = new Set();
+            let deficitsAlumnado = [];
+
             Object.keys(grupos).forEach(ciclo => {
                 const g = grupos[ciclo];
-                datosAlumnado += '\n## ' + (CICLOS_N[ciclo] || ciclo) + ' — Alumnos: ' + g.alumnos.join(', ') + '\n';
+                bloquesTexto += '\n────────────────────────────────────────\n';
+                bloquesTexto += 'CICLO: ' + (CICLOS_N[ciclo] || ciclo) + '\n';
+                bloquesTexto += 'Alumnado (siglas y curso): ' + g.alumnos.join(' | ') + '\n';
+
+                // Recoger déficits de este grupo desde objeto alumnos
+                const idsGrupo = Object.keys(alumnos).filter(id => {
+                    const a = alumnos[id];
+                    const c = (a.ciclo && ['infantil','ciclo1','ciclo2','ciclo3'].includes(a.ciclo)) ? a.ciclo :
+                              ((a.curso||'').toLowerCase().includes('infantil') ? 'infantil' :
+                               ((a.curso||'').match(/[12]/) ? 'ciclo1' :
+                                ((a.curso||'').match(/[34]/) ? 'ciclo2' : 'ciclo3')));
+                    return c === ciclo;
+                });
+                idsGrupo.forEach(id => {
+                    const a = alumnos[id];
+                    cursosImplicados.add(a.curso || ciclo);
+                    if (a.deficit || a.diagnostico || a.observaciones) {
+                        deficitsAlumnado.push(a.siglas + ': ' + (a.deficit || a.diagnostico || a.observaciones || 'NEE no especificada'));
+                    }
+                });
+
                 Object.keys(g.programas).forEach(area => {
                     const pa = g.programas[area];
-                    datosAlumnado += '\n### ' + area + '\n';
+                    areasPrincipales.add(area);
+                    bloquesTexto += '\n  Área/Programa: ' + area + '\n';
                     Object.keys(pa.objetivos).forEach(obj => {
-                        datosAlumnado += '**' + obj + '**\n';
-                        pa.objetivos[obj].forEach(ind => datosAlumnado += '- ' + ind + '\n');
+                        bloquesTexto += '  · ' + obj + '\n';
+                        pa.objetivos[obj].forEach(ind => bloquesTexto += '      – ' + ind + '\n');
                     });
-                    if (pa.criterios.size) datosAlumnado += '\nCriterios de evaluación LOMLOE (Orden 30 mayo 2023 Andalucía): ' + [...pa.criterios].join(', ') + '\n';
+                    if (pa.criterios.size) {
+                        bloquesTexto += '  Criterios de evaluación (Orden 30 mayo 2023 Andalucía): ' + [...pa.criterios].join(' | ') + '\n';
+                    }
                 });
             });
 
-            const prompt = `Eres un experto en diseño curricular y atención a la diversidad en la etapa de Educación Primaria (sistema educativo español, Andalucía, LOMLOE, Orden 30 de mayo de 2023).
+            const areasList = [...areasPrincipales].join(', ');
+            const cursosList = [...cursosImplicados].join(', ');
+            const deficitBloque = deficitsAlumnado.length
+                ? deficitsAlumnado.join('\n')
+                : 'No se han registrado déficits/diagnósticos en el sistema. Diseña las actividades para un perfil de alumnado con necesidades de apoyo educativo en PT.';
 
-A continuación te proporciono los datos del programa específico de los alumnos de PT (Pedagogía Terapéutica) del CEIP Capitulaciones de Santa Fe, agrupados por ciclo, correspondientes al TRIMESTRE ${trimSel} (aproximadamente ${sesionesTotales} semanas de sesiones de PT).
+            const prompt =
+`════════════════════════════════════════════════════════
+INSTRUCCIÓN PARA GEMINI — GENERADOR DE SDA (PT)
+Centro: CEIP Capitulaciones de Santa Fe (Santa Fe, Granada, Andalucía)
+Especialidad docente: Pedagogía Terapéutica (PT)
+Trimestre: ${TRIMESTRES_N[trimSel]} — aprox. ${sesionesTotales} semanas de sesiones PT
+Áreas de los programas específicos: ${areasList}
+Cursos implicados: ${cursosList}
+${contextoLinea}
+════════════════════════════════════════════════════════
 
-TAREA: Diseña una Situación de Aprendizaje (SDA) trimestral para el trabajo de PT, que integre todos los objetivos e indicadores que aparecen a continuación. La SDA debe:
+Eres un maestro experto de Pedagogía Terapéutica en Educación Primaria en Andalucía (España), con conocimiento avanzado de:
+- LOMLOE 2020
+- Orden de 30 de mayo de 2023 de Andalucía (currículo de Educación Primaria y Educación Especial)
+- Instrucción de 8 de marzo de 2017 (programas específicos PT)
+- Metodología DUA versión 3.0
+- Instrucciones para el tratamiento de lectura en Andalucía (mínimo 30 minutos semanales de lectura planificada con textos variados: literarios, científicos, periodísticos, continuos, discontinuos y multimodales; con estrategias antes/durante/después de la lectura)
 
-1. Tener un TÍTULO motivador y contextualizado al entorno (Santa Fe, Granada, Capitulaciones de 1492, Andalucía) — créalo tú en base a los contenidos
-2. Justificación breve (conexión con el contexto y los programas específicos)
-3. Competencias clave trabajadas
-4. OBJETIVOS específicos de PT (extraídos y adaptados de los datos)
-5. CRITERIOS DE EVALUACIÓN referenciados con sus códigos LOMLOE tal como aparecen en los datos
-6. Planificación de SESIONES: distribuye los objetivos e indicadores en el número de semanas del trimestre (${sesionesTotales} semanas), indicando qué se trabaja cada semana o bloque de semanas, agrupando por ciclo cuando sea posible
-7. INSTRUMENTOS DE EVALUACIÓN sugeridos
-8. Adaptaciones y niveles de concreción por ciclo
+════════════════════════════════════════════════════════
+DATOS REALES DEL ALUMNADO (extraídos del Gestor PE)
+════════════════════════════════════════════════════════
+${bloquesTexto}
+Déficits / diagnósticos del alumnado:
+${deficitBloque}
 
-DATOS DEL ALUMNADO:
-${datosAlumnado}
+════════════════════════════════════════════════════════
+TAREA COMPLETA QUE DEBES ELABORAR
+════════════════════════════════════════════════════════
+Elabora un único documento que combine, en este orden:
+  1. PROGRAMA ESPECÍFICO DE PT
+  2. SITUACIÓN DE APRENDIZAJE (SdA)
 
-Genera la SDA completa en formato estructurado, lista para incluir en la programación de PT.`;
+Descríbelo para maestros con nivel avanzado. Razona cada decisión antes de redactarla.
+
+══════════════════════════════════
+BLOQUE 1 — PROGRAMA ESPECÍFICO PT
+══════════════════════════════════
+Sigue la Instrucción de 8 de marzo de 2017. Incluye estos apartados:
+
+A) CURSO Y TÍTULO del Programa específico
+B) ALUMNADO DESTINATARIO: usa las siglas exactas del bloque de datos
+C) JUSTIFICACIÓN: argumenta en clave competencial y de Competencias Clave
+D) TEMPORALIZACIÓN: ${sesionesTotales} sesiones de 60 minutos (${TRIMESTRES_N[trimSel]}). Indica en qué sesiones se realiza cada actividad.
+E) OBJETIVOS: usa LITERALMENTE los objetivos y bloques del bloque de datos anterior (no los reescribas, cópialos exactos con su numeración)
+F) INDICADORES DE EVALUACIÓN: vinculados a cada objetivo. Usa los indicadores del bloque de datos.
+G) CONTENIDOS: vinculados a los objetivos
+H) ACTIVIDADES Y TAREAS:
+   - Para cada sesión propón mínimo 3 actividades distintas para elegir
+   - Integra actividades multimodales (papel y digital)
+   - Para cada actividad indica: Recursos utilizados (materiales y digitales), metodología activa aplicada
+   - Aplica DUA en cada actividad con este esquema:
+     · Pauta DUA aplicada (basada en las 3 redes: representación, acción-expresión, implicación)
+     · Estrategia concreta aplicada
+     · Herramienta digital o IA utilizada (puedes usar Gemini, NotebookLM, Canva, Quizlet, etc. No uses Google Jamboard —está desactivado—)
+   - Adapta cada actividad a los déficits indicados en los datos (especialmente TDAH: instrucciones breves, fragmentación de tareas, refuerzo positivo, movimiento, temporizadores visuales)
+I) COMPETENCIAS CLAVE: selecciona las que correspondan de las 8 competencias LOMLOE vinculadas a los objetivos
+J) METODOLOGÍA: metodologías activas utilizadas (ABP, cooperativo, gamificación, etc.) y cómo se aplican
+K) EVALUACIÓN: tabla con cada indicador y 3 niveles → NI (No Iniciado) | EP (En Proceso) | C (Conseguido)
+
+══════════════════════════════════
+BLOQUE 2 — SITUACIÓN DE APRENDIZAJE (SdA)
+══════════════════════════════════
+Sigue la Orden de 30 de mayo de 2023 y la metodología DUA 3.0.
+El área curricular de la SdA se corresponde con el área predominante de los programas específicos: ${areasList}.
+Para las competencias específicas, descriptores operativos y saberes básicos, selecciónalos tú de la Orden 30 de mayo de 2023 según el área y el ciclo indicados.
+
+──── A) IDENTIFICACIÓN / PARTICIPANTES ────
+
+- Centro: CEIP Capitulaciones de Santa Fe (Santa Fe, Granada)
+- Curso/Ciclo: ${cursosList}
+- Trimestre: ${TRIMESTRES_N[trimSel]}
+- Alumnado: ${[...Object.values(grupos)].flatMap(g => g.alumnos).join(', ')}
+- TÍTULO de la SdA: créalo tú, motivador, coherente con el área, los objetivos y el contexto indicado abajo
+- JUSTIFICACIÓN (máximo 1000 caracteres): conecta la temática elegida, el contexto, las competencias específicas del área y los ODS pertinentes
+- TEMPORALIZACIÓN: mínimo 20 sesiones. Indícalas con fecha/semana orientativa dentro del ${TRIMESTRES_N[trimSel]}
+- Materia/Área: ${areasList}
+
+──── B) CONCRECIÓN CURRICULAR ────
+
+Selecciona de la Orden 30 de mayo de 2023:
+- Competencias específicas del área (con su número)
+- Descriptores operativos de competencias clave asociados (solo nomenclatura: ej. CCL1, STEM2…)
+- Criterios de evaluación LOMLOE del área (usa los del bloque de datos cuando coincidan, añade los que necesites)
+- Saberes básicos implicados
+
+──── C) SECUENCIACIÓN DIDÁCTICA ────
+
+RETO / PRODUCTO FINAL (defínelo antes de las fases):
+- Denominación: título del producto/reto final
+- Definición: descripción completa. Debe implicar resolución creativa y colaborativa, tener aplicación real y transferencia, ser de complejidad creciente, contextualizado con el contexto indicado, cumplir el DUA y reconocer al alumnado como agente de su aprendizaje.
+
+Diseña las actividades de las 6 FASES con el siguiente formato EXACTO para cada actividad:
+
+──── Título de la actividad: "[nombre]"
+──── Tipo de actividad: [fase a la que pertenece]
+──── Abreviatura: [máximo 7 caracteres]
+──── Orden de presentación: [número correlativo en toda la SdA]
+──── Descripción: descripción completa. Incluye:
+       * Adaptaciones generales con 3 niveles:
+           NIVEL 1 — Básico
+           NIVEL 2 — Medio
+           NIVEL 3 — Avanzado
+       * Adaptaciones DUA para el alumnado ACNEAE con los déficits indicados
+       * Indica si es POSIBLE ACTIVIDAD EVALUABLE (no puede serlo en motivación ni activación; la fase de aplicación siempre lo es; en estructuración debe haber una actividad evaluable por cada bloque de contenidos)
+──── Temporalización: número de sesiones
+──── Recursos: materiales y digitales (Chromebooks, Google Workspace, YouTube, etc.; no uses Jamboard)
+──── Trazabilidad: preguntas / productos / desempeños (coherente con la actividad evaluable)
+──── Criterios de evaluación: criterio/s asociados (de los seleccionados en concreción curricular)
+──── Ejercicios por sesión (taxonomía de Bloom en progresión — recordar → comprender → aplicar → analizar → evaluar → crear; indica el nivel al final de cada ejercicio):
+       Sesión 1:
+         a) …
+         b) …
+       Sesión 2:
+         a) …
+──── Metodologías:
+       a) Rutinas de pensamiento aplicadas (si las hay)
+       b) Destrezas de pensamiento aplicadas (si las hay)
+       c) Estructuras cooperativas aplicadas (si las hay)
+       d) Técnicas y aprendizaje activo (gamificación, flipped, podcast, visual thinking, códigos QR, etc.)
+       e) Pedagogías ágiles (kanban, SCAMPER, mapa de empatía, etc., si las hay)
+       f) DUA:
+           · Pauta DUA aplicada
+           · Estrategia aplicada
+           · Herramienta digital o IA utilizada
+
+FASES Y RESTRICCIONES DE SESIONES:
+- MOTIVACIÓN: máximo 1 sesión, mínimo ½ sesión. Capta atención, presenta el reto. No evaluable.
+- ACTIVACIÓN: máximo 1 sesión, mínimo ½ sesión. Conocimientos previos. No evaluable.
+- EXPLORACIÓN: máximo 2 sesiones y 2 actividades. Experimenta, desafíos similares al reto.
+- ESTRUCTURACIÓN: mínimo 10 sesiones y 6 actividades. Introduce nuevos aprendizajes. Reparte los contenidos de forma equitativa por semanas (especifica qué contenidos se trabajan cada semana). Incluye todos los criterios de evaluación al menos una vez. Actividad evaluable por cada bloque de contenidos. Integra los 30 min semanales de lectura planificada (textos variados, estrategias antes/durante/después).
+- APLICACIÓN: mínimo 3 sesiones, máximo 1 actividad (el reto final). SIEMPRE evaluable. Deben aparecer TODOS los criterios de evaluación de la SdA.
+- CONCLUSIÓN: máximo 2 sesiones. Difusión de resultados, evaluación del proceso.
+
+──── D) EVALUACIÓN DE LA PRÁCTICA DOCENTE ────
+Selecciona los ítems más oportunos para esta SdA entre (solo los ítems, sin desarrollar):
+- Resultados de la evaluación de la materia
+- Métodos didácticos y pedagógicos
+- Adecuación de los materiales y recursos didácticos
+- Eficacia de las medidas de atención a la diversidad y a las diferencias individuales
+- Utilización de instrumentos de evaluación variados, diversos, accesibles y adaptados
+
+════════════════════════════════════════════════════════
+NOTAS FINALES PARA GEMINI
+════════════════════════════════════════════════════════
+- Adapta el nivel de lenguaje y complejidad de las actividades a la edad del alumnado indicado
+- Contextualiza siempre en Santa Fe / Las Capitulaciones de 1492 / Andalucía
+- No inventes datos del alumnado: usa únicamente las siglas y déficits del bloque de datos
+- No incluyas Adaptación Curricular Significativa (ACS)
+- Tómate el tiempo necesario y razona cada decisión antes de redactarla
+- El documento final debe estar listo para ser revisado y firmado por el PT del centro
+════════════════════════════════════════════════════════`;
 
             navigator.clipboard.writeText(prompt).then(() => {
-                toast('Prompt copiado — abre Gemini', 'success');
+                toast('✓ Prompt copiado (' + [...areasPrincipales].join(', ') + ') — abriendo Gemini…', 'success');
+                window.open('https://gemini.google.com/', '_blank');
+            }).catch(() => {
+                // Fallback si clipboard falla
+                const ta = document.createElement('textarea');
+                ta.value = prompt;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                toast('✓ Prompt copiado — abriendo Gemini…', 'success');
                 window.open('https://gemini.google.com/', '_blank');
             });
         }
