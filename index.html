@@ -202,6 +202,7 @@
             <div class="nav-tabs no-print">
                 <button class="nav-tab active" onclick="cambiarSeccion('alumnos',this)">👥 Alumnos</button>
                 <button class="nav-tab" onclick="cambiarSeccion('estadisticas',this)">📊 Estadísticas</button>
+                <button class="nav-tab" onclick="cambiarSeccion('sda',this)">🎓 SDA</button>
                 <button class="nav-tab" onclick="cambiarSeccion('biblioteca',this)">📚 Biblioteca</button>
                 <button class="nav-tab" onclick="cambiarSeccion('recursos',this)">🎯 Banco de Actividades</button>
             </div>
@@ -273,7 +274,43 @@
                             </select>
                         </div>
                     </div>
-                    <button class="btn btn-primary" onclick="imprimirInformeMensualTodos()">📄 Generar Informe de Todos los Alumnos</button>
+                    <div class="btn-group" style="margin-top:0;flex-wrap:wrap;gap:8px">
+                        <button class="btn btn-primary" onclick="imprimirInformeMensualTodos()">📄 Generar Informe</button>
+                        <button class="btn btn-ai" onclick="chatGPTInformeTodos()">🤖 ChatGPT — Redactar todos</button>
+                    </div>
+                </div>
+            </div>
+            <div id="seccionSDA" style="display:none">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">🎓 SDA — Situaciones de Aprendizaje</h2>
+                    </div>
+                    <p style="font-size:.82rem;color:var(--text-light);margin-bottom:14px">Genera un prompt para <strong>Gemini</strong> con los datos de todos los programas específicos, agrupados por curso. La IA creará una Situación de Aprendizaje trimestral completa (título, objetivos, indicadores, criterios LOMLOE, sesiones).</p>
+                    <div class="form-row" style="margin-bottom:14px">
+                        <div class="form-group">
+                            <label class="form-label">Trimestre</label>
+                            <select id="sdaTrimestre" class="form-select">
+                                <option value="1">📗 Trimestre 1</option>
+                                <option value="2">📘 Trimestre 2</option>
+                                <option value="3">📙 Trimestre 3</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Filtrar por ciclo</label>
+                            <select id="sdaCurso" class="form-select">
+                                <option value="todos">Todos los cursos</option>
+                                <option value="infantil">Infantil</option>
+                                <option value="ciclo1">1º Ciclo (1º-2º)</option>
+                                <option value="ciclo2">2º Ciclo (3º-4º)</option>
+                                <option value="ciclo3">3º Ciclo (5º-6º)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="sdaPreview" style="display:none;background:var(--bg);border-radius:8px;padding:12px;margin-bottom:12px;font-size:.8rem;color:var(--text);max-height:220px;overflow-y:auto;white-space:pre-wrap;font-family:monospace"></div>
+                    <div class="btn-group" style="flex-wrap:wrap;gap:8px">
+                        <button class="btn btn-secondary btn-sm" onclick="previsualizarSDA()">👁️ Previsualizar datos</button>
+                        <button class="btn btn-ai" onclick="generarPromptSDA()">🤖 Copiar prompt para Gemini</button>
+                    </div>
                 </div>
             </div>
             <div id="seccionBiblioteca" style="display:none">
@@ -1011,7 +1048,7 @@
         // Renderizar biblioteca aunque Firebase no conecte
         renderBiblioteca();
 
-        function cambiarSeccion(s,btn){document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');document.getElementById('seccionAlumnos').style.display=s==='alumnos'?'block':'none';document.getElementById('seccionEstadisticas').style.display=s==='estadisticas'?'block':'none';document.getElementById('seccionBiblioteca').style.display=s==='biblioteca'?'block':'none';document.getElementById('seccionRecursos').style.display=s==='recursos'?'block':'none';if(s==='estadisticas')renderEstadisticasGlobal();if(s==='recursos')inicializarRecursos();}
+        function cambiarSeccion(s,btn){document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');document.getElementById('seccionAlumnos').style.display=s==='alumnos'?'block':'none';document.getElementById('seccionEstadisticas').style.display=s==='estadisticas'?'block':'none';document.getElementById('seccionSDA').style.display=s==='sda'?'block':'none';document.getElementById('seccionBiblioteca').style.display=s==='biblioteca'?'block':'none';document.getElementById('seccionRecursos').style.display=s==='recursos'?'block':'none';if(s==='estadisticas')renderEstadisticasGlobal();if(s==='recursos')inicializarRecursos();}
         function renderInicio(){const g=document.getElementById('alumnosGrid'),ids=Object.keys(alumnos);if(!ids.length){g.innerHTML='<div class="alumno-card alumno-card-add" onclick="abrirModalNuevo()"><span style="font-size:1.3rem">➕</span><span style="font-size:.8rem">Añadir</span></div>';return;}let h=ids.map(id=>{const a=alumnos[id],n=a.programas?Object.keys(a.programas).length:0;return'<div class="alumno-card" onclick="abrirAlumno(\''+id+'\')"><div class="alumno-siglas">'+a.siglas+'</div><div class="alumno-curso">'+a.curso+'</div><div class="alumno-progs">'+n+' prog.</div></div>';}).join('');h+='<div class="alumno-card alumno-card-add" onclick="abrirModalNuevo()"><span style="font-size:1.3rem">➕</span></div>';g.innerHTML=h;}
         
         // BIBLIOTECA
@@ -1740,6 +1777,160 @@ body{font-family:Arial,sans-serif;font-size:10px;color:#222}
 
         // IMPRESIÓN MASIVA
         function abrirModalImprimir(){if(!Object.keys(alumnos).length){toast('No hay alumnos','error');return;}abrirModal('modalImprimir');}
+
+        // CHATGPT INFORME TODOS - solo conseguidos
+        function chatGPTInformeTodos() {
+            const ids = Object.keys(alumnos);
+            if (!ids.length) { toast('No hay alumnos', 'error'); return; }
+            const trim = parseInt(document.getElementById('trimestreInformeMensual').value);
+            const mes = document.getElementById('mesInformeMensual').value;
+            const periodoTexto = mes ? mes + ' — T' + trim : 'Trimestre ' + trim;
+
+            let bloques = [];
+            ids.forEach(id => {
+                const a = alumnos[id];
+                const conseguidos = [];
+                if (a.programas) {
+                    Object.keys(a.programas).forEach(pId => {
+                        const p = a.programas[pId];
+                        const info = AREAS[p.tipo] || { nombre: p.tipo };
+                        (p.objetivos || []).forEach((obj, oi) => {
+                            (obj.indicadores || []).forEach((ind, ii) => {
+                                const k = pId + '_' + oi + '_' + ii + '_T' + trim;
+                                const e = a.evaluaciones ? a.evaluaciones[k] : null;
+                                if (e === 'C') conseguidos.push(info.nombre + ' O' + obj.numero + ': ' + ind);
+                            });
+                        });
+                    });
+                }
+                if (conseguidos.length) {
+                    bloques.push('ALUMNO: ' + a.siglas + ' (' + a.curso + ')\nCONSEGUIDOS:\n' + conseguidos.join('\n'));
+                }
+            });
+
+            if (!bloques.length) { toast('Sin indicadores conseguidos en T' + trim, 'error'); return; }
+
+            const prompt = 'Eres un especialista en Pedagogía Terapéutica. Redacta un informe de seguimiento breve y profesional para cada alumno indicado, basándote SOLO en los indicadores conseguidos. Para cada alumno: 2-3 párrafos con valoración positiva de los logros, progreso observado y orientaciones breves. Usa lenguaje técnico pero claro. Período: ' + periodoTexto + '.\n\n' + bloques.join('\n\n---\n\n');
+
+            navigator.clipboard.writeText(prompt).then(() => {
+                toast('Prompt copiado (' + ids.length + ' alumnos) — abre ChatGPT', 'success');
+                window.open('https://chat.openai.com/', '_blank');
+            });
+        }
+
+        // SDA — SITUACIONES DE APRENDIZAJE
+        function _recopilarDatosSDA() {
+            const trimSel = parseInt(document.getElementById('sdaTrimestre').value);
+            const cicloFiltro = document.getElementById('sdaCurso').value;
+            const ids = Object.keys(alumnos);
+
+            // Detectar ciclo desde el campo 'curso' o 'ciclo' del alumno
+            const cursoACiclo = (a) => {
+                if (a.ciclo && ['infantil','ciclo1','ciclo2','ciclo3'].includes(a.ciclo)) return a.ciclo;
+                const c = (a.curso||'').toLowerCase();
+                if (c.includes('infantil') || c.includes('3 año') || c.includes('4 año') || c.includes('5 año')) return 'infantil';
+                if (c.includes('1º') || c.includes('1 º') || c.includes('2º') || c.includes('2 º') || c==='ciclo1') return 'ciclo1';
+                if (c.includes('3º') || c.includes('3 º') || c.includes('4º') || c.includes('4 º') || c==='ciclo2') return 'ciclo2';
+                if (c.includes('5º') || c.includes('5 º') || c.includes('6º') || c.includes('6 º') || c==='ciclo3') return 'ciclo3';
+                return 'ciclo1';
+            };
+
+            const grupos = {};
+            ids.forEach(id => {
+                const a = alumnos[id];
+                const ciclo = cursoACiclo(a);
+                if (cicloFiltro !== 'todos' && ciclo !== cicloFiltro) return;
+                if (!grupos[ciclo]) grupos[ciclo] = { alumnos: [], programas: {} };
+                grupos[ciclo].alumnos.push(a.siglas + ' (' + (a.curso || ciclo) + ')');
+
+                if (!a.programas) return;
+                Object.keys(a.programas).forEach(pId => {
+                    const p = a.programas[pId];
+                    const area = AREAS[p.tipo] ? AREAS[p.tipo].nombre : p.tipo;
+                    if (!grupos[ciclo].programas[area]) grupos[ciclo].programas[area] = { objetivos: {}, criterios: new Set() };
+                    (p.objetivos || []).filter(o => o.trimestre === trimSel).forEach(obj => {
+                        const key = 'O' + obj.numero + ': ' + obj.descripcion;
+                        if (!grupos[ciclo].programas[area].objetivos[key]) grupos[ciclo].programas[area].objetivos[key] = new Set();
+                        (obj.indicadores || []).forEach(ind => grupos[ciclo].programas[area].objetivos[key].add(ind));
+                        if (obj.criterio) grupos[ciclo].programas[area].criterios.add(obj.criterio);
+                    });
+                });
+            });
+
+            const sesionesTotales = MESES.filter(m => m.trim === trimSel).reduce((s, m) => s + m.semanas, 0);
+            return { grupos, trimSel, sesionesTotales };
+        }
+
+        function previsualizarSDA() {
+            const { grupos, trimSel, sesionesTotales } = _recopilarDatosSDA();
+            if (!Object.keys(grupos).length) { toast('Sin alumnos con ese filtro', 'error'); return; }
+            const CICLOS_N = { infantil: 'Infantil', ciclo1: '1º Ciclo', ciclo2: '2º Ciclo', ciclo3: '3º Ciclo' };
+            let txt = 'TRIMESTRE ' + trimSel + ' — ' + sesionesTotales + ' semanas aprox.\n\n';
+            Object.keys(grupos).forEach(ciclo => {
+                const g = grupos[ciclo];
+                txt += '═══ ' + (CICLOS_N[ciclo] || ciclo).toUpperCase() + ' (' + g.alumnos.join(', ') + ') ═══\n';
+                Object.keys(g.programas).forEach(area => {
+                    const pa = g.programas[area];
+                    txt += '\n▸ ' + area + '\n';
+                    Object.keys(pa.objetivos).forEach(obj => {
+                        txt += '  ' + obj + '\n';
+                        pa.objetivos[obj].forEach(ind => txt += '    • ' + ind + '\n');
+                    });
+                    if (pa.criterios.size) txt += '  Criterios: ' + [...pa.criterios].join(' | ') + '\n';
+                });
+                txt += '\n';
+            });
+            const preview = document.getElementById('sdaPreview');
+            preview.textContent = txt;
+            preview.style.display = 'block';
+            toast('Datos cargados', 'success');
+        }
+
+        function generarPromptSDA() {
+            const { grupos, trimSel, sesionesTotales } = _recopilarDatosSDA();
+            if (!Object.keys(grupos).length) { toast('Sin alumnos con ese filtro', 'error'); return; }
+            const CICLOS_N = { infantil: 'Infantil', ciclo1: '1º Ciclo', ciclo2: '2º Ciclo', ciclo3: '3º Ciclo' };
+
+            let datosAlumnado = '';
+            Object.keys(grupos).forEach(ciclo => {
+                const g = grupos[ciclo];
+                datosAlumnado += '\n## ' + (CICLOS_N[ciclo] || ciclo) + ' — Alumnos: ' + g.alumnos.join(', ') + '\n';
+                Object.keys(g.programas).forEach(area => {
+                    const pa = g.programas[area];
+                    datosAlumnado += '\n### ' + area + '\n';
+                    Object.keys(pa.objetivos).forEach(obj => {
+                        datosAlumnado += '**' + obj + '**\n';
+                        pa.objetivos[obj].forEach(ind => datosAlumnado += '- ' + ind + '\n');
+                    });
+                    if (pa.criterios.size) datosAlumnado += '\nCriterios de evaluación LOMLOE (Orden 30 mayo 2023 Andalucía): ' + [...pa.criterios].join(', ') + '\n';
+                });
+            });
+
+            const prompt = `Eres un experto en diseño curricular y atención a la diversidad en la etapa de Educación Primaria (sistema educativo español, Andalucía, LOMLOE, Orden 30 de mayo de 2023).
+
+A continuación te proporciono los datos del programa específico de los alumnos de PT (Pedagogía Terapéutica) del CEIP Capitulaciones de Santa Fe, agrupados por ciclo, correspondientes al TRIMESTRE ${trimSel} (aproximadamente ${sesionesTotales} semanas de sesiones de PT).
+
+TAREA: Diseña una Situación de Aprendizaje (SDA) trimestral para el trabajo de PT, que integre todos los objetivos e indicadores que aparecen a continuación. La SDA debe:
+
+1. Tener un TÍTULO motivador y contextualizado al entorno (Santa Fe, Granada, Capitulaciones de 1492, Andalucía) — créalo tú en base a los contenidos
+2. Justificación breve (conexión con el contexto y los programas específicos)
+3. Competencias clave trabajadas
+4. OBJETIVOS específicos de PT (extraídos y adaptados de los datos)
+5. CRITERIOS DE EVALUACIÓN referenciados con sus códigos LOMLOE tal como aparecen en los datos
+6. Planificación de SESIONES: distribuye los objetivos e indicadores en el número de semanas del trimestre (${sesionesTotales} semanas), indicando qué se trabaja cada semana o bloque de semanas, agrupando por ciclo cuando sea posible
+7. INSTRUMENTOS DE EVALUACIÓN sugeridos
+8. Adaptaciones y niveles de concreción por ciclo
+
+DATOS DEL ALUMNADO:
+${datosAlumnado}
+
+Genera la SDA completa en formato estructurado, lista para incluir en la programación de PT.`;
+
+            navigator.clipboard.writeText(prompt).then(() => {
+                toast('Prompt copiado — abre Gemini', 'success');
+                window.open('https://gemini.google.com/', '_blank');
+            });
+        }
         
         // Función auxiliar para generar gráficas de evaluación
         async function generarGraficasEvaluacion(alumnoId, trimestreSelec) {
