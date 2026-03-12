@@ -111,8 +111,16 @@
         .eval-btn.c.active{background:var(--success);color:#fff}
         .eval-btn.p{border-color:var(--proceso);color:var(--proceso)}
         .eval-btn.p.active{background:var(--proceso);color:#fff}
-        .eval-btn.n{border-color:#888;color:#888}
-        .eval-btn.n.active{background:#888;color:#fff}
+        .eval-btn.n{border-color:#94a3b8;color:#94a3b8}
+        .eval-btn.n.active{background:#94a3b8;color:#fff}
+        .eval-btn.nc{border-color:var(--danger);color:var(--danger)}
+        .eval-btn.nc.active{background:var(--danger);color:#fff}
+        .criterio-grupo{background:#fff;border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:10px;border:1px solid var(--border)}
+        .criterio-header{display:flex;align-items:center;gap:8px;margin-bottom:8px;padding-bottom:6px;border-bottom:2px solid var(--primary)}
+        .criterio-badge-eval{background:var(--primary);color:#fff;font-size:.7rem;font-weight:700;padding:3px 10px;border-radius:12px;font-family:monospace}
+        .criterio-obj-block{margin-left:10px;margin-bottom:6px}
+        .criterio-obj-label{font-size:.75rem;font-weight:700;color:var(--primary-dark);margin-bottom:4px;display:flex;align-items:center;gap:5px}
+        .criterio-obj-num{background:rgba(26,95,74,.12);color:var(--primary);font-family:monospace;font-size:.68rem;font-weight:700;padding:1px 6px;border-radius:4px}
         .asist-btns{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
         .asist-btn{flex:1;padding:10px;border:2px solid var(--border);border-radius:var(--radius-sm);background:#fff;cursor:pointer;text-align:center;min-width:80px}
         .asist-btn.selected{border-width:3px}
@@ -1190,15 +1198,135 @@
         // EVALUACIÓN
         function renderEval(){const a=alumnos[alumnoActual];let h='<div class="card"><div class="card-header"><h3 class="card-title">📊 Evaluación — Indicadores</h3></div><div class="btn-group no-print" style="margin-bottom:12px"><button class="btn '+(evalTrim===1?'btn-primary':'btn-secondary')+' btn-sm" onclick="setTrim(1)">T1</button><button class="btn '+(evalTrim===2?'btn-primary':'btn-secondary')+' btn-sm" onclick="setTrim(2)">T2</button><button class="btn '+(evalTrim===3?'btn-primary':'btn-secondary')+' btn-sm" onclick="setTrim(3)">T3</button><button class="btn btn-warning btn-sm" onclick="abrirModalInforme()">📄 Informe</button>';if(evalTrim<3){h+='<button class="btn btn-ai btn-sm" onclick="pasarNoConseguidos()">📤 P/N→T'+(evalTrim+1)+'</button>';}h+='</div><div class="chart-container no-print"><canvas id="chartProgreso"></canvas></div><div id="pctArea" class="no-print"></div><div id="evalList"></div></div><div class="card" style="margin-top:12px"><div class="card-header"><h3 class="card-title">🔢 Calificación mensual por criterio</h3></div><p style="font-size:.78rem;color:var(--text-light);margin-bottom:12px">Introduce la nota (0-10) por criterio LOMLOE para cada mes del trimestre. Se guarda automáticamente.</p><div id="califList"></div></div>';document.getElementById('tabEvaluacion').innerHTML=h;renderEvalList();renderCalificaciones();setTimeout(renderEvalCharts,100);}
         function setTrim(t){evalTrim=t;renderEval();}
-        function renderEvalCharts(){const a=alumnos[alumnoActual];if(!a.programas)return;const ctx=document.getElementById('chartProgreso');if(!ctx)return;if(charts.progreso)charts.progreso.destroy();const labels=[],conseguidos=[],proceso=[],noIniciados=[];const pasadosAqui=getIndicadoresPasados(a,evalTrim);Object.keys(a.programas).forEach(pId=>{const p=a.programas[pId],info=AREAS[p.tipo]||{nombre:p.tipo};const objsT=(p.objetivos||[]).filter(o=>o.trimestre===evalTrim);const pasadosProg=pasadosAqui.filter(x=>x.pId===pId);if(!objsT.length&&!pasadosProg.length)return;labels.push(info.nombre.substring(0,12));let c=0,pr=0,n=0;objsT.forEach(obj=>{const oi=p.objetivos.indexOf(obj);(obj.indicadores||[]).forEach((_,ii)=>{const k=pId+'_'+oi+'_'+ii+'_T'+evalTrim,e=a.evaluaciones?a.evaluaciones[k]:null;if(e==='C')c++;else if(e==='P')pr++;else n++;});});pasadosProg.forEach(item=>{const k=item.pId+'_'+item.oIdx+'_'+item.iIdx+'_T'+evalTrim,e=a.evaluaciones?a.evaluaciones[k]:null;if(e==='C')c++;else if(e==='P')pr++;else n++;});conseguidos.push(c);proceso.push(pr);noIniciados.push(n);});charts.progreso=new Chart(ctx,{type:'bar',data:{labels:labels,datasets:[{label:'Conseguido',data:conseguidos,backgroundColor:'#22c55e'},{label:'En proceso',data:proceso,backgroundColor:'#3b82f6'},{label:'No iniciado',data:noIniciados,backgroundColor:'#d1d5db'}]},options:{responsive:true,plugins:{legend:{position:'bottom'},title:{display:true,text:'Indicadores T'+evalTrim}},scales:{x:{stacked:true},y:{stacked:true}}}});
+        function renderEvalCharts(){const a=alumnos[alumnoActual];if(!a.programas)return;const ctx=document.getElementById('chartProgreso');if(!ctx)return;if(charts.progreso)charts.progreso.destroy();const labels=[],conseguidos=[],proceso=[],noConseguidos=[],noIniciados=[];const pasadosAqui=getIndicadoresPasados(a,evalTrim);Object.keys(a.programas).forEach(pId=>{const p=a.programas[pId],info=AREAS[p.tipo]||{nombre:p.tipo};const objsT=(p.objetivos||[]).filter(o=>o.trimestre===evalTrim);const pasadosProg=pasadosAqui.filter(x=>x.pId===pId);if(!objsT.length&&!pasadosProg.length)return;labels.push(info.nombre.substring(0,12));let c=0,pr=0,nc=0,ni=0;objsT.forEach(obj=>{const oi=p.objetivos.indexOf(obj);(obj.indicadores||[]).forEach((_,ii)=>{const k=pId+'_'+oi+'_'+ii+'_T'+evalTrim,e=a.evaluaciones?a.evaluaciones[k]:null;if(e==='C')c++;else if(e==='P')pr++;else if(e==='NC')nc++;else ni++;});});pasadosProg.forEach(item=>{const k=item.pId+'_'+item.oIdx+'_'+item.iIdx+'_T'+evalTrim,e=a.evaluaciones?a.evaluaciones[k]:null;if(e==='C')c++;else if(e==='P')pr++;else if(e==='NC')nc++;else ni++;});conseguidos.push(c);proceso.push(pr);noConseguidos.push(nc);noIniciados.push(ni);});charts.progreso=new Chart(ctx,{type:'bar',data:{labels:labels,datasets:[{label:'Conseguido',data:conseguidos,backgroundColor:'#22c55e'},{label:'En proceso',data:proceso,backgroundColor:'#3b82f6'},{label:'No conseguido',data:noConseguidos,backgroundColor:'#ef4444'},{label:'No iniciado',data:noIniciados,backgroundColor:'#d1d5db'}]},options:{responsive:true,plugins:{legend:{position:'bottom'},title:{display:true,text:'Indicadores T'+evalTrim}},scales:{x:{stacked:true},y:{stacked:true}}}});
             // % consecución por área
             let pctHtml='<div style="margin-top:10px">';
-            labels.forEach((lbl,i)=>{const total=conseguidos[i]+proceso[i]+noIniciados[i];const pct=total?Math.round(conseguidos[i]/total*100):0;const pctP=total?Math.round(proceso[i]/total*100):0;const bar=pct+pctP;pctHtml+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:.75rem"><span style="min-width:90px;font-weight:600;color:var(--primary)">'+lbl+'</span><div style="flex:1;background:#e5e7eb;border-radius:6px;height:18px;overflow:hidden;display:flex"><div style="width:'+pct+'%;background:#22c55e;height:100%"></div><div style="width:'+pctP+'%;background:#3b82f6;height:100%"></div></div><span style="min-width:36px;text-align:right;font-weight:700;color:'+(pct>=60?'#22c55e':pct>=30?'#f59e0b':'#ef4444')+'">'+pct+'%</span></div>';});
-            pctHtml+='<div style="display:flex;gap:12px;justify-content:center;margin-top:4px;font-size:.65rem;color:var(--text-light)"><span>🟩 Conseguido</span><span>🟦 En proceso</span><span>⬜ No iniciado</span></div></div>';
+            labels.forEach((lbl,i)=>{const total=conseguidos[i]+proceso[i]+noConseguidos[i]+noIniciados[i];const pct=total?Math.round(conseguidos[i]/total*100):0;const pctP=total?Math.round(proceso[i]/total*100):0;const pctNC=total?Math.round(noConseguidos[i]/total*100):0;pctHtml+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:.75rem"><span style="min-width:90px;font-weight:600;color:var(--primary)">'+lbl+'</span><div style="flex:1;background:#e5e7eb;border-radius:6px;height:18px;overflow:hidden;display:flex"><div style="width:'+pct+'%;background:#22c55e;height:100%"></div><div style="width:'+pctP+'%;background:#3b82f6;height:100%"></div><div style="width:'+pctNC+'%;background:#ef4444;height:100%"></div></div><span style="min-width:36px;text-align:right;font-weight:700;color:'+(pct>=60?'#22c55e':pct>=30?'#f59e0b':'#ef4444')+'">'+pct+'%</span></div>';});
+            pctHtml+='<div style="display:flex;gap:12px;justify-content:center;margin-top:4px;font-size:.65rem;color:var(--text-light)"><span>🟩 Conseguido</span><span>🟦 En proceso</span><span>🟥 No conseguido</span><span>⬜ No iniciado</span></div></div>';
             const pctContainer=document.getElementById('pctArea');
             if(pctContainer) pctContainer.innerHTML=pctHtml;
         }
-        function renderEvalList(){const a=alumnos[alumnoActual],c=document.getElementById('evalList');let h='',hay=false;if(!a.programas){c.innerHTML='<p style="text-align:center;color:var(--text-light)">Sin programas</p>';return;}const pasadosAqui=getIndicadoresPasados(a,evalTrim);Object.keys(a.programas).forEach(pId=>{const p=a.programas[pId],info=AREAS[p.tipo]||{icon:'📄',nombre:p.tipo,color:'#666'};const objsT=(p.objetivos||[]).filter(o=>o.trimestre===evalTrim);const pasadosProg=pasadosAqui.filter(x=>x.pId===pId);if(!objsT.length&&!pasadosProg.length)return;hay=true;h+='<div class="programa-card" style="border-left-color:'+info.color+'"><div class="programa-titulo" style="margin-bottom:8px">'+info.icon+' '+info.nombre+'</div>';objsT.forEach(obj=>{const oi=p.objetivos.indexOf(obj);h+='<div style="margin-bottom:8px"><div style="font-weight:600;font-size:.8rem;margin-bottom:4px">O'+obj.numero+': '+obj.descripcion.substring(0,30)+'...</div>';(obj.indicadores||[]).forEach((ind,ii)=>{const k=pId+'_'+oi+'_'+ii+'_T'+evalTrim,e=a.evaluaciones?a.evaluaciones[k]:'';h+='<div class="eval-item"><span class="eval-text">'+ind+'</span><button class="eval-btn c '+(e==='C'?'active':'')+'" onclick="setEval(\''+pId+'\','+oi+','+ii+',\'C\')">✓</button><button class="eval-btn p '+(e==='P'?'active':'')+'" onclick="setEval(\''+pId+'\','+oi+','+ii+',\'P\')">◐</button><button class="eval-btn n '+(e==='N'?'active':'')+'" onclick="setEval(\''+pId+'\','+oi+','+ii+',\'N\')">○</button></div>';});h+='</div>';});if(pasadosProg.length){h+='<div style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--border)"><div style="font-size:.75rem;color:var(--warning);margin-bottom:6px">📤 Pasados:</div>';pasadosProg.forEach(item=>{const obj=p.objetivos[item.oIdx];if(!obj)return;const ind=obj.indicadores?obj.indicadores[item.iIdx]:'';const k=pId+'_'+item.oIdx+'_'+item.iIdx+'_T'+evalTrim,e=a.evaluaciones?a.evaluaciones[k]:'';h+='<div class="eval-item"><span class="eval-text">O'+obj.numero+': '+ind+'<span class="pasado-badge">T'+(evalTrim-1)+'</span></span><button class="eval-btn c '+(e==='C'?'active':'')+'" onclick="setEval(\''+pId+'\','+item.oIdx+','+item.iIdx+',\'C\')">✓</button><button class="eval-btn p '+(e==='P'?'active':'')+'" onclick="setEval(\''+pId+'\','+item.oIdx+','+item.iIdx+',\'P\')">◐</button><button class="eval-btn n '+(e==='N'?'active':'')+'" onclick="setEval(\''+pId+'\','+item.oIdx+','+item.iIdx+',\'N\')">○</button></div>';});h+='</div>';}h+='</div>';});c.innerHTML=hay?h:'<p style="text-align:center;color:var(--text-light)">Sin indicadores en T'+evalTrim+'</p>';}
+        function renderEvalList(){
+            const a=alumnos[alumnoActual], c=document.getElementById('evalList');
+            if(!a.programas){c.innerHTML='<p style="text-align:center;color:var(--text-light)">Sin programas</p>';return;}
+
+            const pasadosAqui=getIndicadoresPasados(a,evalTrim);
+            let h='', hay=false;
+
+            Object.keys(a.programas).forEach(pId=>{
+                const p=a.programas[pId], info=AREAS[p.tipo]||{icon:'📄',nombre:p.tipo,color:'#666'};
+                const objsT=(p.objetivos||[]).filter(o=>o.trimestre===evalTrim);
+                const pasadosProg=pasadosAqui.filter(x=>x.pId===pId);
+                if(!objsT.length&&!pasadosProg.length) return;
+                hay=true;
+
+                h+='<div class="programa-card" style="border-left-color:'+info.color+';margin-bottom:12px">';
+                h+='<div class="programa-titulo" style="margin-bottom:10px">'+info.icon+' '+info.nombre+'</div>';
+
+                // Agrupar objsT por criterio
+                const porCriterio={};
+                objsT.forEach(obj=>{
+                    const raw=obj.criterio||'';
+                    const ckey=sanitizeCriterioKey(raw);
+                    const clabel=raw||'(sin criterio LOMLOE)';
+                    if(!porCriterio[ckey]) porCriterio[ckey]={label:clabel, key:ckey, objetivos:[]};
+                    porCriterio[ckey].objetivos.push(obj);
+                });
+
+                // Renderizar por criterio
+                Object.values(porCriterio).forEach(grC=>{
+                    // Contar estado global del criterio para badge rápido
+                    let gcC=0,gcP=0,gcNC=0,gcNI=0;
+                    grC.objetivos.forEach(obj=>{
+                        const oi=p.objetivos.indexOf(obj);
+                        (obj.indicadores||[]).forEach((_,ii)=>{
+                            const k=pId+'_'+oi+'_'+ii+'_T'+evalTrim,e=a.evaluaciones?a.evaluaciones[k]:null;
+                            if(e==='C')gcC++;else if(e==='P')gcP++;else if(e==='NC')gcNC++;else gcNI++;
+                        });
+                    });
+                    const gcTotal=gcC+gcP+gcNC+gcNI;
+                    const pctC=gcTotal?Math.round(gcC/gcTotal*100):0;
+
+                    h+='<div class="criterio-grupo">';
+                    h+='<div class="criterio-header">';
+                    h+='<span class="criterio-badge-eval">'+grC.label+'</span>';
+                    // Mini barra de estado del criterio
+                    h+='<div style="flex:1;display:flex;border-radius:4px;overflow:hidden;height:8px;background:#e5e7eb;max-width:120px">';
+                    const pctP2=gcTotal?Math.round(gcP/gcTotal*100):0;
+                    const pctNC2=gcTotal?Math.round(gcNC/gcTotal*100):0;
+                    const pctNI2=gcTotal?Math.round(gcNI/gcTotal*100):0;
+                    h+='<div style="width:'+pctC+'%;background:#22c55e"></div>';
+                    h+='<div style="width:'+pctP2+'%;background:#3b82f6"></div>';
+                    h+='<div style="width:'+pctNC2+'%;background:#ef4444"></div>';
+                    h+='<div style="width:'+pctNI2+'%;background:#d1d5db"></div>';
+                    h+='</div>';
+                    h+='<span style="font-size:.65rem;color:'+(pctC>=60?'#22c55e':pctC>=30?'#f59e0b':'var(--text-light)')+'">'+pctC+'% C</span>';
+                    h+='</div>'; // criterio-header
+
+                    // Objetivos del criterio
+                    grC.objetivos.forEach(obj=>{
+                        const oi=p.objetivos.indexOf(obj);
+                        h+='<div class="criterio-obj-block">';
+                        h+='<div class="criterio-obj-label">';
+                        h+='<span class="criterio-obj-num">O'+obj.numero+'</span>';
+                        h+='<span style="font-size:.78rem;color:var(--text)">'+obj.descripcion+'</span>';
+                        h+='</div>';
+                        (obj.indicadores||[]).forEach((ind,ii)=>{
+                            const k=pId+'_'+oi+'_'+ii+'_T'+evalTrim,e=a.evaluaciones?a.evaluaciones[k]:'';
+                            h+='<div class="eval-item">';
+                            h+='<span class="eval-text">'+ind+'</span>';
+                            h+='<button class="eval-btn c '+(e==='C'?'active':'')+'" title="Conseguido" onclick="setEval(\''+pId+'\','+oi+','+ii+',\'C\')">✓</button>';
+                            h+='<button class="eval-btn p '+(e==='P'?'active':'')+'" title="En proceso" onclick="setEval(\''+pId+'\','+oi+','+ii+',\'P\')">◐</button>';
+                            h+='<button class="eval-btn nc '+(e==='NC'?'active':'')+'" title="No conseguido" onclick="setEval(\''+pId+'\','+oi+','+ii+',\'NC\')">✗</button>';
+                            h+='<button class="eval-btn n '+((!e)?'active':'')+'" title="No iniciado" onclick="setEval(\''+pId+'\','+oi+','+ii+',\'NI\')">○</button>';
+                            h+='</div>';
+                        });
+                        h+='</div>'; // criterio-obj-block
+                    });
+
+                    h+='</div>'; // criterio-grupo
+                });
+
+                // Pasados de trimestre anterior
+                if(pasadosProg.length){
+                    h+='<div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--border)">';
+                    h+='<div style="font-size:.75rem;color:var(--warning);margin-bottom:6px">📤 Pasados de T'+(evalTrim-1)+':</div>';
+                    // Agrupar pasados por criterio también
+                    const pasadosPorCriterio={};
+                    pasadosProg.forEach(item=>{
+                        const obj=p.objetivos[item.oIdx];if(!obj)return;
+                        const raw=obj.criterio||'';const ckey=sanitizeCriterioKey(raw);
+                        const clabel=raw||'(sin criterio)';
+                        if(!pasadosPorCriterio[ckey])pasadosPorCriterio[ckey]={label:clabel,items:[]};
+                        pasadosPorCriterio[ckey].items.push(item);
+                    });
+                    Object.values(pasadosPorCriterio).forEach(grPas=>{
+                        h+='<div style="margin-bottom:8px">';
+                        h+='<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px">';
+                        h+='<span style="background:#fef3c7;color:#92400e;font-size:.65rem;font-weight:700;padding:2px 8px;border-radius:10px;font-family:monospace">'+grPas.label+'</span>';
+                        h+='</div>';
+                        grPas.items.forEach(item=>{
+                            const obj=p.objetivos[item.oIdx];if(!obj)return;
+                            const ind=obj.indicadores?obj.indicadores[item.iIdx]:'';
+                            const k=pId+'_'+item.oIdx+'_'+item.iIdx+'_T'+evalTrim,e=a.evaluaciones?a.evaluaciones[k]:'';
+                            h+='<div class="eval-item" style="margin-left:10px">';
+                            h+='<span class="eval-text"><span class="criterio-obj-num" style="margin-right:4px">O'+obj.numero+'</span>'+ind+'<span class="pasado-badge">T'+(evalTrim-1)+'</span></span>';
+                            h+='<button class="eval-btn c '+(e==='C'?'active':'')+'" title="Conseguido" onclick="setEval(\''+pId+'\','+item.oIdx+','+item.iIdx+',\'C\')">✓</button>';
+                            h+='<button class="eval-btn p '+(e==='P'?'active':'')+'" title="En proceso" onclick="setEval(\''+pId+'\','+item.oIdx+','+item.iIdx+',\'P\')">◐</button>';
+                            h+='<button class="eval-btn nc '+(e==='NC'?'active':'')+'" title="No conseguido" onclick="setEval(\''+pId+'\','+item.oIdx+','+item.iIdx+',\'NC\')">✗</button>';
+                            h+='<button class="eval-btn n '+((!e)?'active':'')+'" title="No iniciado" onclick="setEval(\''+pId+'\','+item.oIdx+','+item.iIdx+',\'NI\')">○</button>';
+                            h+='</div>';
+                        });
+                        h+='</div>';
+                    });
+                    h+='</div>';
+                }
+
+                h+='</div>'; // programa-card
+            });
+
+            c.innerHTML=hay?h:'<p style="text-align:center;color:var(--text-light)">Sin indicadores en T'+evalTrim+'</p>';
+        }
         // ─── CALIFICACIONES 0-10 POR CRITERIO ───────────────────────────────
 
         // Convierte "LCL.1.3.1" → "LCL_1_3_1" (clave válida para Firebase)
@@ -1226,7 +1354,7 @@
         // Calcula C/P/N y nota sugerida para los indicadores de un criterio en un trimestre
         function calcCriterioStats(a, pId, criterioKey, trim){
             const p = a.programas[pId];
-            let c=0, pr=0, n=0;
+            let c=0, pr=0, nc=0, ni=0;
             (p.objetivos||[]).forEach((obj, oi)=>{
                 if(obj.trimestre !== trim) return;
                 if(sanitizeCriterioKey(obj.criterio||'') !== criterioKey) return;
@@ -1235,12 +1363,15 @@
                     const e = a.evaluaciones ? a.evaluaciones[k] : null;
                     if(e==='C') c++;
                     else if(e==='P') pr++;
-                    else n++;
+                    else if(e==='NC') nc++;
+                    else ni++; // null = no iniciado, no penaliza
                 });
             });
-            const total = c+pr+n;
-            const sugerida = total ? Math.round((c*10 + pr*5) / total * 10) / 10 : null;
-            return { c, pr, n, total, sugerida };
+            const total = c+pr+nc+ni;
+            const evaluados = c+pr+nc;
+            // Nota solo sobre evaluados (null = no iniciado, no penaliza)
+            const sugerida = evaluados ? Math.round((c*10 + pr*5 + nc*0) / evaluados * 10) / 10 : null;
+            return { c, pr, nc, ni, total, evaluados, sugerida };
         }
 
         function renderCalificaciones(){
@@ -1274,11 +1405,12 @@
                     );
                     if(!tieneObjTrim) return;
 
-                    // Calcular stats C/P/N para este criterio
+                    // Calcular stats C/P/NC/NI para este criterio
                     const st = calcCriterioStats(a, pId, criterioKey, evalTrim);
-                    const pctC  = st.total ? Math.round(st.c  / st.total * 100) : 0;
-                    const pctPr = st.total ? Math.round(st.pr / st.total * 100) : 0;
-                    const pctN  = st.total ? Math.round(st.n  / st.total * 100) : 0;
+                    const pctC   = st.total ? Math.round(st.c   / st.total * 100) : 0;
+                    const pctPr  = st.total ? Math.round(st.pr  / st.total * 100) : 0;
+                    const pctNc  = st.total ? Math.round(st.nc  / st.total * 100) : 0;
+                    const pctNi  = st.total ? Math.round(st.ni  / st.total * 100) : 0;
                     const fbDataKey = pId+'__'+criterioKey;
 
                     h += '<div class="calif-card" id="cc_'+fbDataKey+'">';
@@ -1286,7 +1418,9 @@
                     h += '<span class="calif-criterio-badge">'+gr.label+'</span>';
                     // Nota sugerida + botón aplicar a todos los meses vacíos
                     if(st.sugerida !== null){
-                        h += '<span style="font-size:.72rem;color:var(--text-light)">Sugerida: <strong style="color:var(--text)">'+st.sugerida+'</strong></span>';
+                        h += '<span style="font-size:.72rem;color:var(--text-light)">Sugerida: <strong style="color:var(--text)">'+st.sugerida+'</strong>';
+                        if(st.ni > 0) h += ' <span style="color:#f59e0b;font-size:.65rem">('+st.ni+' sin iniciar)</span>';
+                        h += '</span>';
                         h += '<button class="btn btn-secondary btn-sm" style="padding:2px 8px;font-size:.68rem" '
                            + 'onclick="aplicarSugerida(\'' + fbDataKey + '\',' + st.sugerida + ')" title="Rellena los meses vacíos con la nota sugerida">✓ Aplicar</button>';
                     } else {
@@ -1294,16 +1428,17 @@
                     }
                     h += '</div>';
 
-                    // Barra de progreso C/P/N
+                    // Barra de progreso C/P/NC/NI
                     h += '<div style="margin-bottom:10px">';
                     h += '<div style="display:flex;border-radius:6px;overflow:hidden;height:10px;background:#e5e7eb;margin-bottom:3px">';
                     h += '<div style="width:'+pctC+'%;background:#22c55e;transition:width .4s"></div>';
                     h += '<div style="width:'+pctPr+'%;background:#3b82f6;transition:width .4s"></div>';
-                    h += '<div style="width:'+pctN+'%;background:#d1d5db;transition:width .4s"></div>';
+                    h += '<div style="width:'+pctNc+'%;background:#ef4444;transition:width .4s"></div>';
+                    h += '<div style="width:'+pctNi+'%;background:#d1d5db;transition:width .4s"></div>';
                     h += '</div>';
                     h += '<div style="display:flex;gap:10px;font-size:.65rem;color:var(--text-light)">';
-                    h += '<span>🟩 '+st.c+' C</span><span>🟦 '+st.pr+' P</span><span>⬜ '+st.n+' N</span>';
-                    h += '<span style="margin-left:auto">'+st.total+' indicadores</span>';
+                    h += '<span>🟩 '+st.c+' C</span><span>🟦 '+st.pr+' P</span><span>🟥 '+st.nc+' NC</span><span>⬜ '+st.ni+' NI</span>';
+                    h += '<span style="margin-left:auto">'+st.total+' ind.</span>';
                     h += '</div></div>';
 
                     // Indicadores de referencia (colapsados)
@@ -1330,6 +1465,102 @@
             });
 
             cont.innerHTML = h || '<p style="text-align:center;color:var(--text-light)">Sin objetivos en T'+evalTrim+'</p>';
+        }
+
+        // ─── HELPERS PARA INFORMES ───────────────────────────────────────────────
+
+        // Devuelve array de criterios trabajados en un trim con su estado global
+        // [{label, c, pr, nc, ni, total, pct}]
+        function getCriteriosResumen(a, trim){
+            const criterios = {};
+            if(!a.programas) return [];
+            Object.keys(a.programas).forEach(pId=>{
+                const p = a.programas[pId];
+                (p.objetivos||[]).forEach((obj,oi)=>{
+                    if(obj.trimestre !== trim) return;
+                    const raw = obj.criterio||'';
+                    const key = sanitizeCriterioKey(raw);
+                    const label = raw || '(sin criterio)';
+                    if(!criterios[key]) criterios[key]={label,c:0,pr:0,nc:0,ni:0};
+                    (obj.indicadores||[]).forEach((_,ii)=>{
+                        const k = pId+'_'+oi+'_'+ii+'_T'+trim;
+                        const e = a.evaluaciones ? a.evaluaciones[k] : null;
+                        if(e==='C') criterios[key].c++;
+                        else if(e==='P') criterios[key].pr++;
+                        else if(e==='NC') criterios[key].nc++;
+                        else criterios[key].ni++;
+                    });
+                });
+            });
+            return Object.values(criterios).map(cr=>{
+                const total = cr.c+cr.pr+cr.nc+cr.ni;
+                const pct = total ? Math.round(cr.c/total*100) : 0;
+                return {...cr, total, pct};
+            }).filter(cr=>cr.total>0);
+        }
+
+        // Devuelve top-N indicadores más bloqueantes (NC primero, luego P) de un trim
+        // [{programa, objetivo, indicador, estado}]
+        function getIndicadoresBloqueantes(a, trim, maxN){
+            const lista = [];
+            if(!a.programas) return lista;
+            Object.keys(a.programas).forEach(pId=>{
+                const p = a.programas[pId];
+                const info = AREAS[p.tipo]||{nombre:p.tipo};
+                (p.objetivos||[]).forEach((obj,oi)=>{
+                    if(obj.trimestre !== trim) return;
+                    (obj.indicadores||[]).forEach((ind,ii)=>{
+                        const k = pId+'_'+oi+'_'+ii+'_T'+trim;
+                        const e = a.evaluaciones ? a.evaluaciones[k] : null;
+                        if(e==='NC'||e==='P'){
+                            lista.push({
+                                programa: info.nombre,
+                                objetivo: 'O'+obj.numero,
+                                indicador: ind,
+                                estado: e,
+                                peso: e==='NC' ? 2 : 1  // NC es más bloqueante que P
+                            });
+                        }
+                    });
+                });
+            });
+            // Ordenar: NC primero, luego P
+            lista.sort((a,b)=>b.peso-a.peso);
+            return lista.slice(0, maxN||3);
+        }
+
+        // Renderiza HTML del bloque de criterios para informes impresos
+        function htmlCriteriosBloque(criterios, compact){
+            if(!criterios.length) return '';
+            const icon = compact ? '' : '🏷️ ';
+            let h = '<div style="margin-top:'+(compact?'8px':'14px')+';padding-top:'+(compact?'6px':'10px')+';border-top:1px solid #e5e7eb">';
+            h += '<div style="font-size:'+(compact?'9px':'10px')+';font-weight:700;color:#1a5f4a;margin-bottom:4px">'+icon+'CRITERIOS TRABAJADOS</div>';
+            h += '<div style="display:flex;flex-wrap:wrap;gap:4px">';
+            criterios.forEach(cr=>{
+                const bg = cr.pct>=60?'#dcfce7':cr.pct>=30?'#fef9c3':'#fee2e2';
+                const color = cr.pct>=60?'#166534':cr.pct>=30?'#92400e':'#991b1b';
+                const icon2 = cr.pct>=60?'✅':cr.pct>=30?'🔄':'⚠️';
+                h += '<span style="background:'+bg+';color:'+color+';font-size:'+(compact?'8px':'9px')+';font-weight:700;padding:2px 8px;border-radius:10px;font-family:monospace;white-space:nowrap">';
+                h += icon2+' '+cr.label+' <span style="font-weight:400">('+cr.pct+'% C)</span>';
+                h += '</span>';
+            });
+            h += '</div></div>';
+            return h;
+        }
+
+        // Renderiza HTML del bloque de bloqueantes para informes impresos
+        function htmlBloqueantesBloque(bloqueantes, compact){
+            if(!bloqueantes.length) return '';
+            let h = '<div style="margin-top:'+(compact?'8px':'12px')+';padding-top:'+(compact?'6px':'8px')+';border-top:1px solid #e5e7eb">';
+            h += '<div style="font-size:'+(compact?'9px':'10px')+';font-weight:700;color:#ef4444;margin-bottom:4px">🔴 INDICADORES A REFORZAR (top '+bloqueantes.length+')</div>';
+            bloqueantes.forEach(b=>{
+                const badge = b.estado==='NC'
+                    ? '<span style="background:#fee2e2;color:#991b1b;font-size:8px;font-weight:700;padding:1px 5px;border-radius:8px;margin-right:4px">NC</span>'
+                    : '<span style="background:#dbeafe;color:#1e40af;font-size:8px;font-weight:700;padding:1px 5px;border-radius:8px;margin-right:4px">P</span>';
+                h += '<div style="font-size:'+(compact?'9px':'10px')+';padding:2px 0 2px '+(compact?'10px':'12px')+';border-bottom:1px solid #f9fafb">'+badge+'<span style="color:#555;font-size:8px">'+b.programa+' '+b.objetivo+':</span> '+b.indicador+'</div>';
+            });
+            h += '</div>';
+            return h;
         }
 
         // Aplica la nota sugerida a todos los meses vacíos del criterio
@@ -1447,11 +1678,26 @@
         }
 
 
-        function setEval(pId,oi,ii,e){const a=alumnos[alumnoActual],k=pId+'_'+oi+'_'+ii+'_T'+evalTrim;a.evaluaciones=a.evaluaciones||{};if(a.evaluaciones[k]===e){db.ref('gestorpe/alumnos/'+alumnoActual+'/evaluaciones/'+k).remove();delete a.evaluaciones[k];}else{db.ref('gestorpe/alumnos/'+alumnoActual+'/evaluaciones/'+k).set(e);a.evaluaciones[k]=e;}renderEvalList();setTimeout(renderEvalCharts,100);}
-        function pasarNoConseguidos(){if(evalTrim>=3)return;const a=alumnos[alumnoActual];if(!a.programas)return;const siguienteTrim=evalTrim+1,updates={};let count=0;Object.keys(a.programas).forEach(pId=>{const p=a.programas[pId];(p.objetivos||[]).forEach((obj,oi)=>{if(obj.trimestre!==evalTrim)return;(obj.indicadores||[]).forEach((_,ii)=>{const k=pId+'_'+oi+'_'+ii+'_T'+evalTrim,e=a.evaluaciones?a.evaluaciones[k]:'';if(e!=='C'){const pasadoKey=pId+'_'+oi+'_'+ii;updates['gestorpe/alumnos/'+alumnoActual+'/pasados/'+pasadoKey]=siguienteTrim;count++;}});});});const pasadosActuales=getIndicadoresPasados(a,evalTrim);pasadosActuales.forEach(item=>{const k=item.pId+'_'+item.oIdx+'_'+item.iIdx+'_T'+evalTrim,e=a.evaluaciones?a.evaluaciones[k]:'';if(e!=='C'){updates['gestorpe/alumnos/'+alumnoActual+'/pasados/'+item.key]=siguienteTrim;count++;}});if(count===0){toast('¡Todo conseguido!','success');return;}db.ref().update(updates).then(()=>{const nueva=generarProgramacion(alumnos[alumnoActual]);return db.ref('gestorpe/alumnos/'+alumnoActual+'/programacion').set(nueva);}).then(()=>{toast(count+' → T'+siguienteTrim,'success');evalTrim=siguienteTrim;renderEval();renderProg();});}
+        function setEval(pId,oi,ii,e){
+            const a=alumnos[alumnoActual],k=pId+'_'+oi+'_'+ii+'_T'+evalTrim;
+            a.evaluaciones=a.evaluaciones||{};
+            // NI = no iniciado = borrar el valor (null)
+            if(e==='NI' || (a.evaluaciones[k]===e && e!=='NI')){
+                db.ref('gestorpe/alumnos/'+alumnoActual+'/evaluaciones/'+k).remove();
+                delete a.evaluaciones[k];
+            } else {
+                db.ref('gestorpe/alumnos/'+alumnoActual+'/evaluaciones/'+k).set(e);
+                a.evaluaciones[k]=e;
+            }
+            renderEvalList();setTimeout(renderEvalCharts,100);
+        }
+        function pasarNoConseguidos(){if(evalTrim>=3)return;const a=alumnos[alumnoActual];if(!a.programas)return;const siguienteTrim=evalTrim+1,updates={};let count=0;Object.keys(a.programas).forEach(pId=>{const p=a.programas[pId];(p.objetivos||[]).forEach((obj,oi)=>{if(obj.trimestre!==evalTrim)return;(obj.indicadores||[]).forEach((_,ii)=>{const k=pId+'_'+oi+'_'+ii+'_T'+evalTrim,e=a.evaluaciones?a.evaluaciones[k]:null;// Solo pasar P y NC (trabajados pero no conseguidos); NI (null) se queda
+            if(e==='P'||e==='NC'){const pasadoKey=pId+'_'+oi+'_'+ii;updates['gestorpe/alumnos/'+alumnoActual+'/pasados/'+pasadoKey]=siguienteTrim;count++;}});});});const pasadosActuales=getIndicadoresPasados(a,evalTrim);pasadosActuales.forEach(item=>{const k=item.pId+'_'+item.oIdx+'_'+item.iIdx+'_T'+evalTrim,e=a.evaluaciones?a.evaluaciones[k]:null;if(e==='P'||e==='NC'){updates['gestorpe/alumnos/'+alumnoActual+'/pasados/'+item.key]=siguienteTrim;count++;}});if(count===0){toast('¡Todo conseguido o sin evaluar!','success');return;}db.ref().update(updates).then(()=>{const nueva=generarProgramacion(alumnos[alumnoActual]);return db.ref('gestorpe/alumnos/'+alumnoActual+'/programacion').set(nueva);}).then(()=>{toast(count+' (P/NC) → T'+siguienteTrim,'success');evalTrim=siguienteTrim;renderEval();renderProg();});}
 
         // RESUMEN
-        function renderAsis(){const a=alumnos[alumnoActual],st=calcStats(a);let totalC=0,totalP=0,totalN=0;if(a.evaluaciones){Object.keys(a.evaluaciones).forEach(k=>{const e=a.evaluaciones[k];if(e==='C')totalC++;else if(e==='P')totalP++;else if(e==='N')totalN++;});}document.getElementById('tabAsistencia').innerHTML='<div class="card"><div class="card-header"><h3 class="card-title">📈 Resumen</h3></div><div class="stats-box"><div class="stat-item"><div class="stat-num" style="color:var(--danger)">'+st.ausencias+'</div><div class="stat-label">Ausencias</div></div><div class="stat-item"><div class="stat-num" style="color:var(--success)">'+st.conseguidos+'</div><div class="stat-label">Sesiones OK</div></div><div class="stat-item"><div class="stat-num" style="color:var(--warning)">'+st.repetir+'</div><div class="stat-label">Repetir</div></div></div><div class="stats-box"><div class="stat-item"><div class="stat-num" style="color:var(--success)">'+totalC+'</div><div class="stat-label">Conseguidos</div></div><div class="stat-item"><div class="stat-num" style="color:var(--proceso)">'+totalP+'</div><div class="stat-label">En proceso</div></div><div class="stat-item"><div class="stat-num" style="color:gray">'+totalN+'</div><div class="stat-label">No iniciados</div></div></div><div class="chart-container"><canvas id="chartAusTrim"></canvas></div><div class="chart-container" style="margin-top:12px"><canvas id="chartCompTrim"></canvas></div><div class="chart-container" style="margin-top:12px"><canvas id="chartRadar"></canvas></div></div>';setTimeout(renderAsisCharts,100);}
+        function renderAsis(){const a=alumnos[alumnoActual],st=calcStats(a);let totalC=0,totalP=0,totalNC=0,totalNI=0;if(a.evaluaciones){Object.keys(a.evaluaciones).forEach(k=>{const e=a.evaluaciones[k];if(e==='C')totalC++;else if(e==='P')totalP++;else if(e==='NC')totalNC++;});}// NI = sin clave en evaluaciones, contar total indicadores - evaluados
+        if(a.programas){Object.keys(a.programas).forEach(pId=>{const p=a.programas[pId];(p.objetivos||[]).forEach((obj,oi)=>{(obj.indicadores||[]).forEach((_,ii)=>{[1,2,3].forEach(t=>{const k=pId+'_'+oi+'_'+ii+'_T'+t;if(!a.evaluaciones||!a.evaluaciones[k])totalNI++;});});});});}
+        document.getElementById('tabAsistencia').innerHTML='<div class="card"><div class="card-header"><h3 class="card-title">📈 Resumen</h3></div><div class="stats-box"><div class="stat-item"><div class="stat-num" style="color:var(--danger)">'+st.ausencias+'</div><div class="stat-label">Ausencias</div></div><div class="stat-item"><div class="stat-num" style="color:var(--success)">'+st.conseguidos+'</div><div class="stat-label">Sesiones OK</div></div><div class="stat-item"><div class="stat-num" style="color:var(--warning)">'+st.repetir+'</div><div class="stat-label">Repetir</div></div></div><div class="stats-box"><div class="stat-item"><div class="stat-num" style="color:var(--success)">'+totalC+'</div><div class="stat-label">Conseguidos</div></div><div class="stat-item"><div class="stat-num" style="color:var(--proceso)">'+totalP+'</div><div class="stat-label">En proceso</div></div><div class="stat-item"><div class="stat-num" style="color:var(--danger)">'+totalNC+'</div><div class="stat-label">No conseg.</div></div><div class="stat-item"><div class="stat-num" style="color:#94a3b8">'+totalNI+'</div><div class="stat-label">No iniciados</div></div></div><div class="chart-container"><canvas id="chartAusTrim"></canvas></div><div class="chart-container" style="margin-top:12px"><canvas id="chartCompTrim"></canvas></div><div class="chart-container" style="margin-top:12px"><canvas id="chartRadar"></canvas></div></div>';setTimeout(renderAsisCharts,100);}
         function renderAsisCharts(){
             const a=alumnos[alumnoActual],st=calcStats(a);
             // Ausencias por trimestre
@@ -1460,14 +1706,14 @@
 
             if(!a.programas) return;
 
-            // Comparativa trimestres: C/P/N por cada trimestre
-            const trimData={1:{c:0,p:0,n:0,total:0},2:{c:0,p:0,n:0,total:0},3:{c:0,p:0,n:0,total:0}};
+            // Comparativa trimestres: C/P/NC/NI por cada trimestre
+            const trimData={1:{c:0,p:0,nc:0,ni:0,total:0},2:{c:0,p:0,nc:0,ni:0,total:0},3:{c:0,p:0,nc:0,ni:0,total:0}};
             Object.keys(a.programas).forEach(pId=>{const pr=a.programas[pId];
                 (pr.objetivos||[]).forEach((obj,oi)=>{const t=obj.trimestre||1;
                     (obj.indicadores||[]).forEach((_,ii)=>{
                         const k=pId+'_'+oi+'_'+ii+'_T'+t,e=a.evaluaciones?a.evaluaciones[k]:null;
                         trimData[t].total++;
-                        if(e==='C')trimData[t].c++;else if(e==='P')trimData[t].p++;else trimData[t].n++;
+                        if(e==='C')trimData[t].c++;else if(e==='P')trimData[t].p++;else if(e==='NC')trimData[t].nc++;else trimData[t].ni++;
                     });
                 });
             });
@@ -1475,11 +1721,13 @@
             if(ctx2){if(charts.compTrim)charts.compTrim.destroy();
                 const pctC=[1,2,3].map(t=>trimData[t].total?Math.round(trimData[t].c/trimData[t].total*100):0);
                 const pctP=[1,2,3].map(t=>trimData[t].total?Math.round(trimData[t].p/trimData[t].total*100):0);
-                const pctN=[1,2,3].map(t=>trimData[t].total?Math.round(trimData[t].n/trimData[t].total*100):0);
+                const pctNC=[1,2,3].map(t=>trimData[t].total?Math.round(trimData[t].nc/trimData[t].total*100):0);
+                const pctNI=[1,2,3].map(t=>trimData[t].total?Math.round(trimData[t].ni/trimData[t].total*100):0);
                 charts.compTrim=new Chart(ctx2,{type:'bar',data:{labels:['Trimestre 1','Trimestre 2','Trimestre 3'],datasets:[
                     {label:'Conseguido %',data:pctC,backgroundColor:'#22c55e'},
                     {label:'En proceso %',data:pctP,backgroundColor:'#3b82f6'},
-                    {label:'No iniciado %',data:pctN,backgroundColor:'#d1d5db'}
+                    {label:'No conseguido %',data:pctNC,backgroundColor:'#ef4444'},
+                    {label:'No iniciado %',data:pctNI,backgroundColor:'#d1d5db'}
                 ]},options:{responsive:true,plugins:{title:{display:true,text:'Comparativa por trimestres (%)'},legend:{position:'bottom'}},scales:{x:{stacked:true},y:{stacked:true,max:100,ticks:{callback:v=>v+'%'}}}}});
             }
 
@@ -1869,19 +2117,42 @@
                 }
             };
             abrirModal('modalInforme');}
-        function generarInforme(){const trim=parseInt(document.getElementById('informeTrim').value),a=alumnos[alumnoActual],st=calcStats(a);const conseguidos=[],proceso=[],noIniciados=[];if(a.programas){Object.keys(a.programas).forEach(pId=>{const p=a.programas[pId],info=AREAS[p.tipo]||{nombre:p.tipo};(p.objetivos||[]).forEach((obj,oi)=>{(obj.indicadores||[]).forEach((ind,ii)=>{const k=pId+'_'+oi+'_'+ii+'_T'+trim,e=a.evaluaciones?a.evaluaciones[k]:null,item={programa:info.nombre,objetivo:'O'+obj.numero,indicador:ind};if(e==='C')conseguidos.push(item);else if(e==='P')proceso.push(item);else noIniciados.push(item);});});});}informeData={alumno:a,trim:trim,conseguidos:conseguidos,proceso:proceso,noIniciados:noIniciados,ausencias:st.porTrim[trim]?st.porTrim[trim].aus:0};const total=conseguidos.length+proceso.length+noIniciados.length,porcC=total?Math.round(conseguidos.length/total*100):0;document.getElementById('informePreview').innerHTML='<h4>T'+trim+' - '+a.siglas+'</h4><p>✅ '+conseguidos.length+' ('+porcC+'%) | 🔄 '+proceso.length+' | ⭕ '+noIniciados.length+' | ❌ '+informeData.ausencias+' aus.</p>';document.getElementById('informePreview').style.display='block';document.getElementById('btnImprimirInforme').style.display='inline-flex';toast('Generado','success');}
+        function generarInforme(){
+            const trim=parseInt(document.getElementById('informeTrim').value),a=alumnos[alumnoActual],st=calcStats(a);
+            const conseguidos=[],proceso=[],noConseguidos=[],noIniciados=[];
+            if(a.programas){Object.keys(a.programas).forEach(pId=>{const p=a.programas[pId],info=AREAS[p.tipo]||{nombre:p.tipo};(p.objetivos||[]).forEach((obj,oi)=>{(obj.indicadores||[]).forEach((ind,ii)=>{const k=pId+'_'+oi+'_'+ii+'_T'+trim,e=a.evaluaciones?a.evaluaciones[k]:null,item={programa:info.nombre,objetivo:'O'+obj.numero,indicador:ind};if(e==='C')conseguidos.push(item);else if(e==='P')proceso.push(item);else if(e==='NC')noConseguidos.push(item);else noIniciados.push(item);});});});}
+            const criterios = getCriteriosResumen(a, trim);
+            const bloqueantes = getIndicadoresBloqueantes(a, trim, 3);
+            informeData={alumno:a,trim:trim,conseguidos,proceso,noConseguidos,noIniciados,criterios,bloqueantes,ausencias:st.porTrim[trim]?st.porTrim[trim].aus:0};
+            const total=conseguidos.length+proceso.length+noConseguidos.length+noIniciados.length,porcC=total?Math.round(conseguidos.length/total*100):0;
+            let prevHtml='<h4 style="color:#1a5f4a;margin-bottom:6px">T'+trim+' — '+a.siglas+'</h4>';
+            prevHtml+='<p style="margin-bottom:8px">✅ '+conseguidos.length+' ('+porcC+'%) &nbsp;|&nbsp; 🔄 '+proceso.length+' &nbsp;|&nbsp; ✗ '+noConseguidos.length+' NC &nbsp;|&nbsp; ⭕ '+noIniciados.length+' NI &nbsp;|&nbsp; ❌ '+informeData.ausencias+' aus.</p>';
+            if(criterios.length){
+                prevHtml+='<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px">';
+                criterios.forEach(cr=>{const bg=cr.pct>=60?'#dcfce7':cr.pct>=30?'#fef9c3':'#fee2e2';const col=cr.pct>=60?'#166534':cr.pct>=30?'#92400e':'#991b1b';const ic=cr.pct>=60?'✅':cr.pct>=30?'🔄':'⚠️';prevHtml+='<span style="background:'+bg+';color:'+col+';font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:10px;font-family:monospace">'+ic+' '+cr.label+' ('+cr.pct+'%)</span>';});
+                prevHtml+='</div>';
+            }
+            if(bloqueantes.length){
+                prevHtml+='<div style="margin-top:8px;font-size:.72rem;color:#ef4444;font-weight:700">🔴 A reforzar:</div>';
+                bloqueantes.forEach(b=>{const badge=b.estado==='NC'?'<b style="color:#ef4444">[NC]</b>':'<b style="color:#3b82f6">[P]</b>';prevHtml+='<div style="font-size:.7rem;padding:2px 0 2px 10px;color:#555">'+badge+' '+b.programa+' '+b.objetivo+': '+b.indicador+'</div>';});
+            }
+            document.getElementById('informePreview').innerHTML=prevHtml;
+            document.getElementById('informePreview').style.display='block';
+            document.getElementById('btnImprimirInforme').style.display='inline-flex';
+            toast('Generado','success');
+        }
         function abrirChatGPTInforme(tipo){
             const trim=parseInt(document.getElementById('informeTrim').value);
             const periodo=document.getElementById('informePeriodo').value;
             const a=alumnos[alumnoActual],st=calcStats(a);
             
             // Recopilar datos
-            const conseguidos=[],proceso=[],noIniciados=[];
-            if(a.programas){Object.keys(a.programas).forEach(pId=>{const p=a.programas[pId],info=AREAS[p.tipo]||{nombre:p.tipo};(p.objetivos||[]).forEach((obj,oi)=>{(obj.indicadores||[]).forEach((ind,ii)=>{const k=pId+'_'+oi+'_'+ii+'_T'+trim,e=a.evaluaciones?a.evaluaciones[k]:null,item=info.nombre+': '+ind;if(e==='C')conseguidos.push(item);else if(e==='P')proceso.push(item);else noIniciados.push(item);});});});}
+            const conseguidos=[],proceso=[],noConseguidos=[],noIniciados=[];
+            if(a.programas){Object.keys(a.programas).forEach(pId=>{const p=a.programas[pId],info=AREAS[p.tipo]||{nombre:p.tipo};(p.objetivos||[]).forEach((obj,oi)=>{(obj.indicadores||[]).forEach((ind,ii)=>{const k=pId+'_'+oi+'_'+ii+'_T'+trim,e=a.evaluaciones?a.evaluaciones[k]:null,item=info.nombre+': '+ind;if(e==='C')conseguidos.push(item);else if(e==='P')proceso.push(item);else if(e==='NC')noConseguidos.push(item);else noIniciados.push(item);});});});}
             
             let prompt='';
             const periodoTexto=periodo==='mensual'?'MES: '+MESES[document.getElementById('informeMes').value].nombre:'TRIMESTRE: '+trim;
-            const datosBase='ALUMNO: '+a.siglas+' ('+a.curso+')\n'+periodoTexto+'\n\nCONSEGUIDOS ('+conseguidos.length+'):\n'+(conseguidos.slice(0,10).join('\n')||'Ninguno')+'\n\nEN PROCESO ('+proceso.length+'):\n'+(proceso.slice(0,10).join('\n')||'Ninguno')+'\n\nAUSENCIAS: '+(st.porTrim[trim]?st.porTrim[trim].aus:0);
+            const datosBase='ALUMNO: '+a.siglas+' ('+a.curso+')\n'+periodoTexto+'\n\nCONSEGUIDOS ('+conseguidos.length+'):\n'+(conseguidos.slice(0,10).join('\n')||'Ninguno')+'\n\nEN PROCESO ('+proceso.length+'):\n'+(proceso.slice(0,10).join('\n')||'Ninguno')+'\n\nNO CONSEGUIDOS ('+noConseguidos.length+'):\n'+(noConseguidos.slice(0,10).join('\n')||'Ninguno')+'\n\nAUSENCIAS: '+(st.porTrim[trim]?st.porTrim[trim].aus:0);
             
             if(tipo==='pt'){
                 prompt='Valoración PT para informe.\n\n'+datosBase+'\n\nEscribe 2-3 párrafos profesionales para el informe de PT.';
@@ -1935,8 +2206,23 @@
                     califHtml += '</tbody></table>';
                 }
             }
+            // Criterios y bloqueantes
+            const criteriosHtml = htmlCriteriosBloque(informeData.criterios||[], false);
+            const bloqueantesHtml = htmlBloqueantesBloque(informeData.bloqueantes||[], false);
+            const ncHtml = informeData.noConseguidos && informeData.noConseguidos.length
+                ? '<h2 style="margin-top:20px;color:#ef4444">✗ No Conseguidos ('+informeData.noConseguidos.length+')</h2>'+(informeData.noConseguidos.map(x=>'<p class="indicador" style="color:#991b1b">• '+x.programa+' '+x.objetivo+': '+x.indicador+'</p>').join(''))
+                : '';
             const win = window.open('','_blank');
-            win.document.write('<!DOCTYPE html><html><head><title>Informe</title><style>body{font-family:Arial;padding:30px;max-width:800px;margin:0 auto}h1{color:#1a5f4a}h2{margin-top:20px}.indicador{margin:5px 0 5px 20px}</style></head><body><h1>INFORME T'+informeData.trim+' - '+a.siglas+'</h1><p>Curso: '+a.curso+' | Fecha: '+new Date().toLocaleDateString('es-ES')+'</p><h2>✅ Conseguidos ('+informeData.conseguidos.length+')</h2>'+(informeData.conseguidos.map(x=>'<p class="indicador">• '+x.programa+': '+x.indicador+'</p>').join('')||'<p>Ninguno</p>')+'<h2>🔄 En Proceso ('+informeData.proceso.length+')</h2>'+(informeData.proceso.map(x=>'<p class="indicador">• '+x.programa+': '+x.indicador+'</p>').join('')||'<p>Ninguno</p>')+'<h2>⭕ No Iniciados ('+informeData.noIniciados.length+')</h2>'+(informeData.noIniciados.map(x=>'<p class="indicador">• '+x.programa+': '+x.indicador+'</p>').join('')||'<p>Ninguno</p>')+califHtml+'<p style="margin-top:40px">Fdo: _______________</p></body></html>');
+            win.document.write('<!DOCTYPE html><html><head><title>Informe</title><style>body{font-family:Arial;padding:30px;max-width:800px;margin:0 auto}h1{color:#1a5f4a}h2{margin-top:20px}.indicador{margin:5px 0 5px 20px}</style></head><body>'
+                +'<h1>INFORME T'+informeData.trim+' — '+a.siglas+'</h1>'
+                +'<p>Curso: '+a.curso+' | Fecha: '+new Date().toLocaleDateString('es-ES')+'</p>'
+                +criteriosHtml
+                +bloqueantesHtml
+                +'<h2>✅ Conseguidos ('+informeData.conseguidos.length+')</h2>'+(informeData.conseguidos.map(x=>'<p class="indicador">• '+x.programa+' '+x.objetivo+': '+x.indicador+'</p>').join('')||'<p>Ninguno</p>')
+                +'<h2>🔄 En Proceso ('+informeData.proceso.length+')</h2>'+(informeData.proceso.map(x=>'<p class="indicador">• '+x.programa+' '+x.objetivo+': '+x.indicador+'</p>').join('')||'<p>Ninguno</p>')
+                +ncHtml
+                +califHtml
+                +'<p style="margin-top:40px">Fdo: _______________</p></body></html>');
             win.document.close();
             setTimeout(()=>{ win.print(); }, 300);
         }
@@ -1988,6 +2274,14 @@ body{font-family:Arial,sans-serif;font-size:10px;color:#222}
 .area-tag{font-size:9px;color:#888;margin-right:4px}
 .sin-datos{font-style:italic;color:#aaa;font-size:10px;padding:6px 0}
 .firma{margin-top:20px;font-size:10px;color:#aaa}
+.criterios-bloque{margin-top:8px;padding-top:6px;border-top:1px solid #e5e7eb}
+.criterios-titulo{font-size:9px;font-weight:700;color:#1a5f4a;margin-bottom:4px}
+.criterio-chip{display:inline-block;font-size:8px;font-weight:700;padding:2px 7px;border-radius:10px;font-family:monospace;white-space:nowrap;margin:2px 2px}
+.bloqueantes-bloque{margin-top:8px;padding-top:6px;border-top:1px solid #e5e7eb}
+.bloqueantes-titulo{font-size:9px;font-weight:700;color:#ef4444;margin-bottom:4px}
+.bloqueante-item{font-size:9px;padding:2px 0 2px 10px;border-bottom:1px solid #f9fafb;color:#333}
+.badge-nc{background:#fee2e2;color:#991b1b;font-size:8px;font-weight:700;padding:1px 5px;border-radius:8px;margin-right:3px}
+.badge-p{background:#dbeafe;color:#1e40af;font-size:8px;font-weight:700;padding:1px 5px;border-radius:8px;margin-right:3px}
 
 @media print{
     .portada{height:100vh;page-break-after:always}
@@ -2016,7 +2310,7 @@ body{font-family:Arial,sans-serif;font-size:10px;color:#222}
             ids.forEach(id => {
                 const a = alumnos[id];
                 const st = calcStats(a);
-                const conseguidos = [], proceso = [], noIniciados = [];
+                const conseguidos = [], proceso = [], noConseguidos = [], noIniciados = [];
 
                 if (a.programas) {
                     Object.keys(a.programas).forEach(pId => {
@@ -2029,15 +2323,18 @@ body{font-family:Arial,sans-serif;font-size:10px;color:#222}
                                 const item = { programa: info.nombre, objetivo: 'O' + obj.numero, indicador: ind };
                                 if (e === 'C') conseguidos.push(item);
                                 else if (e === 'P') proceso.push(item);
+                                else if (e === 'NC') noConseguidos.push(item);
                                 else noIniciados.push(item);
                             });
                         });
                     });
                 }
 
-                const total = conseguidos.length + proceso.length + noIniciados.length;
+                const total = conseguidos.length + proceso.length + noConseguidos.length + noIniciados.length;
                 const porcC = total ? Math.round(conseguidos.length / total * 100) : 0;
                 const ausencias = st.porTrim && st.porTrim[trim] ? st.porTrim[trim].aus : 0;
+                const criterios = getCriteriosResumen(a, trim);
+                const bloqueantes = getIndicadoresBloqueantes(a, trim, 3);
 
                 html += `<div class="alumno-bloque">
                     <div class="alumno-cabecera">
@@ -2047,12 +2344,19 @@ body{font-family:Arial,sans-serif;font-size:10px;color:#222}
                     <div class="resumen-bar">
                         <span class="resumen-chip chip-c">✅ Conseguido: ${conseguidos.length} (${porcC}%)</span>
                         <span class="resumen-chip chip-p">🔄 En Proceso: ${proceso.length}</span>
-                        <span class="resumen-chip chip-n">⭕ No Iniciado: ${noIniciados.length}</span>
+                        <span class="resumen-chip" style="background:#fee2e2;color:#991b1b">✗ No conseg.: ${noConseguidos.length}</span>
+                        <span class="resumen-chip chip-n">⭕ No inic.: ${noIniciados.length}</span>
                         <span class="resumen-chip chip-aus">❌ Ausencias: ${ausencias}</span>
                     </div>`;
 
+                // Criterios trabajados
+                html += htmlCriteriosBloque(criterios, true);
+
+                // Top-3 bloqueantes
+                html += htmlBloqueantesBloque(bloqueantes, true);
+
                 // Conseguidos
-                html += `<div class="seccion-titulo">✅ CONSEGUIDOS (${conseguidos.length})</div>`;
+                html += `<div class="seccion-titulo" style="margin-top:10px">✅ CONSEGUIDOS (${conseguidos.length})</div>`;
                 if (conseguidos.length) {
                     html += conseguidos.map(x => `<div class="indicador-item"><span class="area-tag">${x.programa} ${x.objetivo}:</span> ${x.indicador}</div>`).join('');
                 } else {
@@ -2065,14 +2369,6 @@ body{font-family:Arial,sans-serif;font-size:10px;color:#222}
                     html += proceso.map(x => `<div class="indicador-item"><span class="area-tag">${x.programa} ${x.objetivo}:</span> ${x.indicador}</div>`).join('');
                 } else {
                     html += '<div class="sin-datos">Ninguno registrado</div>';
-                }
-
-                // No iniciados
-                html += `<div class="seccion-titulo" style="margin-top:10px">⭕ NO INICIADOS / SIN REGISTRAR (${noIniciados.length})</div>`;
-                if (noIniciados.length) {
-                    html += noIniciados.map(x => `<div class="indicador-item"><span class="area-tag">${x.programa} ${x.objetivo}:</span> ${x.indicador}</div>`).join('');
-                } else {
-                    html += '<div class="sin-datos">Ninguno</div>';
                 }
 
                 html += `<div class="firma">Fdo: _____________________________ &nbsp;&nbsp;&nbsp; PT: _____________________________</div>
