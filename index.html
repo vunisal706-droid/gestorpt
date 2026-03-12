@@ -2170,18 +2170,57 @@ body{font-family:Arial,sans-serif;font-size:10px;color:#222}
                 });
             });
 
-            const sesionesTotales = MESES.filter(m => m.trim === trimSel).reduce((s, m) => s + m.semanas, 0);
-            return { grupos, trimSel, sesionesTotales };
+            // Calcular sesiones reales por ciclo usando diasSesion de los alumnos
+            // Para cada ciclo: unión de días de sesión de sus alumnos × semanas de cada mes
+            const DIAS_NOMBRE = ['Lunes','Martes','Miércoles','Jueves','Viernes'];
+            const mesesTrim = MESES.map((m,i)=>({...m,idx:i})).filter(m=>m.trim===trimSel);
+
+            // Añadir al grupo: días únicos de sesión y temporalización mensual
+            Object.keys(grupos).forEach(ciclo => {
+                const g = grupos[ciclo];
+                // Recoger todos los diasSesion de los alumnos de este ciclo
+                const diasSet = new Set();
+                ids.forEach(id => {
+                    if (cursoACiclo(alumnos[id]) !== ciclo) return;
+                    if (cicloFiltro !== 'todos' && ciclo !== cicloFiltro) return;
+                    (alumnos[id].diasSesion || [1,3,4]).forEach(d => diasSet.add(d));
+                });
+                const diasOrdenados = [...diasSet].sort();
+                const diasNombres = diasOrdenados.map(d => DIAS_NOMBRE[d] || d);
+
+                // Calcular sesiones por mes y total
+                const porMes = mesesTrim.map(m => ({
+                    nombre: m.nombre,
+                    semanas: m.semanas,
+                    sesiones: m.semanas * diasOrdenados.length
+                }));
+                const totalSesiones = porMes.reduce((s,m) => s + m.sesiones, 0);
+
+                g.dias = diasNombres;
+                g.porMes = porMes;
+                g.totalSesiones = totalSesiones;
+            });
+
+            const sesionesTotales = mesesTrim.reduce((s,m) => s + m.semanas, 0); // semanas, para compatibilidad
+            return { grupos, trimSel, sesionesTotales, mesesTrim };
         }
 
         function previsualizarSDA() {
-            const { grupos, trimSel, sesionesTotales } = _recopilarDatosSDA();
+            const { grupos, trimSel } = _recopilarDatosSDA();
             if (!Object.keys(grupos).length) { toast('Sin alumnos con ese filtro', 'error'); return; }
             const CICLOS_N = { infantil: 'Infantil', ciclo1: '1º Ciclo', ciclo2: '2º Ciclo', ciclo3: '3º Ciclo' };
-            let txt = 'TRIMESTRE ' + trimSel + ' — ' + sesionesTotales + ' semanas aprox.\n\n';
+            const TRIMESTRES_N = { 1: 'Trimestre 1', 2: 'Trimestre 2', 3: 'Trimestre 3' };
+            let txt = '📅 ' + TRIMESTRES_N[trimSel].toUpperCase() + '\n\n';
             Object.keys(grupos).forEach(ciclo => {
                 const g = grupos[ciclo];
                 txt += '═══ ' + (CICLOS_N[ciclo] || ciclo).toUpperCase() + ' (' + g.alumnos.join(', ') + ') ═══\n';
+                if (g.dias && g.porMes) {
+                    txt += '📆 Sesiones: ' + g.dias.join(', ') + '\n';
+                    g.porMes.forEach(m => {
+                        txt += '   · ' + m.nombre + ': ' + m.semanas + ' sem. → ' + m.sesiones + ' sesiones\n';
+                    });
+                    txt += '   TOTAL T' + trimSel + ': ' + g.totalSesiones + ' sesiones\n';
+                }
                 Object.keys(g.programas).forEach(area => {
                     const pa = g.programas[area];
                     txt += '\n▸ ' + area + '\n';
@@ -2238,6 +2277,16 @@ body{font-family:Arial,sans-serif;font-size:10px;color:#222}
                     }
                 });
 
+                // Temporalización real del grupo
+                if (g.dias && g.porMes) {
+                    bloquesTexto += 'Días de sesión PT: ' + g.dias.join(', ') + '\n';
+                    bloquesTexto += 'Temporalización mensual:\n';
+                    g.porMes.forEach(m => {
+                        bloquesTexto += '  · ' + m.nombre + ': ' + m.semanas + ' semanas → ' + m.sesiones + ' sesiones PT\n';
+                    });
+                    bloquesTexto += 'TOTAL ' + TRIMESTRES_N[trimSel] + ': ' + g.totalSesiones + ' sesiones PT de pequeño grupo\n';
+                }
+
                 Object.keys(g.programas).forEach(area => {
                     const pa = g.programas[area];
                     areasPrincipales.add(area);
@@ -2263,7 +2312,7 @@ body{font-family:Arial,sans-serif;font-size:10px;color:#222}
 INSTRUCCIÓN PARA GEMINI — GENERADOR DE SDA (PT)
 Centro: CEIP Capitulaciones de Santa Fe (Santa Fe, Granada, Andalucía)
 Especialidad docente: Pedagogía Terapéutica (PT)
-Trimestre: ${TRIMESTRES_N[trimSel]} — aprox. ${sesionesTotales} semanas de sesiones PT
+Trimestre: ${TRIMESTRES_N[trimSel]}
 Áreas de los programas específicos: ${areasList}
 Cursos implicados: ${cursosList}
 ${contextoLinea}
@@ -2300,7 +2349,7 @@ Sigue la Instrucción de 8 de marzo de 2017. Incluye estos apartados:
 A) CURSO Y TÍTULO del Programa específico
 B) ALUMNADO DESTINATARIO: usa las siglas exactas del bloque de datos
 C) JUSTIFICACIÓN: argumenta en clave competencial y de Competencias Clave
-D) TEMPORALIZACIÓN: ${sesionesTotales} sesiones de 60 minutos (${TRIMESTRES_N[trimSel]}). Indica en qué sesiones se realiza cada actividad.
+D) TEMPORALIZACIÓN: usa los datos reales de sesiones por mes del bloque de datos anterior. Distribuye las actividades mes a mes respetando el número exacto de sesiones de cada mes.
 E) OBJETIVOS: usa LITERALMENTE los objetivos y bloques del bloque de datos anterior (no los reescribas, cópialos exactos con su numeración)
 F) INDICADORES DE EVALUACIÓN: vinculados a cada objetivo. Usa los indicadores del bloque de datos.
 G) CONTENIDOS: vinculados a los objetivos
@@ -2332,16 +2381,19 @@ Para las competencias específicas, descriptores operativos y saberes básicos, 
 - Alumnado: ${[...Object.values(grupos)].flatMap(g => g.alumnos).join(', ')}
 - TÍTULO de la SdA: créalo tú, motivador, coherente con el área, los objetivos y el contexto indicado abajo
 - JUSTIFICACIÓN (máximo 1000 caracteres): conecta la temática elegida, el contexto, las competencias específicas del área y los ODS pertinentes
-- TEMPORALIZACIÓN: mínimo 20 sesiones. Indícalas con fecha/semana orientativa dentro del ${TRIMESTRES_N[trimSel]}
+- TEMPORALIZACIÓN: usa los datos reales de sesiones PT del bloque de datos (días de sesión, sesiones por mes, total del trimestre). Distribuye los tres momentos (Situación de partida, Desarrollo, Situación final) respetando esa temporalización real mes a mes. La duración total es la que resulta de los datos — no impongas un mínimo de sesiones si los datos reales son inferiores.
 - Materia/Área: ${areasList}
 
 ──── B) CONCRECIÓN CURRICULAR ────
 
-Selecciona de la Orden 30 de mayo de 2023:
-- Competencias específicas del área (con su número)
-- Descriptores operativos de competencias clave asociados (solo nomenclatura: ej. CCL1, STEM2…)
-- Criterios de evaluación LOMLOE del área (usa los del bloque de datos cuando coincidan, añade los que necesites)
-- Saberes básicos implicados
+Presenta este apartado como una TABLA DE DOBLE ENTRADA siguiendo el modelo oficial de la Consejería de Desarrollo Educativo de la Junta de Andalucía (Orden 30 de mayo de 2023). Cada fila es un criterio de evaluación. Las columnas son:
+
+| Competencia específica (nº y enunciado breve) | Descriptores operativos (solo código: CCL1, STEM2…) | Criterio de evaluación (código LOMLOE del bloque de datos + enunciado) | Saberes básicos implicados | Instrumento de evaluación |
+
+- Usa los criterios del bloque de datos cuando coincidan con el área; completa con los que sean necesarios para la SdA.
+- Los saberes básicos deben referenciarse con su bloque y letra según la Orden (ej: Bloque A. Comunicación. A.1…).
+- El instrumento de evaluación debe ser concreto: rúbrica, lista de cotejo, observación sistemática, portfolio, prueba escrita, etc.
+- Al terminar la tabla añade un párrafo breve explicando la relación entre los elementos curriculares elegidos.
 
 ──── C) SECUENCIACIÓN DIDÁCTICA ────
 
@@ -2349,10 +2401,25 @@ RETO / PRODUCTO FINAL (defínelo antes de las fases):
 - Denominación: título del producto/reto final
 - Definición: descripción completa. Debe implicar resolución creativa y colaborativa, tener aplicación real y transferencia, ser de complejidad creciente, contextualizado con el contexto indicado, cumplir el DUA y reconocer al alumnado como agente de su aprendizaje.
 
-Diseña las actividades de las 6 FASES con el siguiente formato EXACTO para cada actividad:
+La secuencia se organiza en TRES MOMENTOS OFICIALES (nomenclatura de la Consejería de Andalucía) que agrupan las fases internas:
+
+▸ MOMENTO 1 — SITUACIÓN DE PARTIDA
+  Fases internas: motivación + activación de conocimientos previos
+  Objetivo: despertar el interés, conectar con lo que ya sabe el alumnado y presentar el reto
+
+▸ MOMENTO 2 — DESARROLLO
+  Fases internas: exploración + estructuración + aplicación
+  Objetivo: introducir los nuevos aprendizajes, practicarlos y aplicarlos al reto final
+
+▸ MOMENTO 3 — SITUACIÓN FINAL
+  Fases internas: conclusión y difusión
+  Objetivo: compartir el producto, autoevaluar el proceso y transferir lo aprendido
+
+Dentro de cada momento, diseña las actividades con el siguiente formato EXACTO:
 
 ──── Título de la actividad: "[nombre]"
-──── Tipo de actividad: [fase a la que pertenece]
+──── Momento: [Situación de partida / Desarrollo / Situación final]
+──── Fase interna: [motivación / activación / exploración / estructuración / aplicación / conclusión]
 ──── Abreviatura: [máximo 7 caracteres]
 ──── Orden de presentación: [número correlativo en toda la SdA]
 ──── Descripción: descripción completa. Incluye:
@@ -2361,17 +2428,17 @@ Diseña las actividades de las 6 FASES con el siguiente formato EXACTO para cada
            NIVEL 2 — Medio
            NIVEL 3 — Avanzado
        * Adaptaciones DUA para el alumnado ACNEAE con los déficits indicados
-       * Indica si es POSIBLE ACTIVIDAD EVALUABLE (no puede serlo en motivación ni activación; la fase de aplicación siempre lo es; en estructuración debe haber una actividad evaluable por cada bloque de contenidos)
+       * Indica si es POSIBLE ACTIVIDAD EVALUABLE (no puede serlo en motivación ni activación; la aplicación siempre lo es; en estructuración una evaluable por cada bloque de contenidos)
 ──── Temporalización: número de sesiones
 ──── Recursos: materiales y digitales (Chromebooks, Google Workspace, YouTube, etc.; no uses Jamboard)
 ──── Trazabilidad: preguntas / productos / desempeños (coherente con la actividad evaluable)
-──── Criterios de evaluación: criterio/s asociados (de los seleccionados en concreción curricular)
+──── Criterios de evaluación: criterio/s de la tabla de concreción curricular asociados a esta actividad
 ──── Ejercicios por sesión (taxonomía de Bloom en progresión — recordar → comprender → aplicar → analizar → evaluar → crear; indica el nivel al final de cada ejercicio):
        Sesión 1:
-         a) …
-         b) …
+         a) … [nivel Bloom]
+         b) … [nivel Bloom]
        Sesión 2:
-         a) …
+         a) … [nivel Bloom]
 ──── Metodologías:
        a) Rutinas de pensamiento aplicadas (si las hay)
        b) Destrezas de pensamiento aplicadas (si las hay)
@@ -2379,20 +2446,43 @@ Diseña las actividades de las 6 FASES con el siguiente formato EXACTO para cada
        d) Técnicas y aprendizaje activo (gamificación, flipped, podcast, visual thinking, códigos QR, etc.)
        e) Pedagogías ágiles (kanban, SCAMPER, mapa de empatía, etc., si las hay)
        f) DUA:
-           · Pauta DUA aplicada
-           · Estrategia aplicada
+           · Pauta DUA aplicada (red de representación, acción-expresión o implicación)
+           · Estrategia concreta aplicada
            · Herramienta digital o IA utilizada
 
-FASES Y RESTRICCIONES DE SESIONES:
-- MOTIVACIÓN: máximo 1 sesión, mínimo ½ sesión. Capta atención, presenta el reto. No evaluable.
-- ACTIVACIÓN: máximo 1 sesión, mínimo ½ sesión. Conocimientos previos. No evaluable.
+RESTRICCIONES DE SESIONES POR FASE INTERNA:
+- MOTIVACIÓN: máximo 1 sesión. Capta atención, presenta el reto. No evaluable.
+- ACTIVACIÓN: máximo 1 sesión. Conocimientos previos. No evaluable.
 - EXPLORACIÓN: máximo 2 sesiones y 2 actividades. Experimenta, desafíos similares al reto.
-- ESTRUCTURACIÓN: mínimo 10 sesiones y 6 actividades. Introduce nuevos aprendizajes. Reparte los contenidos de forma equitativa por semanas (especifica qué contenidos se trabajan cada semana). Incluye todos los criterios de evaluación al menos una vez. Actividad evaluable por cada bloque de contenidos. Integra los 30 min semanales de lectura planificada (textos variados, estrategias antes/durante/después).
-- APLICACIÓN: mínimo 3 sesiones, máximo 1 actividad (el reto final). SIEMPRE evaluable. Deben aparecer TODOS los criterios de evaluación de la SdA.
-- CONCLUSIÓN: máximo 2 sesiones. Difusión de resultados, evaluación del proceso.
+- ESTRUCTURACIÓN: mínimo 10 sesiones y 6 actividades. Nuevos aprendizajes. Reparte contenidos de forma equitativa por semanas (especifica qué contenidos se trabajan cada semana). Todos los criterios al menos una vez. Actividad evaluable por cada bloque de contenidos. Integra mínimo 30 min semanales de lectura planificada (textos variados: literarios, científicos, periodísticos, continuos, discontinuos y multimodales; estrategias antes/durante/después de la lectura).
+- APLICACIÓN: mínimo 3 sesiones, máximo 1 actividad (el reto final). SIEMPRE evaluable. Deben aparecer TODOS los criterios de la tabla de concreción.
+- CONCLUSIÓN: máximo 2 sesiones. Difusión del producto, coevaluación y transferencia.
 
-──── D) EVALUACIÓN DE LA PRÁCTICA DOCENTE ────
-Selecciona los ítems más oportunos para esta SdA entre (solo los ítems, sin desarrollar):
+──── D) ATENCIÓN A LA DIVERSIDAD ────
+
+Redacta este apartado como sección independiente (es obligatorio en el modelo oficial andaluz):
+
+1. MEDIDAS GENERALES aplicadas en la SdA (agrupamientos flexibles, materiales multinivel, tiempos diferenciados…)
+2. MEDIDAS ESPECÍFICAS para el alumnado ACNEAE indicado en los datos, detallando para cada alumno/a:
+   - Adaptación del acceso al currículo
+   - Adaptación metodológica
+   - Adaptación de la evaluación
+3. APLICACIÓN DEL DUA a nivel de SdA (no solo por actividad): indica las tres redes — representación, acción-expresión e implicación — y cómo se garantizan a lo largo de toda la secuencia.
+
+──── E) EVALUACIÓN ────
+
+5.1 INSTRUMENTOS DE EVALUACIÓN
+Lista los instrumentos concretos vinculados a cada momento de la secuencia.
+
+5.2 RÚBRICA DE EVALUACIÓN (obligatoria en el modelo oficial andaluz)
+Presenta una rúbrica con una fila por cada criterio de evaluación de la tabla de concreción curricular. Las columnas son exactamente estos tres niveles oficiales de la Consejería:
+
+| Criterio de evaluación | COMPETENCIAL (supera los objetivos con autonomía) | EN DESARROLLO (alcanza los objetivos con apoyo) | INICIADO (no alcanza los objetivos aún) |
+
+Cada celda debe describir conductas observables concretas, no genéricas.
+
+5.3 EVALUACIÓN DE LA PRÁCTICA DOCENTE
+Selecciona solo los ítems pertinentes para esta SdA (sin desarrollarlos):
 - Resultados de la evaluación de la materia
 - Métodos didácticos y pedagógicos
 - Adecuación de los materiales y recursos didácticos
@@ -2402,10 +2492,11 @@ Selecciona los ítems más oportunos para esta SdA entre (solo los ítems, sin d
 ════════════════════════════════════════════════════════
 NOTAS FINALES PARA GEMINI
 ════════════════════════════════════════════════════════
+- Usa siempre la terminología oficial de la Consejería de Desarrollo Educativo de la Junta de Andalucía
 - Adapta el nivel de lenguaje y complejidad de las actividades a la edad del alumnado indicado
-- Contextualiza siempre en Santa Fe / Las Capitulaciones de 1492 / Andalucía
 - No inventes datos del alumnado: usa únicamente las siglas y déficits del bloque de datos
 - No incluyas Adaptación Curricular Significativa (ACS)
+- La tabla de concreción curricular y la rúbrica son los dos elementos que inspección revisa primero — cuídalos especialmente
 - Tómate el tiempo necesario y razona cada decisión antes de redactarla
 - El documento final debe estar listo para ser revisado y firmado por el PT del centro
 ════════════════════════════════════════════════════════`;
