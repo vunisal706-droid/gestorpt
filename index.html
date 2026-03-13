@@ -105,6 +105,8 @@
         .stat-num{font-size:1.3rem;font-weight:700}
         .stat-label{font-size:.65rem;color:var(--text-light)}
         .eval-item{display:flex;align-items:center;gap:6px;padding:8px;background:var(--bg);border-radius:6px;margin-bottom:5px;flex-wrap:wrap}
+        .eval-btns{display:flex;gap:4px;flex-shrink:0}
+        @media(max-width:600px){.eval-item{flex-direction:column;align-items:flex-start;gap:4px}.eval-btns{padding-left:2px}}
         .eval-text{flex:1;font-size:.8rem;min-width:140px}
         .eval-btn{width:32px;height:32px;border-radius:50%;border:2px solid var(--border);background:#fff;cursor:pointer;font-size:.85rem}
         .eval-btn.c{border-color:var(--success);color:var(--success)}
@@ -1198,11 +1200,11 @@
         // EVALUACIÓN
         function renderEval(){const a=alumnos[alumnoActual];let h='<div class="card"><div class="card-header"><h3 class="card-title">📊 Evaluación — Indicadores</h3></div><div class="btn-group no-print" style="margin-bottom:12px"><button class="btn '+(evalTrim===1?'btn-primary':'btn-secondary')+' btn-sm" onclick="setTrim(1)">T1</button><button class="btn '+(evalTrim===2?'btn-primary':'btn-secondary')+' btn-sm" onclick="setTrim(2)">T2</button><button class="btn '+(evalTrim===3?'btn-primary':'btn-secondary')+' btn-sm" onclick="setTrim(3)">T3</button><button class="btn btn-warning btn-sm" onclick="abrirModalInforme()">📄 Informe</button>';if(evalTrim<3){h+='<button class="btn btn-ai btn-sm" onclick="pasarNoConseguidos()">📤 P/N→T'+(evalTrim+1)+'</button>';}h+='</div><div class="chart-container no-print"><canvas id="chartProgreso"></canvas></div><div id="pctArea" class="no-print"></div><div id="evalList"></div></div><div class="card" style="margin-top:12px"><div class="card-header"><h3 class="card-title">🔢 Calificación mensual por criterio</h3></div><p style="font-size:.78rem;color:var(--text-light);margin-bottom:12px">Introduce la nota (0-10) por criterio LOMLOE para cada mes del trimestre. Se guarda automáticamente.</p><div id="califList"></div></div>';document.getElementById('tabEvaluacion').innerHTML=h;renderEvalList();renderCalificaciones();setTimeout(renderEvalCharts,100);}
         function setTrim(t){evalTrim=t;renderEval();}
-        function renderEvalCharts(){const a=alumnos[alumnoActual];if(!a.programas)return;const ctx=document.getElementById('chartProgreso');if(!ctx)return;if(charts.progreso)charts.progreso.destroy();const labels=[],conseguidos=[],proceso=[],noConseguidos=[],noIniciados=[];const pasadosAqui=getIndicadoresPasados(a,evalTrim);Object.keys(a.programas).forEach(pId=>{const p=a.programas[pId],info=AREAS[p.tipo]||{nombre:p.tipo};const objsT=(p.objetivos||[]).filter(o=>o.trimestre===evalTrim);const pasadosProg=pasadosAqui.filter(x=>x.pId===pId);if(!objsT.length&&!pasadosProg.length)return;labels.push(info.nombre.substring(0,12));let c=0,pr=0,nc=0,ni=0;objsT.forEach(obj=>{const oi=p.objetivos.indexOf(obj);(obj.indicadores||[]).forEach((_,ii)=>{const k=pId+'_'+oi+'_'+ii+'_T'+evalTrim,e=a.evaluaciones?a.evaluaciones[k]:null;if(e==='C')c++;else if(e==='P')pr++;else if(e==='NC')nc++;else ni++;});});pasadosProg.forEach(item=>{const k=item.pId+'_'+item.oIdx+'_'+item.iIdx+'_T'+evalTrim,e=a.evaluaciones?a.evaluaciones[k]:null;if(e==='C')c++;else if(e==='P')pr++;else if(e==='NC')nc++;else ni++;});conseguidos.push(c);proceso.push(pr);noConseguidos.push(nc);noIniciados.push(ni);});charts.progreso=new Chart(ctx,{type:'bar',data:{labels:labels,datasets:[{label:'Conseguido',data:conseguidos,backgroundColor:'#22c55e'},{label:'En proceso',data:proceso,backgroundColor:'#3b82f6'},{label:'No conseguido',data:noConseguidos,backgroundColor:'#ef4444'},{label:'No iniciado',data:noIniciados,backgroundColor:'#d1d5db'}]},options:{responsive:true,plugins:{legend:{position:'bottom'},title:{display:true,text:'Indicadores T'+evalTrim}},scales:{x:{stacked:true},y:{stacked:true}}}});
+        function renderEvalCharts(){const a=alumnos[alumnoActual];if(!a.programas)return;const ctx=document.getElementById('chartProgreso');if(!ctx)return;if(charts.progreso)charts.progreso.destroy();const labels=[],conseguidos=[],proceso=[],noConseguidos=[],noIniciados=[];const pasadosAqui=getIndicadoresPasados(a,evalTrim);Object.keys(a.programas).forEach(pId=>{const p=a.programas[pId],info=AREAS[p.tipo]||{nombre:p.tipo};const objsT=(p.objetivos||[]).filter(o=>o.trimestre===evalTrim);const pasadosProg=pasadosAqui.filter(x=>x.pId===pId);if(!objsT.length&&!pasadosProg.length)return;labels.push(info.nombre.substring(0,12));let c=0,pr=0,nc=0;objsT.forEach(obj=>{const oi=p.objetivos.indexOf(obj);(obj.indicadores||[]).forEach((_,ii)=>{const k=pId+'_'+oi+'_'+ii+'_T'+evalTrim,e=a.evaluaciones?a.evaluaciones[k]:null;if(e==='C')c++;else if(e==='P')pr++;else if(e==='NC')nc++;});});pasadosProg.forEach(item=>{const k=item.pId+'_'+item.oIdx+'_'+item.iIdx+'_T'+evalTrim,e=a.evaluaciones?a.evaluaciones[k]:null;if(e==='C')c++;else if(e==='P')pr++;else if(e==='NC')nc++;});conseguidos.push(c);proceso.push(pr);noConseguidos.push(nc);});charts.progreso=new Chart(ctx,{type:'bar',data:{labels:labels,datasets:[{label:'Conseguido',data:conseguidos,backgroundColor:'#22c55e'},{label:'En proceso',data:proceso,backgroundColor:'#3b82f6'},{label:'No conseguido',data:noConseguidos,backgroundColor:'#ef4444'},]},options:{responsive:true,plugins:{legend:{position:'bottom'},title:{display:true,text:'Indicadores T'+evalTrim}},scales:{x:{stacked:true},y:{stacked:true}}}});
             // % consecución por área
             let pctHtml='<div style="margin-top:10px">';
-            labels.forEach((lbl,i)=>{const total=conseguidos[i]+proceso[i]+noConseguidos[i]+noIniciados[i];const pct=total?Math.round(conseguidos[i]/total*100):0;const pctP=total?Math.round(proceso[i]/total*100):0;const pctNC=total?Math.round(noConseguidos[i]/total*100):0;pctHtml+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:.75rem"><span style="min-width:90px;font-weight:600;color:var(--primary)">'+lbl+'</span><div style="flex:1;background:#e5e7eb;border-radius:6px;height:18px;overflow:hidden;display:flex"><div style="width:'+pct+'%;background:#22c55e;height:100%"></div><div style="width:'+pctP+'%;background:#3b82f6;height:100%"></div><div style="width:'+pctNC+'%;background:#ef4444;height:100%"></div></div><span style="min-width:36px;text-align:right;font-weight:700;color:'+(pct>=60?'#22c55e':pct>=30?'#f59e0b':'#ef4444')+'">'+pct+'%</span></div>';});
-            pctHtml+='<div style="display:flex;gap:12px;justify-content:center;margin-top:4px;font-size:.65rem;color:var(--text-light)"><span>🟩 Conseguido</span><span>🟦 En proceso</span><span>🟥 No conseguido</span><span>⬜ No iniciado</span></div></div>';
+            labels.forEach((lbl,i)=>{const totEv=conseguidos[i]+proceso[i]+noConseguidos[i];const pct=totEv?Math.round(conseguidos[i]/totEv*100):0;const pctP=totEv?Math.round(proceso[i]/totEv*100):0;const pctNC=totEv?Math.round(noConseguidos[i]/totEv*100):0;pctHtml+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:.75rem"><span style="min-width:90px;font-weight:600;color:var(--primary)">'+lbl+'</span><div style="flex:1;background:#e5e7eb;border-radius:6px;height:18px;overflow:hidden;display:flex"><div style="width:'+pct+'%;background:#22c55e;height:100%"></div><div style="width:'+pctP+'%;background:#3b82f6;height:100%"></div><div style="width:'+pctNC+'%;background:#ef4444;height:100%"></div></div><span style="min-width:36px;text-align:right;font-weight:700;color:'+(pct>=60?'#22c55e':pct>=30?'#f59e0b':'#ef4444')+'">'+pct+'%</span></div>';});
+            pctHtml+='<div style="display:flex;gap:12px;justify-content:center;margin-top:4px;font-size:.65rem;color:var(--text-light)"><span>🟩 Conseguido</span><span>🟦 En proceso</span><span>🟥 No conseguido</span></div></div>';
             const pctContainer=document.getElementById('pctArea');
             if(pctContainer) pctContainer.innerHTML=pctHtml;
         }
@@ -1236,15 +1238,15 @@
                 // Renderizar por criterio
                 Object.values(porCriterio).forEach(grC=>{
                     // Contar estado global del criterio para badge rápido
-                    let gcC=0,gcP=0,gcNC=0,gcNI=0;
+                    let gcC=0,gcP=0,gcNC=0;
                     grC.objetivos.forEach(obj=>{
                         const oi=p.objetivos.indexOf(obj);
                         (obj.indicadores||[]).forEach((_,ii)=>{
                             const k=pId+'_'+oi+'_'+ii+'_T'+evalTrim,e=a.evaluaciones?a.evaluaciones[k]:null;
-                            if(e==='C')gcC++;else if(e==='P')gcP++;else if(e==='NC')gcNC++;else gcNI++;
+                            if(e==='C')gcC++;else if(e==='P')gcP++;else if(e==='NC')gcNC++;
                         });
                     });
-                    const gcTotal=gcC+gcP+gcNC+gcNI;
+                    const gcTotal=gcC+gcP+gcNC;
                     const pctC=gcTotal?Math.round(gcC/gcTotal*100):0;
 
                     h+='<div class="criterio-grupo">';
@@ -1254,11 +1256,9 @@
                     h+='<div style="flex:1;display:flex;border-radius:4px;overflow:hidden;height:8px;background:#e5e7eb;max-width:120px">';
                     const pctP2=gcTotal?Math.round(gcP/gcTotal*100):0;
                     const pctNC2=gcTotal?Math.round(gcNC/gcTotal*100):0;
-                    const pctNI2=gcTotal?Math.round(gcNI/gcTotal*100):0;
                     h+='<div style="width:'+pctC+'%;background:#22c55e"></div>';
                     h+='<div style="width:'+pctP2+'%;background:#3b82f6"></div>';
                     h+='<div style="width:'+pctNC2+'%;background:#ef4444"></div>';
-                    h+='<div style="width:'+pctNI2+'%;background:#d1d5db"></div>';
                     h+='</div>';
                     h+='<span style="font-size:.65rem;color:'+(pctC>=60?'#22c55e':pctC>=30?'#f59e0b':'var(--text-light)')+'">'+pctC+'% C</span>';
                     h+='</div>'; // criterio-header
@@ -1275,10 +1275,12 @@
                             const k=pId+'_'+oi+'_'+ii+'_T'+evalTrim,e=a.evaluaciones?a.evaluaciones[k]:'';
                             h+='<div class="eval-item">';
                             h+='<span class="eval-text">'+ind+'</span>';
+                            h+='<div class="eval-btns">';
                             h+='<button class="eval-btn c '+(e==='C'?'active':'')+'" title="Conseguido" onclick="setEval(\''+pId+'\','+oi+','+ii+',\'C\')">✓</button>';
                             h+='<button class="eval-btn p '+(e==='P'?'active':'')+'" title="En proceso" onclick="setEval(\''+pId+'\','+oi+','+ii+',\'P\')">◐</button>';
                             h+='<button class="eval-btn nc '+(e==='NC'?'active':'')+'" title="No conseguido" onclick="setEval(\''+pId+'\','+oi+','+ii+',\'NC\')">✗</button>';
                             h+='<button class="eval-btn n '+((!e)?'active':'')+'" title="No iniciado" onclick="setEval(\''+pId+'\','+oi+','+ii+',\'NI\')">○</button>';
+                            h+='</div>';
                             h+='</div>';
                         });
                         h+='</div>'; // criterio-obj-block
@@ -1311,10 +1313,12 @@
                             const k=pId+'_'+item.oIdx+'_'+item.iIdx+'_T'+evalTrim,e=a.evaluaciones?a.evaluaciones[k]:'';
                             h+='<div class="eval-item" style="margin-left:10px">';
                             h+='<span class="eval-text"><span class="criterio-obj-num" style="margin-right:4px">O'+obj.numero+'</span>'+ind+'<span class="pasado-badge">T'+(evalTrim-1)+'</span></span>';
+                            h+='<div class="eval-btns">';
                             h+='<button class="eval-btn c '+(e==='C'?'active':'')+'" title="Conseguido" onclick="setEval(\''+pId+'\','+item.oIdx+','+item.iIdx+',\'C\')">✓</button>';
                             h+='<button class="eval-btn p '+(e==='P'?'active':'')+'" title="En proceso" onclick="setEval(\''+pId+'\','+item.oIdx+','+item.iIdx+',\'P\')">◐</button>';
                             h+='<button class="eval-btn nc '+(e==='NC'?'active':'')+'" title="No conseguido" onclick="setEval(\''+pId+'\','+item.oIdx+','+item.iIdx+',\'NC\')">✗</button>';
                             h+='<button class="eval-btn n '+((!e)?'active':'')+'" title="No iniciado" onclick="setEval(\''+pId+'\','+item.oIdx+','+item.iIdx+',\'NI\')">○</button>';
+                            h+='</div>';
                             h+='</div>';
                         });
                         h+='</div>';
@@ -1407,10 +1411,10 @@
 
                     // Calcular stats C/P/NC/NI para este criterio
                     const st = calcCriterioStats(a, pId, criterioKey, evalTrim);
-                    const pctC   = st.total ? Math.round(st.c   / st.total * 100) : 0;
-                    const pctPr  = st.total ? Math.round(st.pr  / st.total * 100) : 0;
-                    const pctNc  = st.total ? Math.round(st.nc  / st.total * 100) : 0;
-                    const pctNi  = st.total ? Math.round(st.ni  / st.total * 100) : 0;
+                    const _ev = st.c + st.pr + st.nc;
+                    const pctC   = _ev ? Math.round(st.c  / _ev * 100) : 0;
+                    const pctPr  = _ev ? Math.round(st.pr / _ev * 100) : 0;
+                    const pctNc  = _ev ? Math.round(st.nc / _ev * 100) : 0;
                     const fbDataKey = pId+'__'+criterioKey;
 
                     h += '<div class="calif-card" id="cc_'+fbDataKey+'">';
@@ -1419,8 +1423,7 @@
                     // Nota sugerida + botón aplicar a todos los meses vacíos
                     if(st.sugerida !== null){
                         h += '<span style="font-size:.72rem;color:var(--text-light)">Sugerida: <strong style="color:var(--text)">'+st.sugerida+'</strong>';
-                        if(st.ni > 0) h += ' <span style="color:#f59e0b;font-size:.65rem">('+st.ni+' sin iniciar)</span>';
-                        h += '</span>';
+                                        h += '</span>';
                         h += '<button class="btn btn-secondary btn-sm" style="padding:2px 8px;font-size:.68rem" '
                            + 'onclick="aplicarSugerida(\'' + fbDataKey + '\',' + st.sugerida + ')" title="Rellena los meses vacíos con la nota sugerida">✓ Aplicar</button>';
                     } else {
@@ -1434,11 +1437,10 @@
                     h += '<div style="width:'+pctC+'%;background:#22c55e;transition:width .4s"></div>';
                     h += '<div style="width:'+pctPr+'%;background:#3b82f6;transition:width .4s"></div>';
                     h += '<div style="width:'+pctNc+'%;background:#ef4444;transition:width .4s"></div>';
-                    h += '<div style="width:'+pctNi+'%;background:#d1d5db;transition:width .4s"></div>';
                     h += '</div>';
                     h += '<div style="display:flex;gap:10px;font-size:.65rem;color:var(--text-light)">';
-                    h += '<span>🟩 '+st.c+' C</span><span>🟦 '+st.pr+' P</span><span>🟥 '+st.nc+' NC</span><span>⬜ '+st.ni+' NI</span>';
-                    h += '<span style="margin-left:auto">'+st.total+' ind.</span>';
+                    h += '<span>🟩 '+st.c+' C</span><span>🟦 '+st.pr+' P</span><span>🟥 '+st.nc+' NC</span>';
+                    h += '<span style="margin-left:auto">'+_ev+' eval.</span>';
                     h += '</div></div>';
 
                     // Indicadores de referencia (colapsados)
@@ -1488,15 +1490,15 @@
                         if(e==='C') criterios[key].c++;
                         else if(e==='P') criterios[key].pr++;
                         else if(e==='NC') criterios[key].nc++;
-                        else criterios[key].ni++;
+                        // NI not tracked
                     });
                 });
             });
             return Object.values(criterios).map(cr=>{
-                const total = cr.c+cr.pr+cr.nc+cr.ni;
-                const pct = total ? Math.round(cr.c/total*100) : 0;
-                return {...cr, total, pct};
-            }).filter(cr=>cr.total>0);
+                const evaluados = cr.c+cr.pr+cr.nc;
+                const pct = evaluados ? Math.round(cr.c/evaluados*100) : 0;
+                return {...cr, evaluados, pct};
+            }).filter(cr=>cr.evaluados>0);
         }
 
         // Devuelve top-N indicadores más bloqueantes (NC primero, luego P) de un trim
@@ -1696,8 +1698,7 @@
 
         // RESUMEN
         function renderAsis(){const a=alumnos[alumnoActual],st=calcStats(a);let totalC=0,totalP=0,totalNC=0,totalNI=0;if(a.evaluaciones){Object.keys(a.evaluaciones).forEach(k=>{const e=a.evaluaciones[k];if(e==='C')totalC++;else if(e==='P')totalP++;else if(e==='NC')totalNC++;});}// NI = sin clave en evaluaciones, contar total indicadores - evaluados
-        if(a.programas){Object.keys(a.programas).forEach(pId=>{const p=a.programas[pId];(p.objetivos||[]).forEach((obj,oi)=>{(obj.indicadores||[]).forEach((_,ii)=>{[1,2,3].forEach(t=>{const k=pId+'_'+oi+'_'+ii+'_T'+t;if(!a.evaluaciones||!a.evaluaciones[k])totalNI++;});});});});}
-        document.getElementById('tabAsistencia').innerHTML='<div class="card"><div class="card-header"><h3 class="card-title">📈 Resumen</h3></div><div class="stats-box"><div class="stat-item"><div class="stat-num" style="color:var(--danger)">'+st.ausencias+'</div><div class="stat-label">Ausencias</div></div><div class="stat-item"><div class="stat-num" style="color:var(--success)">'+st.conseguidos+'</div><div class="stat-label">Sesiones OK</div></div><div class="stat-item"><div class="stat-num" style="color:var(--warning)">'+st.repetir+'</div><div class="stat-label">Repetir</div></div></div><div class="stats-box"><div class="stat-item"><div class="stat-num" style="color:var(--success)">'+totalC+'</div><div class="stat-label">Conseguidos</div></div><div class="stat-item"><div class="stat-num" style="color:var(--proceso)">'+totalP+'</div><div class="stat-label">En proceso</div></div><div class="stat-item"><div class="stat-num" style="color:var(--danger)">'+totalNC+'</div><div class="stat-label">No conseg.</div></div><div class="stat-item"><div class="stat-num" style="color:#94a3b8">'+totalNI+'</div><div class="stat-label">No iniciados</div></div></div><div class="chart-container"><canvas id="chartAusTrim"></canvas></div><div class="chart-container" style="margin-top:12px"><canvas id="chartCompTrim"></canvas></div><div class="chart-container" style="margin-top:12px"><canvas id="chartRadar"></canvas></div></div>';setTimeout(renderAsisCharts,100);}
+                document.getElementById('tabAsistencia').innerHTML='<div class="card"><div class="card-header"><h3 class="card-title">📈 Resumen</h3></div><div class="stats-box"><div class="stat-item"><div class="stat-num" style="color:var(--danger)">'+st.ausencias+'</div><div class="stat-label">Ausencias</div></div><div class="stat-item"><div class="stat-num" style="color:var(--success)">'+st.conseguidos+'</div><div class="stat-label">Sesiones OK</div></div><div class="stat-item"><div class="stat-num" style="color:var(--warning)">'+st.repetir+'</div><div class="stat-label">Repetir</div></div></div><div class="stats-box"><div class="stat-item"><div class="stat-num" style="color:var(--success)">'+totalC+'</div><div class="stat-label">Conseguidos</div></div><div class="stat-item"><div class="stat-num" style="color:var(--proceso)">'+totalP+'</div><div class="stat-label">En proceso</div></div><div class="stat-item"><div class="stat-num" style="color:var(--danger)">'+totalNC+'</div><div class="stat-label">No conseg.</div></div></div><div class="chart-container"><canvas id="chartAusTrim"></canvas></div><div class="chart-container" style="margin-top:12px"><canvas id="chartCompTrim"></canvas></div><div class="chart-container" style="margin-top:12px"><canvas id="chartRadar"></canvas></div></div>';setTimeout(renderAsisCharts,100);}
         function renderAsisCharts(){
             const a=alumnos[alumnoActual],st=calcStats(a);
             // Ausencias por trimestre
@@ -1707,27 +1708,26 @@
             if(!a.programas) return;
 
             // Comparativa trimestres: C/P/NC/NI por cada trimestre
-            const trimData={1:{c:0,p:0,nc:0,ni:0,total:0},2:{c:0,p:0,nc:0,ni:0,total:0},3:{c:0,p:0,nc:0,ni:0,total:0}};
+            const trimData={1:{c:0,p:0,nc:0,total:0},2:{c:0,p:0,nc:0,total:0},3:{c:0,p:0,nc:0,total:0}};
             Object.keys(a.programas).forEach(pId=>{const pr=a.programas[pId];
                 (pr.objetivos||[]).forEach((obj,oi)=>{const t=obj.trimestre||1;
                     (obj.indicadores||[]).forEach((_,ii)=>{
                         const k=pId+'_'+oi+'_'+ii+'_T'+t,e=a.evaluaciones?a.evaluaciones[k]:null;
                         trimData[t].total++;
-                        if(e==='C')trimData[t].c++;else if(e==='P')trimData[t].p++;else if(e==='NC')trimData[t].nc++;else trimData[t].ni++;
+                        if(e==='C')trimData[t].c++;else if(e==='P')trimData[t].p++;else if(e==='NC')trimData[t].nc++;
                     });
                 });
             });
             const ctx2=document.getElementById('chartCompTrim');
             if(ctx2){if(charts.compTrim)charts.compTrim.destroy();
-                const pctC=[1,2,3].map(t=>trimData[t].total?Math.round(trimData[t].c/trimData[t].total*100):0);
-                const pctP=[1,2,3].map(t=>trimData[t].total?Math.round(trimData[t].p/trimData[t].total*100):0);
-                const pctNC=[1,2,3].map(t=>trimData[t].total?Math.round(trimData[t].nc/trimData[t].total*100):0);
-                const pctNI=[1,2,3].map(t=>trimData[t].total?Math.round(trimData[t].ni/trimData[t].total*100):0);
+                const totEval=[1,2,3].map(t=>trimData[t].c+trimData[t].p+trimData[t].nc);
+                const pctC=[1,2,3].map((t,i)=>totEval[i]?Math.round(trimData[t].c/totEval[i]*100):0);
+                const pctP=[1,2,3].map((t,i)=>totEval[i]?Math.round(trimData[t].p/totEval[i]*100):0);
+                const pctNC=[1,2,3].map((t,i)=>totEval[i]?Math.round(trimData[t].nc/totEval[i]*100):0);
                 charts.compTrim=new Chart(ctx2,{type:'bar',data:{labels:['Trimestre 1','Trimestre 2','Trimestre 3'],datasets:[
                     {label:'Conseguido %',data:pctC,backgroundColor:'#22c55e'},
                     {label:'En proceso %',data:pctP,backgroundColor:'#3b82f6'},
                     {label:'No conseguido %',data:pctNC,backgroundColor:'#ef4444'},
-                    {label:'No iniciado %',data:pctNI,backgroundColor:'#d1d5db'}
                 ]},options:{responsive:true,plugins:{title:{display:true,text:'Comparativa por trimestres (%)'},legend:{position:'bottom'}},scales:{x:{stacked:true},y:{stacked:true,max:100,ticks:{callback:v=>v+'%'}}}}});
             }
 
@@ -2124,9 +2124,9 @@
             const criterios = getCriteriosResumen(a, trim);
             const bloqueantes = getIndicadoresBloqueantes(a, trim, 3);
             informeData={alumno:a,trim:trim,conseguidos,proceso,noConseguidos,noIniciados,criterios,bloqueantes,ausencias:st.porTrim[trim]?st.porTrim[trim].aus:0};
-            const total=conseguidos.length+proceso.length+noConseguidos.length+noIniciados.length,porcC=total?Math.round(conseguidos.length/total*100):0;
+            const total=conseguidos.length+proceso.length+noConseguidos.length,porcC=total?Math.round(conseguidos.length/total*100):0;
             let prevHtml='<h4 style="color:#1a5f4a;margin-bottom:6px">T'+trim+' — '+a.siglas+'</h4>';
-            prevHtml+='<p style="margin-bottom:8px">✅ '+conseguidos.length+' ('+porcC+'%) &nbsp;|&nbsp; 🔄 '+proceso.length+' &nbsp;|&nbsp; ✗ '+noConseguidos.length+' NC &nbsp;|&nbsp; ⭕ '+noIniciados.length+' NI &nbsp;|&nbsp; ❌ '+informeData.ausencias+' aus.</p>';
+            prevHtml+='<p style="margin-bottom:8px">✅ '+conseguidos.length+' ('+porcC+'%) &nbsp;|&nbsp; 🔄 '+proceso.length+' &nbsp;|&nbsp; ✗ '+noConseguidos.length+' NC &nbsp;|&nbsp; ❌ '+informeData.ausencias+' aus.</p>';
             if(criterios.length){
                 prevHtml+='<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px">';
                 criterios.forEach(cr=>{const bg=cr.pct>=60?'#dcfce7':cr.pct>=30?'#fef9c3':'#fee2e2';const col=cr.pct>=60?'#166534':cr.pct>=30?'#92400e':'#991b1b';const ic=cr.pct>=60?'✅':cr.pct>=30?'🔄':'⚠️';prevHtml+='<span style="background:'+bg+';color:'+col+';font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:10px;font-family:monospace">'+ic+' '+cr.label+' ('+cr.pct+'%)</span>';});
@@ -2330,7 +2330,7 @@ body{font-family:Arial,sans-serif;font-size:10px;color:#222}
                     });
                 }
 
-                const total = conseguidos.length + proceso.length + noConseguidos.length + noIniciados.length;
+                const total = conseguidos.length + proceso.length + noConseguidos.length;
                 const porcC = total ? Math.round(conseguidos.length / total * 100) : 0;
                 const ausencias = st.porTrim && st.porTrim[trim] ? st.porTrim[trim].aus : 0;
                 const criterios = getCriteriosResumen(a, trim);
@@ -2345,7 +2345,6 @@ body{font-family:Arial,sans-serif;font-size:10px;color:#222}
                         <span class="resumen-chip chip-c">✅ Conseguido: ${conseguidos.length} (${porcC}%)</span>
                         <span class="resumen-chip chip-p">🔄 En Proceso: ${proceso.length}</span>
                         <span class="resumen-chip" style="background:#fee2e2;color:#991b1b">✗ No conseg.: ${noConseguidos.length}</span>
-                        <span class="resumen-chip chip-n">⭕ No inic.: ${noIniciados.length}</span>
                         <span class="resumen-chip chip-aus">❌ Ausencias: ${ausencias}</span>
                     </div>`;
 
@@ -2813,219 +2812,208 @@ NOTAS FINALES PARA GEMINI
             });
         }
         
+        // Función auxiliar: genera una imagen de canvas con Chart.js
+        async function _canvasChart(type, data, options, w, h) {
+            const canvas = document.createElement('canvas');
+            canvas.width = w || 800; canvas.height = h || 400;
+            const chart = new Chart(canvas.getContext('2d'), {type, data, options:{...options, responsive:false, animation:false}});
+            await new Promise(r => setTimeout(r, 200));
+            const img = canvas.toDataURL('image/png');
+            chart.destroy();
+            return img;
+        }
+
+        // Genera un donut de 4 categorías para un trimestre dado
+        async function _donutTrim(datos, label) {
+            const total = datos.C + datos.P + datos.NC;
+            if (!total) return null;
+            return _canvasChart('doughnut',
+                {
+                    labels: ['Conseguido', 'En Proceso', 'No Conseguido'],
+                    datasets: [{
+                        data: [datos.C, datos.P, datos.NC],
+                        backgroundColor: ['#22c55e', '#3b82f6', '#ef4444']
+                    }]
+                },
+                {
+                    plugins: {
+                        title: { display:true, text: label, font:{size:15,weight:'bold'}, color:'#1a5f4a' },
+                        legend: { position:'bottom', labels:{font:{size:11}} }
+                    }
+                }
+            );
+        }
+
         // Función auxiliar para generar gráficas de evaluación
         async function generarGraficasEvaluacion(alumnoId, trimestreSelec) {
             const a = alumnos[alumnoId];
             if (!a || !a.programas) return null;
-            
-            // Recopilar datos por trimestre
-            const datosT1 = {C:0, P:0, N:0};
-            const datosT2 = {C:0, P:0, N:0};
-            const datosT3 = {C:0, P:0, N:0};
-            
+
+            // Recopilar datos por trimestre con 4 estados (C/P/NC/NI)
+            const datosT = {1:{C:0,P:0,NC:0}, 2:{C:0,P:0,NC:0}, 3:{C:0,P:0,NC:0}};
+
             Object.keys(a.programas).forEach(pId => {
                 const p = a.programas[pId];
                 (p.objetivos || []).forEach((obj, oi) => {
-                    (obj.indicadores || []).forEach((ind, ii) => {
-                        [1,2,3].forEach(trim => {
-                            const k = pId+'_'+oi+'_'+ii+'_T'+trim;
-                            const e = a.evaluaciones ? a.evaluaciones[k] : null;
-                            const datos = trim===1 ? datosT1 : trim===2 ? datosT2 : datosT3;
-                            if (e === 'C') datos.C++;
-                            else if (e === 'P') datos.P++;
-                            else if (e === 'N') datos.N++;
+                    (obj.indicadores || []).forEach((_, ii) => {
+                        [1,2,3].forEach(t => {
+                            const e = a.evaluaciones ? a.evaluaciones[pId+'_'+oi+'_'+ii+'_T'+t] : null;
+                            if      (e==='C')  datosT[t].C++;
+                            else if (e==='P')  datosT[t].P++;
+                            else if (e==='NC') datosT[t].NC++;
+                            // NI not tracked
                         });
                     });
                 });
             });
-            
+
             let imgBarras = null;
-            let imgCircular = null;
-            
-            // Si es "todos" los trimestres, generar gráfico de barras comparativo
+            let imgCircular = null;        // single trim → 1 donut
+            let imgDonutsGrid = null;      // todos → 3 donuts side-by-side
+
             if (trimestreSelec === 'todos') {
-                const canvas1 = document.createElement('canvas');
-                canvas1.width = 800;
-                canvas1.height = 400;
-                const ctx1 = canvas1.getContext('2d');
-                
-                const chart1 = new Chart(ctx1, {
-                    type: 'bar',
-                    data: {
+                // Barras comparativas con 4 datasets
+                imgBarras = await _canvasChart('bar',
+                    {
                         labels: ['Trimestre 1', 'Trimestre 2', 'Trimestre 3'],
                         datasets: [
-                            {
-                                label: 'Conseguido',
-                                data: [datosT1.C, datosT2.C, datosT3.C],
-                                backgroundColor: '#22c55e'
-                            },
-                            {
-                                label: 'En Proceso',
-                                data: [datosT1.P, datosT2.P, datosT3.P],
-                                backgroundColor: '#3b82f6'
-                            },
-                            {
-                                label: 'No Iniciado',
-                                data: [datosT1.N, datosT2.N, datosT3.N],
-                                backgroundColor: '#999'
-                            }
+                            { label:'Conseguido',    data:[datosT[1].C,  datosT[2].C,  datosT[3].C],  backgroundColor:'#22c55e' },
+                            { label:'En Proceso',    data:[datosT[1].P,  datosT[2].P,  datosT[3].P],  backgroundColor:'#3b82f6' },
+                            { label:'No Conseguido', data:[datosT[1].NC, datosT[2].NC, datosT[3].NC], backgroundColor:'#ef4444' },
                         ]
                     },
-                    options: {
-                        responsive: false,
-                        animation: false,
+                    {
                         plugins: {
-                            title: {
-                                display: true,
-                                text: 'Evolución por Trimestres - ' + a.siglas,
-                                font: {size: 18, weight: 'bold'},
-                                color: '#1a5f4a'
-                            },
-                            legend: {
-                                position: 'bottom',
-                                labels: {font: {size: 14}}
-                            }
+                            title:  { display:true, text:'Evolución por Trimestres — '+a.siglas, font:{size:16,weight:'bold'}, color:'#1a5f4a' },
+                            legend: { position:'bottom', labels:{font:{size:12}} }
                         },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                ticks: {stepSize: 1, font: {size: 12}}
-                            },
-                            x: {
-                                ticks: {font: {size: 12}}
-                            }
-                        }
+                        scales: { x:{stacked:true}, y:{stacked:true, beginAtZero:true, ticks:{stepSize:1}} }
                     }
+                );
+
+                // Tres donuts (uno por trimestre) en un canvas ancho
+                const canvas3 = document.createElement('canvas');
+                canvas3.width = 1200; canvas3.height = 400;
+                const ctx3 = canvas3.getContext('2d');
+
+                // Dibujar fondo blanco
+                ctx3.fillStyle = '#ffffff';
+                ctx3.fillRect(0, 0, 1200, 400);
+
+                // Títulos de trimestres
+                ctx3.fillStyle = '#1a5f4a';
+                ctx3.font = 'bold 18px Arial';
+                ctx3.textAlign = 'center';
+                ['Trimestre 1','Trimestre 2','Trimestre 3'].forEach((lbl, i) => {
+                    ctx3.fillText(lbl, 200 + i*400, 30);
                 });
-                
-                await new Promise(resolve => setTimeout(resolve, 200));
-                imgBarras = canvas1.toDataURL('image/png');
-                chart1.destroy();
-            }
-            
-            // Determinar qué trimestre usar para el gráfico circular
-            const trimActual = trimestreSelec === 'todos' ? (evalTrim || 1) : parseInt(trimestreSelec);
-            const datosActual = trimActual===1 ? datosT1 : trimActual===2 ? datosT2 : datosT3;
-            const total = datosActual.C + datosActual.P + datosActual.N;
-            
-            if (total > 0) {
-                const canvas2 = document.createElement('canvas');
-                canvas2.width = 800;
-                canvas2.height = 400;
-                const ctx2 = canvas2.getContext('2d');
-                
-                // Si es un trimestre específico, mostrar gráfico de barras también
-                if (trimestreSelec !== 'todos') {
-                    const chart1 = new Chart(ctx2, {
-                        type: 'bar',
-                        data: {
-                            labels: ['Conseguido', 'En Proceso', 'No Iniciado'],
-                            datasets: [{
-                                label: 'Cantidad',
-                                data: [datosActual.C, datosActual.P, datosActual.N],
-                                backgroundColor: ['#22c55e', '#3b82f6', '#999']
-                            }]
-                        },
-                        options: {
-                            responsive: false,
-                            animation: false,
-                            plugins: {
-                                title: {
-                                    display: true,
-                                    text: 'Resultados Trimestre ' + trimActual + ' - ' + a.siglas,
-                                    font: {size: 18, weight: 'bold'},
-                                    color: '#1a5f4a'
-                                },
-                                legend: {display: false}
-                            },
-                            scales: {
-                                y: {
-                                    beginAtZero: true,
-                                    ticks: {stepSize: 1, font: {size: 12}}
-                                },
-                                x: {
-                                    ticks: {font: {size: 12}}
-                                }
-                            }
+
+                const colores = ['#22c55e','#3b82f6','#ef4444'];
+                const etiquetas = ['C','P','NC','NI'];
+
+                for (let t = 1; t <= 3; t++) {
+                    const d = datosT[t];
+                    const total = d.C + d.P + d.NC;
+                    const cx = 200 + (t-1)*400;
+                    const cy = 200;
+                    const r = 130;
+
+                    if (total === 0) {
+                        ctx3.fillStyle = '#aaa';
+                        ctx3.font = '14px Arial';
+                        ctx3.textAlign = 'center';
+                        ctx3.fillText('Sin datos', cx, cy);
+                        continue;
+                    }
+
+                    const vals = [d.C, d.P, d.NC];
+                    let startAngle = -Math.PI / 2;
+
+                    vals.forEach((v, i) => {
+                        if (!v) return;
+                        const slice = (v / total) * 2 * Math.PI;
+                        ctx3.beginPath();
+                        ctx3.moveTo(cx, cy);
+                        ctx3.arc(cx, cy, r, startAngle, startAngle + slice);
+                        ctx3.closePath();
+                        ctx3.fillStyle = colores[i];
+                        ctx3.fill();
+                        ctx3.strokeStyle = '#fff';
+                        ctx3.lineWidth = 2;
+                        ctx3.stroke();
+
+                        // Porcentaje dentro del sector si es grande
+                        const pct = Math.round(v/total*100);
+                        if (pct >= 8) {
+                            const midA = startAngle + slice/2;
+                            const tx = cx + (r*0.65) * Math.cos(midA);
+                            const ty = cy + (r*0.65) * Math.sin(midA);
+                            ctx3.fillStyle = '#fff';
+                            ctx3.font = 'bold 13px Arial';
+                            ctx3.textAlign = 'center';
+                            ctx3.fillText(pct+'%', tx, ty+5);
                         }
+                        startAngle += slice;
                     });
-                    
-                    await new Promise(resolve => setTimeout(resolve, 200));
-                    imgBarras = canvas2.toDataURL('image/png');
-                    chart1.destroy();
-                    
-                    // Crear nuevo canvas para el circular
-                    const canvas3 = document.createElement('canvas');
-                    canvas3.width = 800;
-                    canvas3.height = 400;
-                    const ctx3 = canvas3.getContext('2d');
-                    
-                    const chart2 = new Chart(ctx3, {
-                        type: 'doughnut',
-                        data: {
-                            labels: ['Conseguido', 'En Proceso', 'No Iniciado'],
-                            datasets: [{
-                                data: [datosActual.C, datosActual.P, datosActual.N],
-                                backgroundColor: ['#22c55e', '#3b82f6', '#999']
-                            }]
-                        },
-                        options: {
-                            responsive: false,
-                            animation: false,
-                            plugins: {
-                                title: {
-                                    display: true,
-                                    text: 'Distribución Trimestre ' + trimActual + ' - ' + a.siglas,
-                                    font: {size: 18, weight: 'bold'},
-                                    color: '#1a5f4a'
-                                },
-                                legend: {
-                                    position: 'bottom',
-                                    labels: {font: {size: 14}}
-                                }
-                            }
-                        }
-                    });
-                    
-                    await new Promise(resolve => setTimeout(resolve, 200));
-                    imgCircular = canvas3.toDataURL('image/png');
-                    chart2.destroy();
-                } else {
-                    // Para "todos", mostrar solo el circular del trimestre actual
-                    const chart2 = new Chart(ctx2, {
-                        type: 'doughnut',
-                        data: {
-                            labels: ['Conseguido', 'En Proceso', 'No Iniciado'],
-                            datasets: [{
-                                data: [datosActual.C, datosActual.P, datosActual.N],
-                                backgroundColor: ['#22c55e', '#3b82f6', '#999']
-                            }]
-                        },
-                        options: {
-                            responsive: false,
-                            animation: false,
-                            plugins: {
-                                title: {
-                                    display: true,
-                                    text: 'Distribución Trimestre ' + trimActual + ' - ' + a.siglas,
-                                    font: {size: 18, weight: 'bold'},
-                                    color: '#1a5f4a'
-                                },
-                                legend: {
-                                    position: 'bottom',
-                                    labels: {font: {size: 14}}
-                                }
-                            }
-                        }
-                    });
-                    
-                    await new Promise(resolve => setTimeout(resolve, 200));
-                    imgCircular = canvas2.toDataURL('image/png');
-                    chart2.destroy();
+
+                    // Hueco central (donut)
+                    ctx3.beginPath();
+                    ctx3.arc(cx, cy, r*0.45, 0, 2*Math.PI);
+                    ctx3.fillStyle = '#fff';
+                    ctx3.fill();
+
+                    // Total en el centro
+                    ctx3.fillStyle = '#1a5f4a';
+                    ctx3.font = 'bold 20px Arial';
+                    ctx3.textAlign = 'center';
+                    ctx3.fillText(total, cx, cy+4);
+                    ctx3.font = '11px Arial';
+                    ctx3.fillStyle = '#888';
+                    ctx3.fillText('ind.', cx, cy+20);
                 }
+
+                // Leyenda global debajo
+                ctx3.font = '13px Arial';
+                ctx3.textAlign = 'left';
+                const leyY = 370;
+                const startX = 180;
+                ['Conseguido','En Proceso','No Conseguido'].forEach((lbl, i) => {
+                    const lx = startX + i*310;
+                    ctx3.fillStyle = colores[i];
+                    ctx3.fillRect(lx, leyY-12, 16, 16);
+                    ctx3.fillStyle = '#444';
+                    ctx3.fillText(lbl, lx+22, leyY);
+                });
+
+                imgDonutsGrid = canvas3.toDataURL('image/png');
+
+            } else {
+                // Trimestre único: barras + donut
+                const trimNum = parseInt(trimestreSelec);
+                const d = datosT[trimNum];
+
+                imgBarras = await _canvasChart('bar',
+                    {
+                        labels: ['Conseguido', 'En Proceso', 'No Conseguido'],
+                        datasets: [{
+                            label: 'Cantidad',
+                            data: [d.C, d.P, d.NC],
+                            backgroundColor: ['#22c55e','#3b82f6','#ef4444']
+                        }]
+                    },
+                    {
+                        plugins: {
+                            title:  { display:true, text:'Resultados T'+trimNum+' — '+a.siglas, font:{size:16,weight:'bold'}, color:'#1a5f4a' },
+                            legend: { display:false }
+                        },
+                        scales: { y:{ beginAtZero:true, ticks:{stepSize:1} } }
+                    }
+                );
+
+                imgCircular = await _donutTrim(d, 'Distribución T'+trimNum+' — '+a.siglas);
             }
-            
-            return {barras: imgBarras, circular: imgCircular, trimestre: trimActual};
+
+            return { barras: imgBarras, circular: imgCircular, donutsGrid: imgDonutsGrid };
         }
         
         // Función para imprimir informe de evaluación con gráficas
@@ -3134,19 +3122,34 @@ body{font-family:Arial,sans-serif;font-size:10px;color:#333}
                 html += '<div class="bloque-alumno">';
                 html += '<div class="eval-sec">'+a.siglas+' - '+a.curso+'</div>';
                 
-                if(g && (g.barras || g.circular)){
-                    html += '<div class="graficas-grid">';
-                    if(g.barras){
-                        html += '<div class="grafica-container">';
-                        html += '<img src="'+g.barras+'" class="grafica-img" />';
+                if(g && (g.barras || g.circular || g.donutsGrid)){
+                    if (trimestreSelec === 'todos') {
+                        // Modo comparativa: barras arriba, 3 donuts abajo (ancho completo)
+                        if(g.barras){
+                            html += '<div class="grafica-container" style="margin-bottom:12px">';
+                            html += '<img src="'+g.barras+'" class="grafica-img" />';
+                            html += '</div>';
+                        }
+                        if(g.donutsGrid){
+                            html += '<div class="grafica-container">';
+                            html += '<img src="'+g.donutsGrid+'" class="grafica-img" style="width:100%" />';
+                            html += '</div>';
+                        }
+                    } else {
+                        // Modo trimestre único: barras + donut lado a lado
+                        html += '<div class="graficas-grid">';
+                        if(g.barras){
+                            html += '<div class="grafica-container">';
+                            html += '<img src="'+g.barras+'" class="grafica-img" />';
+                            html += '</div>';
+                        }
+                        if(g.circular){
+                            html += '<div class="grafica-container">';
+                            html += '<img src="'+g.circular+'" class="grafica-img" />';
+                            html += '</div>';
+                        }
                         html += '</div>';
                     }
-                    if(g.circular){
-                        html += '<div class="grafica-container">';
-                        html += '<img src="'+g.circular+'" class="grafica-img" />';
-                        html += '</div>';
-                    }
-                    html += '</div>';
                 } else {
                     html += '<p style="color:#888;font-style:italic;padding:20px;text-align:center">No hay datos de evaluación registrados</p>';
                 }
@@ -3164,73 +3167,69 @@ body{font-family:Arial,sans-serif;font-size:10px;color:#333}
             html += '<table class="tabla-resumen">';
             
             if (trimestreSelec === 'todos') {
-                // Tabla con los 3 trimestres
-                html += '<tr><th>Alumno</th><th>T1 Conseguido</th><th>T1 Proceso</th><th>T1 No Iniciado</th>';
-                html += '<th>T2 Conseguido</th><th>T2 Proceso</th><th>T2 No Iniciado</th>';
-                html += '<th>T3 Conseguido</th><th>T3 Proceso</th><th>T3 No Iniciado</th></tr>';
-                
+                // Tabla con los 3 trimestres — 4 estados
+                html += '<tr><th>Alumno</th>';
+                [1,2,3].forEach(t => {
+                    html += '<th style="background:#166534">T'+t+' C</th><th style="background:#1e40af">T'+t+' P</th><th style="background:#991b1b">T'+t+' NC</th>';
+                });
+                html += '</tr>';
+
                 ids.forEach(id => {
                     const a = alumnos[id];
-                    const datosT1 = {C:0, P:0, N:0};
-                    const datosT2 = {C:0, P:0, N:0};
-                    const datosT3 = {C:0, P:0, N:0};
-                    
+                    const datosT = {1:{C:0,P:0,NC:0}, 2:{C:0,P:0,NC:0}, 3:{C:0,P:0,NC:0}};
                     if(a.programas){
                         Object.keys(a.programas).forEach(pId => {
                             const p = a.programas[pId];
-                            (p.objetivos || []).forEach((obj, oi) => {
-                                (obj.indicadores || []).forEach((ind, ii) => {
-                                    [1,2,3].forEach(trim => {
-                                        const k = pId+'_'+oi+'_'+ii+'_T'+trim;
-                                        const e = a.evaluaciones ? a.evaluaciones[k] : null;
-                                        const datos = trim===1 ? datosT1 : trim===2 ? datosT2 : datosT3;
-                                        if (e === 'C') datos.C++;
-                                        else if (e === 'P') datos.P++;
-                                        else if (e === 'N') datos.N++;
+                            (p.objetivos||[]).forEach((obj,oi) => {
+                                (obj.indicadores||[]).forEach((_,ii) => {
+                                    [1,2,3].forEach(t => {
+                                        const e = a.evaluaciones ? a.evaluaciones[pId+'_'+oi+'_'+ii+'_T'+t] : null;
+                                        if(e==='C') datosT[t].C++;
+                                        else if(e==='P') datosT[t].P++;
+                                        else if(e==='NC') datosT[t].NC++;
                                     });
                                 });
                             });
                         });
                     }
-                    
                     html += '<tr>';
                     html += '<td>'+a.siglas+' - '+a.curso+'</td>';
-                    html += '<td>'+datosT1.C+'</td><td>'+datosT1.P+'</td><td>'+datosT1.N+'</td>';
-                    html += '<td>'+datosT2.C+'</td><td>'+datosT2.P+'</td><td>'+datosT2.N+'</td>';
-                    html += '<td>'+datosT3.C+'</td><td>'+datosT3.P+'</td><td>'+datosT3.N+'</td>';
+                    [1,2,3].forEach(t => {
+                        const d = datosT[t];
+                        html += '<td style="background:#dcfce7;color:#166534;font-weight:700">'+d.C+'</td>';
+                        html += '<td style="background:#dbeafe;color:#1e40af;font-weight:700">'+d.P+'</td>';
+                        html += '<td style="background:#fee2e2;color:#991b1b;font-weight:700">'+d.NC+'</td>';
+                    });
                     html += '</tr>';
                 });
             } else {
-                // Tabla de un solo trimestre
+                // Tabla de un solo trimestre — 4 estados
                 const trimNum = parseInt(trimestreSelec);
-                html += '<tr><th>Alumno</th><th>Conseguido</th><th>En Proceso</th><th>No Iniciado</th><th>Total</th><th>% Conseguido</th></tr>';
-                
+                html += '<tr><th>Alumno</th><th style="background:#166534">Conseguido</th><th style="background:#1e40af">En Proceso</th><th style="background:#991b1b">No Conseguido</th><th>Evaluados</th><th>% Conseguido</th></tr>';
+
                 ids.forEach(id => {
                     const a = alumnos[id];
-                    const datos = {C:0, P:0, N:0};
-                    
+                    const d = {C:0, P:0, NC:0};
                     if(a.programas){
                         Object.keys(a.programas).forEach(pId => {
                             const p = a.programas[pId];
-                            (p.objetivos || []).forEach((obj, oi) => {
-                                (obj.indicadores || []).forEach((ind, ii) => {
-                                    const k = pId+'_'+oi+'_'+ii+'_T'+trimNum;
-                                    const e = a.evaluaciones ? a.evaluaciones[k] : null;
-                                    if (e === 'C') datos.C++;
-                                    else if (e === 'P') datos.P++;
-                                    else if (e === 'N') datos.N++;
+                            (p.objetivos||[]).forEach((obj,oi) => {
+                                (obj.indicadores||[]).forEach((_,ii) => {
+                                    const e = a.evaluaciones ? a.evaluaciones[pId+'_'+oi+'_'+ii+'_T'+trimNum] : null;
+                                    if(e==='C') d.C++; else if(e==='P') d.P++; else if(e==='NC') d.NC++;
                                 });
                             });
                         });
                     }
-                    
-                    const total = datos.C + datos.P + datos.N;
-                    const porcentaje = total > 0 ? Math.round((datos.C / total) * 100) : 0;
-                    
+                    const evaluados = d.C + d.P + d.NC;
+                    const porcentaje = evaluados > 0 ? Math.round(d.C / evaluados * 100) : 0;
                     html += '<tr>';
                     html += '<td>'+a.siglas+' - '+a.curso+'</td>';
-                    html += '<td>'+datos.C+'</td><td>'+datos.P+'</td><td>'+datos.N+'</td>';
-                    html += '<td>'+total+'</td><td>'+porcentaje+'%</td>';
+                    html += '<td style="background:#dcfce7;color:#166534;font-weight:700;text-align:center">'+d.C+'</td>';
+                    html += '<td style="background:#dbeafe;color:#1e40af;font-weight:700;text-align:center">'+d.P+'</td>';
+                    html += '<td style="background:#fee2e2;color:#991b1b;font-weight:700;text-align:center">'+d.NC+'</td>';
+                    html += '<td style="text-align:center">'+evaluados+'</td>';
+                    html += '<td style="text-align:center;font-weight:700">'+porcentaje+'%</td>';
                     html += '</tr>';
                 });
             }
