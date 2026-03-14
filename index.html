@@ -227,6 +227,7 @@
                 <button class="nav-tab" onclick="cambiarSeccion('sda',this)">🎓 SDA</button>
                 <button class="nav-tab" onclick="cambiarSeccion('biblioteca',this)">📚 Biblioteca</button>
                 <button class="nav-tab" onclick="cambiarSeccion('recursos',this)">🎯 Banco de Actividades</button>
+                <button class="nav-tab" onclick="cambiarSeccion('aci',this)">📋 ACI</button>
             </div>
             <div id="seccionAlumnos">
                 <div class="card">
@@ -434,6 +435,27 @@
                     <div id="recursosGrid" style="margin-top:20px"></div>
                 </div>
             </div>
+            <!-- ══ SECCIÓN ACI ══════════════════════════════════════════════ -->
+            <div id="seccionACI" style="display:none">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">📋 ACI — Adaptaciones Curriculares</h2>
+                        <div class="btn-group">
+                            <button class="btn btn-accent btn-sm" onclick="aciNuevaDesdeSeccion()">➕ Nueva ACI</button>
+                            <button class="btn btn-secondary btn-sm" onclick="aciInformeGeneral()">📄 Informe</button>
+                            <button class="btn btn-warning btn-sm" onclick="aciMigrarYReparar()" title="Migra datos del aci.html antiguo y corrige criterios mal asignados">🔧 Reparar datos</button>
+                        </div>
+                    </div>
+                    <!-- Selector alumno -->
+                    <div class="form-group" style="margin-bottom:12px">
+                        <label class="form-label">Alumno</label>
+                        <select class="form-select" id="aciAlumnoSel" onchange="aciCambiarAlumno()">
+                            <option value="">-- Seleccionar alumno --</option>
+                        </select>
+                    </div>
+                    <div id="aciContenidoPrincipal"></div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -455,7 +477,138 @@
         </div>
     </div>
 
-    <!-- MODALES -->
+    <!-- MODAL ACI -->
+    <div class="modal-overlay" id="modalACI">
+        <div class="modal">
+            <div class="modal-header"><h3 class="modal-title" id="modalACITitulo">📋 Nueva ACI</h3><button class="modal-close" onclick="cerrarModal('modalACI')">×</button></div>
+            <div class="modal-body" style="padding:16px">
+                <div class="form-group">
+                    <label class="form-label">Tipo</label>
+                    <div style="padding:10px;border-radius:8px;border:2px solid var(--accent);background:#fffbeb;font-size:.84rem;font-weight:600;color:#92400e">
+                        🟡 ACS — Adaptación Curricular Significativa <small style="font-weight:400;display:block;margin-top:3px">Modifica elementos prescriptivos del currículo (criterios de evaluación). Única modalidad ACI en Andalucía (Instrucciones 22/06/2015).</small>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Área</label>
+                        <select class="form-select" id="aciModalMateria" onchange="aciCargarCriterios()">
+                            <option value="">-- Seleccionar --</option>
+                            <option value="LCL">📖 Lengua Castellana</option>
+                            <option value="MA">🔢 Matemáticas</option>
+                            <option value="CN">🌿 Ciencias Naturales</option>
+                            <option value="CS">🌍 Ciencias Sociales</option>
+                            <option value="ING">🇬🇧 Inglés</option>
+                            <option value="EF">🏃 Ed. Física</option>
+                            <option value="EA">🎨 Ed. Artística</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Trimestre</label>
+                        <select class="form-select" id="aciModalTrim">
+                            <option value="1">T1</option><option value="2">T2</option><option value="3">T3</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group" id="aciGrupoCursoRef">
+                    <label class="form-label">Criterios del curso <span style="color:var(--accent);font-weight:400;text-transform:none"> (puede ser un curso inferior al del alumno)</span></label>
+                    <select class="form-select" id="aciModalCursoRef" onchange="aciCargarCriterios()">
+                        <option value="1">1º Primaria</option><option value="2">2º Primaria</option>
+                        <option value="3">3º Primaria</option><option value="4">4º Primaria</option>
+                        <option value="5">5º Primaria</option><option value="6">6º Primaria</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Criterios a adaptar <span id="aciCheckCount" style="color:var(--accent);font-weight:400;text-transform:none"></span></label>
+                    <div id="aciCriteriosSel" style="max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:8px">
+                        <div style="padding:12px;color:var(--text-light);font-size:.82rem">Selecciona área y curso</div>
+                    </div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                    <div class="form-group"><label class="form-label">Metodología</label><textarea class="form-input" id="aciAdapMet" rows="2" placeholder="Trabajo manipulativo, pasos pequeños..."></textarea></div>
+                    <div class="form-group"><label class="form-label">Materiales</label><textarea class="form-input" id="aciAdapMat" rows="2" placeholder="Fichas adaptadas, pictogramas..."></textarea></div>
+                    <div class="form-group"><label class="form-label">Tiempo / Organización</label><textarea class="form-input" id="aciAdapTiempo" rows="2" placeholder="Más tiempo, tareas más breves..."></textarea></div>
+                    <div class="form-group"><label class="form-label">Evaluación</label><textarea class="form-input" id="aciAdapEval" rows="2" placeholder="Pruebas orales, criterios adaptados..."></textarea></div>
+                </div>
+                <div class="form-group"><label class="form-label">Observaciones</label><textarea class="form-input" id="aciObsModal" rows="2" placeholder="Acuerdos con familia, coordinación..."></textarea></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="cerrarModal('modalACI')">Cancelar</button>
+                <button class="btn btn-primary" onclick="aciGuardar()">💾 Guardar ACI</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL SdA GENERADOR -->
+    <div class="modal-overlay" id="modalSdA">
+        <div class="modal" style="max-width:700px">
+            <div class="modal-header"><h3 class="modal-title">🎓 Generar Actividades con IA</h3><button class="modal-close" onclick="cerrarModal('modalSdA')">×</button></div>
+            <div class="modal-body" style="padding:16px">
+                <p style="font-size:.8rem;color:var(--text-light);margin-bottom:14px">Genera un prompt experto para copiar en Gemini, ChatGPT o Claude. Los criterios se extraen automáticamente de la programación de este mes.</p>
+                <!-- Resumen del mes -->
+                <div id="sdaMesResumen" style="background:var(--bg);border-radius:8px;padding:10px;margin-bottom:14px;font-size:.8rem"></div>
+                <!-- Filtro por área -->
+                <div class="form-row" style="margin-bottom:12px">
+                    <div class="form-group">
+                        <label class="form-label">Área a trabajar</label>
+                        <select class="form-select" id="sdaAreaSel" onchange="sdaActualizarCriterios()">
+                            <option value="">Todas las áreas del mes</option>
+                            <option value="LCL">📖 Lengua Castellana</option>
+                            <option value="MA">🔢 Matemáticas</option>
+                            <option value="CN">🌿 Ciencias Naturales</option>
+                            <option value="CS">🌍 Ciencias Sociales</option>
+                            <option value="ING">🇬🇧 Inglés</option>
+                            <option value="EF">🏃 Ed. Física</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Temática / Contexto (opcional)</label>
+                        <input type="text" class="form-input" id="sdaTematica" placeholder="Ej: Las plantas, Los números decimales...">
+                    </div>
+                </div>
+                <!-- Criterios extraídos -->
+                <div class="form-group">
+                    <label class="form-label">Criterios detectados este mes <span id="sdaCriteriosCount" style="color:var(--accent);font-weight:400;text-transform:none"></span></label>
+                    <div id="sdaCriteriosBox" style="background:var(--bg);border-radius:8px;padding:10px;max-height:160px;overflow-y:auto;font-size:.78rem;font-family:monospace;white-space:pre-wrap;color:var(--text)"></div>
+                </div>
+                <!-- Metodologías -->
+                <div class="form-group">
+                    <label class="form-label">Metodologías activas</label>
+                    <div style="display:flex;flex-wrap:wrap;gap:6px" id="sdaMetodologias">
+                        <span class="eval-badge" style="cursor:pointer;padding:4px 10px;border-radius:16px;border:1.5px solid var(--border);font-size:.75rem;background:var(--bg)" onclick="sdaToggleChip(this)">ABP</span>
+                        <span class="eval-badge" style="cursor:pointer;padding:4px 10px;border-radius:16px;border:1.5px solid var(--primary);font-size:.75rem;background:var(--primary);color:white" onclick="sdaToggleChip(this)">Aprendizaje cooperativo</span>
+                        <span class="eval-badge" style="cursor:pointer;padding:4px 10px;border-radius:16px;border:1.5px solid var(--border);font-size:.75rem;background:var(--bg)" onclick="sdaToggleChip(this)">Gamificación</span>
+                        <span class="eval-badge" style="cursor:pointer;padding:4px 10px;border-radius:16px;border:1.5px solid var(--border);font-size:.75rem;background:var(--bg)" onclick="sdaToggleChip(this)">Manipulativos</span>
+                        <span class="eval-badge" style="cursor:pointer;padding:4px 10px;border-radius:16px;border:1.5px solid var(--border);font-size:.75rem;background:var(--bg)" onclick="sdaToggleChip(this)">Flipped classroom</span>
+                        <span class="eval-badge" style="cursor:pointer;padding:4px 10px;border-radius:16px;border:1.5px solid var(--border);font-size:.75rem;background:var(--bg)" onclick="sdaToggleChip(this)">Design Thinking</span>
+                    </div>
+                </div>
+                <!-- Sesiones y duración -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Nº de sesiones</label>
+                        <input type="number" class="form-input" id="sdaSesiones" value="3" min="1" max="10">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Duración (min)</label>
+                        <input type="number" class="form-input" id="sdaDuracion" value="60" min="30" max="120" step="15">
+                    </div>
+                </div>
+                <!-- Preview del prompt -->
+                <div class="form-group">
+                    <label class="form-label">Vista previa del prompt</label>
+                    <div id="sdaPromptPreview" style="background:#1e293b;color:#e2e8f0;border-radius:8px;padding:12px;max-height:200px;overflow-y:auto;font-size:.72rem;font-family:monospace;white-space:pre-wrap;line-height:1.5">Pulsa "Generar prompt" para previsualizar...</div>
+                </div>
+            </div>
+            <div class="modal-footer" style="gap:8px;flex-wrap:wrap">
+                <button class="btn btn-secondary" onclick="cerrarModal('modalSdA')">Cerrar</button>
+                <button class="btn btn-secondary btn-sm" onclick="sdaGenerarPrompt()">👁️ Generar prompt</button>
+                <button class="btn btn-primary" onclick="sdaCopiarPrompt()">📋 Copiar para IA</button>
+                <button class="btn btn-ai btn-sm" onclick="sdaAbrirGemini()">🤖 Abrir Gemini</button>
+            </div>
+        </div>
+    </div>
+
+        <!-- MODALES -->
     <div class="modal-overlay" id="modalNuevo">
         <div class="modal">
             <div class="modal-header"><h3 class="modal-title">➕ Nuevo Alumno</h3><button class="modal-close" onclick="cerrarModal('modalNuevo')">×</button></div>
@@ -1388,7 +1541,8 @@
         });
         
         // Firebase listeners
-        db.ref('gestorpe/alumnos').on('value',snap=>{alumnos=snap.val()||{};renderInicio();if(alumnoActual&&alumnos[alumnoActual]){renderProgs();renderProg();renderEval();renderAsis();}document.getElementById('statusDot').classList.add('ok');document.getElementById('statusText').textContent='Conectado';});
+        db.ref('gestorpe/alumnos').on('value',snap=>{alumnos=snap.val()||{};// Extract ACI sub-data
+        aciData={};Object.keys(alumnos).forEach(id=>{if(alumnos[id].aci)aciData[id]=alumnos[id].aci;});renderInicio();if(alumnoActual&&alumnos[alumnoActual]){renderProgs();renderProg();renderEval();renderAsis();}document.getElementById('statusDot').classList.add('ok');document.getElementById('statusText').textContent='Conectado';if(document.getElementById('seccionACI').style.display!=='none')renderAciSeccion();});
         db.ref('gestorpe/plantillas').on('value',snap=>{
             const customPlantillas=snap.val()||{};
             // Añadir plantillas personalizadas de Firebase
@@ -1401,7 +1555,7 @@
         // Renderizar biblioteca aunque Firebase no conecte
         renderBiblioteca();
 
-        function cambiarSeccion(s,btn){document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');document.getElementById('seccionAlumnos').style.display=s==='alumnos'?'block':'none';document.getElementById('seccionEstadisticas').style.display=s==='estadisticas'?'block':'none';document.getElementById('seccionSDA').style.display=s==='sda'?'block':'none';document.getElementById('seccionBiblioteca').style.display=s==='biblioteca'?'block':'none';document.getElementById('seccionRecursos').style.display=s==='recursos'?'block':'none';if(s==='estadisticas')renderEstadisticasGlobal();if(s==='recursos')inicializarRecursos();}
+        function cambiarSeccion(s,btn){document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');document.getElementById('seccionAlumnos').style.display=s==='alumnos'?'block':'none';document.getElementById('seccionEstadisticas').style.display=s==='estadisticas'?'block':'none';document.getElementById('seccionSDA').style.display=s==='sda'?'block':'none';document.getElementById('seccionBiblioteca').style.display=s==='biblioteca'?'block':'none';document.getElementById('seccionRecursos').style.display=s==='recursos'?'block':'none';document.getElementById('seccionACI').style.display=s==='aci'?'block':'none';if(s==='estadisticas')renderEstadisticasGlobal();if(s==='recursos')inicializarRecursos();if(s==='aci')renderAciSeccion();}
         function renderInicio(){const g=document.getElementById('alumnosGrid'),ids=Object.keys(alumnos);if(!ids.length){g.innerHTML='<div class="alumno-card alumno-card-add" onclick="abrirModalNuevo()"><span style="font-size:1.3rem">➕</span><span style="font-size:.8rem">Añadir</span></div>';return;}let h=ids.map(id=>{const a=alumnos[id],n=a.programas?Object.keys(a.programas).length:0;return'<div class="alumno-card" onclick="abrirAlumno(\''+id+'\')"><div class="alumno-siglas">'+a.siglas+'</div><div class="alumno-curso">'+a.curso+'</div><div class="alumno-progs">'+n+' prog.</div></div>';}).join('');h+='<div class="alumno-card alumno-card-add" onclick="abrirModalNuevo()"><span style="font-size:1.3rem">➕</span></div>';g.innerHTML=h;}
         
         // BIBLIOTECA
@@ -1433,7 +1587,7 @@
         function eliminarAlumno(id){if(confirm('¿Eliminar alumno?')){db.ref('gestorpe/alumnos/'+id).remove();volverInicio();toast('Eliminado','success');}}
 
         // PROGRAMAS
-        function renderProgs(){const a=alumnos[alumnoActual];let h='<div class="card"><div class="card-header"><h3 class="card-title">📄 Programas</h3><button class="btn btn-primary btn-sm no-print" onclick="abrirModalAddProg()">➕</button></div>';if(!a.programas||!Object.keys(a.programas).length){h+='<div class="empty-state">Sin programas</div>';}else{Object.keys(a.programas).forEach(pId=>{const p=a.programas[pId],info=AREAS[p.tipo]||{icon:'📄',nombre:p.tipo,color:'#666'};h+='<div class="programa-card" style="border-left-color:'+info.color+'"><div class="programa-header"><span class="programa-titulo">'+info.icon+' '+info.nombre+'</span><button class="btn btn-danger btn-sm no-print" onclick="elimProg(\''+pId+'\')">🗑️</button></div>';(p.objetivos||[]).forEach(obj=>{h+='<div class="objetivo-card"><div class="objetivo-header"><span class="objetivo-num">O'+obj.numero+'</span><span class="trimestre-badge t'+obj.trimestre+'">T'+obj.trimestre+'</span></div><div class="objetivo-desc">'+obj.descripcion+'</div>';if(obj.indicadores&&obj.indicadores.length){h+='<ul class="indicadores-list">'+obj.indicadores.map(x=>'<li>• '+x+'</li>').join('')+'</ul>';}h+='</div>';});h+='</div>';});}h+='<div class="btn-group no-print" style="margin-top:12px"><button class="btn btn-secondary btn-sm" onclick="regenerarProg()">🔄 Regenerar</button><button class="btn btn-ai btn-sm" onclick="generarPromptIA()">🤖 IA</button><button class="btn btn-warning btn-sm" onclick="abrirModal(\'modalImportJSON\')">📥 JSON</button><button class="btn btn-secondary btn-sm" onclick="actualizarCriteriosLOMLOE()" title="Añade los criterios LOMLOE sin borrar nada">🏷️ Criterios</button></div></div>';document.getElementById('tabProgramas').innerHTML=h;}
+        function renderProgs(){const a=alumnos[alumnoActual];let h='<div class="card"><div class="card-header"><h3 class="card-title">📄 Programas</h3><button class="btn btn-primary btn-sm no-print" onclick="abrirModalAddProg()">➕</button></div>';if(!a.programas||!Object.keys(a.programas).length){h+='<div class="empty-state">Sin programas</div>';}else{Object.keys(a.programas).forEach(pId=>{const p=a.programas[pId],info=AREAS[p.tipo]||{icon:'📄',nombre:p.tipo,color:'#666'};h+='<div class="programa-card" style="border-left-color:'+info.color+'"><div class="programa-header"><span class="programa-titulo">'+info.icon+' '+info.nombre+'</span><button class="btn btn-danger btn-sm no-print" onclick="elimProg(\''+pId+'\')">🗑️</button></div>';(p.objetivos||[]).forEach(obj=>{h+='<div class="objetivo-card"><div class="objetivo-header"><span class="objetivo-num">O'+obj.numero+'</span><span class="trimestre-badge t'+obj.trimestre+'">T'+obj.trimestre+'</span></div><div class="objetivo-desc">'+obj.descripcion+'</div>';if(obj.indicadores&&obj.indicadores.length){h+='<ul class="indicadores-list">'+obj.indicadores.map(x=>'<li>• '+x+'</li>').join('')+'</ul>';}h+='</div>';});h+='</div>';});}h+='<div class="btn-group no-print" style="margin-top:12px"><button class="btn btn-secondary btn-sm" onclick="regenerarProg()">🔄 Regenerar</button><button class="btn btn-ai btn-sm" onclick="generarPromptIA()">🤖 IA</button><button class="btn btn-warning btn-sm" onclick="abrirModal(\'modalImportJSON\')">📥 JSON</button><button class="btn btn-secondary btn-sm" onclick="actualizarCriteriosLOMLOE()" title="Añade los criterios LOMLOE sin borrar nada">🏷️ Criterios</button><button class="btn btn-danger btn-sm" onclick="repararTodosCriterios()" title="Corrige criterios mal asignados en TODOS los alumnos">🔧 Reparar criterios</button></div></div>';document.getElementById('tabProgramas').innerHTML=h;}
         function abrirModalAddProg(){const a=alumnos[alumnoActual];const cicloAlumno=a.ciclo||'ciclo1';const sel=document.getElementById('selPlantilla');sel.innerHTML='<option value="">-- Elegir plantilla --</option>';Object.keys(plantillas).forEach(id=>{const p=plantillas[id];if(p.ciclo===cicloAlumno){const area=AREAS[p.tipo]||{icon:'📄'};sel.innerHTML+='<option value="'+id+'">'+area.icon+' '+p.nombre+'</option>';}});document.getElementById('previewPlantilla').style.display='none';document.getElementById('addProgTipo').value='';document.getElementById('addProgTexto').value='';document.getElementById('uploadZone').innerHTML='📄 Toca para seleccionar';document.getElementById('uploadZone').classList.remove('has-file');document.getElementById('previewProg').style.display='none';document.getElementById('zonaDocx').style.display='block';document.getElementById('zonaLecto').style.display='none';docExtraido=null;abrirModal('modalAddProg');}
         function previsualizarPlantilla(){const id=document.getElementById('selPlantilla').value;if(!id){document.getElementById('previewPlantilla').style.display='none';return;}const p=plantillas[id];if(!p)return;const nObj=p.objetivos?p.objetivos.length:0;const nInd=p.objetivos?p.objetivos.reduce((s,o)=>s+(o.indicadores?o.indicadores.length:0),0):0;document.getElementById('previewPlantilla').innerHTML='<strong>'+p.nombre+'</strong><br>'+nObj+' objetivos · '+nInd+' indicadores';document.getElementById('previewPlantilla').style.display='block';}
         function cambioTipoProg(){const t=document.getElementById('addProgTipo').value;document.getElementById('zonaDocx').style.display=t==='lectoescritura'?'none':'block';document.getElementById('zonaLecto').style.display=t==='lectoescritura'?'block':'none';}
@@ -1444,58 +1598,117 @@
         function addPrograma(){const plantillaId=document.getElementById('selPlantilla').value;if(plantillaId){asignarPlantilla(plantillaId,alumnoActual);cerrarModal('modalAddProg');return;}const tipo=document.getElementById('addProgTipo').value;if(!tipo){toast('Selecciona tipo o plantilla','error');return;}const objetivos=tipo==='lectoescritura'?LECTO:docExtraido;if(!objetivos||!objetivos.length){toast('Sin objetivos','error');return;}const a=alumnos[alumnoActual],pId='p_'+Date.now();db.ref('gestorpe/alumnos/'+alumnoActual+'/programas/'+pId).set({tipo:tipo,objetivos:objetivos}).then(()=>{a.programas=a.programas||{};a.programas[pId]={tipo:tipo,objetivos:objetivos};const nueva=generarProgramacion(a);return db.ref('gestorpe/alumnos/'+alumnoActual+'/programacion').set(nueva);}).then(()=>{cerrarModal('modalAddProg');renderProgs();renderProg();toast('Añadido ✓','success');});}
         function elimProg(pId){if(!confirm('¿Eliminar?'))return;db.ref('gestorpe/alumnos/'+alumnoActual+'/programas/'+pId).remove().then(()=>{delete alumnos[alumnoActual].programas[pId];return db.ref('gestorpe/alumnos/'+alumnoActual+'/programacion').set(generarProgramacion(alumnos[alumnoActual]));}).then(()=>{renderProgs();renderProg();toast('Eliminado','success');});}
 
+        // Construye índice correcto: tipo -> ciclo -> numero -> criterio
+        function construirIndiceCriterios(){
+            const indice = {}; // indice[tipo][ciclo][numero] = criterio
+            PLANTILLAS_BASE.forEach(pl => {
+                if (!indice[pl.tipo]) indice[pl.tipo] = {};
+                if (!indice[pl.tipo][pl.ciclo]) indice[pl.tipo][pl.ciclo] = {};
+                (pl.objetivos || []).forEach(obj => {
+                    if (obj.criterio) indice[pl.tipo][pl.ciclo][obj.numero] = obj.criterio;
+                });
+            });
+            return indice;
+        }
+
+        // Devuelve el ciclo correspondiente al curso del alumno
+        function getCicloDeAlumno(a){
+            const c = a.curso || '';
+            if(c.includes('1º')||c.includes('2º')||c.includes('Infantil')) return 'ciclo1';
+            if(c.includes('3º')||c.includes('4º')) return 'ciclo2';
+            if(c.includes('5º')||c.includes('6º')) return 'ciclo3';
+            return a.ciclo || 'ciclo1';
+        }
+
         function actualizarCriteriosLOMLOE(){
             const a = alumnos[alumnoActual];
             if (!a.programas || !Object.keys(a.programas).length) { toast('Sin programas', 'error'); return; }
-            
-            // Construir índice: tipo -> numero -> criterio desde PLANTILLAS_BASE
-            const indice = {};
-            PLANTILLAS_BASE.forEach(pl => {
-                if (!indice[pl.tipo]) indice[pl.tipo] = {};
-                (pl.objetivos || []).forEach(obj => {
-                    if (obj.criterio) indice[pl.tipo][obj.numero] = obj.criterio;
-                });
-            });
-            // También LECTO
-            LECTO.forEach(obj => {
-                if (!indice['lectoescritura']) indice['lectoescritura'] = {};
-                if (obj.criterio) indice['lectoescritura'][obj.numero] = obj.criterio;
-            });
-            
+            const indice = construirIndiceCriterios();
+            const cicloAlumno = getCicloDeAlumno(a);
+
+            // LECTO index
+            const indiceLecto = {};
+            LECTO.forEach(obj => { if (obj.criterio) indiceLecto[obj.numero] = obj.criterio; });
+
             let actualizados = 0, noEncontrados = 0;
             const updates = {};
-            
+
             Object.keys(a.programas).forEach(pId => {
                 const p = a.programas[pId];
                 let cambio = false;
                 const objetivosActualizados = (p.objetivos || []).map(obj => {
                     if (obj.criterio) return obj; // ya tiene, no tocar
-                    const criterio = indice[p.tipo] ? indice[p.tipo][obj.numero] : null;
-                    if (criterio) {
-                        actualizados++;
-                        cambio = true;
-                        return { ...obj, criterio: criterio };
-                    } else {
-                        noEncontrados++;
-                        return obj;
+                    let criterio = null;
+                    if (p.tipo === 'lectoescritura') {
+                        criterio = indiceLecto[obj.numero] || null;
+                    } else if (indice[p.tipo] && indice[p.tipo][cicloAlumno]) {
+                        criterio = indice[p.tipo][cicloAlumno][obj.numero] || null;
                     }
+                    if (criterio) { actualizados++; cambio = true; return { ...obj, criterio }; }
+                    noEncontrados++;
+                    return obj;
                 });
                 if (cambio) {
-                    // Solo guardar objetivos, sin tocar nada más
                     updates['gestorpe/alumnos/' + alumnoActual + '/programas/' + pId + '/objetivos'] = objetivosActualizados;
                     a.programas[pId].objetivos = objetivosActualizados;
                 }
             });
-            
-            if (actualizados === 0) {
-                toast('No hay criterios nuevos que añadir', 'success');
-                return;
-            }
-            
+
+            if (actualizados === 0) { toast('No hay criterios nuevos que añadir', 'success'); return; }
             db.ref().update(updates).then(() => {
                 renderProgs();
                 toast('✓ ' + actualizados + ' criterios añadidos' + (noEncontrados ? ' · ' + noEncontrados + ' sin correspondencia' : ''), 'success');
             });
+        }
+
+        // Repara criterios mal asignados en TODOS los alumnos (ciclo3 donde no toca)
+        function repararTodosCriterios(){
+            if(!confirm('Esto revisará los programas de TODOS los alumnos y corregirá criterios asignados al ciclo equivocado.\n\nLos criterios que no correspondan al ciclo del alumno serán actualizados al correcto.\n\n¿Continuar?')) return;
+            const indice = construirIndiceCriterios();
+            const indiceLecto = {};
+            LECTO.forEach(obj => { if(obj.criterio) indiceLecto[obj.numero] = obj.criterio; });
+
+            let totalFixed = 0, totalAlumnos = 0;
+            const updates = {};
+
+            Object.keys(alumnos).forEach(id => {
+                const a = alumnos[id];
+                if(!a.programas) return;
+                const cicloAlumno = getCicloDeAlumno(a);
+                let alumnoFixed = false;
+
+                Object.keys(a.programas).forEach(pId => {
+                    const p = a.programas[pId];
+                    let cambio = false;
+                    const objetivosCorregidos = (p.objetivos || []).map(obj => {
+                        // Determine correct criterio for this alumno's ciclo
+                        let criterioCorrect = null;
+                        if(p.tipo === 'lectoescritura') {
+                            criterioCorrect = indiceLecto[obj.numero] || null;
+                        } else if(indice[p.tipo] && indice[p.tipo][cicloAlumno]) {
+                            criterioCorrect = indice[p.tipo][cicloAlumno][obj.numero] || null;
+                        }
+                        if(!criterioCorrect) return obj; // no hay referencia, dejar como está
+                        if(obj.criterio === criterioCorrect) return obj; // ya correcto
+                        // Needs fixing
+                        cambio = true;
+                        totalFixed++;
+                        return { ...obj, criterio: criterioCorrect };
+                    });
+                    if(cambio) {
+                        updates['gestorpe/alumnos/' + id + '/programas/' + pId + '/objetivos'] = objetivosCorregidos;
+                        a.programas[pId].objetivos = objetivosCorregidos;
+                        alumnoFixed = true;
+                    }
+                });
+                if(alumnoFixed) totalAlumnos++;
+            });
+
+            if(Object.keys(updates).length === 0) { toast('Todos los criterios ya son correctos ✓', 'success'); return; }
+            db.ref().update(updates).then(() => {
+                toast(`✅ ${totalFixed} criterios corregidos en ${totalAlumnos} alumno/s`, 'success');
+                if(alumnoActual && alumnos[alumnoActual]) { renderProgs(); renderEval(); }
+            }).catch(e => toast('Error: ' + e.message, 'error'));
         }
 
         // PROGRAMACIÓN
@@ -1507,7 +1720,7 @@
         function insertarRepeticion(a,clave,contenido){const todasSesiones=getTodasLasSesiones(a);const idx=todasSesiones.indexOf(clave);if(idx<0)return a.programacion;const dias=a.diasSesion||[1,3,4];let idxRepetir=idx+dias.length;if(idxRepetir>=todasSesiones.length)idxRepetir=todasSesiones.length-1;const claveRepetir=todasSesiones[idxRepetir];const nueva={...a.programacion};for(let i=todasSesiones.length-1;i>idxRepetir;i--){const keyActual=todasSesiones[i];const keyAnterior=todasSesiones[i-1];if(nueva[keyAnterior]){nueva[keyActual]=nueva[keyAnterior];}}nueva[claveRepetir]=contenido;return nueva;}
         function generarPromptIA(){const a=alumnos[alumnoActual];if(!a.programas||!Object.keys(a.programas).length){toast('Añade programas','error');return;}const dias=a.diasSesion||[1,3,4];const todasSesiones=getTodasLasSesiones(a);let prompt='Genera programación COMPLETA curso 2025/2026.\n\n👤 '+a.siglas+' ('+a.curso+')\n📆 '+dias.map(d=>DIAS_C[d]).join(', ')+'\n📊 '+todasSesiones.length+' sesiones\n\n📚 PROGRAMAS:\n';Object.keys(a.programas).forEach(pId=>{const p=a.programas[pId],info=AREAS[p.tipo]||{nombre:p.tipo};prompt+='\n🔷 '+info.nombre+' (ID: "'+pId+'")\n';(p.objetivos||[]).forEach((obj,oi)=>{prompt+='  O'+obj.numero+' (oIdx:'+oi+', T'+obj.trimestre+'): '+obj.descripcion+'\n';(obj.indicadores||[]).forEach((ind,ii)=>{prompt+='    - iIdx:'+ii+': '+ind+'\n';});});});prompt+='\n📤 RESPONDE SOLO JSON:\n{"mes_semana_dia": {"pId": "...", "oIdx": N, "iIdx": N}, ...}\n\n⚠️ '+todasSesiones.length+' entradas. Alterna 50-50. Respeta trimestres.';navigator.clipboard.writeText(prompt).then(()=>{toast('Copiado','success');window.open('https://chat.openai.com/','_blank');});}
         function importarJSON(){const txt=document.getElementById('jsonInput').value.trim();if(!txt){toast('Pega JSON','error');return;}try{let cleanJSON=txt.replace(/```json?\n?/g,'').replace(/```/g,'').trim();const prog=JSON.parse(cleanJSON);db.ref('gestorpe/alumnos/'+alumnoActual+'/programacion').set(prog).then(()=>{alumnos[alumnoActual].programacion=prog;cerrarModal('modalImportJSON');document.getElementById('jsonInput').value='';renderProg();toast('Importado ✓','success');});}catch(e){toast('Error JSON','error');}}
-        function renderProg(){const a=alumnos[alumnoActual],dias=a.diasSesion||[1,3,4],noms=dias.map(d=>DIAS_C[d]),mes=MESES[mesActual],st=calcStats(a);let h='<div class="card"><div class="stats-box no-print"><div class="stat-item"><div class="stat-num" style="color:var(--danger)">'+(st.porMes[mesActual]?st.porMes[mesActual].aus:0)+'</div><div class="stat-label">Ausencias</div></div></div><div class="cuadrante-nav no-print"><button class="nav-btn" onclick="cambiarMes(-1)">◀</button><select class="form-select" style="width:auto" onchange="mesActual=parseInt(this.value);renderProg()">';for(let i=0;i<MESES.length;i++){h+='<option value="'+i+'"'+(i===mesActual?' selected':'')+'>'+MESES[i].nombre+'</option>';}h+='</select><button class="nav-btn" onclick="cambiarMes(1)">▶</button><span class="trimestre-badge t'+mes.trim+'">T'+mes.trim+'</span></div><div class="leyenda no-print"><div class="leyenda-item"><div class="leyenda-color" style="background:#fee2e2"></div>Ausencia</div><div class="leyenda-item"><div class="leyenda-color" style="background:#e0e7ff"></div>Sin cole</div></div><div style="overflow-x:auto;margin-top:8px"><table class="cuadrante-table"><thead><tr><th>S</th>';for(let i=0;i<noms.length;i++){h+='<th>'+noms[i]+'</th>';}h+='</tr></thead><tbody>';for(let si=0;si<mes.semanas;si++){const sem=si+1;h+='<tr><td>'+sem+'</td>';for(let di=0;di<dias.length;di++){h+=renderCelda(a,mesActual+'_'+sem+'_'+dias[di],dias[di]);}h+='</tr>';}h+='</tbody></table></div></div>';document.getElementById('tabProgramacion').innerHTML=h;}
+        function renderProg(){const a=alumnos[alumnoActual],dias=a.diasSesion||[1,3,4],noms=dias.map(d=>DIAS_C[d]),mes=MESES[mesActual],st=calcStats(a);let h='<div class="card"><div class="stats-box no-print"><div class="stat-item"><div class="stat-num" style="color:var(--danger)">'+(st.porMes[mesActual]?st.porMes[mesActual].aus:0)+'</div><div class="stat-label">Ausencias</div></div></div><div class="cuadrante-nav no-print"><button class="nav-btn" onclick="cambiarMes(-1)">◀</button><select class="form-select" style="width:auto" onchange="mesActual=parseInt(this.value);renderProg()">';for(let i=0;i<MESES.length;i++){h+='<option value="'+i+'"'+(i===mesActual?' selected':'')+'>'+MESES[i].nombre+'</option>';}h+='</select><button class="nav-btn" onclick="cambiarMes(1)">▶</button><span class="trimestre-badge t'+mes.trim+'">T'+mes.trim+'</span></div><div class="leyenda no-print"><div class="leyenda-item"><div class="leyenda-color" style="background:#fee2e2"></div>Ausencia</div><div class="leyenda-item"><div class="leyenda-color" style="background:#e0e7ff"></div>Sin cole</div></div><div style="overflow-x:auto;margin-top:8px"><table class="cuadrante-table"><thead><tr><th>S</th>';for(let i=0;i<noms.length;i++){h+='<th>'+noms[i]+'</th>';}h+='</tr></thead><tbody>';for(let si=0;si<mes.semanas;si++){const sem=si+1;h+='<tr><td>'+sem+'</td>';for(let di=0;di<dias.length;di++){h+=renderCelda(a,mesActual+'_'+sem+'_'+dias[di],dias[di]);}h+='</tr>';}h+='</tbody></table></div></div>';h+='<div class="btn-group no-print" style="margin-top:12px"><button class="btn btn-ai btn-sm" onclick="abrirModalSdA()">🎓 Generar actividades con IA</button></div>';document.getElementById('tabProgramacion').innerHTML=h;}
         function renderCelda(a,k,d){const c=a.programacion?a.programacion[k]:null,aus=a.ausencias?a.ausencias[k]:false,sc=a.sincole?a.sincole[k]:false,res=a.resultados?a.resultados[k]:null;let cls='celda',icon='';if(sc){cls+=' celda-sincole';icon='🏫';}else if(aus){cls+=' celda-ausencia';icon='❌';}else if(res==='conseguido'){icon='✅';}else if(res==='repetir'){icon='🔄';}if(!c||!a.programas||!a.programas[c.pId]){return'<td class="'+cls+' celda-vacia" onclick="editarCelda(\''+k+'\','+d+')">'+(icon?'<span class="celda-icon">'+icon+'</span>':'')+'+</td>';}const p=a.programas[c.pId],obj=p.objetivos?p.objetivos[c.oIdx]:null;if(!obj)return'<td class="'+cls+'">?</td>';const info=AREAS[p.tipo]||{color:'#666'},ind=obj.indicadores?(obj.indicadores[c.iIdx]||''):'';const criterio=obj.criterio?'<div style="font-size:.55rem;color:#888;margin-top:2px;font-family:monospace">'+obj.criterio+'</div>':'';const recursoIcon=c.recursoId?'<span style="position:absolute;bottom:2px;left:2px;font-size:.6rem" title="Recurso vinculado">🔗</span>':'';return'<td class="'+cls+'" onclick="editarCelda(\''+k+'\','+d+')">'+(icon?'<span class="celda-icon">'+icon+'</span>':'')+recursoIcon+'<div class="celda-obj" style="color:'+info.color+'">O'+obj.numero+'</div><div class="celda-ind">'+ind.substring(0,25)+(ind.length>25?'...':'')+'</div>'+criterio+'</td>';}
         function cambiarMes(dir){mesActual=Math.max(0,Math.min(9,mesActual+dir));renderProg();}
         function editarCelda(k,d){celdaEditando=k;estadoCelda='asiste';resultadoCelda=null;const a=alumnos[alumnoActual],c=a.programacion?a.programacion[k]:{};document.getElementById('celdaTitulo').textContent=DIAS[d];document.querySelectorAll('.asist-btn').forEach(b=>b.classList.remove('selected'));document.querySelectorAll('.resultado-btn').forEach(b=>b.classList.remove('selected'));if(a.sincole&&a.sincole[k]){estadoCelda='sincole';document.querySelector('.asist-btn.sincole').classList.add('selected');document.getElementById('contenidoSesion').style.display='none';}else if(a.ausencias&&a.ausencias[k]){estadoCelda='ausencia';document.querySelector('.asist-btn.ausencia').classList.add('selected');document.getElementById('contenidoSesion').style.display='none';}else{document.querySelector('.asist-btn.asiste').classList.add('selected');document.getElementById('contenidoSesion').style.display='block';}resultadoCelda=(a.resultados&&a.resultados[k])?a.resultados[k]:null;if(resultadoCelda){const btn=document.querySelector('.resultado-btn.'+resultadoCelda);if(btn)btn.classList.add('selected');}const sel=document.getElementById('selPrograma');sel.innerHTML='<option value="">-</option>';if(a.programas){Object.keys(a.programas).forEach(pId=>{const p=a.programas[pId],info=AREAS[p.tipo]||{icon:'📄'};sel.innerHTML+='<option value="'+pId+'"'+(c.pId===pId?' selected':'')+'>'+info.icon+' '+(info.nombre||p.tipo)+'</option>';});}if(c.pId){cargarObjetivos();setTimeout(()=>{document.getElementById('selObjetivo').value=c.oIdx!==undefined?c.oIdx:'';cargarIndicadores();setTimeout(()=>{document.getElementById('selIndicador').value=c.iIdx!==undefined?c.iIdx:'';cargarRecursosSugeridos();setTimeout(()=>{document.getElementById('selRecurso').value=c.recursoId||'';if(c.recursoId)mostrarInfoRecurso(c.recursoId);},30);},30);},30);}else{document.getElementById('selObjetivo').innerHTML='<option value="">-</option>';document.getElementById('selIndicador').innerHTML='<option value="">-</option>';document.getElementById('selRecurso').innerHTML='<option value="">Sin recurso</option>';}abrirModal('modalCelda');}
@@ -2380,6 +2593,606 @@
             return contenidos.slice(0,5).map((c,i)=>(i+1)+'. '+c).join('\n');
         }
         
+
+        // ══════════════════════════════════════════════════════════════════
+        // ACI — ADAPTACIONES CURRICULARES INDIVIDUALIZADAS
+        // ══════════════════════════════════════════════════════════════════
+
+
+        // ══════════════════════════════════════════════════════════════════
+        // ACI — MIGRACIÓN Y REPARACIÓN DE DATOS
+        // Mueve datos de gestorpe/aci/ → gestorpe/alumnos/{id}/aci/
+        // y corrige criterios mal asignados según el curso real del alumno
+        // ══════════════════════════════════════════════════════════════════
+        function aciMigrarYReparar(){
+            if(!confirm('Esto buscará ACIs en la ruta antigua (aci.html), las moverá a la ruta correcta y corregirá criterios según el curso de cada alumno.\n\n¿Continuar?'))return;
+            toast('Leyendo datos...','success');
+
+            // All valid codes per ciclo (to validate/filter)
+            const codigosPorCiclo={
+                ciclo1:new Set(),ciclo2:new Set(),ciclo3:new Set()
+            };
+            Object.values(ACI_CRITERIOS).forEach(areaData=>{
+                ['ciclo1','ciclo2','ciclo3'].forEach(ciclo=>{
+                    if(areaData[ciclo])Object.keys(areaData[ciclo]).forEach(code=>codigosPorCiclo[ciclo].add(code));
+                });
+            });
+            // A code is "valid up to" a ciclo if it belongs to that ciclo or a lower one
+            function esCriterioValidoParaCurso(code, cursoNum){
+                const ciclo=ACI_CURSO_CICLO[String(cursoNum)]||'ciclo1';
+                if(ciclo==='ciclo1') return codigosPorCiclo.ciclo1.has(code);
+                if(ciclo==='ciclo2') return codigosPorCiclo.ciclo1.has(code)||codigosPorCiclo.ciclo2.has(code);
+                return true; // ciclo3 accepts all
+            }
+
+            let migraded=0, fixed=0, skipped=0;
+            const updates={};
+
+            // Step 1: Read old path gestorpe/aci/
+            db.ref('gestorpe/aci').once('value').then(snap=>{
+                const oldData=snap.val()||{};
+                const oldIds=Object.keys(oldData);
+
+                oldIds.forEach(id=>{
+                    const alumno=alumnos[id];
+                    if(!alumno){skipped++;return;}
+                    const cursoNum=aciGetCursoAlumno(alumno);
+                    const aciAl=oldData[id];
+
+                    Object.keys(aciAl).forEach(key=>{
+                        const aci=aciAl[key];
+                        // Fix criterios_seleccionados: remove any that don't belong to this curso
+                        const original=aci.criterios_seleccionados||[];
+                        const filtrados=original.filter(code=>esCriterioValidoParaCurso(code,cursoNum));
+                        if(filtrados.length<original.length){
+                            fixed+=(original.length-filtrados.length);
+                        }
+                        const corrected={...aci,tipo:'ACS',criterios_seleccionados:filtrados,cursoRef:aci.cursoRef||cursoNum};
+                        // Write to new path
+                        updates[`gestorpe/alumnos/${id}/aci/${key}`]=corrected;
+                        migraded++;
+                    });
+                    // Mark old path for deletion
+                    updates[`gestorpe/aci/${id}`]=null;
+                });
+
+                // Step 2: Also fix any existing data in the new path
+                Object.keys(alumnos).forEach(id=>{
+                    const alumno=alumnos[id];
+                    const cursoNum=aciGetCursoAlumno(alumno);
+                    if(!alumno.aci)return;
+                    Object.keys(alumno.aci).forEach(key=>{
+                        const aci=alumno.aci[key];
+                        const original=aci.criterios_seleccionados||[];
+                        const filtrados=original.filter(code=>esCriterioValidoParaCurso(code,cursoNum));
+                        if(filtrados.length<original.length){
+                            fixed+=(original.length-filtrados.length);
+                            updates[`gestorpe/alumnos/${id}/aci/${key}/criterios_seleccionados`]=filtrados;
+                            // Also fix evaluacion: remove keys not in filtrados
+                            const eval_=aci.evaluacion||{};
+                            const newEval={};
+                            filtrados.forEach(c=>{if(eval_[c])newEval[c]=eval_[c];});
+                            updates[`gestorpe/alumnos/${id}/aci/${key}/evaluacion`]=newEval;
+                        }
+                    });
+                });
+
+                if(Object.keys(updates).length===0){
+                    toast('No se encontraron datos para migrar ni reparar','success');
+                    return;
+                }
+
+                return db.ref().update(updates);
+            }).then(()=>{
+                toast(`✅ Migrados: ${migraded} ACIs · Criterios eliminados: ${fixed} · Sin alumno: ${skipped}`,'success');
+                // Refresh local aciData
+                Object.keys(alumnos).forEach(id=>{
+                    if(alumnos[id].aci)aciData[id]=alumnos[id].aci;
+                });
+                renderAciAlumnoPanel();
+                renderAciSeccion();
+            }).catch(e=>{
+                toast('Error: '+e.message,'error');
+                console.error('Migrate error:',e);
+            });
+        }
+
+        const ACI_CRITERIOS = {
+            LCL:{nombre:'Lengua Castellana y Literatura',icon:'📖',color:'#6366f1',
+                ciclo1:{'LCL.1.1.1':'Comprender textos orales breves identificando el tema y la información relevante','LCL.1.1.2':'Identificar la intención comunicativa y el sentido global de textos orales sencillos','LCL.1.2.1':'Producir textos orales breves coherentes y adecuados a la situación comunicativa','LCL.1.2.2':'Participar en intercambios comunicativos respetando las normas básicas','LCL.1.3.1':'Leer en voz alta con pronunciación ritmo y entonación adecuados','LCL.1.3.2':'Comprender textos escritos sencillos identificando información explícita e ideas principales','LCL.1.4.1':'Escribir textos breves con coherencia usando las convenciones básicas de la escritura','LCL.1.4.2':'Revisar y mejorar textos propios con orientación del docente','LCL.1.8.1':'Usar vocabulario adecuado al nivel y enriquecer el léxico activo'},
+                ciclo2:{'LCL.2.1.1':'Comprender textos orales de mayor complejidad identificando la información relevante','LCL.2.2.1':'Producir textos orales coherentes con estructura clara y adecuados al contexto','LCL.2.3.1':'Leer con fluidez entonación y comprensión en diferentes tipos de texto','LCL.2.3.2':'Comprender textos escritos de diferente tipología identificando ideas principales e inferenciales','LCL.2.4.1':'Escribir textos de diferente tipo con coherencia cohesión y adecuación','LCL.2.4.2':'Planificar redactar y revisar textos propios con creciente autonomía','LCL.2.8.1':'Ampliar y usar el vocabulario de forma precisa y variada'},
+                ciclo3:{'LCL.3.1.1':'Comprender textos orales complejos distinguiendo ideas principales y secundarias','LCL.3.2.1':'Producir textos orales elaborados con argumentación y adaptados al contexto','LCL.3.3.1':'Leer de forma autónoma con fluidez y expresividad en diferentes géneros textuales','LCL.3.3.2':'Comprender textos escritos complejos realizando inferencias y valoraciones','LCL.3.4.1':'Escribir textos diversos con autonomía coherencia cohesión y corrección','LCL.3.4.2':'Planificar redactar revisar y publicar textos con autonomía creciente','LCL.3.8.1':'Usar un vocabulario amplio preciso y adecuado al registro y al contexto'}},
+            MA:{nombre:'Matemáticas',icon:'🔢',color:'#3b82f6',
+                ciclo1:{'MA.1.1.1':'Resolver problemas sencillos de la vida cotidiana usando estrategias básicas','MA.1.2.1':'Realizar operaciones de suma y resta comprendiendo su significado y procedimiento','MA.1.3.1':'Identificar y usar patrones relaciones y regularidades sencillas','MA.1.4.1':'Medir y estimar magnitudes usando unidades no convencionales y convencionales básicas','MA.1.5.1':'Recoger organizar y representar datos sencillos en tablas y pictogramas','MA.1.5.2':'Usar el sentido numérico para comprender y operar con números naturales hasta 999'},
+                ciclo2:{'MA.2.1.1':'Resolver problemas de uno o dos pasos usando estrategias variadas y justificando el proceso','MA.2.1.2':'Usar el razonamiento matemático para modelizar y resolver situaciones reales','MA.2.2.1':'Realizar operaciones con comprensión y eficacia','MA.2.3.1':'Identificar y usar patrones relaciones algebraicas y regularidades numéricas','MA.2.4.1':'Medir y estimar magnitudes usando unidades del sistema métrico decimal','MA.2.5.1':'Recoger organizar y representar datos en tablas y gráficos estadísticos básicos','MA.2.5.2':'Usar el sentido numérico con números naturales fracciones y decimales'},
+                ciclo3:{'MA.3.1.1':'Resolver problemas complejos de varios pasos con estrategias propias y justificación','MA.3.1.2':'Modelizar situaciones reales usando las matemáticas con autonomía y rigor','MA.3.2.1':'Operar con números naturales fraccionarios y decimales con comprensión y fluidez','MA.3.3.1':'Usar el pensamiento algebraico y el razonamiento para generalizar y abstraer','MA.3.4.1':'Calcular y estimar magnitudes geométricas perímetro área y volumen básico','MA.3.5.1':'Analizar datos estadísticos e interpretar probabilidades básicas','MA.3.5.2':'Usar el sentido numérico con la amplitud numérica completa de primaria'}},
+            CN:{nombre:'Ciencias Naturales',icon:'🌿',color:'#10b981',
+                ciclo1:{'CN.1.1.1':'Identificar y describir características de los seres vivos del entorno próximo','CN.1.2.1':'Reconocer materiales y sus propiedades en objetos y situaciones cotidianas','CN.1.3.1':'Observar fenómenos naturales sencillos y describir sus características','CN.1.4.1':'Adoptar hábitos de vida saludable alimentación descanso e higiene'},
+                ciclo2:{'CN.2.1.1':'Describir y clasificar seres vivos según sus características y relaciones ecológicas','CN.2.2.1':'Analizar propiedades de materiales y sus usos en el entorno','CN.2.3.1':'Investigar fenómenos naturales usando procedimientos científicos básicos','CN.2.4.1':'Aplicar hábitos de vida saludable y conocer el funcionamiento básico del cuerpo humano'},
+                ciclo3:{'CN.3.1.1':'Explicar la biodiversidad y las relaciones entre seres vivos y su ecosistema','CN.3.2.1':'Relacionar propiedades de la materia con sus usos tecnológicos y cotidianos','CN.3.3.1':'Planificar y realizar investigaciones científicas sencillas con rigor metodológico','CN.3.4.1':'Analizar el funcionamiento del cuerpo humano y sus sistemas con profundidad'}},
+            CS:{nombre:'Ciencias Sociales',icon:'🌍',color:'#f59e0b',
+                ciclo1:{'CS.1.1.1':'Identificar los elementos del entorno geográfico próximo y sus características','CS.1.2.1':'Reconocer aspectos básicos de la vida en sociedad y normas de convivencia','CS.1.3.1':'Situar hechos y personajes en el tiempo usando referencias temporales básicas'},
+                ciclo2:{'CS.2.1.1':'Describir los elementos del paisaje y el territorio español con sus características','CS.2.2.1':'Analizar la organización social política y económica básica de la comunidad','CS.2.3.1':'Situar y relacionar hechos históricos en el tiempo cronológico'},
+                ciclo3:{'CS.3.1.1':'Analizar los elementos geográficos de España y Europa relacionándolos con la actividad humana','CS.3.2.1':'Comprender la organización política social y económica de España y Europa','CS.3.3.1':'Analizar procesos históricos relevantes para comprender la realidad presente'}},
+            ING:{nombre:'Inglés',icon:'🇬🇧',color:'#8b5cf6',
+                ciclo1:{'ING.1.1.1':'Comprender instrucciones expresiones y textos orales muy breves y sencillos en inglés','ING.1.2.1':'Producir palabras expresiones y frases muy cortas en inglés','ING.1.3.1':'Leer palabras y textos muy breves con vocabulario conocido y apoyo visual','ING.1.4.1':'Escribir palabras y expresiones sencillas con apoyo de modelo'},
+                ciclo2:{'ING.2.1.1':'Comprender textos orales breves y sencillos sobre temas conocidos','ING.2.2.1':'Producir mensajes orales breves y sencillos con vocabulario básico','ING.2.3.1':'Leer y comprender textos breves con vocabulario familiar','ING.2.4.1':'Escribir textos breves y sencillos con apoyo y modelo previo'},
+                ciclo3:{'ING.3.1.1':'Comprender textos orales de mayor extensión sobre temas variados','ING.3.2.1':'Producir mensajes orales claros y coherentes con vocabulario suficiente','ING.3.3.1':'Leer y comprender textos escritos de diferente tipología','ING.3.4.1':'Escribir textos cortos y coherentes sobre temas conocidos con autonomía'}},
+            EF:{nombre:'Educación Física',icon:'🏃',color:'#ec4899',
+                ciclo1:{'EF.01.01':'Responder a situaciones motrices sencillas con habilidades perceptivo-motrices básicas','EF.01.02':'Explorar las posibilidades expresivas del cuerpo en situaciones lúdicas y rítmicas','EF.01.06':'Aplicar capacidades coordinativas en situaciones físico-motrices variadas','EF.01.07':'Conocer y controlar el propio cuerpo esquema corporal y lateralidad'},
+                ciclo2:{'EF.02.01':'Resolver situaciones motrices aplicando habilidades básicas y genéricas con eficacia','EF.02.02':'Usar recursos expresivos del cuerpo en producciones rítmicas y expresivas','EF.02.06':'Aplicar capacidades físicas y coordinativas en situaciones de creciente complejidad'},
+                ciclo3:{'EF.03.01':'Resolver situaciones motrices complejas seleccionando y combinando habilidades','EF.03.02':'Usar de forma creativa los recursos expresivos del cuerpo','EF.03.06':'Regular la intensidad y duración del esfuerzo en situaciones físico-motrices'}},
+            EA:{nombre:'Educación Artística',icon:'🎨',color:'#f97316',
+                ciclo1:{'EA.1.1.1':'Explorar y usar materiales técnicas y recursos plásticos básicos de forma creativa','EA.1.2.1':'Participar en producciones musicales sencillas canciones ritmos e instrumentos'},
+                ciclo2:{'EA.2.1.1':'Aplicar técnicas plásticas y visuales con intención comunicativa y estética','EA.2.2.1':'Participar activamente en producciones musicales interpretación y creación básica'},
+                ciclo3:{'EA.3.1.1':'Crear producciones plásticas y visuales con autonomía técnica y expresiva','EA.3.2.1':'Interpretar y crear músicas con mayor complejidad técnica y sentido estético'}}
+        };
+
+        const ACI_CURSO_CICLO={'1':'ciclo1','2':'ciclo1','3':'ciclo2','4':'ciclo2','5':'ciclo3','6':'ciclo3'};
+        const ACI_CURSO_LABELS={'1':'1º Primaria','2':'2º Primaria','3':'3º Primaria','4':'4º Primaria','5':'5º Primaria','6':'6º Primaria'};
+        let aciData={}, aciAlumnoSel=null, aciTipoSel='ACS', aciEditandoKey=null;
+        let aciTrimActual=1, aciMateriaActual='LCL';
+
+        // Cargar datos ACI desde Firebase
+        // ACI data lives inside each alumno: alumnos/{id}/aci/{key}
+        // Loaded via the main alumnos listener - no separate listener needed
+
+        function aciGetCursoAlumno(a){
+            const c=a.curso||'';
+            if(c.includes('1º'))return'1';if(c.includes('2º'))return'2';if(c.includes('3º'))return'3';
+            if(c.includes('4º'))return'4';if(c.includes('5º'))return'5';if(c.includes('6º'))return'6';
+            return'1';
+        }
+
+        function aciGetCriteriosCurso(area,curso){
+            const d=ACI_CRITERIOS[area];if(!d)return{};
+            return d[ACI_CURSO_CICLO[String(curso)]]||{};
+        }
+
+        // ── Render sección ACI (pestaña principal) ──────────────────────────
+        function renderAciSeccion(){
+            // Populate alumno selector
+            const sel=document.getElementById('aciAlumnoSel');
+            const cur=sel.value;
+            sel.innerHTML='<option value="">-- Seleccionar alumno --</option>';
+            const ids=Object.keys(alumnos).sort((a,b)=>(alumnos[a].curso||'').localeCompare(alumnos[b].curso||'','es'));
+            ids.forEach(id=>{
+                const a=alumnos[id];
+                const nACI=aciData[id]?Object.keys(aciData[id]).length:0;
+                sel.innerHTML+=`<option value="${id}"${cur===id?' selected':''}>${a.siglas} — ${a.curso}${nACI?' ('+nACI+' ACI)':''}</option>`;
+            });
+            if(cur&&alumnos[cur])aciAlumnoSel=cur;
+            renderAciAlumnoPanel();
+        }
+
+        function aciCambiarAlumno(){
+            aciAlumnoSel=document.getElementById('aciAlumnoSel').value||null;
+            renderAciAlumnoPanel();
+        }
+
+        function renderAciAlumnoPanel(){
+            const cont=document.getElementById('aciContenidoPrincipal');
+            if(!aciAlumnoSel||!alumnos[aciAlumnoSel]){cont.innerHTML='<div style="text-align:center;padding:24px;color:var(--text-light)">Selecciona un alumno para ver sus ACI</div>';return;}
+            const a=alumnos[aciAlumnoSel];
+            const aciAl=aciData[aciAlumnoSel]||{};
+            const cursoNum=aciGetCursoAlumno(a);
+
+            // Trim tabs
+            let h=`<div style="display:flex;gap:8px;margin-bottom:14px;align-items:center">
+                <span style="font-size:.78rem;font-weight:600;color:var(--text-light)">Trimestre:</span>
+                ${[1,2,3].map(t=>`<button class="btn btn-sm ${t===aciTrimActual?'btn-primary':'btn-secondary'}" onclick="aciTrimActual=${t};renderAciAlumnoPanel()">${t===aciTrimActual?'▶ ':''}T${t}</button>`).join('')}
+            </div>`;
+
+            // Materias tabs
+            h+=`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">`;
+            Object.keys(ACI_CRITERIOS).forEach(m=>{
+                const info=ACI_CRITERIOS[m];
+                const tieneACI=!!(aciAl[`${m}_T${aciTrimActual}`]);
+                const isAct=m===aciMateriaActual;
+                h+=`<div style="padding:6px 12px;border-radius:20px;font-size:.75rem;font-weight:600;cursor:pointer;border:2px solid ${isAct?info.color:tieneACI?info.color+'88':'var(--border)'};background:${isAct?info.color:'white'};color:${isAct?'white':tieneACI?info.color:'var(--text-light)'}" onclick="aciMateriaActual='${m}';renderAciAlumnoPanel()">${info.icon} ${m}${tieneACI?'  ✓':''}</div>`;
+            });
+            h+=`</div>`;
+
+            // Content for selected materia
+            const key=`${aciMateriaActual}_T${aciTrimActual}`;
+            const aci=aciAl[key];
+            const infoMat=ACI_CRITERIOS[aciMateriaActual];
+
+            if(!aci){
+                h+=`<div style="text-align:center;padding:24px;border:2px dashed var(--border);border-radius:10px;color:var(--text-light)">
+                    <div style="font-size:1.5rem;margin-bottom:6px">${infoMat.icon}</div>
+                    <div style="font-weight:600;margin-bottom:4px">Sin ACI para ${infoMat.nombre} en T${aciTrimActual}</div>
+                    <button class="btn btn-primary btn-sm" style="margin-top:10px" onclick="aciNueva('${aciMateriaActual}',${aciTrimActual})">➕ Crear ACI</button>
+                </div>`;
+            } else {
+                const criterios=aci.criterios_seleccionados||[];
+                const eval_=aci.evaluacion||{};
+                const criteriosCurso=aciGetCriteriosCurso(aciMateriaActual,aci.cursoRef||cursoNum);
+                let nC=0,nP=0,nNC=0;
+                criterios.forEach(c=>{const e=eval_[c]||'NI';if(e==='C')nC++;else if(e==='P')nP++;else if(e==='NC')nNC++;});
+                const totEv=nC+nP+nNC,total=criterios.length;
+                const pct=totEv?Math.round(nC/totEv*100):0;
+
+                h+=`<div style="border:2px solid ${infoMat.color}33;border-left:4px solid ${infoMat.color};border-radius:10px;padding:14px;background:white">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+                        <div style="display:flex;gap:8px;align-items:center">
+                            <span style="font-size:.7rem;font-weight:700;padding:3px 10px;border-radius:20px;color:white;background:'#f59e0b'">${aci.tipo}</span>
+                            <span style="font-size:.78rem;color:var(--text-light)">Criterios ${ACI_CURSO_LABELS[aci.cursoRef||cursoNum]}</span>
+                        </div>
+                        <div style="display:flex;gap:6px">
+                            <button class="btn btn-secondary btn-sm" onclick="aciEditar('${key}')">✏️</button>
+                            <button class="btn btn-danger btn-sm" onclick="aciEliminar('${key}')">🗑️</button>
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+                        <span style="font-size:.72rem;padding:3px 10px;border-radius:20px;background:#dcfce7;color:#16a34a;font-weight:600">✓ ${nC} C</span>
+                        <span style="font-size:.72rem;padding:3px 10px;border-radius:20px;background:#dbeafe;color:#1d4ed8;font-weight:600">◐ ${nP} P</span>
+                        <span style="font-size:.72rem;padding:3px 10px;border-radius:20px;background:#fee2e2;color:#dc2626;font-weight:600">✗ ${nNC} NC</span>
+                        <span style="font-size:.72rem;padding:3px 10px;border-radius:20px;background:#f3f4f6;color:#6b7280;font-weight:600">${pct}%</span>
+                    </div>
+                    <div style="height:8px;border-radius:4px;background:#e5e7eb;overflow:hidden;display:flex;margin-bottom:12px">
+                        <div style="width:${total?nC/total*100:0}%;background:#22c55e;height:100%"></div>
+                        <div style="width:${total?nP/total*100:0}%;background:#3b82f6;height:100%"></div>
+                        <div style="width:${total?nNC/total*100:0}%;background:#ef4444;height:100%"></div>
+                    </div>`;
+
+                // Criterios con botones eval
+                criterios.forEach(code=>{
+                    const desc=criteriosCurso[code]||code;
+                    const estado=eval_[code]||'NI';
+                    const lbls={C:'✓',P:'◐',NC:'✗',NI:'○'};
+                    let btns=['C','P','NC','NI'].map(e=>`<button style="width:26px;height:26px;border-radius:5px;border:2px solid ${estado===e?(e==='C'?'#16a34a':e==='P'?'#2563eb':e==='NC'?'#dc2626':'#9ca3af'):'#e2e8f0'};background:${estado===e?(e==='C'?'#22c55e':e==='P'?'#3b82f6':e==='NC'?'#ef4444':'#e5e7eb'):'white'};color:${estado===e?'white':'#9ca3af'};cursor:pointer;font-weight:700;font-size:.75rem" onclick="aciSetEval('${key}','${code}','${e}')" title="${e}">${lbls[e]}</button>`).join('');
+                    h+=`<div style="display:flex;align-items:flex-start;gap:8px;padding:7px 0;border-bottom:1px solid #f1f5f9">
+                        <span style="font-size:.62rem;font-weight:700;color:var(--text-light);min-width:68px;padding-top:4px;font-family:monospace">${code}</span>
+                        <span style="font-size:.78rem;flex:1;line-height:1.35">${desc}</span>
+                        <div style="display:flex;gap:3px;flex-shrink:0">${btns}</div>
+                    </div>`;
+                });
+
+                // Adaptaciones
+                const adapt=aci.adaptaciones||{};
+                const adaptFlds=[{k:'metodologia',l:'Metodología'},{k:'materiales',l:'Materiales'},{k:'tiempo',l:'Tiempo'},{k:'evaluacion',l:'Evaluación'}];
+                const adaptTxt=adaptFlds.filter(f=>adapt[f.k]);
+                if(adaptTxt.length){
+                    h+=`<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:.75rem">`;
+                    adaptTxt.forEach(f=>h+=`<div style="margin-bottom:4px"><strong>${f.l}:</strong> ${adapt[f.k]}</div>`);
+                    h+=`</div>`;
+                }
+                if(aci.observaciones)h+=`<div style="margin-top:8px;padding:8px;background:#fffbeb;border-radius:6px;font-size:.75rem;color:#92400e">${aci.observaciones}</div>`;
+                h+=`</div>`;
+            }
+
+            cont.innerHTML=h;
+        }
+
+        function aciSetEval(key,code,estado){
+            if(!aciAlumnoSel)return;
+            const current=((aciData[aciAlumnoSel]||{})[key]||{}).evaluacion||{};
+            const newE=current[code]===estado?'NI':estado;
+            db.ref(`gestorpe/alumnos/${aciAlumnoSel}/aci/${key}/evaluacion/${code}`).set(newE).then(()=>{
+                if(!alumnos[aciAlumnoSel])alumnos[aciAlumnoSel]={};
+                if(!alumnos[aciAlumnoSel].aci)alumnos[aciAlumnoSel].aci={};
+                if(!alumnos[aciAlumnoSel].aci[key])alumnos[aciAlumnoSel].aci[key]={};
+                if(!alumnos[aciAlumnoSel].aci[key].evaluacion)alumnos[aciAlumnoSel].aci[key].evaluacion={};
+                alumnos[aciAlumnoSel].aci[key].evaluacion[code]=newE;
+                aciData[aciAlumnoSel]=alumnos[aciAlumnoSel].aci;
+                renderAciAlumnoPanel();
+            });
+        }
+
+        function aciNuevaDesdeSeccion(){
+            if(!aciAlumnoSel){toast('Selecciona un alumno primero','error');return;}
+            aciNueva(aciMateriaActual,aciTrimActual);
+        }
+
+        function aciNueva(materia,trim){
+            aciEditandoKey=null;
+            document.getElementById('modalACITitulo').textContent='📋 Nueva ACS';
+            aciSelTipo('ACS');
+            document.getElementById('aciModalMateria').value=materia||'LCL';
+            document.getElementById('aciModalTrim').value=trim||aciTrimActual;
+            const cursoNum=aciGetCursoAlumno(alumnos[aciAlumnoSel]||{});
+            // Populate cursoRef select with courses up to alumno's course
+            const sel=document.getElementById('aciModalCursoRef');
+            sel.innerHTML='';
+            for(let c=1;c<=parseInt(cursoNum);c++){
+                sel.innerHTML+=`<option value="${c}">${c}º Primaria</option>`;
+            }
+            sel.value=cursoNum; // default = alumno's own course
+            ['Met','Mat','Tiempo','Eval'].forEach(k=>document.getElementById('aciAdap'+k).value='');
+            document.getElementById('aciObsModal').value='';
+            aciCargarCriterios();
+            abrirModal('modalACI');
+        }
+
+        function aciEditar(key){
+            const aci=(aciData[aciAlumnoSel]||{})[key];if(!aci)return;
+            aciEditandoKey=key;
+            const [mat,trimStr]=key.split('_T');
+            document.getElementById('modalACITitulo').textContent='✏️ Editar ACI';
+            aciSelTipo('ACS');
+            document.getElementById('aciModalMateria').value=mat;
+            document.getElementById('aciModalTrim').value=trimStr;
+            document.getElementById('aciModalCursoRef').value=aci.cursoRef||'1';
+            const adapt=aci.adaptaciones||{};
+            document.getElementById('aciAdapMet').value=adapt.metodologia||'';
+            document.getElementById('aciAdapMat').value=adapt.materiales||'';
+            document.getElementById('aciAdapTiempo').value=adapt.tiempo||'';
+            document.getElementById('aciAdapEval').value=adapt.evaluacion||'';
+            document.getElementById('aciObsModal').value=aci.observaciones||'';
+            aciCargarCriterios(aci.criterios_seleccionados||[]);
+            abrirModal('modalACI');
+        }
+
+        function aciEliminar(key){
+            if(!confirm('¿Eliminar esta ACI?'))return;
+            db.ref(`gestorpe/alumnos/${aciAlumnoSel}/aci/${key}`).remove().then(()=>{toast('ACI eliminada','success');renderAciAlumnoPanel();});
+        }
+
+        function aciSelTipo(tipo){aciTipoSel='ACS';}
+
+        function aciCargarCriterios(preSelected){
+            const mat=document.getElementById('aciModalMateria').value;
+            const curso=document.getElementById('aciModalCursoRef').value;
+            const cont=document.getElementById('aciCriteriosSel');
+            if(!mat){cont.innerHTML='<div style="padding:12px;color:var(--text-light);font-size:.8rem">Selecciona área</div>';return;}
+            const criterios=aciGetCriteriosCurso(mat,curso);
+            let h='',chk=0;
+            Object.entries(criterios).forEach(([code,desc])=>{
+                const sel=preSelected?preSelected.includes(code):false;
+                if(sel)chk++;
+                h+=`<label style="display:flex;align-items:flex-start;gap:8px;padding:8px 10px;cursor:pointer;border-bottom:1px solid #f8fafc">
+                    <input type="checkbox" value="${code}" ${sel?'checked':''} style="margin-top:3px;flex-shrink:0;accent-color:var(--primary)" onchange="document.getElementById('aciCheckCount').textContent='('+document.querySelectorAll('#aciCriteriosSel input:checked').length+' sel.)'">
+                    <span style="font-size:.62rem;font-weight:700;color:var(--text-light);min-width:68px;font-family:monospace">${code}</span>
+                    <span style="font-size:.78rem;line-height:1.35">${desc}</span>
+                </label>`;
+            });
+            cont.innerHTML=h||'<div style="padding:12px;color:var(--text-light);font-size:.8rem">Sin criterios para este curso</div>';
+            document.getElementById('aciCheckCount').textContent=`(${chk} sel.)`;
+        }
+
+        function aciGuardar(){
+            if(!aciAlumnoSel){toast('Sin alumno','error');return;}
+            const mat=document.getElementById('aciModalMateria').value;
+            if(!mat){toast('Selecciona un área','error');return;}
+            const trim=parseInt(document.getElementById('aciModalTrim').value)||aciTrimActual;
+            const key=aciEditandoKey||`${mat}_T${trim}`;
+            const cursoRef=document.getElementById('aciModalCursoRef').value;
+            const checks=[...document.querySelectorAll('#aciCriteriosSel input:checked')].map(c=>c.value);
+            if(!checks.length){toast('Selecciona al menos un criterio','error');return;}
+            const adapt={};
+            if(document.getElementById('aciAdapMet').value.trim())adapt.metodologia=document.getElementById('aciAdapMet').value.trim();
+            if(document.getElementById('aciAdapMat').value.trim())adapt.materiales=document.getElementById('aciAdapMat').value.trim();
+            if(document.getElementById('aciAdapTiempo').value.trim())adapt.tiempo=document.getElementById('aciAdapTiempo').value.trim();
+            if(document.getElementById('aciAdapEval').value.trim())adapt.evaluacion=document.getElementById('aciAdapEval').value.trim();
+            const existingEval=aciEditandoKey?((aciData[aciAlumnoSel]||{})[key]||{}).evaluacion||{}:{};
+            const record={tipo:'ACS',cursoRef,criterios_seleccionados:checks,evaluacion:existingEval,adaptaciones:adapt,observaciones:document.getElementById('aciObsModal').value.trim(),fechaMod:new Date().toISOString().split('T')[0]};
+            db.ref(`gestorpe/alumnos/${aciAlumnoSel}/aci/${key}`).set(record).then(()=>{
+                if(!alumnos[aciAlumnoSel])alumnos[aciAlumnoSel]={};
+                if(!alumnos[aciAlumnoSel].aci)alumnos[aciAlumnoSel].aci={};
+                alumnos[aciAlumnoSel].aci[key]=record;
+                aciData[aciAlumnoSel]=alumnos[aciAlumnoSel].aci;
+                cerrarModal('modalACI');
+                toast('ACI guardada ✓','success');
+                aciMateriaActual=mat;aciTrimActual=trim;
+                renderAciAlumnoPanel();
+            }).catch(e=>{toast('Error al guardar: '+e.message,'error');console.error('ACI save error:',e);});
+        }
+
+        function aciInformeGeneral(){
+            if(!aciAlumnoSel){toast('Selecciona un alumno','error');return;}
+            const a=alumnos[aciAlumnoSel];
+            const aciAl=aciData[aciAlumnoSel]||{};
+            let h=`<div style="font-family:serif;padding:8px"><h3 style="color:var(--primary);margin-bottom:4px">ACI — ${a.siglas} — ${a.curso}</h3><div style="font-size:.75rem;color:var(--text-light);margin-bottom:16px">CEIP Capitulaciones de Santa Fe</div>`;
+            Object.keys(ACI_CRITERIOS).forEach(mat=>{
+                const infoMat=ACI_CRITERIOS[mat];
+                [1,2,3].forEach(t=>{
+                    const key=`${mat}_T${t}`;
+                    const aci=aciAl[key];if(!aci)return;
+                    const criterios=aci.criterios_seleccionados||[];
+                    const eval_=aci.evaluacion||{};
+                    const cursoRef=aci.cursoRef||'1';
+                    const criteriosCurso=aciGetCriteriosCurso(mat,cursoRef);
+                    h+=`<div style="margin-bottom:12px;border:1px solid #ddd;border-radius:8px;padding:10px">
+                        <div style="font-weight:700;font-size:.85rem;margin-bottom:6px">${infoMat.icon} ${infoMat.nombre} · T${t} · <span style="background:'#f59e0b';color:white;padding:2px 8px;border-radius:12px;font-size:.7rem">${aci.tipo}</span> · Criterios ${ACI_CURSO_LABELS[cursoRef]}</div>
+                        <table style="width:100%;border-collapse:collapse;font-size:.72rem">
+                            <tr style="background:#f1f5f9"><th style="padding:4px 6px;text-align:left">Código</th><th style="padding:4px 6px;text-align:left">Criterio</th><th style="padding:4px 6px;text-align:center;width:40px">Eval.</th></tr>`;
+                    criterios.forEach(code=>{
+                        const e=eval_[code]||'NI';
+                        const bg={C:'#dcfce7',P:'#dbeafe',NC:'#fee2e2',NI:'#f9fafb'};
+                        h+=`<tr style="border-bottom:1px solid #f1f5f9"><td style="padding:3px 6px;font-family:monospace;font-size:.65rem">${code}</td><td style="padding:3px 6px">${criteriosCurso[code]||code}</td><td style="padding:3px 6px;text-align:center;background:${bg[e]};font-weight:700">${e}</td></tr>`;
+                    });
+                    h+=`</table>`;
+                    const adapt=aci.adaptaciones||{};
+                    const flds=[{k:'metodologia',l:'Metodología'},{k:'materiales',l:'Materiales'},{k:'tiempo',l:'Tiempo'},{k:'evaluacion',l:'Evaluación'}].filter(f=>adapt[f.k]);
+                    if(flds.length){h+=`<div style="margin-top:6px;font-size:.72rem">`+flds.map(f=>`<strong>${f.l}:</strong> ${adapt[f.k]}`).join(' · ')+`</div>`;}
+                    h+=`</div>`;
+                });
+            });
+            h+=`</div>`;
+            // Show in print window
+            const win=window.open('','_blank');
+            win.document.write(`<!DOCTYPE html><html><head><title>ACI ${a.siglas}</title><style>body{font-family:serif;padding:20px;max-width:800px;margin:0 auto}@media print{body{padding:0}}</style></head><body>${h}<script>window.onload=function(){window.print();}<\/script></body></html>`);
+            win.document.close();
+        }
+
+
+        // ══════════════════════════════════════════════════════════════════
+        // SdA — GENERADOR DE ACTIVIDADES DESDE PROGRAMACIÓN MENSUAL
+        // ══════════════════════════════════════════════════════════════════
+
+        function abrirModalSdA(){
+            if(!alumnoActual)return;
+            sdaActualizarCriterios();
+            abrirModal('modalSdA');
+        }
+
+        function sdaGetCriteriosMes(){
+            const a=alumnos[alumnoActual];
+            if(!a||!a.programas||!a.programacion)return{};
+            const mes=MESES[mesActual];
+            const dias=a.diasSesion||[1,3,4];
+            const criteriosEncontrados={};
+            for(let s=1;s<=mes.semanas;s++){
+                dias.forEach(d=>{
+                    const k=`${mesActual}_${s}_${d}`;
+                    const cel=a.programacion[k];
+                    if(!cel||!cel.pId)return;
+                    const prog=a.programas[cel.pId];if(!prog)return;
+                    const obj=prog.objetivos?prog.objetivos[cel.oIdx]:null;if(!obj)return;
+                    if(obj.criterio){
+                        const area=aciCodeToArea(obj.criterio);
+                        if(!criteriosEncontrados[area])criteriosEncontrados[area]={criterios:{},tipo:prog.tipo};
+                        criteriosEncontrados[area].criterios[obj.criterio]=(criteriosEncontrados[area].criterios[obj.criterio]||0)+1;
+                    }
+                });
+            }
+            return criteriosEncontrados;
+        }
+
+        function aciCodeToArea(code){
+            if(!code)return'otro';
+            if(code.startsWith('LCL'))return'LCL';
+            if(code.startsWith('MA'))return'MA';
+            if(code.startsWith('CN'))return'CN';
+            if(code.startsWith('CS'))return'CS';
+            if(code.startsWith('ING'))return'ING';
+            if(code.startsWith('EF'))return'EF';
+            if(code.startsWith('EA'))return'EA';
+            if(code.startsWith('CA')||code.startsWith('DE')||code.startsWith('CR')||code.startsWith('CRR'))return'INF';
+            return'otro';
+        }
+
+        function sdaActualizarCriterios(){
+            const a=alumnos[alumnoActual];
+            const mes=MESES[mesActual];
+            const criteriosMes=sdaGetCriteriosMes();
+            const areaFiltro=document.getElementById('sdaAreaSel').value;
+
+            // Resumen mes
+            document.getElementById('sdaMesResumen').innerHTML=`<strong>${mes.nombre}</strong> (T${mes.trim}) · ${a.siglas} · ${a.curso} · ${Object.keys(criteriosMes).length} áreas trabajadas`;
+
+            // Criterios box
+            let textoC='';let total=0;
+            const areasAMostrar=areaFiltro?{[areaFiltro]:criteriosMes[areaFiltro]}:criteriosMes;
+            Object.entries(areasAMostrar).forEach(([area,data])=>{
+                if(!data)return;
+                const info=ACI_CRITERIOS[area];
+                const label=info?info.nombre:area;
+                textoC+=`── ${label} ──
+`;
+                Object.keys(data.criterios).forEach(code=>{
+                    // Get description from ACI_CRITERIOS if possible
+                    let desc='';
+                    if(info){
+                        Object.values(info).forEach(cicloData=>{
+                            if(typeof cicloData==='object'&&cicloData[code])desc=cicloData[code];
+                        });
+                    }
+                    textoC+=`• ${code}: ${desc||code}
+`;
+                    total++;
+                });
+                textoC+='\n';
+            });
+            document.getElementById('sdaCriteriosBox').textContent=textoC||'No hay criterios registrados en la programación de este mes.';
+            document.getElementById('sdaCriteriosCount').textContent=`(${total} criterios en ${Object.keys(areasAMostrar).filter(k=>criteriosMes[k]).length} áreas)`;
+        }
+
+        function sdaToggleChip(el){
+            const active=el.style.background.includes('var(--primary)')||el.style.background==='var(--primary)';
+            el.style.background=active?'var(--bg)':'var(--primary)';
+            el.style.color=active?'var(--text)':'white';
+            el.style.borderColor=active?'var(--border)':'var(--primary)';
+        }
+
+        function sdaGenerarPrompt(){
+            const a=alumnos[alumnoActual];
+            const mes=MESES[mesActual];
+            const criteriosMes=sdaGetCriteriosMes();
+            const areaFiltro=document.getElementById('sdaAreaSel').value;
+            const tematica=document.getElementById('sdaTematica').value.trim();
+            const sesiones=document.getElementById('sdaSesiones').value;
+            const duracion=document.getElementById('sdaDuracion').value;
+            const mets=[...document.querySelectorAll('#sdaMetodologias span')].filter(s=>s.style.background&&s.style.background.includes('primary')).map(s=>s.textContent);
+
+            const areasAMostrar=areaFiltro?{[areaFiltro]:criteriosMes[areaFiltro]}:criteriosMes;
+            let criteriosTexto='';
+            Object.entries(areasAMostrar).forEach(([area,data])=>{
+                if(!data)return;
+                const info=ACI_CRITERIOS[area];
+                criteriosTexto+=`
+${info?info.nombre:area}:
+`;
+                Object.keys(data.criterios).forEach(code=>{
+                    let desc='';
+                    if(info){Object.values(info).forEach(cicloData=>{if(typeof cicloData==='object'&&cicloData[code])desc=cicloData[code];});}
+                    criteriosTexto+=`  • ${code}: ${desc||code}
+`;
+                });
+            });
+
+            const curso=a.curso||'';
+            const prompt=`# GENERADOR DE ACTIVIDADES EVALUABLES — PROGRAMA ESPECÍFICO PT
+## CONTEXTO
+Eres docente especialista en Pedagogía Terapéutica, experto en diseño de actividades adaptadas a la LOMLOE y la Orden de 30 de mayo de 2023 para Andalucía.
+
+## DATOS DEL ALUMNO Y CONTEXTO
+- Alumno/a: ${a.siglas}
+- Curso: ${curso}
+- Mes: ${mes.nombre} (Trimestre ${mes.trim})
+- Sesiones de PT: ${sesiones} sesiones de ${duracion} minutos
+${tematica?`- Temática / contexto de aula: ${tematica}`:''}
+
+## CRITERIOS DE EVALUACIÓN TRABAJADOS ESTE MES (extraídos de la programación PT)
+${criteriosTexto}
+## METODOLOGÍAS ACTIVAS A INCLUIR
+${mets.length?mets.map(m=>`• ${m}`).join('\n'):'\u2022 Aprendizaje cooperativo\n\u2022 Trabajo manipulativo'}
+
+## INSTRUCCIONES
+Elabora **3 actividades evaluables** para trabajar en las sesiones de PT del mes de ${mes.nombre}, adaptadas a las necesidades del alumno/a:
+
+### REQUISITOS DE CADA ACTIVIDAD:
+a) Vinculada a los criterios indicados con su código exacto (Orden 30/05/2023)
+b) Adaptada al nivel y necesidades del alumno con principios DUA
+c) Incluye: inicio (enganche 5-10 min), desarrollo (actividad principal), cierre (reflexión)
+d) Especifica materiales y recursos (manipulativos, digitales, impresos)
+e) Describe la evidencia evaluable que producirá el alumno
+f) Indica instrumento de evaluación (lista de cotejo / escala / observación)
+
+### NIVELES DE DIFICULTAD:
+1. Actividad 1 — Nivel básico: máximo andamiaje, manipulativos, trabajo guiado
+2. Actividad 2 — Nivel intermedio: autonomía progresiva, trabajo en parejas
+3. Actividad 3 — Nivel avanzado: transferencia a nuevos contextos, reto creativo
+
+### ESTRUCTURA DE CADA ACTIVIDAD:
+#### ACTIVIDAD [N]: [TÍTULO CREATIVO]
+**Criterio/s evaluados:** [código — descripción]
+**Desarrollo:** [paso a paso claro y ejecutable]
+**Materiales:** [digitales y físicos]
+**Evidencia evaluable:** [qué produce el alumno]
+**Evaluación:** [instrumento con 4 niveles: No iniciado / En proceso / Conseguido / Excelente]
+**Adaptación PT:** [estrategia específica para este alumno]
+
+---
+Genera las 3 actividades completas y listas para aplicar en sesiones PT.`;
+
+            document.getElementById('sdaPromptPreview').textContent=prompt;
+            toast('Prompt generado ✓','success');
+        }
+
+        function sdaCopiarPrompt(){
+            sdaGenerarPrompt();
+            const txt=document.getElementById('sdaPromptPreview').textContent;
+            if(txt.includes('Pulsa')){toast('Primero pulsa "Generar prompt"','error');return;}
+            navigator.clipboard.writeText(txt).then(()=>{toast('Prompt copiado al portapapeles 📋','success');});
+        }
+
+        function sdaAbrirGemini(){
+            sdaCopiarPrompt();
+            setTimeout(()=>window.open('https://gemini.google.com','_blank'),400);
+        }
+
         function generarActividades(objAgrupado,tipo){
             const actividadesBase={
                 'comunicativo':['Juegos de denominación y descripción de imágenes','Actividades de comprensión de órdenes y narraciones','Ejercicios de conciencia fonológica (rimas, segmentación)','Diálogos guiados y role-playing comunicativo'],
