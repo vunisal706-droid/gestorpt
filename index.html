@@ -208,6 +208,21 @@
         .recurso-link:hover{text-decoration:underline}
         .recurso-actions{display:flex;gap:6px}
         .recurso-actions .btn{flex:1;padding:8px;font-size:.8rem}
+        /* SEGUIMIENTO SÉNECA */
+        .seg-alumno{background:var(--bg-card);border-radius:var(--radius);padding:14px;margin-bottom:12px;box-shadow:var(--shadow)}
+        .seg-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px}
+        .seg-siglas{font-family:monospace;font-size:1rem;font-weight:700;color:var(--primary);background:rgba(26,95,74,.12);padding:4px 12px;border-radius:8px}
+        .seg-textarea{width:100%;padding:10px 12px;border:2px solid var(--border);border-radius:var(--radius-sm);font-family:inherit;font-size:.82rem;resize:vertical;line-height:1.55;min-height:90px;transition:border-color .2s}
+        .seg-textarea:focus{outline:none;border-color:var(--primary)}
+        .seg-footer{display:flex;justify-content:space-between;align-items:center;margin-top:6px;flex-wrap:wrap;gap:4px}
+        .char-counter{font-size:.72rem;font-weight:700}
+        .char-ok{color:var(--success)}
+        .char-warn{color:var(--warning)}
+        .char-over{color:var(--danger)}
+        /* ÁREA CHIPS (multi-selección modal IA) */
+        .area-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}
+        .area-chip{padding:4px 10px;border-radius:16px;border:1.5px solid var(--border);font-size:.75rem;background:var(--bg);cursor:pointer;font-weight:600;transition:all .15s;user-select:none}
+        .area-chip.active{border-color:var(--primary);background:var(--primary);color:#fff}
     </style>
 
 </head>
@@ -227,6 +242,7 @@
                 <button class="nav-tab" onclick="cambiarSeccion('sda',this)">🎓 SDA</button>
                 <button class="nav-tab" onclick="cambiarSeccion('biblioteca',this)">📚 Biblioteca</button>
                 <button class="nav-tab" onclick="cambiarSeccion('recursos',this)">🎯 Banco de Actividades</button>
+                <button class="nav-tab" onclick="cambiarSeccion('seguimiento',this)">📊 Seguimiento</button>
                 <button class="nav-tab" onclick="cambiarSeccion('aci',this)">📋 ACI</button>
                 <button class="nav-tab" onclick="cambiarSeccion('memoria',this)">📝 Memoria Final</button>
             </div>
@@ -436,6 +452,44 @@
                     <div id="recursosGrid" style="margin-top:20px"></div>
                 </div>
             </div>
+            <!-- ══ SECCIÓN SEGUIMIENTO ══════════════════════════════════════ -->
+            <div id="seccionSeguimiento" style="display:none">
+                <!-- Panel de generación -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">📊 Seguimiento Trimestral — Séneca</h2>
+                        <select class="form-select" id="seguimientoTrim" style="min-width:130px;font-size:.82rem" onchange="renderSeguimiento()">
+                            <option value="1">📗 Trimestre 1</option>
+                            <option value="2">📘 Trimestre 2</option>
+                            <option value="3">📙 Trimestre 3</option>
+                        </select>
+                    </div>
+                    <div style="background:#e0f2fe;border-radius:8px;padding:10px;margin-bottom:14px;font-size:.8rem;color:#0369a1">
+                        💡 Genera un prompt con los datos de todos los alumnos → pégalo en Gemini, ChatGPT o Claude → pega la respuesta abajo → <strong>Distribuir</strong> rellena cada alumno automáticamente.
+                    </div>
+                    <!-- Paso 1 -->
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+                        <span style="background:var(--primary);color:#fff;border-radius:50%;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;flex-shrink:0">1</span>
+                        <span style="font-size:.85rem;font-weight:600">Genera el prompt y cópialo en tu IA favorita</span>
+                    </div>
+                    <div class="btn-group" style="margin-bottom:14px">
+                        <button class="btn btn-primary btn-sm" onclick="seguimientoGenerarPrompt()">📋 Copiar prompt para IA</button>
+                        <button class="btn btn-secondary btn-sm" onclick="seguimientoVerPrompt()">👁️ Ver prompt</button>
+                    </div>
+                    <div id="seguimientoPromptPreview" style="display:none;background:#1e293b;color:#e2e8f0;border-radius:8px;padding:12px;max-height:180px;overflow-y:auto;font-size:.72rem;font-family:monospace;white-space:pre-wrap;margin-bottom:12px"></div>
+                    <!-- Paso 2 -->
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+                        <span style="background:var(--primary);color:#fff;border-radius:50%;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;flex-shrink:0">2</span>
+                        <span style="font-size:.85rem;font-weight:600">Pega aquí la respuesta de la IA</span>
+                    </div>
+                    <textarea class="form-textarea" id="seguimientoRespuestaIA" rows="6" style="font-size:.8rem;font-family:monospace" placeholder="Pega aquí la respuesta completa de la IA. Formato esperado:&#10;===ALUMNO: XXX===&#10;Texto del resumen...&#10;===ALUMNO: YYY===&#10;Texto del resumen..."></textarea>
+                    <div style="margin-top:8px">
+                        <button class="btn btn-primary" onclick="seguimientoDistribuir()">🔀 Distribuir en los alumnos</button>
+                    </div>
+                </div>
+                <!-- Panel de alumnos -->
+                <div id="seguimientoContenido" style="margin-top:0"></div>
+            </div>
             <!-- ══ SECCIÓN ACI ══════════════════════════════════════════════ -->
             <div id="seccionACI" style="display:none">
                 <div class="card">
@@ -570,29 +624,60 @@
                 <p style="font-size:.8rem;color:var(--text-light);margin-bottom:14px">Genera un prompt experto para copiar en Gemini, ChatGPT o Claude. Los criterios se extraen automáticamente de la programación de este mes.</p>
                 <!-- Resumen del mes -->
                 <div id="sdaMesResumen" style="background:var(--bg);border-radius:8px;padding:10px;margin-bottom:14px;font-size:.8rem"></div>
-                <!-- Filtro por área -->
+                <!-- Áreas (multi-selección) -->
+                <div class="form-group" style="margin-bottom:12px">
+                    <label class="form-label">Áreas a trabajar <span style="font-weight:400;color:var(--text-light)">(selecciona una o más)</span></label>
+                    <div class="area-chips" id="sdaAreaChips">
+                        <span class="area-chip active" data-area="" onclick="sdaToggleArea(this)">🗂️ Todas las del mes</span>
+                        <span class="area-chip" data-area="LCL" onclick="sdaToggleArea(this)">📖 Lengua</span>
+                        <span class="area-chip" data-area="MA" onclick="sdaToggleArea(this)">🔢 Mates</span>
+                        <span class="area-chip" data-area="CN" onclick="sdaToggleArea(this)">🌿 C. Naturales</span>
+                        <span class="area-chip" data-area="CS" onclick="sdaToggleArea(this)">🌍 C. Sociales</span>
+                        <span class="area-chip" data-area="ING" onclick="sdaToggleArea(this)">🇬🇧 Inglés</span>
+                        <span class="area-chip" data-area="EF" onclick="sdaToggleArea(this)">🏃 Ed. Física</span>
+                        <span class="area-chip" data-area="comunicativo" onclick="sdaToggleArea(this)">🗣️ Comunicativo</span>
+                        <span class="area-chip" data-area="cognitivo" onclick="sdaToggleArea(this)">🧠 Cognitivo</span>
+                        <span class="area-chip" data-area="psicomotor" onclick="sdaToggleArea(this)">🤸 Psicomotor</span>
+                        <span class="area-chip" data-area="motor" onclick="sdaToggleArea(this)">✋ Motor</span>
+                        <span class="area-chip" data-area="social" onclick="sdaToggleArea(this)">🤝 Social-Emocional</span>
+                        <span class="area-chip" data-area="autonomia" onclick="sdaToggleArea(this)">🎒 Autonomía</span>
+                    </div>
+                </div>
+                <!-- NEAE + Temática -->
                 <div class="form-row" style="margin-bottom:12px">
                     <div class="form-group">
-                        <label class="form-label">Área a trabajar</label>
-                        <select class="form-select" id="sdaAreaSel" onchange="sdaActualizarCriterios()">
-                            <option value="">Todas las áreas del mes</option>
-                            <option value="LCL">📖 Lengua Castellana</option>
-                            <option value="MA">🔢 Matemáticas</option>
-                            <option value="CN">🌿 Ciencias Naturales</option>
-                            <option value="CS">🌍 Ciencias Sociales</option>
-                            <option value="ING">🇬🇧 Inglés</option>
-                            <option value="EF">🏃 Ed. Física</option>
+                        <label class="form-label">Tipo de NEAE del alumno</label>
+                        <select class="form-select" id="sdaNeae">
+                            <option value="">Sin especificar</option>
+                            <option value="TEA">TEA — Trastorno Espectro Autista</option>
+                            <option value="TDAH">TDAH — Déficit de Atención e Hiperactividad</option>
+                            <option value="DI">Discapacidad Intelectual</option>
+                            <option value="DL">Trastorno del Lenguaje / Comunicación</option>
+                            <option value="DA">Dificultades de Aprendizaje (dislexia, discalculia…)</option>
+                            <option value="DM">Discapacidad Motora</option>
+                            <option value="RM">Retraso Madurativo</option>
+                            <option value="NEE">NEE — otras necesidades educativas</option>
                         </select>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Temática / Contexto (opcional)</label>
-                        <input type="text" class="form-input" id="sdaTematica" placeholder="Ej: Las plantas, Los números decimales...">
+                        <input type="text" class="form-input" id="sdaTematica" placeholder="Ej: Las plantas, Los decimales...">
                     </div>
+                </div>
+                <!-- Transportar objetivos -->
+                <div class="form-group" style="margin-bottom:12px;padding:10px;background:var(--bg);border-radius:8px">
+                    <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer">
+                        <input type="checkbox" id="sdaTransportarObjetivos" style="margin-top:3px" onchange="sdaActualizarCriterios()">
+                        <div>
+                            <span style="font-size:.85rem;font-weight:600">📥 Transportar objetivos e indicadores de las sesiones de este mes</span>
+                            <div style="font-size:.73rem;color:var(--text-light);margin-top:2px">Las actividades trabajarán exactamente lo programado en cada sesión del cuadrante</div>
+                        </div>
+                    </label>
                 </div>
                 <!-- Criterios extraídos -->
                 <div class="form-group">
-                    <label class="form-label">Criterios detectados este mes <span id="sdaCriteriosCount" style="color:var(--accent);font-weight:400;text-transform:none"></span></label>
-                    <div id="sdaCriteriosBox" style="background:var(--bg);border-radius:8px;padding:10px;max-height:160px;overflow-y:auto;font-size:.78rem;font-family:monospace;white-space:pre-wrap;color:var(--text)"></div>
+                    <label class="form-label">Criterios / contenidos detectados este mes <span id="sdaCriteriosCount" style="color:var(--accent);font-weight:400;text-transform:none"></span></label>
+                    <div id="sdaCriteriosBox" style="background:var(--bg);border-radius:8px;padding:10px;max-height:150px;overflow-y:auto;font-size:.78rem;font-family:monospace;white-space:pre-wrap;color:var(--text)"></div>
                 </div>
                 <!-- Metodologías -->
                 <div class="form-group">
@@ -616,6 +701,31 @@
                         <label class="form-label">Duración (min)</label>
                         <input type="number" class="form-input" id="sdaDuracion" value="60" min="30" max="120" step="15">
                     </div>
+                </div>
+                <!-- Formato de respuesta -->
+                <div class="form-group" style="margin-bottom:10px">
+                    <label class="form-label">La IA debe responder con…</label>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap">
+                        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 14px;border:2px solid var(--border);border-radius:var(--radius-sm);font-size:.82rem;font-weight:600;flex:1;min-width:150px;transition:border-color .2s" id="fmtLabelActividades">
+                            <input type="radio" name="sdaFormato" value="actividades" checked onchange="sdaCambiarFormato('actividades')">
+                            📋 Lista de actividades
+                        </label>
+                        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 14px;border:2px solid var(--border);border-radius:var(--radius-sm);font-size:.82rem;font-weight:600;flex:1;min-width:150px;transition:border-color .2s" id="fmtLabelJson">
+                            <input type="radio" name="sdaFormato" value="json" onchange="sdaCambiarFormato('json')">
+                            🔧 JSON para Gestor PT
+                        </label>
+                    </div>
+                </div>
+                <!-- Zona JSON -->
+                <div id="sdaZonaJson" style="display:none;margin-bottom:10px">
+                    <div style="background:#e0f2fe;border-radius:8px;padding:10px;margin-bottom:10px;font-size:.78rem;color:#0369a1">
+                        💡 <strong>Cómo usar:</strong> Genera el prompt → cópialo en la IA → pega aquí el JSON que te devuelva → pulsa "Importar tabla"
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Pegar JSON de la IA</label>
+                        <textarea class="form-textarea" id="sdaJsonInput" rows="5" placeholder='Pega aquí el JSON generado por la IA...&#10;Formato: {"0_1_1":{"titulo":"...","desc":"...","criterio":"...","nivel":"básico"},...}'></textarea>
+                    </div>
+                    <button class="btn btn-primary btn-sm" onclick="sdaImportarActividadesJSON()">📥 Importar tabla de actividades</button>
                 </div>
                 <!-- Preview del prompt -->
                 <div class="form-group">
@@ -1579,7 +1689,7 @@
         // Renderizar biblioteca aunque Firebase no conecte
         renderBiblioteca();
 
-        function cambiarSeccion(s,btn){document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');document.getElementById('seccionAlumnos').style.display=s==='alumnos'?'block':'none';document.getElementById('seccionEstadisticas').style.display=s==='estadisticas'?'block':'none';document.getElementById('seccionSDA').style.display=s==='sda'?'block':'none';document.getElementById('seccionBiblioteca').style.display=s==='biblioteca'?'block':'none';document.getElementById('seccionRecursos').style.display=s==='recursos'?'block':'none';document.getElementById('seccionACI').style.display=s==='aci'?'block':'none';document.getElementById('seccionMemoria').style.display=s==='memoria'?'block':'none';if(s==='estadisticas')renderEstadisticasGlobal();if(s==='recursos')inicializarRecursos();if(s==='aci')renderAciSeccion();if(s==='memoria')memoriaIniciar();}
+        function cambiarSeccion(s,btn){document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');document.getElementById('seccionAlumnos').style.display=s==='alumnos'?'block':'none';document.getElementById('seccionEstadisticas').style.display=s==='estadisticas'?'block':'none';document.getElementById('seccionSDA').style.display=s==='sda'?'block':'none';document.getElementById('seccionBiblioteca').style.display=s==='biblioteca'?'block':'none';document.getElementById('seccionRecursos').style.display=s==='recursos'?'block':'none';document.getElementById('seccionSeguimiento').style.display=s==='seguimiento'?'block':'none';document.getElementById('seccionACI').style.display=s==='aci'?'block':'none';document.getElementById('seccionMemoria').style.display=s==='memoria'?'block':'none';if(s==='estadisticas')renderEstadisticasGlobal();if(s==='recursos')inicializarRecursos();if(s==='seguimiento')renderSeguimiento();if(s==='aci')renderAciSeccion();if(s==='memoria')memoriaIniciar();}
         function renderInicio(){const g=document.getElementById('alumnosGrid'),ids=Object.keys(alumnos);if(!ids.length){g.innerHTML='<div class="alumno-card alumno-card-add" onclick="abrirModalNuevo()"><span style="font-size:1.3rem">➕</span><span style="font-size:.8rem">Añadir</span></div>';return;}let h=ids.map(id=>{const a=alumnos[id],n=a.programas?Object.keys(a.programas).length:0;return'<div class="alumno-card" onclick="abrirAlumno(\''+id+'\')"><div class="alumno-siglas">'+a.siglas+'</div><div class="alumno-curso">'+a.curso+'</div><div class="alumno-progs">'+n+' prog.</div></div>';}).join('');h+='<div class="alumno-card alumno-card-add" onclick="abrirModalNuevo()"><span style="font-size:1.3rem">➕</span></div>';g.innerHTML=h;}
         
         // BIBLIOTECA
@@ -2022,7 +2132,7 @@
                 if(alumnoActual&&alumnos[alumnoActual])renderProg();
             }).catch(e=>toast('Error: '+e.message,'error'));
         }
-        function renderProg(){const a=alumnos[alumnoActual],dias=a.diasSesion||[1,3,4],noms=dias.map(d=>DIAS_C[d]),mes=MESES[mesActual],st=calcStats(a);let h='<div class="card"><div class="stats-box no-print"><div class="stat-item"><div class="stat-num" style="color:var(--danger)">'+(st.porMes[mesActual]?st.porMes[mesActual].aus:0)+'</div><div class="stat-label">Ausencias</div></div></div><div class="cuadrante-nav no-print"><button class="nav-btn" onclick="cambiarMes(-1)">◀</button><select class="form-select" style="width:auto" onchange="mesActual=parseInt(this.value);renderProg()">';for(let i=0;i<MESES.length;i++){h+='<option value="'+i+'"'+(i===mesActual?' selected':'')+'>'+MESES[i].nombre+'</option>';}h+='</select><button class="nav-btn" onclick="cambiarMes(1)">▶</button><span class="trimestre-badge t'+mes.trim+'">T'+mes.trim+'</span></div><div class="leyenda no-print"><div class="leyenda-item"><div class="leyenda-color" style="background:#fee2e2"></div>Ausencia</div><div class="leyenda-item"><div class="leyenda-color" style="background:#e0e7ff"></div>Sin cole</div></div><div style="overflow-x:auto;margin-top:8px"><table class="cuadrante-table"><thead><tr><th>S</th>';for(let i=0;i<noms.length;i++){h+='<th>'+noms[i]+'</th>';}h+='</tr></thead><tbody>';for(let si=0;si<mes.semanas;si++){const sem=si+1;h+='<tr><td>'+sem+'</td>';for(let di=0;di<dias.length;di++){h+=renderCelda(a,mesActual+'_'+sem+'_'+dias[di],dias[di]);}h+='</tr>';}h+='</tbody></table></div></div>';h+='<div class="btn-group no-print" style="margin-top:12px"><button class="btn btn-ai btn-sm" onclick="abrirModalSdA()">🎓 Generar actividades con IA</button></div>';document.getElementById('tabProgramacion').innerHTML=h;autoRepararProgramacion();}
+        function renderProg(){const a=alumnos[alumnoActual],dias=a.diasSesion||[1,3,4],noms=dias.map(d=>DIAS_C[d]),mes=MESES[mesActual],st=calcStats(a);let h='<div class="card"><div class="stats-box no-print"><div class="stat-item"><div class="stat-num" style="color:var(--danger)">'+(st.porMes[mesActual]?st.porMes[mesActual].aus:0)+'</div><div class="stat-label">Ausencias</div></div></div><div class="cuadrante-nav no-print"><button class="nav-btn" onclick="cambiarMes(-1)">◀</button><select class="form-select" style="width:auto" onchange="mesActual=parseInt(this.value);renderProg()">';for(let i=0;i<MESES.length;i++){h+='<option value="'+i+'"'+(i===mesActual?' selected':'')+'>'+MESES[i].nombre+'</option>';}h+='</select><button class="nav-btn" onclick="cambiarMes(1)">▶</button><span class="trimestre-badge t'+mes.trim+'">T'+mes.trim+'</span></div><div class="leyenda no-print"><div class="leyenda-item"><div class="leyenda-color" style="background:#fee2e2"></div>Ausencia</div><div class="leyenda-item"><div class="leyenda-color" style="background:#e0e7ff"></div>Sin cole</div></div><div style="overflow-x:auto;margin-top:8px"><table class="cuadrante-table"><thead><tr><th>S</th>';for(let i=0;i<noms.length;i++){h+='<th>'+noms[i]+'</th>';}h+='</tr></thead><tbody>';for(let si=0;si<mes.semanas;si++){const sem=si+1;h+='<tr><td>'+sem+'</td>';for(let di=0;di<dias.length;di++){h+=renderCelda(a,mesActual+'_'+sem+'_'+dias[di],dias[di]);}h+='</tr>';}h+='</tbody></table></div></div>';h+='<div class="btn-group no-print" style="margin-top:12px"><button class="btn btn-ai btn-sm" onclick="abrirModalSdA()">🎓 Generar actividades con IA</button></div>';h+='<div id="tablaActividadesIA"></div>';document.getElementById('tabProgramacion').innerHTML=h;autoRepararProgramacion();renderTablaActividades(a,mesActual);}
 
         // Detecta meses vacíos y regenera si hay programas disponibles
         function autoRepararProgramacion(){
@@ -3361,8 +3471,60 @@
 
         function abrirModalSdA(){
             if(!alumnoActual)return;
+            // Reset área chips to "Todas"
+            document.querySelectorAll('#sdaAreaChips .area-chip').forEach(c=>c.classList.remove('active'));
+            const todaChip=document.querySelector('#sdaAreaChips .area-chip[data-area=""]');
+            if(todaChip)todaChip.classList.add('active');
+            // Reset formato
+            const radAct=document.querySelector('input[name="sdaFormato"][value="actividades"]');
+            if(radAct){radAct.checked=true;sdaCambiarFormato('actividades');}
+            // Reset transport checkbox
+            const cbTransp=document.getElementById('sdaTransportarObjetivos');
+            if(cbTransp)cbTransp.checked=false;
             sdaActualizarCriterios();
             abrirModal('modalSdA');
+        }
+
+        function sdaToggleArea(el){
+            const area=el.dataset.area;
+            if(area===''){
+                document.querySelectorAll('#sdaAreaChips .area-chip').forEach(c=>c.classList.remove('active'));
+                el.classList.add('active');
+            }else{
+                const todaChip=document.querySelector('#sdaAreaChips .area-chip[data-area=""]');
+                if(todaChip)todaChip.classList.remove('active');
+                el.classList.toggle('active');
+                const hasActive=[...document.querySelectorAll('#sdaAreaChips .area-chip')].some(c=>c.classList.contains('active')&&c.dataset.area!=='');
+                if(!hasActive&&todaChip)todaChip.classList.add('active');
+            }
+            sdaActualizarCriterios();
+        }
+
+        function sdaGetAreasSeleccionadas(){
+            return [...document.querySelectorAll('#sdaAreaChips .area-chip.active')].map(c=>c.dataset.area).filter(a=>a!=='');
+        }
+
+        function sdaCambiarFormato(fmt){
+            const z=document.getElementById('sdaZonaJson');
+            if(z)z.style.display=fmt==='json'?'block':'none';
+        }
+
+        function sdaGetObjetivosMes(){
+            const a=alumnos[alumnoActual];
+            if(!a||!a.programas||!a.programacion)return[];
+            const mes=MESES[mesActual],dias=a.diasSesion||[1,3,4],sesiones=[];
+            for(let s=1;s<=mes.semanas;s++){
+                dias.forEach(d=>{
+                    const k=`${mesActual}_${s}_${d}`,cel=a.programacion[k];
+                    if(!cel||!cel.pId)return;
+                    const prog=a.programas[cel.pId];if(!prog)return;
+                    const obj=prog.objetivos?prog.objetivos[cel.oIdx]:null;if(!obj)return;
+                    const ind=obj.indicadores?(obj.indicadores[cel.iIdx]||''):'';
+                    const info=AREAS[prog.tipo]||{nombre:prog.tipo};
+                    sesiones.push({key:k,semana:s,dia:d,area:info.nombre,tipo:prog.tipo,objetivo:`O${obj.numero}: ${obj.descripcion}`,indicador:ind,criterio:obj.criterio||''});
+                });
+            }
+            return sesiones;
         }
 
         function sdaGetCriteriosMes(){
@@ -3378,10 +3540,18 @@
                     if(!cel||!cel.pId)return;
                     const prog=a.programas[cel.pId];if(!prog)return;
                     const obj=prog.objetivos?prog.objetivos[cel.oIdx]:null;if(!obj)return;
-                    if(obj.criterio){
-                        const area=aciCodeToArea(obj.criterio);
-                        if(!criteriosEncontrados[area])criteriosEncontrados[area]={criterios:{},tipo:prog.tipo};
-                        criteriosEncontrados[area].criterios[obj.criterio]=(criteriosEncontrados[area].criterios[obj.criterio]||0)+1;
+                    // Collect by ACI code area AND by program type
+                    const areaCode=obj.criterio?aciCodeToArea(obj.criterio):null;
+                    if(areaCode&&areaCode!=='otro'){
+                        if(!criteriosEncontrados[areaCode])criteriosEncontrados[areaCode]={criterios:{},tipo:prog.tipo};
+                        if(obj.criterio)criteriosEncontrados[areaCode].criterios[obj.criterio]=(criteriosEncontrados[areaCode].criterios[obj.criterio]||0)+1;
+                    }
+                    // Also collect by program type
+                    const tipo=prog.tipo;
+                    if(tipo&&!['comunicativo','cognitivo','psicomotor','motor','social','autonomia','tdah'].every(t=>t!==tipo)){
+                        if(!criteriosEncontrados[tipo])criteriosEncontrados[tipo]={criterios:{},tipo:tipo,esPT:true};
+                        const objKey=`O${obj.numero}: ${obj.descripcion}`;
+                        criteriosEncontrados[tipo].criterios[objKey]=(criteriosEncontrados[tipo].criterios[objKey]||0)+1;
                     }
                 });
             }
@@ -3405,36 +3575,55 @@
             const a=alumnos[alumnoActual];
             const mes=MESES[mesActual];
             const criteriosMes=sdaGetCriteriosMes();
-            const areaFiltro=document.getElementById('sdaAreaSel').value;
+            const areasSeleccionadas=sdaGetAreasSeleccionadas();
+            const transportar=document.getElementById('sdaTransportarObjetivos')?.checked;
 
-            // Resumen mes
             document.getElementById('sdaMesResumen').innerHTML=`<strong>${mes.nombre}</strong> (T${mes.trim}) · ${a.siglas} · ${a.curso} · ${Object.keys(criteriosMes).length} áreas trabajadas`;
 
-            // Criterios box
-            let textoC='';let total=0;
-            const areasAMostrar=areaFiltro?{[areaFiltro]:criteriosMes[areaFiltro]}:criteriosMes;
-            Object.entries(areasAMostrar).forEach(([area,data])=>{
-                if(!data)return;
-                const info=ACI_CRITERIOS[area];
-                const label=info?info.nombre:area;
-                textoC+=`── ${label} ──
-`;
-                Object.keys(data.criterios).forEach(code=>{
-                    // Get description from ACI_CRITERIOS if possible
-                    let desc='';
-                    if(info){
-                        Object.values(info).forEach(cicloData=>{
-                            if(typeof cicloData==='object'&&cicloData[code])desc=cicloData[code];
+            let textoC='',total=0;
+
+            if(transportar){
+                const sesiones=sdaGetObjetivosMes();
+                const DIAS_N={0:'Lunes',1:'Martes',2:'Miércoles',3:'Jueves',4:'Viernes'};
+                const sessFiltradas=areasSeleccionadas.length>0
+                    ?sesiones.filter(s=>areasSeleccionadas.some(ar=>s.tipo===ar||s.area.toLowerCase().includes(ar.toLowerCase())||s.criterio.startsWith(ar)))
+                    :sesiones;
+                if(!sessFiltradas.length){textoC='No hay sesiones programadas para las áreas seleccionadas.';}
+                else{
+                    const porSem={};
+                    sessFiltradas.forEach(s=>{if(!porSem[s.semana])porSem[s.semana]=[];porSem[s.semana].push(s);});
+                    Object.keys(porSem).sort((a,b)=>a-b).forEach(sem=>{
+                        textoC+=`── Semana ${sem} ──\n`;
+                        porSem[sem].forEach(s=>{
+                            textoC+=`• ${DIAS_N[s.dia]||s.dia}: ${s.area} — ${s.objetivo}\n`;
+                            if(s.indicador)textoC+=`  → ${s.indicador}\n`;
+                            if(s.criterio)textoC+=`  [${s.criterio}]\n`;
+                            total++;
                         });
-                    }
-                    textoC+=`• ${code}: ${desc||code}
-`;
-                    total++;
+                        textoC+='\n';
+                    });
+                }
+                document.getElementById('sdaCriteriosCount').textContent=`(${total} sesiones)`;
+            }else{
+                const areasAMostrar=areasSeleccionadas.length>0
+                    ?Object.fromEntries(Object.entries(criteriosMes).filter(([k])=>areasSeleccionadas.includes(k)))
+                    :criteriosMes;
+                Object.entries(areasAMostrar).forEach(([area,data])=>{
+                    if(!data)return;
+                    const info=ACI_CRITERIOS[area];
+                    const label=info?info.nombre:(AREAS[area]?AREAS[area].nombre:area);
+                    textoC+=`── ${label} ──\n`;
+                    Object.keys(data.criterios).forEach(code=>{
+                        let desc='';
+                        if(info){Object.values(info).forEach(cicloData=>{if(typeof cicloData==='object'&&cicloData[code])desc=cicloData[code];});}
+                        textoC+=`• ${code}: ${desc||code}\n`;
+                        total++;
+                    });
+                    textoC+='\n';
                 });
-                textoC+='\n';
-            });
+                document.getElementById('sdaCriteriosCount').textContent=`(${total} ítems en ${Object.keys(areasAMostrar).filter(k=>criteriosMes[k]).length} áreas)`;
+            }
             document.getElementById('sdaCriteriosBox').textContent=textoC||'No hay criterios registrados en la programación de este mes.';
-            document.getElementById('sdaCriteriosCount').textContent=`(${total} criterios en ${Object.keys(areasAMostrar).filter(k=>criteriosMes[k]).length} áreas)`;
         }
 
         function sdaToggleChip(el){
@@ -3448,72 +3637,105 @@
             const a=alumnos[alumnoActual];
             const mes=MESES[mesActual];
             const criteriosMes=sdaGetCriteriosMes();
-            const areaFiltro=document.getElementById('sdaAreaSel').value;
+            const areasSeleccionadas=sdaGetAreasSeleccionadas();
             const tematica=document.getElementById('sdaTematica').value.trim();
             const sesiones=document.getElementById('sdaSesiones').value;
             const duracion=document.getElementById('sdaDuracion').value;
+            const neae=document.getElementById('sdaNeae').value;
+            const transportar=document.getElementById('sdaTransportarObjetivos').checked;
+            const formato=document.querySelector('input[name="sdaFormato"]:checked')?.value||'actividades';
             const mets=[...document.querySelectorAll('#sdaMetodologias span')].filter(s=>s.style.background&&s.style.background.includes('primary')).map(s=>s.textContent);
 
-            const areasAMostrar=areaFiltro?{[areaFiltro]:criteriosMes[areaFiltro]}:criteriosMes;
+            // Build criteria text
             let criteriosTexto='';
-            Object.entries(areasAMostrar).forEach(([area,data])=>{
-                if(!data)return;
-                const info=ACI_CRITERIOS[area];
-                criteriosTexto+=`
-${info?info.nombre:area}:
-`;
-                Object.keys(data.criterios).forEach(code=>{
-                    let desc='';
-                    if(info){Object.values(info).forEach(cicloData=>{if(typeof cicloData==='object'&&cicloData[code])desc=cicloData[code];});}
-                    criteriosTexto+=`  • ${code}: ${desc||code}
-`;
+            if(transportar){
+                const sesionesMes=sdaGetObjetivosMes();
+                const DIAS_N={0:'Lunes',1:'Martes',2:'Miércoles',3:'Jueves',4:'Viernes'};
+                sesionesMes.forEach(s=>{
+                    criteriosTexto+=`• ${DIAS_N[s.dia]||s.dia} Sem.${s.semana}: ${s.area} — ${s.objetivo} → ${s.indicador}${s.criterio?' ['+s.criterio+']':''}\n`;
                 });
-            });
+            }else{
+                const areasAMostrar=areasSeleccionadas.length>0
+                    ?Object.fromEntries(Object.entries(criteriosMes).filter(([k])=>areasSeleccionadas.includes(k)))
+                    :criteriosMes;
+                Object.entries(areasAMostrar).forEach(([area,data])=>{
+                    if(!data)return;
+                    const info=ACI_CRITERIOS[area];
+                    const label=info?info.nombre:(AREAS[area]?AREAS[area].nombre:area);
+                    criteriosTexto+=`\n${label}:\n`;
+                    Object.keys(data.criterios).forEach(code=>{
+                        let desc='';
+                        if(info){Object.values(info).forEach(cd=>{if(typeof cd==='object'&&cd[code])desc=cd[code];});}
+                        criteriosTexto+=`  • ${code}: ${desc||code}\n`;
+                    });
+                });
+            }
 
-            const curso=a.curso||'';
-            const prompt=`# GENERADOR DE ACTIVIDADES EVALUABLES — PROGRAMA ESPECÍFICO PT
-## CONTEXTO
-Eres docente especialista en Pedagogía Terapéutica, experto en diseño de actividades adaptadas a la LOMLOE y la Orden de 30 de mayo de 2023 para Andalucía.
+            const neaeTexto=neae?`- NEAE del alumno/a: ${neae}\n`:'';
+            const tematicaTexto=tematica?`- Temática / contexto de aula: ${tematica}\n`:'';
 
-## DATOS DEL ALUMNO Y CONTEXTO
-- Alumno/a: ${a.siglas}
-- Curso: ${curso}
-- Mes: ${mes.nombre} (Trimestre ${mes.trim})
-- Sesiones de PT: ${sesiones} sesiones de ${duracion} minutos
-${tematica?`- Temática / contexto de aula: ${tematica}`:''}
+            let instruccionesFormato='';
+            if(formato==='json'){
+                const dias=a.diasSesion||[1,3,4];
+                const DIAS_C2={0:'L',1:'M',2:'X',3:'J',4:'V'};
+                let claves='';
+                for(let s=1;s<=mes.semanas;s++){dias.forEach(d=>{claves+=`"${mesActual}_${s}_${d}": sem${s} ${DIAS_C2[d]||d}, `;});}
+                instruccionesFormato=`
+## FORMATO DE RESPUESTA — JSON (OBLIGATORIO)
+Responde ÚNICAMENTE con un objeto JSON válido (sin texto, sin markdown, sin explicaciones).
+Estructura: una entrada por sesión del mes.
 
-## CRITERIOS DE EVALUACIÓN TRABAJADOS ESTE MES (extraídos de la programación PT)
-${criteriosTexto}
-## METODOLOGÍAS ACTIVAS A INCLUIR
-${mets.length?mets.map(m=>`• ${m}`).join('\n'):'\u2022 Aprendizaje cooperativo\n\u2022 Trabajo manipulativo'}
+CLAVES DE SESIÓN DE ${mes.nombre} (índice ${mesActual}):
+${claves}
 
+Formato de cada entrada:
+{
+  "${mesActual}_1_${(a.diasSesion||[1])[0]}": {"titulo": "Nombre breve de la actividad", "desc": "Descripción de 1-2 líneas clara y ejecutable", "criterio": "código LOMLOE o área PT", "nivel": "básico/medio/avanzado"}
+}
+
+Rellena TODAS las claves de sesión. Alterna niveles. Adapta al perfil NEAE del alumno.`;
+            }else{
+                instruccionesFormato=`
 ## INSTRUCCIONES
-Elabora **3 actividades evaluables** para trabajar en las sesiones de PT del mes de ${mes.nombre}, adaptadas a las necesidades del alumno/a:
+Elabora ${sesiones} actividades evaluables para PT del mes de ${mes.nombre}, adaptadas al alumno/a.
 
-### REQUISITOS DE CADA ACTIVIDAD:
-a) Vinculada a los criterios indicados con su código exacto (Orden 30/05/2023)
-b) Adaptada al nivel y necesidades del alumno con principios DUA
-c) Incluye: inicio (enganche 5-10 min), desarrollo (actividad principal), cierre (reflexión)
-d) Especifica materiales y recursos (manipulativos, digitales, impresos)
-e) Describe la evidencia evaluable que producirá el alumno
-f) Indica instrumento de evaluación (lista de cotejo / escala / observación)
+### REQUISITOS POR ACTIVIDAD:
+a) Vinculada a los criterios/contenidos con código exacto
+b) Adaptada con DUA al perfil${neae?' '+neae:''}
+c) Estructura: Inicio (5-10 min) → Desarrollo → Cierre
+d) Materiales y recursos concretos
+e) Evidencia evaluable + instrumento de evaluación
 
-### NIVELES DE DIFICULTAD:
-1. Actividad 1 — Nivel básico: máximo andamiaje, manipulativos, trabajo guiado
-2. Actividad 2 — Nivel intermedio: autonomía progresiva, trabajo en parejas
-3. Actividad 3 — Nivel avanzado: transferencia a nuevos contextos, reto creativo
+### NIVELES:
+1. Básico: máximo andamiaje, manipulativos, guiado
+2. Intermedio: autonomía progresiva, parejas
+3. Avanzado: transferencia, reto creativo
 
 ### ESTRUCTURA DE CADA ACTIVIDAD:
-#### ACTIVIDAD [N]: [TÍTULO CREATIVO]
-**Criterio/s evaluados:** [código — descripción]
-**Desarrollo:** [paso a paso claro y ejecutable]
+#### ACTIVIDAD [N]: [TÍTULO]
+**Criterio/s:** [código — descripción]
+**Desarrollo:** [paso a paso ejecutable]
 **Materiales:** [digitales y físicos]
 **Evidencia evaluable:** [qué produce el alumno]
 **Evaluación:** [instrumento con 4 niveles: No iniciado / En proceso / Conseguido / Excelente]
-**Adaptación PT:** [estrategia específica para este alumno]
+**Adaptación ${neae||'PT'}:** [estrategia específica]`;
+            }
 
----
-Genera las 3 actividades completas y listas para aplicar en sesiones PT.`;
+            const prompt=`# GENERADOR DE ACTIVIDADES EVALUABLES — PROGRAMA ESPECÍFICO PT
+## CONTEXTO
+Eres docente especialista en Pedagogía Terapéutica, experto en actividades adaptadas LOMLOE / Orden 30 de mayo de 2023 (Andalucía).
+
+## DATOS DEL ALUMNO Y CONTEXTO
+- Alumno/a: ${a.siglas}
+- Curso: ${a.curso}
+- Mes: ${mes.nombre} (Trimestre ${mes.trim})
+- Sesiones PT: ${sesiones} sesiones de ${duracion} minutos
+${neaeTexto}${tematicaTexto}
+## CRITERIOS / CONTENIDOS DEL MES (extraídos de la programación PT)
+${criteriosTexto||'(Programa general del alumno)'}
+## METODOLOGÍAS ACTIVAS
+${mets.length?mets.map(m=>`• ${m}`).join('\n'):'• Aprendizaje cooperativo\n• Trabajo manipulativo'}
+${instruccionesFormato}`;
 
             document.getElementById('sdaPromptPreview').textContent=prompt;
             toast('Prompt generado ✓','success');
@@ -3523,12 +3745,75 @@ Genera las 3 actividades completas y listas para aplicar en sesiones PT.`;
             sdaGenerarPrompt();
             const txt=document.getElementById('sdaPromptPreview').textContent;
             if(txt.includes('Pulsa')){toast('Primero pulsa "Generar prompt"','error');return;}
-            navigator.clipboard.writeText(txt).then(()=>{toast('Prompt copiado al portapapeles 📋','success');});
+            navigator.clipboard.writeText(txt).then(()=>{toast('Prompt copiado al portapapeles 📋','success');}).catch(()=>{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);toast('Prompt copiado 📋','success');});
         }
 
         function sdaAbrirGemini(){
             sdaCopiarPrompt();
             setTimeout(()=>window.open('https://gemini.google.com','_blank'),400);
+        }
+
+        function sdaImportarActividadesJSON(){
+            const a=alumnos[alumnoActual];
+            const txt=document.getElementById('sdaJsonInput')?.value.trim();
+            if(!txt){toast('Pega el JSON de la IA','error');return;}
+            try{
+                let clean=txt.replace(/```json?\n?/g,'').replace(/```/g,'').trim();
+                const actividades=JSON.parse(clean);
+                db.ref('gestorpe/alumnos/'+alumnoActual+'/actividadesGeneradas/'+mesActual).set(actividades)
+                    .then(()=>{
+                        a.actividadesGeneradas=a.actividadesGeneradas||{};
+                        a.actividadesGeneradas[mesActual]=actividades;
+                        cerrarModal('modalSdA');
+                        renderProg();
+                        toast('Tabla de actividades importada ✓','success');
+                    });
+            }catch(e){toast('Error al parsear JSON: '+e.message,'error');}
+        }
+
+        function renderTablaActividades(a,mesIdx){
+            const cont=document.getElementById('tablaActividadesIA');
+            if(!cont)return;
+            const actMes=a.actividadesGeneradas?a.actividadesGeneradas[mesIdx]:null;
+            if(!actMes||!Object.keys(actMes).length){cont.innerHTML='';return;}
+            const mes=MESES[mesIdx],dias=a.diasSesion||[1,3,4],noms=dias.map(d=>DIAS_C[d]);
+            let h='<div class="card" style="margin-top:12px">';
+            h+='<div class="card-header"><h3 class="card-title">🎓 Actividades IA — '+mes.nombre+'</h3>';
+            h+='<button class="btn btn-danger btn-sm no-print" onclick="borrarActividadesIA()">🗑️ Borrar</button></div>';
+            h+='<div style="overflow-x:auto;margin-top:8px"><table class="cuadrante-table"><thead><tr><th>S</th>';
+            for(let i=0;i<noms.length;i++)h+='<th>'+noms[i]+'</th>';
+            h+='</tr></thead><tbody>';
+            for(let si=0;si<mes.semanas;si++){
+                const sem=si+1;
+                h+='<tr><td>'+sem+'</td>';
+                for(let di=0;di<dias.length;di++){
+                    const k=mesIdx+'_'+sem+'_'+dias[di],act=actMes[k];
+                    if(act){
+                        const nv=(act.nivel||'').toLowerCase();
+                        const bg=nv.includes('bás')||nv.includes('bas')?'#dcfce7':nv.includes('med')?'#dbeafe':nv.includes('avan')?'#fef3c7':'#fff';
+                        const col=nv.includes('bás')||nv.includes('bas')?'#166534':nv.includes('med')?'#1e40af':nv.includes('avan')?'#92400e':'#333';
+                        h+='<td class="celda" style="background:'+bg+'" title="'+(act.desc||'').replace(/"/g,"'")+'">';
+                        h+='<div class="celda-obj" style="color:'+col+'">'+(act.titulo||'—')+'</div>';
+                        if(act.criterio)h+='<div class="celda-ind">['+act.criterio+']</div>';
+                        h+='</td>';
+                    }else h+='<td class="celda celda-vacia">—</td>';
+                }
+                h+='</tr>';
+            }
+            h+='</tbody></table></div></div>';
+            cont.innerHTML=h;
+        }
+
+        function borrarActividadesIA(){
+            if(!confirm('¿Borrar la tabla de actividades IA de este mes?'))return;
+            const a=alumnos[alumnoActual];
+            db.ref('gestorpe/alumnos/'+alumnoActual+'/actividadesGeneradas/'+mesActual).remove()
+                .then(()=>{
+                    if(a.actividadesGeneradas)delete a.actividadesGeneradas[mesActual];
+                    const cont=document.getElementById('tablaActividadesIA');
+                    if(cont)cont.innerHTML='';
+                    toast('Actividades eliminadas','success');
+                });
         }
 
 
@@ -5607,6 +5892,185 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
         
         function verRecurso(id) {
             toast('Próximamente: Vista detallada de actividad', 'success');
+        }
+        // ══════════════════════════════════════════════════════════════════
+        // SEGUIMIENTO TRIMESTRAL — SÉNECA
+        // ══════════════════════════════════════════════════════════════════
+
+        function _segDatosAlumno(id, trim){
+            const a=alumnos[id];
+            let nC=0,nP=0,nNC=0;
+            const areas=new Set(), conseguidosList=[], bloqueList=[];
+            if(a.programas){
+                Object.keys(a.programas).forEach(pId=>{
+                    const p=a.programas[pId], info=AREAS[p.tipo]||{nombre:p.tipo};
+                    (p.objetivos||[]).filter(o=>o.trimestre===trim).forEach((obj,oi)=>{
+                        (obj.indicadores||[]).forEach((ind,ii)=>{
+                            const k=pId+'_'+oi+'_'+ii+'_T'+trim, e=a.evaluaciones?a.evaluaciones[k]:null;
+                            if(e==='C'){nC++;areas.add(info.nombre);if(conseguidosList.length<4)conseguidosList.push(ind);}
+                            else if(e==='P'){nP++;areas.add(info.nombre);}
+                            else if(e==='NC'){nNC++;areas.add(info.nombre);if(bloqueList.length<3)bloqueList.push(ind);}
+                        });
+                    });
+                });
+            }
+            const dias=a.diasSesion||[1,3,4];
+            let totalSes=0;
+            MESES.forEach(m=>{if(m.trim===trim)totalSes+=m.semanas*dias.length;});
+            const aus=Object.keys(a.ausencias||{}).filter(k=>{const mi=parseInt(k.split('_')[0]);return MESES[mi]&&MESES[mi].trim===trim;}).length;
+            return{nC,nP,nNC,areas:[...areas],conseguidosList,bloqueList,totalSes,aus};
+        }
+
+        function seguimientoBuildPrompt(trim){
+            const ids=Object.keys(alumnos).sort((a,b)=>(alumnos[a].curso||'').localeCompare(alumnos[b].curso||'','es'));
+            if(!ids.length)return null;
+            let bloque='';
+            ids.forEach(id=>{
+                const a=alumnos[id], d=_segDatosAlumno(id,trim);
+                bloque+=`\n---\nALUMNO: ${a.siglas} | Curso: ${a.curso}\n`;
+
+                bloque+=`Resultados: ${d.nC} conseguidos · ${d.nP} en proceso · ${d.nNC} no conseguidos\n`;
+                if(d.areas.length)bloque+=`Áreas trabajadas: ${d.areas.join(', ')}\n`;
+                if(d.conseguidosList.length)bloque+=`Logros destacados: ${d.conseguidosList.join(' / ')}\n`;
+                if(d.bloqueList.length)bloque+=`A reforzar: ${d.bloqueList.join(' / ')}\n`;
+            });
+
+            return `Eres especialista en Pedagogía Terapéutica (PT) en Andalucía (LOMLOE). Redacta el seguimiento trimestral de PT para el Sistema de Información Séneca de cada alumno/a.
+
+REQUISITOS ESTRICTOS PARA CADA RESUMEN:
+- MÁXIMO 900 CARACTERES por alumno (es un límite absoluto del sistema Séneca)
+- Texto corrido y redactado: ni listas, ni viñetas, ni numeración
+- Tono profesional y empático, sin tecnicismos innecesarios
+- Mencionar: áreas trabajadas, logros conseguidos, aspectos en proceso, actitud general
+- Debe sonar a informe real de PT, no a lista de datos
+
+FORMATO DE RESPUESTA (respeta este formato EXACTO para cada alumno):
+===ALUMNO: [siglas]===
+[texto del resumen, máximo 900 caracteres]
+
+DATOS DE LOS ALUMNOS — Trimestre ${trim}:
+${bloque}
+Genera ahora un resumen por cada alumno en el formato indicado. No añadas nada más.`;
+        }
+
+        function seguimientoGenerarPrompt(){
+            const trim=parseInt(document.getElementById('seguimientoTrim').value);
+            const prompt=seguimientoBuildPrompt(trim);
+            if(!prompt){toast('No hay alumnos','error');return;}
+            navigator.clipboard.writeText(prompt).then(()=>{
+                toast('Prompt copiado 📋 — pégalo en Gemini, ChatGPT o Claude','success');
+            }).catch(()=>{
+                const ta=document.createElement('textarea');ta.value=prompt;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
+                toast('Prompt copiado 📋','success');
+            });
+        }
+
+        function seguimientoVerPrompt(){
+            const trim=parseInt(document.getElementById('seguimientoTrim').value);
+            const prompt=seguimientoBuildPrompt(trim);
+            if(!prompt){toast('No hay alumnos','error');return;}
+            const prev=document.getElementById('seguimientoPromptPreview');
+            if(prev.style.display==='none'){prev.style.display='block';prev.textContent=prompt;}
+            else prev.style.display='none';
+        }
+
+        function seguimientoDistribuir(){
+            const raw=document.getElementById('seguimientoRespuestaIA')?.value||'';
+            if(!raw.trim()){toast('Pega primero la respuesta de la IA','error');return;}
+            const trim=parseInt(document.getElementById('seguimientoTrim').value);
+            // Parse ===ALUMNO: XXX=== blocks
+            const regex=/===ALUMNO:\s*([^=\n]+)===[^\n]*\n([\s\S]*?)(?====ALUMNO:|$)/g;
+            let m, count=0;
+            while((m=regex.exec(raw))!==null){
+                const siglas=m[1].trim().toUpperCase();
+                const texto=m[2].trim().substring(0,1000);
+                // Find alumno by siglas
+                const id=Object.keys(alumnos).find(k=>alumnos[k].siglas.toUpperCase()===siglas);
+                if(id&&texto){
+                    db.ref('gestorpe/alumnos/'+id+'/seguimientoTrimestral/T'+trim).set(texto);
+                    alumnos[id].seguimientoTrimestral=alumnos[id].seguimientoTrimestral||{};
+                    alumnos[id].seguimientoTrimestral['T'+trim]=texto;
+                    // Update textarea if visible
+                    const ta=document.getElementById('seg_'+id);
+                    if(ta){ta.value=texto;seguimientoActualizarContador(id);}
+                    count++;
+                }
+            }
+            if(count>0){toast(count+' resúmenes distribuidos ✓','success');renderSeguimiento();}
+            else toast('No se encontraron coincidencias. Comprueba el formato ===ALUMNO: XXX===','error');
+        }
+
+        function renderSeguimiento(){
+            const trim=parseInt(document.getElementById('seguimientoTrim').value);
+            const ids=Object.keys(alumnos).sort((a,b)=>(alumnos[a].curso||'').localeCompare(alumnos[b].curso||'','es'));
+            const cont=document.getElementById('seguimientoContenido');
+            if(!ids.length){cont.innerHTML='';return;}
+            let h='';
+            ids.forEach(id=>{
+                const a=alumnos[id],d=_segDatosAlumno(id,trim);
+                const savedText=(a.seguimientoTrimestral&&a.seguimientoTrimestral['T'+trim])||'';
+                const charLen=savedText.length;
+                const charClass=charLen===0?'char-ok':charLen>1000?'char-over':charLen>900?'char-warn':'char-ok';
+                const pct=charLen?Math.round(charLen/900*100):0;
+                const barColor=charLen>1000?'#ef4444':charLen>900?'#f59e0b':'#22c55e';
+
+                h+='<div class="seg-alumno">';
+                // Header compacto
+                h+='<div class="seg-header">';
+                h+='<div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0">';
+                h+='<span class="seg-siglas">'+a.siglas+'</span>';
+                h+='<div style="min-width:0">';
+                h+='<div style="font-weight:600;font-size:.82rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+a.curso+'</div>';
+                h+='<div style="font-size:.68rem;color:var(--text-light)">T'+trim+': ';
+                h+='<span style="color:var(--success)">'+d.nC+'✓</span> ';
+                h+='<span style="color:var(--proceso)">'+d.nP+'◐</span> ';
+                h+='<span style="color:var(--danger)">'+d.nNC+'✗</span>';
+                if(d.aus)h+=' · <span style="color:var(--danger)">'+d.aus+' aus.</span>';
+                h+='</div></div></div>';
+                h+='<button class="btn-copiar" onclick="seguimientoCopiar(\''+id+'\')">📋 Copiar</button>';
+                h+='</div>';
+                // Textarea
+                h+='<textarea class="seg-textarea" id="seg_'+id+'" maxlength="1000" oninput="seguimientoGuardar(\''+id+'\')" placeholder="El alumno/a ha trabajado durante este trimestre…">'+savedText+'</textarea>';
+                // Footer con barra + contador
+                h+='<div class="seg-footer">';
+                h+='<div style="flex:1;height:5px;background:#e5e7eb;border-radius:3px;overflow:hidden;margin-right:8px"><div style="height:100%;width:'+Math.min(pct,100)+'%;background:'+barColor+';transition:width .3s;border-radius:3px"></div></div>';
+                h+='<span class="char-counter '+charClass+'" id="segCounter_'+id+'">'+charLen+' / 900</span>';
+                h+='</div></div>';
+            });
+            cont.innerHTML=h;
+        }
+
+        function seguimientoActualizarContador(id){
+            const ta=document.getElementById('seg_'+id);if(!ta)return;
+            const len=ta.value.length;
+            const counter=document.getElementById('segCounter_'+id);
+            const barColor=len>1000?'#ef4444':len>900?'#f59e0b':'#22c55e';
+            const pct=Math.min(Math.round(len/900*100),100);
+            if(counter){counter.textContent=len+' / 900';counter.className='char-counter '+(len>1000?'char-over':len>900?'char-warn':'char-ok');}
+            // Update mini bar
+            const bar=document.querySelector('#seg_'+id+'~.seg-footer div>div');
+            if(bar){bar.style.width=pct+'%';bar.style.background=barColor;}
+        }
+
+        const _segTimers={};
+        function seguimientoGuardar(id){
+            seguimientoActualizarContador(id);
+            clearTimeout(_segTimers[id]);
+            _segTimers[id]=setTimeout(()=>{
+                const val=document.getElementById('seg_'+id)?.value||'';
+                const trim=parseInt(document.getElementById('seguimientoTrim').value);
+                db.ref('gestorpe/alumnos/'+id+'/seguimientoTrimestral/T'+trim).set(val);
+                alumnos[id].seguimientoTrimestral=alumnos[id].seguimientoTrimestral||{};
+                alumnos[id].seguimientoTrimestral['T'+trim]=val;
+            },900);
+        }
+
+        function seguimientoCopiar(id){
+            const ta=document.getElementById('seg_'+id);
+            if(!ta||!ta.value.trim()){toast('No hay texto que copiar','error');return;}
+            navigator.clipboard.writeText(ta.value)
+                .then(()=>toast('Copiado ✓ — pega en Séneca','success'))
+                .catch(()=>{ta.select();document.execCommand('copy');toast('Copiado ✓','success');});
         }
     </script>
 </body>
