@@ -475,6 +475,7 @@
                     <div class="btn-group" style="margin-bottom:14px">
                         <button class="btn btn-primary btn-sm" onclick="seguimientoGenerarPrompt()">📋 Copiar prompt para IA</button>
                         <button class="btn btn-secondary btn-sm" onclick="seguimientoVerPrompt()">👁️ Ver prompt</button>
+                        <button class="btn btn-danger btn-sm" onclick="limpiarSeguimiento()">🗑️ Limpiar todo</button>
                     </div>
                     <div id="seguimientoPromptPreview" style="display:none;background:#1e293b;color:#e2e8f0;border-radius:8px;padding:12px;max-height:180px;overflow-y:auto;font-size:.72rem;font-family:monospace;white-space:pre-wrap;margin-bottom:12px"></div>
                     <!-- Paso 2 -->
@@ -3780,28 +3781,55 @@ ${instruccionesFormato}`;
             let h='<div class="card" style="margin-top:12px">';
             h+='<div class="card-header"><h3 class="card-title">🎓 Actividades IA — '+mes.nombre+'</h3>';
             h+='<button class="btn btn-danger btn-sm no-print" onclick="borrarActividadesIA()">🗑️ Borrar</button></div>';
-            h+='<div style="overflow-x:auto;margin-top:8px"><table class="cuadrante-table"><thead><tr><th>S</th>';
+            h+='<p style="font-size:.75rem;color:var(--text-light);margin-bottom:8px">Toca una celda para ver el detalle de la actividad.</p>';
+            h+='<div style="overflow-x:auto;margin-top:4px"><table class="cuadrante-table"><thead><tr><th>S</th>';
             for(let i=0;i<noms.length;i++)h+='<th>'+noms[i]+'</th>';
             h+='</tr></thead><tbody>';
-            for(let si=0;si<mes.semanas;si++){
-                const sem=si+1;
-                h+='<tr><td>'+sem+'</td>';
-                for(let di=0;di<dias.length;di++){
-                    const k=mesIdx+'_'+sem+'_'+dias[di],act=actMes[k];
-                    if(act){
-                        const nv=(act.nivel||'').toLowerCase();
-                        const bg=nv.includes('bás')||nv.includes('bas')?'#dcfce7':nv.includes('med')?'#dbeafe':nv.includes('avan')?'#fef3c7':'#fff';
-                        const col=nv.includes('bás')||nv.includes('bas')?'#166534':nv.includes('med')?'#1e40af':nv.includes('avan')?'#92400e':'#333';
-                        h+='<td class="celda" style="background:'+bg+'" title="'+(act.desc||'').replace(/"/g,"'")+'">';
-                        h+='<div class="celda-obj" style="color:'+col+'">'+(act.titulo||'—')+'</div>';
-                        if(act.criterio)h+='<div class="celda-ind">['+act.criterio+']</div>';
-                        h+='</td>';
-                    }else h+='<td class="celda celda-vacia">—</td>';
-                }
-                h+='</tr>';
-            }
+            // Store activities in a JS variable accessible from onclick
             h+='</tbody></table></div></div>';
             cont.innerHTML=h;
+            // Now build rows injecting data via JS to avoid escaping issues
+            const tbody=cont.querySelector('tbody');
+            for(let si=0;si<mes.semanas;si++){
+                const sem=si+1;
+                const tr=document.createElement('tr');
+                const tdSem=document.createElement('td');
+                tdSem.textContent=sem;
+                tr.appendChild(tdSem);
+                for(let di=0;di<dias.length;di++){
+                    const k=mesIdx+'_'+sem+'_'+dias[di];
+                    const act=actMes[k];
+                    const td=document.createElement('td');
+                    td.className='celda';
+                    if(act){
+                        const nv=(act.nivel||'').toLowerCase();
+                        td.style.background=nv.includes('bás')||nv.includes('bas')?'#dcfce7':nv.includes('med')?'#dbeafe':nv.includes('avan')?'#fef3c7':'#fff';
+                        const col=nv.includes('bás')||nv.includes('bas')?'#166534':nv.includes('med')?'#1e40af':nv.includes('avan')?'#92400e':'#333';
+                        td.style.cursor='pointer';
+                        td.innerHTML='<div class="celda-obj" style="color:'+col+'">'+(act.titulo||'—')+'</div>'+(act.criterio?'<div class="celda-ind">['+act.criterio+']</div>':'');
+                        td.addEventListener('click',()=>verDetalleActividad(act));
+                    }else{
+                        td.classList.add('celda-vacia');
+                        td.textContent='—';
+                    }
+                    tr.appendChild(td);
+                }
+                tbody.appendChild(tr);
+            }
+        }
+
+        function verDetalleActividad(act){
+            const nv=(act.nivel||'').toLowerCase();
+            const nvLabel=nv.includes('bás')||nv.includes('bas')?'🟢 Básico':nv.includes('med')?'🔵 Medio':nv.includes('avan')?'🟡 Avanzado':'📌 '+act.nivel;
+            const bg=nv.includes('bás')||nv.includes('bas')?'#dcfce7':nv.includes('med')?'#dbeafe':nv.includes('avan')?'#fef3c7':'#f0fdf4';
+            const col=nv.includes('bás')||nv.includes('bas')?'#166534':nv.includes('med')?'#1e40af':nv.includes('avan')?'#92400e':'#333';
+            document.getElementById('actDetalleContenido').innerHTML=`
+                <div style="display:inline-block;padding:3px 12px;border-radius:20px;background:${bg};color:${col};font-size:.75rem;font-weight:700;margin-bottom:12px">${nvLabel}</div>
+                <h3 style="font-size:1rem;font-weight:700;color:var(--primary);margin-bottom:10px">${act.titulo||'Sin título'}</h3>
+                ${act.criterio?`<div style="margin-bottom:10px"><span style="font-size:.72rem;font-weight:700;background:var(--primary);color:#fff;padding:2px 10px;border-radius:12px;font-family:monospace">${act.criterio}</span></div>`:''}
+                ${act.desc?`<div style="font-size:.85rem;line-height:1.6;color:var(--text)">${act.desc}</div>`:'<div style="color:var(--text-light);font-size:.82rem">Sin descripción</div>'}
+            `;
+            abrirModal('modalActDetalle');
         }
 
         function borrarActividadesIA(){
@@ -5957,11 +5985,14 @@ Genera ahora un resumen por cada alumno en el formato indicado. No añadas nada 
             const trim=parseInt(document.getElementById('seguimientoTrim').value);
             const prompt=seguimientoBuildPrompt(trim);
             if(!prompt){toast('No hay alumnos','error');return;}
+            const abrir=()=>setTimeout(()=>window.open('https://gemini.google.com','_blank'),300);
             navigator.clipboard.writeText(prompt).then(()=>{
-                toast('Prompt copiado 📋 — pégalo en Gemini, ChatGPT o Claude','success');
+                toast('Prompt copiado 📋 — abriendo Gemini…','success');
+                abrir();
             }).catch(()=>{
                 const ta=document.createElement('textarea');ta.value=prompt;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
-                toast('Prompt copiado 📋','success');
+                toast('Prompt copiado 📋 — abriendo Gemini…','success');
+                abrir();
             });
         }
 
@@ -5972,6 +6003,23 @@ Genera ahora un resumen por cada alumno en el formato indicado. No añadas nada 
             const prev=document.getElementById('seguimientoPromptPreview');
             if(prev.style.display==='none'){prev.style.display='block';prev.textContent=prompt;}
             else prev.style.display='none';
+        }
+
+        function limpiarSeguimiento(){
+            const trim=parseInt(document.getElementById('seguimientoTrim').value);
+            if(!confirm('¿Borrar todos los resúmenes del Trimestre '+trim+'? Esta acción no se puede deshacer.'))return;
+            const ids=Object.keys(alumnos);
+            const updates={};
+            ids.forEach(id=>{
+                updates['gestorpe/alumnos/'+id+'/seguimientoTrimestral/T'+trim]=null;
+                if(alumnos[id].seguimientoTrimestral)delete alumnos[id].seguimientoTrimestral['T'+trim];
+            });
+            db.ref().update(updates).then(()=>{
+                const respTA=document.getElementById('seguimientoRespuestaIA');
+                if(respTA)respTA.value='';
+                renderSeguimiento();
+                toast('Seguimiento T'+trim+' limpiado ✓','success');
+            });
         }
 
         function seguimientoDistribuir(){
@@ -6073,5 +6121,19 @@ Genera ahora un resumen por cada alumno en el formato indicado. No añadas nada 
                 .catch(()=>{ta.select();document.execCommand('copy');toast('Copiado ✓','success');});
         }
     </script>
+    <!-- MODAL DETALLE ACTIVIDAD IA -->
+    <div class="modal-overlay" id="modalActDetalle">
+        <div class="modal" style="max-width:420px">
+            <div class="modal-header">
+                <h3 class="modal-title">🎓 Detalle de la actividad</h3>
+                <button class="modal-close" onclick="cerrarModal('modalActDetalle')">×</button>
+            </div>
+            <div class="modal-body" id="actDetalleContenido" style="padding:16px"></div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="cerrarModal('modalActDetalle')">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>
