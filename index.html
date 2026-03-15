@@ -1581,13 +1581,13 @@
         function toggleDia(d){const idx=diasSel.indexOf(d);if(idx>-1){if(diasSel.length>1)diasSel.splice(idx,1);}else{diasSel.push(d);diasSel.sort((a,b)=>a-b);}actualizarDiasBtns();}
         function actualizarDiasBtns(){document.querySelectorAll('#diasBtns .dia-btn').forEach(btn=>{btn.classList.toggle('active',diasSel.includes(parseInt(btn.dataset.dia)));});}
         function crearAlumno(){const siglas=document.getElementById('nuevoSiglas').value.trim().toUpperCase();if(!siglas){toast('Introduce siglas','error');return;}const cursoSel=document.getElementById('nuevoCurso'),cursoTexto=cursoSel.options[cursoSel.selectedIndex].text,ciclo=cursoSel.value;db.ref('gestorpe/alumnos').push().set({siglas:siglas,curso:cursoTexto,ciclo:ciclo,diasSesion:diasSel.slice(),programas:{},programacion:{},evaluaciones:{},ausencias:{},sincole:{},resultados:{},pasados:{}}).then(()=>{cerrarModal('modalNuevo');toast(siglas+' creado ✓','success');});}
-        function abrirAlumno(id){alumnoActual=id;mesActual=0;evalTrim=1;document.getElementById('screenInicio').classList.remove('active');document.getElementById('screenAlumno').classList.add('active');const a=alumnos[id],diasStr=(a.diasSesion||[0,2,4]).map(d=>DIAS_C[d]).join('-');document.getElementById('alumnoHeader').innerHTML='<div class="alumno-header-siglas">'+a.siglas+'</div><div><h2 style="font-size:.95rem">'+a.curso+'</h2><p style="color:var(--text-light);font-size:.75rem">'+diasStr+'</p></div><div style="margin-left:auto" class="btn-group no-print"><button class="btn btn-secondary btn-sm" onclick="volverInicio()">← Volver</button><button class="btn btn-secondary btn-sm" onclick="window.print()">🖨️</button><button class="btn btn-danger btn-sm" onclick="eliminarAlumno(\''+id+'\')">🗑️</button></div>';document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===0));document.querySelectorAll('.tab-content').forEach((c,i)=>c.classList.toggle('active',i===0));renderProgs();renderProg();renderEval();renderAsis();}
+        function abrirAlumno(id){alumnoActual=id;mesActual=getMesEscolarActual();evalTrim=1;document.getElementById('screenInicio').classList.remove('active');document.getElementById('screenAlumno').classList.add('active');const a=alumnos[id],diasStr=(a.diasSesion||[0,2,4]).map(d=>DIAS_C[d]).join('-');document.getElementById('alumnoHeader').innerHTML='<div class="alumno-header-siglas">'+a.siglas+'</div><div><h2 style="font-size:.95rem">'+a.curso+'</h2><p style="color:var(--text-light);font-size:.75rem">'+diasStr+'</p></div><div style="margin-left:auto" class="btn-group no-print"><button class="btn btn-secondary btn-sm" onclick="volverInicio()">← Volver</button><button class="btn btn-secondary btn-sm" onclick="window.print()">🖨️</button><button class="btn btn-danger btn-sm" onclick="eliminarAlumno(\''+id+'\')">🗑️</button></div>';document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===0));document.querySelectorAll('.tab-content').forEach((c,i)=>c.classList.toggle('active',i===0));renderProgs();renderProg();renderEval();renderAsis();}
         function volverInicio(){alumnoActual=null;document.getElementById('screenAlumno').classList.remove('active');document.getElementById('screenInicio').classList.add('active');}
         function cambiarTab(t){document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));event.target.classList.add('active');document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));document.getElementById('tab'+t.charAt(0).toUpperCase()+t.slice(1)).classList.add('active');if(t==='asistencia')setTimeout(renderAsisCharts,100);if(t==='evaluacion')setTimeout(renderEvalCharts,100);if(t==='seneca')renderSeneca();}
         function eliminarAlumno(id){if(confirm('¿Eliminar alumno?')){db.ref('gestorpe/alumnos/'+id).remove();volverInicio();toast('Eliminado','success');}}
 
         // PROGRAMAS
-        function renderProgs(){const a=alumnos[alumnoActual];let h='<div class="card"><div class="card-header"><h3 class="card-title">📄 Programas</h3><button class="btn btn-primary btn-sm no-print" onclick="abrirModalAddProg()">➕</button></div>';if(!a.programas||!Object.keys(a.programas).length){h+='<div class="empty-state">Sin programas</div>';}else{Object.keys(a.programas).forEach(pId=>{const p=a.programas[pId],info=AREAS[p.tipo]||{icon:'📄',nombre:p.tipo,color:'#666'};h+='<div class="programa-card" style="border-left-color:'+info.color+'"><div class="programa-header"><span class="programa-titulo">'+info.icon+' '+info.nombre+'</span><button class="btn btn-danger btn-sm no-print" onclick="elimProg(\''+pId+'\')">🗑️</button></div>';(p.objetivos||[]).forEach(obj=>{h+='<div class="objetivo-card"><div class="objetivo-header"><span class="objetivo-num">O'+obj.numero+'</span><span class="trimestre-badge t'+obj.trimestre+'">T'+obj.trimestre+'</span></div><div class="objetivo-desc">'+obj.descripcion+'</div>';if(obj.indicadores&&obj.indicadores.length){h+='<ul class="indicadores-list">'+obj.indicadores.map(x=>'<li>• '+x+'</li>').join('')+'</ul>';}h+='</div>';});h+='</div>';});}h+='<div class="btn-group no-print" style="margin-top:12px"><button class="btn btn-secondary btn-sm" onclick="regenerarProg()">🔄 Regenerar</button><button class="btn btn-ai btn-sm" onclick="generarPromptIA()">🤖 IA</button><button class="btn btn-warning btn-sm" onclick="abrirModal(\'modalImportJSON\')">📥 JSON</button><button class="btn btn-secondary btn-sm" onclick="actualizarCriteriosLOMLOE()" title="Añade los criterios LOMLOE sin borrar nada">🏷️ Criterios</button><button class="btn btn-danger btn-sm" onclick="repararTodosCriterios()" title="Corrige criterios mal asignados en TODOS los alumnos">🔧 Reparar criterios</button></div></div>';document.getElementById('tabProgramas').innerHTML=h;}
+        function renderProgs(){const a=alumnos[alumnoActual];let h='<div class="card"><div class="card-header"><h3 class="card-title">📄 Programas</h3><button class="btn btn-primary btn-sm no-print" onclick="abrirModalAddProg()">➕</button></div>';if(!a.programas||!Object.keys(a.programas).length){h+='<div class="empty-state">Sin programas</div>';}else{Object.keys(a.programas).forEach(pId=>{const p=a.programas[pId],info=AREAS[p.tipo]||{icon:'📄',nombre:p.tipo,color:'#666'};h+='<div class="programa-card" style="border-left-color:'+info.color+'"><div class="programa-header"><span class="programa-titulo">'+info.icon+' '+info.nombre+'</span><button class="btn btn-danger btn-sm no-print" onclick="elimProg(\''+pId+'\')">🗑️</button></div>';(p.objetivos||[]).forEach(obj=>{h+='<div class="objetivo-card"><div class="objetivo-header"><span class="objetivo-num">O'+obj.numero+'</span><span class="trimestre-badge t'+obj.trimestre+'">T'+obj.trimestre+'</span></div><div class="objetivo-desc">'+obj.descripcion+'</div>';if(obj.indicadores&&obj.indicadores.length){h+='<ul class="indicadores-list">'+obj.indicadores.map(x=>'<li>• '+x+'</li>').join('')+'</ul>';}h+='</div>';});h+='</div>';});}h+='<div class="btn-group no-print" style="margin-top:12px"><button class="btn btn-secondary btn-sm" onclick="regenerarProg()">🔄 Regenerar</button><button class="btn btn-ai btn-sm" onclick="generarPromptIA()">🤖 IA</button><button class="btn btn-warning btn-sm" onclick="abrirModal(\'modalImportJSON\')">📥 JSON</button><button class="btn btn-secondary btn-sm" onclick="actualizarCriteriosLOMLOE()" title="Añade los criterios LOMLOE sin borrar nada">🏷️ Criterios</button></div></div>';document.getElementById('tabProgramas').innerHTML=h;}
         function abrirModalAddProg(){const a=alumnos[alumnoActual];const cicloAlumno=a.ciclo||'ciclo1';const sel=document.getElementById('selPlantilla');sel.innerHTML='<option value="">-- Elegir plantilla --</option>';Object.keys(plantillas).forEach(id=>{const p=plantillas[id];if(p.ciclo===cicloAlumno){const area=AREAS[p.tipo]||{icon:'📄'};sel.innerHTML+='<option value="'+id+'">'+area.icon+' '+p.nombre+'</option>';}});document.getElementById('previewPlantilla').style.display='none';document.getElementById('addProgTipo').value='';document.getElementById('addProgTexto').value='';document.getElementById('uploadZone').innerHTML='📄 Toca para seleccionar';document.getElementById('uploadZone').classList.remove('has-file');document.getElementById('previewProg').style.display='none';document.getElementById('zonaDocx').style.display='block';document.getElementById('zonaLecto').style.display='none';docExtraido=null;abrirModal('modalAddProg');}
         function previsualizarPlantilla(){const id=document.getElementById('selPlantilla').value;if(!id){document.getElementById('previewPlantilla').style.display='none';return;}const p=plantillas[id];if(!p)return;const nObj=p.objetivos?p.objetivos.length:0;const nInd=p.objetivos?p.objetivos.reduce((s,o)=>s+(o.indicadores?o.indicadores.length:0),0):0;document.getElementById('previewPlantilla').innerHTML='<strong>'+p.nombre+'</strong><br>'+nObj+' objetivos · '+nInd+' indicadores';document.getElementById('previewPlantilla').style.display='block';}
         function cambioTipoProg(){const t=document.getElementById('addProgTipo').value;document.getElementById('zonaDocx').style.display=t==='lectoescritura'?'none':'block';document.getElementById('zonaLecto').style.display=t==='lectoescritura'?'block':'none';}
@@ -1712,15 +1712,329 @@
         }
 
         // PROGRAMACIÓN
+
+        function getMesEscolarActual(){
+            const m=new Date().getMonth(); // 0=Jan...11=Dec
+            const mapa={8:0,9:1,10:2,11:3,0:4,1:5,2:6,3:7,4:8,5:9};
+            return mapa.hasOwnProperty(m)?mapa[m]:0;
+        }
         function getIndicadoresPasados(a,trim){const pasados=a.pasados||{},result=[];Object.keys(pasados).forEach(k=>{if(pasados[k]===trim){const parts=k.split('_');result.push({pId:parts[0],oIdx:parseInt(parts[1]),iIdx:parseInt(parts[2]),key:k});}});return result;}
         function getTodasLasSesiones(a){const dias=a.diasSesion||[1,3,4],keys=[];for(let mi=0;mi<MESES.length;mi++){const m=MESES[mi];for(let s=1;s<=m.semanas;s++){for(let di=0;di<dias.length;di++){keys.push(mi+'_'+s+'_'+dias[di]);}}}return keys;}
-        function generarProgramacion(a){const prog={};if(!a.programas)return prog;const pIds=Object.keys(a.programas);if(!pIds.length)return prog;const todasSesiones=getTodasLasSesiones(a);const sesionesPorTrim={1:0,2:0,3:0};todasSesiones.forEach(k=>{const mi=parseInt(k.split('_')[0]);sesionesPorTrim[MESES[mi].trim]++;});const poolT={1:[],2:[],3:[]};pIds.forEach(pId=>{const p=a.programas[pId];(p.objetivos||[]).forEach((o,oi)=>{const trim=o.trimestre||1;(o.indicadores||['Indicador']).forEach((_,ii)=>{poolT[trim].push({pId:pId,oIdx:oi,iIdx:ii});});});});[2,3].forEach(t=>{getIndicadoresPasados(a,t).forEach(p=>poolT[t].push({pId:p.pId,oIdx:p.oIdx,iIdx:p.iIdx}));});[1,2,3].forEach(t=>{if(poolT[t].length<2)return;const porProg={};poolT[t].forEach(item=>{if(!porProg[item.pId])porProg[item.pId]=[];porProg[item.pId].push(item);});const pIdsEnPool=Object.keys(porProg);if(pIdsEnPool.length<2)return;const nuevo=[];let maxLen=Math.max(...pIdsEnPool.map(id=>porProg[id].length));for(let i=0;i<maxLen;i++){pIdsEnPool.forEach(id=>{if(porProg[id][i])nuevo.push(porProg[id][i]);});}poolT[t]=nuevo;});[1,2,3].forEach(t=>{if(!poolT[t].length)return;const sesiones=sesionesPorTrim[t];while(poolT[t].length<sesiones){const original=[...poolT[t]];for(let i=0;i<original.length&&poolT[t].length<sesiones;i++){poolT[t].push({...original[i]});}}});let idxT={1:0,2:0,3:0};todasSesiones.forEach(k=>{const mi=parseInt(k.split('_')[0]);const trim=MESES[mi].trim;const pool=poolT[trim];if(!pool.length)return;prog[k]=pool[idxT[trim]%pool.length];idxT[trim]++;});return prog;}
+        // Infiere el trimestre de un objetivo por su posición si no tiene campo trimestre
+        function inferirTrimestre(obj, totalObjs){
+            if(obj.trimestre) return parseInt(obj.trimestre)||1;
+            // Por posición: tercio inferior T1, medio T2, superior T3
+            const n = obj.numero || 1;
+            const tercio = Math.ceil((totalObjs||15)/3);
+            if(n <= tercio) return 1;
+            if(n <= tercio*2) return 2;
+            return 3;
+        }
+
+        function generarProgramacion(a){
+            const prog={};
+            if(!a.programas)return prog;
+            const pIds=Object.keys(a.programas);
+            if(!pIds.length)return prog;
+            const todasSesiones=getTodasLasSesiones(a);
+            const sesionesPorTrim={1:0,2:0,3:0};
+            todasSesiones.forEach(k=>{const mi=parseInt(k.split('_')[0]);sesionesPorTrim[MESES[mi].trim]++;});
+
+            // Build pools using inferred trimestre if missing
+            const poolT={1:[],2:[],3:[]};
+            pIds.forEach(pId=>{
+                const p=a.programas[pId];
+                const objs=p.objetivos||[];
+                const total=objs.length;
+                objs.forEach((o,oi)=>{
+                    const trim=inferirTrimestre(o, total);
+                    (o.indicadores||['Indicador']).forEach((_,ii)=>{
+                        poolT[trim].push({pId,oIdx:oi,iIdx:ii});
+                    });
+                });
+            });
+
+            // Add pasados to their target trimestre (skip orphan pIds)
+            const pIdsExistentes = new Set(Object.keys(a.programas||{}));
+            [2,3].forEach(t=>{
+                getIndicadoresPasados(a,t).forEach(p=>{
+                    if(pIdsExistentes.has(p.pId)) poolT[t].push({pId:p.pId,oIdx:p.oIdx,iIdx:p.iIdx});
+                });
+            });
+
+            // Fallback: if T3 empty use T2, if T2 empty use T1
+            if(!poolT[3].length && poolT[2].length) poolT[3]=[...poolT[2]];
+            if(!poolT[3].length && poolT[1].length) poolT[3]=[...poolT[1]];
+            if(!poolT[2].length && poolT[1].length) poolT[2]=[...poolT[1]];
+
+            // Interleave programs for variety
+            [1,2,3].forEach(t=>{
+                if(poolT[t].length<2)return;
+                const porProg={};
+                poolT[t].forEach(item=>{if(!porProg[item.pId])porProg[item.pId]=[];porProg[item.pId].push(item);});
+                const pIdsEnPool=Object.keys(porProg);
+                if(pIdsEnPool.length<2)return;
+                const nuevo=[];
+                let maxLen=Math.max(...pIdsEnPool.map(id=>porProg[id].length));
+                for(let i=0;i<maxLen;i++){pIdsEnPool.forEach(id=>{if(porProg[id][i])nuevo.push(porProg[id][i]);});}
+                poolT[t]=nuevo;
+            });
+
+            // Expand each pool to cover all sessions of that trimestre
+            [1,2,3].forEach(t=>{
+                if(!poolT[t].length)return;
+                const sesiones=sesionesPorTrim[t];
+                while(poolT[t].length<sesiones){
+                    const original=[...poolT[t]];
+                    for(let i=0;i<original.length&&poolT[t].length<sesiones;i++){poolT[t].push({...original[i]});}
+                }
+            });
+
+            // Assign sessions
+            let idxT={1:0,2:0,3:0};
+            todasSesiones.forEach(k=>{
+                const mi=parseInt(k.split('_')[0]);
+                const trim=MESES[mi].trim;
+                const pool=poolT[trim];
+                if(!pool.length)return;
+                prog[k]=pool[idxT[trim]%pool.length];
+                idxT[trim]++;
+            });
+            return prog;
+        }
         function regenerarProg(){const a=alumnos[alumnoActual];if(!a.programas||!Object.keys(a.programas).length){toast('Añade programa','error');return;}const nueva=generarProgramacion(a);db.ref('gestorpe/alumnos/'+alumnoActual+'/programacion').set(nueva).then(()=>{a.programacion=nueva;renderProg();toast('Regenerado ✓','success');});}
         function reajustarDesde(a,desdeClave){const todasSesiones=getTodasLasSesiones(a);const idx=todasSesiones.indexOf(desdeClave);if(idx<0)return a.programacion;const nueva={...a.programacion};for(let i=todasSesiones.length-1;i>idx;i--){const keyActual=todasSesiones[i];const keyAnterior=todasSesiones[i-1];if(nueva[keyAnterior]){nueva[keyActual]=nueva[keyAnterior];}}delete nueva[desdeClave];return nueva;}
         function insertarRepeticion(a,clave,contenido){const todasSesiones=getTodasLasSesiones(a);const idx=todasSesiones.indexOf(clave);if(idx<0)return a.programacion;const dias=a.diasSesion||[1,3,4];let idxRepetir=idx+dias.length;if(idxRepetir>=todasSesiones.length)idxRepetir=todasSesiones.length-1;const claveRepetir=todasSesiones[idxRepetir];const nueva={...a.programacion};for(let i=todasSesiones.length-1;i>idxRepetir;i--){const keyActual=todasSesiones[i];const keyAnterior=todasSesiones[i-1];if(nueva[keyAnterior]){nueva[keyActual]=nueva[keyAnterior];}}nueva[claveRepetir]=contenido;return nueva;}
         function generarPromptIA(){const a=alumnos[alumnoActual];if(!a.programas||!Object.keys(a.programas).length){toast('Añade programas','error');return;}const dias=a.diasSesion||[1,3,4];const todasSesiones=getTodasLasSesiones(a);let prompt='Genera programación COMPLETA curso 2025/2026.\n\n👤 '+a.siglas+' ('+a.curso+')\n📆 '+dias.map(d=>DIAS_C[d]).join(', ')+'\n📊 '+todasSesiones.length+' sesiones\n\n📚 PROGRAMAS:\n';Object.keys(a.programas).forEach(pId=>{const p=a.programas[pId],info=AREAS[p.tipo]||{nombre:p.tipo};prompt+='\n🔷 '+info.nombre+' (ID: "'+pId+'")\n';(p.objetivos||[]).forEach((obj,oi)=>{prompt+='  O'+obj.numero+' (oIdx:'+oi+', T'+obj.trimestre+'): '+obj.descripcion+'\n';(obj.indicadores||[]).forEach((ind,ii)=>{prompt+='    - iIdx:'+ii+': '+ind+'\n';});});});prompt+='\n📤 RESPONDE SOLO JSON:\n{"mes_semana_dia": {"pId": "...", "oIdx": N, "iIdx": N}, ...}\n\n⚠️ '+todasSesiones.length+' entradas. Alterna 50-50. Respeta trimestres.';navigator.clipboard.writeText(prompt).then(()=>{toast('Copiado','success');window.open('https://chat.openai.com/','_blank');});}
         function importarJSON(){const txt=document.getElementById('jsonInput').value.trim();if(!txt){toast('Pega JSON','error');return;}try{let cleanJSON=txt.replace(/```json?\n?/g,'').replace(/```/g,'').trim();const prog=JSON.parse(cleanJSON);db.ref('gestorpe/alumnos/'+alumnoActual+'/programacion').set(prog).then(()=>{alumnos[alumnoActual].programacion=prog;cerrarModal('modalImportJSON');document.getElementById('jsonInput').value='';renderProg();toast('Importado ✓','success');});}catch(e){toast('Error JSON','error');}}
-        function renderProg(){const a=alumnos[alumnoActual],dias=a.diasSesion||[1,3,4],noms=dias.map(d=>DIAS_C[d]),mes=MESES[mesActual],st=calcStats(a);let h='<div class="card"><div class="stats-box no-print"><div class="stat-item"><div class="stat-num" style="color:var(--danger)">'+(st.porMes[mesActual]?st.porMes[mesActual].aus:0)+'</div><div class="stat-label">Ausencias</div></div></div><div class="cuadrante-nav no-print"><button class="nav-btn" onclick="cambiarMes(-1)">◀</button><select class="form-select" style="width:auto" onchange="mesActual=parseInt(this.value);renderProg()">';for(let i=0;i<MESES.length;i++){h+='<option value="'+i+'"'+(i===mesActual?' selected':'')+'>'+MESES[i].nombre+'</option>';}h+='</select><button class="nav-btn" onclick="cambiarMes(1)">▶</button><span class="trimestre-badge t'+mes.trim+'">T'+mes.trim+'</span></div><div class="leyenda no-print"><div class="leyenda-item"><div class="leyenda-color" style="background:#fee2e2"></div>Ausencia</div><div class="leyenda-item"><div class="leyenda-color" style="background:#e0e7ff"></div>Sin cole</div></div><div style="overflow-x:auto;margin-top:8px"><table class="cuadrante-table"><thead><tr><th>S</th>';for(let i=0;i<noms.length;i++){h+='<th>'+noms[i]+'</th>';}h+='</tr></thead><tbody>';for(let si=0;si<mes.semanas;si++){const sem=si+1;h+='<tr><td>'+sem+'</td>';for(let di=0;di<dias.length;di++){h+=renderCelda(a,mesActual+'_'+sem+'_'+dias[di],dias[di]);}h+='</tr>';}h+='</tbody></table></div></div>';h+='<div class="btn-group no-print" style="margin-top:12px"><button class="btn btn-ai btn-sm" onclick="abrirModalSdA()">🎓 Generar actividades con IA</button></div>';document.getElementById('tabProgramacion').innerHTML=h;}
+
+        // Repara trimestre en objetivos de Firebase (cuando están a null/undefined)
+        // y regenera la programación de todos los alumnos
+
+        function diagnosticarProgramacion(){
+            const a = alumnos[alumnoActual];
+            if(!a || !a.programas){ alert('Sin programas'); return; }
+
+            const lines = [];
+            lines.push('=== DIAGNÓSTICO: ' + a.siglas + ' (' + a.curso + ') ===\n');
+
+            // 1. Días de sesión
+            const dias = a.diasSesion || [1,3,4];
+            lines.push('Días sesión: ' + dias.map(d=>['L','M','X','J','V'][d]).join(', '));
+
+            // 2. Programas y objetivos
+            Object.keys(a.programas).forEach(pId => {
+                const p = a.programas[pId];
+                const objs = p.objetivos || [];
+                lines.push('\n── Programa ' + pId + ' (' + p.tipo + ') ──');
+                lines.push('  Objetivos: ' + objs.length);
+                const byTrim = {1:0, 2:0, 3:0, null:0};
+                objs.forEach(o => {
+                    const t = o.trimestre ? parseInt(o.trimestre) : 'null';
+                    if(byTrim[t]!==undefined) byTrim[t]++; else byTrim['null']++;
+                });
+                lines.push('  Por trimestre: T1=' + byTrim[1] + ' T2=' + byTrim[2] + ' T3=' + byTrim[3] + ' sin_trim=' + byTrim['null']);
+                // Show first 3 objs
+                objs.slice(0,3).forEach(o => {
+                    lines.push('  · O'+o.numero+' trim='+o.trimestre+' inds='+(o.indicadores||[]).length);
+                });
+            });
+
+            // 3. Pasados
+            const pasados = a.pasados || {};
+            const pasT = {2:0, 3:0};
+            Object.values(pasados).forEach(t => { if(pasT[t]!==undefined) pasT[t]++; });
+            lines.push('\nPasados: T2=' + pasT[2] + ' T3=' + pasT[3]);
+
+            // 4. Simulate pool building
+            lines.push('\n=== POOL SIMULADO ===');
+            const poolT = {1:[],2:[],3:[]};
+            Object.keys(a.programas).forEach(pId => {
+                const p = a.programas[pId];
+                const objs = p.objetivos || [];
+                const total = objs.length;
+                objs.forEach((o,oi) => {
+                    const trim = inferirTrimestre(o, total);
+                    (o.indicadores||['ind']).forEach((_,ii) => poolT[trim].push({pId,oIdx:oi,iIdx:ii}));
+                });
+            });
+            [2,3].forEach(t => getIndicadoresPasados(a,t).forEach(p => poolT[t].push({pId:p.pId,oIdx:p.oIdx,iIdx:p.iIdx})));
+
+            const todasSesiones = getTodasLasSesiones(a);
+            const sesionesPorTrim = {1:0,2:0,3:0};
+            todasSesiones.forEach(k => { const mi=parseInt(k.split('_')[0]); sesionesPorTrim[MESES[mi].trim]++; });
+
+            [1,2,3].forEach(t => {
+                lines.push('T'+t+': pool='+poolT[t].length+' sesiones_necesarias='+sesionesPorTrim[t]+(poolT[t].length===0?' ← VACÍO':''));
+            });
+
+            // 5. Actual programacion in Firebase
+            lines.push('\n=== PROGRAMACIÓN GUARDADA ===');
+            const prog = a.programacion || {};
+            let vacias=0, rellenas=0;
+            todasSesiones.forEach(k => {
+                const mi = parseInt(k.split('_')[0]);
+                const trim = MESES[mi].trim;
+                if(prog[k]) rellenas++;
+                else if(!(a.ausencias&&a.ausencias[k]) && !(a.sincole&&a.sincole[k])) vacias++;
+            });
+            lines.push('Rellenas: ' + rellenas + '  Vacías: ' + vacias + '  Total sesiones: ' + todasSesiones.length);
+
+            // Detect orphan pIds in programacion
+            let huerfanos=0;
+            Object.keys(prog).forEach(k=>{
+                const c=prog[k];
+                if(c && c.pId && (!a.programas||!a.programas[c.pId])) huerfanos++;
+            });
+            if(huerfanos>0) lines.push('⚠️ Prog. huérfanas: '+huerfanos+' entradas → se ven vacías');
+            // Detect orphan pasados - this is the real cause of regenerated orphans
+            const pasadosObj=a.pasados||{};
+            let pasadosHuerfanos=0;
+            Object.keys(pasadosObj).forEach(k=>{
+                const pId=k.split('_')[0];
+                if(!a.programas||!a.programas[pId]) pasadosHuerfanos++;
+            });
+            if(pasadosHuerfanos>0) lines.push('⚠️ Pasados huérfanos: '+pasadosHuerfanos+' → generarProgramacion los vuelve a meter');
+
+            // Show which months have empty or orphan cells
+            for(let mi=0;mi<MESES.length;mi++){
+                const mes = MESES[mi];
+                let v=0, r=0, h=0;
+                for(let s=1;s<=mes.semanas;s++){
+                    dias.forEach(d => {
+                        const k = mi+'_'+s+'_'+d;
+                        const cel=prog[k];
+                        if(cel){
+                            if(a.programas&&a.programas[cel.pId]) r++;
+                            else h++;
+                        } else if(!(a.ausencias&&a.ausencias[k])&&!(a.sincole&&a.sincole[k])) v++;
+                    });
+                }
+                if(v>0||h>0) lines.push('  · '+MESES[mi].nombre+': '+(v?v+' SIN DATO ':'')+(h?h+' HUÉRFANAS ':'')+r+' OK');
+            }
+
+            const msg = lines.join('\n');
+            console.log(msg);
+            // Show in a modal-like div
+            const div = document.createElement('div');
+            div.style.cssText='position:fixed;top:10px;left:10px;right:10px;background:#1e293b;color:#e2e8f0;padding:16px;border-radius:12px;z-index:9999;font-family:monospace;font-size:.75rem;white-space:pre;overflow-y:auto;max-height:80vh;box-shadow:0 20px 60px rgba(0,0,0,.5)';
+            div.textContent = msg;
+            const closeBtn = document.createElement('button');
+            closeBtn.textContent = '✕ Cerrar';
+            closeBtn.style.cssText='position:sticky;top:0;float:right;background:#ef4444;color:white;border:none;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:.8rem;margin-bottom:8px';
+            closeBtn.onclick = () => div.remove();
+            div.prepend(closeBtn);
+            document.body.appendChild(div);
+        }
+        function repararTrimestresYProgramacion(){
+            if(!confirm('Esto asignará trimestre correcto a todos los objetivos sin trimestre y regenerará la programación de TODOS los alumnos.\n\n¿Continuar?'))return;
+            const updates={};
+            let alumnosReparados=0, objetivosReparados=0;
+
+            Object.keys(alumnos).forEach(id=>{
+                const a=alumnos[id];
+                if(!a.programas)return;
+                let cambio=false;
+
+                // Fix trimestre on objectives
+                Object.keys(a.programas).forEach(pId=>{
+                    const p=a.programas[pId];
+                    const objs=p.objetivos||[];
+                    const total=objs.length;
+                    const objsReparados=objs.map((o)=>{
+                        const trimActual=o.trimestre?parseInt(o.trimestre):null;
+                        if(trimActual&&trimActual>=1&&trimActual<=3)return o;
+                        const trimNuevo=inferirTrimestre({...o, trimestre:null}, total);
+                        objetivosReparados++;
+                        cambio=true;
+                        return {...o, trimestre:trimNuevo};
+                    });
+                    if(cambio){
+                        updates['gestorpe/alumnos/'+id+'/programas/'+pId+'/objetivos']=objsReparados;
+                        a.programas[pId].objetivos=objsReparados;
+                    }
+                });
+
+                // Clean orphan pIds from programacion AND pasados
+                const prog=a.programacion||{};
+                const pIdsValidos=new Set(Object.keys(a.programas));
+                let hayHuerfanos=false;
+                Object.keys(prog).forEach(k=>{
+                    if(prog[k]&&prog[k].pId&&!pIdsValidos.has(prog[k].pId)){
+                        delete prog[k]; hayHuerfanos=true;
+                    }
+                });
+                if(hayHuerfanos){ a.programacion=prog; }
+                // Clean orphan pasados too - this is critical
+                const pasados=a.pasados||{};
+                let hayPasadosHuerfanos=false;
+                Object.keys(pasados).forEach(k=>{
+                    const pId=k.split('_')[0];
+                    if(!pIdsValidos.has(pId)){
+                        hayPasadosHuerfanos=true;
+                        updates['gestorpe/alumnos/'+id+'/pasados/'+k]=null;
+                    }
+                });
+                if(hayPasadosHuerfanos){
+                    const pasadosLimpios={};
+                    Object.keys(pasados).forEach(k=>{
+                        const pId=k.split('_')[0];
+                        if(pIdsValidos.has(pId)) pasadosLimpios[k]=pasados[k];
+                    });
+                    a.pasados=pasadosLimpios;
+                }
+
+                // Regenerar programación completa
+                const nueva=generarProgramacion(a);
+                updates['gestorpe/alumnos/'+id+'/programacion']=nueva;
+                a.programacion=nueva;
+                alumnosReparados++;
+            });
+
+            if(Object.keys(updates).length===0){toast('No hay datos que reparar','success');return;}
+            toast('Guardando...','success');
+            db.ref().update(updates).then(()=>{
+                toast('✅ '+objetivosReparados+' objetivos con trimestre asignado · '+alumnosReparados+' programaciones regeneradas','success');
+                if(alumnoActual&&alumnos[alumnoActual])renderProg();
+            }).catch(e=>toast('Error: '+e.message,'error'));
+        }
+        function renderProg(){const a=alumnos[alumnoActual],dias=a.diasSesion||[1,3,4],noms=dias.map(d=>DIAS_C[d]),mes=MESES[mesActual],st=calcStats(a);let h='<div class="card"><div class="stats-box no-print"><div class="stat-item"><div class="stat-num" style="color:var(--danger)">'+(st.porMes[mesActual]?st.porMes[mesActual].aus:0)+'</div><div class="stat-label">Ausencias</div></div></div><div class="cuadrante-nav no-print"><button class="nav-btn" onclick="cambiarMes(-1)">◀</button><select class="form-select" style="width:auto" onchange="mesActual=parseInt(this.value);renderProg()">';for(let i=0;i<MESES.length;i++){h+='<option value="'+i+'"'+(i===mesActual?' selected':'')+'>'+MESES[i].nombre+'</option>';}h+='</select><button class="nav-btn" onclick="cambiarMes(1)">▶</button><span class="trimestre-badge t'+mes.trim+'">T'+mes.trim+'</span></div><div class="leyenda no-print"><div class="leyenda-item"><div class="leyenda-color" style="background:#fee2e2"></div>Ausencia</div><div class="leyenda-item"><div class="leyenda-color" style="background:#e0e7ff"></div>Sin cole</div></div><div style="overflow-x:auto;margin-top:8px"><table class="cuadrante-table"><thead><tr><th>S</th>';for(let i=0;i<noms.length;i++){h+='<th>'+noms[i]+'</th>';}h+='</tr></thead><tbody>';for(let si=0;si<mes.semanas;si++){const sem=si+1;h+='<tr><td>'+sem+'</td>';for(let di=0;di<dias.length;di++){h+=renderCelda(a,mesActual+'_'+sem+'_'+dias[di],dias[di]);}h+='</tr>';}h+='</tbody></table></div></div>';h+='<div class="btn-group no-print" style="margin-top:12px"><button class="btn btn-ai btn-sm" onclick="abrirModalSdA()">🎓 Generar actividades con IA</button></div>';document.getElementById('tabProgramacion').innerHTML=h;autoRepararProgramacion();}
+
+        // Detecta meses vacíos y regenera si hay programas disponibles
+        function autoRepararProgramacion(){
+            const a=alumnos[alumnoActual];
+            if(!a||!a.programas||!Object.keys(a.programas).length)return;
+            // Don't auto-repair if there are orphan pasados - use manual repair button instead
+            const pIdsAct=new Set(Object.keys(a.programas));
+            const pasadosObj=a.pasados||{};
+            const hayPasadosHuerfanos=Object.keys(pasadosObj).some(k=>!pIdsAct.has(k.split('_')[0]));
+            if(hayPasadosHuerfanos)return; // needs manual repair first
+            const dias=a.diasSesion||[1,3,4];
+            // Check if ANY session in current or future months is missing
+            let vacias=0,esperadas=0;
+            for(let mi=mesActual;mi<MESES.length;mi++){
+                const mes=MESES[mi];
+                for(let s=1;s<=mes.semanas;s++){
+                    dias.forEach(d=>{
+                        const k=mi+'_'+s+'_'+d;
+                        if(!(a.ausencias&&a.ausencias[k])&&!(a.sincole&&a.sincole[k])){
+                            esperadas++;
+                            if(!a.programacion||!a.programacion[k])vacias++;
+                        }
+                    });
+                }
+            }
+            // If more than 20% of remaining sessions are empty → auto-regenerate silently
+            if(esperadas>0&&vacias/esperadas>0.2){
+                const nueva=generarProgramacion(a);
+                db.ref('gestorpe/alumnos/'+alumnoActual+'/programacion').set(nueva).then(()=>{
+                    a.programacion=nueva;
+                    renderProg();
+                    toast('Programación regenerada automáticamente ✓','success');
+                });
+            }
+        }
+
         function renderCelda(a,k,d){const c=a.programacion?a.programacion[k]:null,aus=a.ausencias?a.ausencias[k]:false,sc=a.sincole?a.sincole[k]:false,res=a.resultados?a.resultados[k]:null;let cls='celda',icon='';if(sc){cls+=' celda-sincole';icon='🏫';}else if(aus){cls+=' celda-ausencia';icon='❌';}else if(res==='conseguido'){icon='✅';}else if(res==='repetir'){icon='🔄';}if(!c||!a.programas||!a.programas[c.pId]){return'<td class="'+cls+' celda-vacia" onclick="editarCelda(\''+k+'\','+d+')">'+(icon?'<span class="celda-icon">'+icon+'</span>':'')+'+</td>';}const p=a.programas[c.pId],obj=p.objetivos?p.objetivos[c.oIdx]:null;if(!obj)return'<td class="'+cls+'">?</td>';const info=AREAS[p.tipo]||{color:'#666'},ind=obj.indicadores?(obj.indicadores[c.iIdx]||''):'';const criterio=obj.criterio?'<div style="font-size:.55rem;color:#888;margin-top:2px;font-family:monospace">'+obj.criterio+'</div>':'';const recursoIcon=c.recursoId?'<span style="position:absolute;bottom:2px;left:2px;font-size:.6rem" title="Recurso vinculado">🔗</span>':'';return'<td class="'+cls+'" onclick="editarCelda(\''+k+'\','+d+')">'+(icon?'<span class="celda-icon">'+icon+'</span>':'')+recursoIcon+'<div class="celda-obj" style="color:'+info.color+'">O'+obj.numero+'</div><div class="celda-ind">'+ind.substring(0,25)+(ind.length>25?'...':'')+'</div>'+criterio+'</td>';}
         function cambiarMes(dir){mesActual=Math.max(0,Math.min(9,mesActual+dir));renderProg();}
         function editarCelda(k,d){celdaEditando=k;estadoCelda='asiste';resultadoCelda=null;const a=alumnos[alumnoActual],c=a.programacion?a.programacion[k]:{};document.getElementById('celdaTitulo').textContent=DIAS[d];document.querySelectorAll('.asist-btn').forEach(b=>b.classList.remove('selected'));document.querySelectorAll('.resultado-btn').forEach(b=>b.classList.remove('selected'));if(a.sincole&&a.sincole[k]){estadoCelda='sincole';document.querySelector('.asist-btn.sincole').classList.add('selected');document.getElementById('contenidoSesion').style.display='none';}else if(a.ausencias&&a.ausencias[k]){estadoCelda='ausencia';document.querySelector('.asist-btn.ausencia').classList.add('selected');document.getElementById('contenidoSesion').style.display='none';}else{document.querySelector('.asist-btn.asiste').classList.add('selected');document.getElementById('contenidoSesion').style.display='block';}resultadoCelda=(a.resultados&&a.resultados[k])?a.resultados[k]:null;if(resultadoCelda){const btn=document.querySelector('.resultado-btn.'+resultadoCelda);if(btn)btn.classList.add('selected');}const sel=document.getElementById('selPrograma');sel.innerHTML='<option value="">-</option>';if(a.programas){Object.keys(a.programas).forEach(pId=>{const p=a.programas[pId],info=AREAS[p.tipo]||{icon:'📄'};sel.innerHTML+='<option value="'+pId+'"'+(c.pId===pId?' selected':'')+'>'+info.icon+' '+(info.nombre||p.tipo)+'</option>';});}if(c.pId){cargarObjetivos();setTimeout(()=>{document.getElementById('selObjetivo').value=c.oIdx!==undefined?c.oIdx:'';cargarIndicadores();setTimeout(()=>{document.getElementById('selIndicador').value=c.iIdx!==undefined?c.iIdx:'';cargarRecursosSugeridos();setTimeout(()=>{document.getElementById('selRecurso').value=c.recursoId||'';if(c.recursoId)mostrarInfoRecurso(c.recursoId);},30);},30);},30);}else{document.getElementById('selObjetivo').innerHTML='<option value="">-</option>';document.getElementById('selIndicador').innerHTML='<option value="">-</option>';document.getElementById('selRecurso').innerHTML='<option value="">Sin recurso</option>';}abrirModal('modalCelda');}
