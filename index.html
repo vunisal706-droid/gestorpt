@@ -228,6 +228,7 @@
                 <button class="nav-tab" onclick="cambiarSeccion('biblioteca',this)">📚 Biblioteca</button>
                 <button class="nav-tab" onclick="cambiarSeccion('recursos',this)">🎯 Banco de Actividades</button>
                 <button class="nav-tab" onclick="cambiarSeccion('aci',this)">📋 ACI</button>
+                <button class="nav-tab" onclick="cambiarSeccion('memoria',this)">📝 Memoria Final</button>
             </div>
             <div id="seccionAlumnos">
                 <div class="card">
@@ -457,6 +458,29 @@
                 </div>
             </div>
         </div>
+
+            <!-- ══ SECCIÓN MEMORIA FINAL PT ════════════════════════════════ -->
+            <div id="seccionMemoria" style="display:none">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">📝 Memoria Final PT</h2>
+                        <div class="btn-group">
+                            <button class="btn btn-secondary btn-sm" onclick="memoriaGenerarTodos()">📋 Generar todos</button>
+                        </div>
+                    </div>
+                    <p style="font-size:.82rem;color:var(--text-light);margin-bottom:14px">
+                        Genera un prompt completo para <strong>ChatGPT</strong> con los datos de evaluación final de cada alumno.
+                        La IA elaborará la memoria y las recomendaciones para el curso siguiente.
+                    </p>
+                    <div class="form-group" style="margin-bottom:12px">
+                        <label class="form-label">Alumno</label>
+                        <select class="form-select" id="memoriaAlumnoSel" onchange="memoriaRenderAlumno()">
+                            <option value="">-- Seleccionar alumno --</option>
+                        </select>
+                    </div>
+                    <div id="memoriaContenido"></div>
+                </div>
+            </div>
     </div>
 
     <div id="screenAlumno" class="screen">
@@ -1555,7 +1579,7 @@
         // Renderizar biblioteca aunque Firebase no conecte
         renderBiblioteca();
 
-        function cambiarSeccion(s,btn){document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');document.getElementById('seccionAlumnos').style.display=s==='alumnos'?'block':'none';document.getElementById('seccionEstadisticas').style.display=s==='estadisticas'?'block':'none';document.getElementById('seccionSDA').style.display=s==='sda'?'block':'none';document.getElementById('seccionBiblioteca').style.display=s==='biblioteca'?'block':'none';document.getElementById('seccionRecursos').style.display=s==='recursos'?'block':'none';document.getElementById('seccionACI').style.display=s==='aci'?'block':'none';if(s==='estadisticas')renderEstadisticasGlobal();if(s==='recursos')inicializarRecursos();if(s==='aci')renderAciSeccion();}
+        function cambiarSeccion(s,btn){document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');document.getElementById('seccionAlumnos').style.display=s==='alumnos'?'block':'none';document.getElementById('seccionEstadisticas').style.display=s==='estadisticas'?'block':'none';document.getElementById('seccionSDA').style.display=s==='sda'?'block':'none';document.getElementById('seccionBiblioteca').style.display=s==='biblioteca'?'block':'none';document.getElementById('seccionRecursos').style.display=s==='recursos'?'block':'none';document.getElementById('seccionACI').style.display=s==='aci'?'block':'none';document.getElementById('seccionMemoria').style.display=s==='memoria'?'block':'none';if(s==='estadisticas')renderEstadisticasGlobal();if(s==='recursos')inicializarRecursos();if(s==='aci')renderAciSeccion();if(s==='memoria')memoriaIniciar();}
         function renderInicio(){const g=document.getElementById('alumnosGrid'),ids=Object.keys(alumnos);if(!ids.length){g.innerHTML='<div class="alumno-card alumno-card-add" onclick="abrirModalNuevo()"><span style="font-size:1.3rem">➕</span><span style="font-size:.8rem">Añadir</span></div>';return;}let h=ids.map(id=>{const a=alumnos[id],n=a.programas?Object.keys(a.programas).length:0;return'<div class="alumno-card" onclick="abrirAlumno(\''+id+'\')"><div class="alumno-siglas">'+a.siglas+'</div><div class="alumno-curso">'+a.curso+'</div><div class="alumno-progs">'+n+' prog.</div></div>';}).join('');h+='<div class="alumno-card alumno-card-add" onclick="abrirModalNuevo()"><span style="font-size:1.3rem">➕</span></div>';g.innerHTML=h;}
         
         // BIBLIOTECA
@@ -3506,6 +3530,358 @@ Genera las 3 actividades completas y listas para aplicar en sesiones PT.`;
             sdaCopiarPrompt();
             setTimeout(()=>window.open('https://gemini.google.com','_blank'),400);
         }
+
+
+        // ══════════════════════════════════════════════════════════════════
+        // MEMORIA FINAL PT
+        // ══════════════════════════════════════════════════════════════════
+
+        function memoriaGetCursoEscolar(){
+            const m = new Date().getMonth(); // 0=Jan
+            const y = new Date().getFullYear();
+            // Sep-Dec: curso y/y+1. Ene-Aug: curso y-1/y
+            if(m >= 8) return (y) + '/' + (y+1);
+            return (y-1) + '/' + y;
+        }
+
+        function memoriaIniciar(){
+            const sel = document.getElementById('memoriaAlumnoSel');
+            const cur = sel.value;
+            sel.innerHTML = '<option value="">-- Seleccionar alumno --</option>';
+            const ids = Object.keys(alumnos).sort((a,b)=>(alumnos[a].curso||'').localeCompare(alumnos[b].curso||'','es'));
+            ids.forEach(id=>{
+                const a = alumnos[id];
+                sel.innerHTML += `<option value="${id}"${cur===id?' selected':''}>${a.siglas} — ${a.curso}</option>`;
+            });
+            if(cur) memoriaRenderAlumno();
+        }
+
+        function memoriaRenderAlumno(){
+            const id = document.getElementById('memoriaAlumnoSel').value;
+            const cont = document.getElementById('memoriaContenido');
+            if(!id){ cont.innerHTML=''; return; }
+            const a = alumnos[id];
+            const res = memoriaCalcularResumen(a);
+            cont.innerHTML = memoriaRenderPanel(id, a, res);
+            setTimeout(()=>memoriaRenderCharts(id, res), 120);
+        }
+
+        function memoriaCalcularResumen(a){
+            const res = { programas:[], criteriosTrabajados:new Set(), criteriosPendientes:[] };
+            if(!a.programas) return res;
+            const pIdsExist = new Set(Object.keys(a.programas));
+
+            Object.keys(a.programas).forEach(pId=>{
+                const p = a.programas[pId];
+                const info = AREAS[p.tipo]||{nombre:p.tipo,icon:'📄',color:'#666'};
+                const objs = p.objetivos||[];
+                const trimData = {
+                    1:{C:0,P:0,NC:0,NI:0,total:0},
+                    2:{C:0,P:0,NC:0,NI:0,total:0},
+                    3:{C:0,P:0,NC:0,NI:0,total:0}
+                };
+
+                objs.forEach((obj,oi)=>{
+                    const t = parseInt(obj.trimestre)||1;
+                    if(obj.criterio) res.criteriosTrabajados.add(obj.criterio);
+                    (obj.indicadores||[]).forEach((_,ii)=>{
+                        const k = pId+'_'+oi+'_'+ii+'_T'+t;
+                        const e = (a.evaluaciones&&a.evaluaciones[k])||'NI';
+                        trimData[t][e]++;
+                        trimData[t].total++;
+                    });
+                });
+
+                const pasadosAqui = a.pasados||{};
+                [2,3].forEach(t=>{
+                    Object.keys(pasadosAqui).forEach(k=>{
+                        if(pasadosAqui[k]!==t) return;
+                        const parts=k.split('_');
+                        if(parts[0]!==pId||!pIdsExist.has(parts[0])) return;
+                        const evalK=pId+'_'+parts[1]+'_'+parts[2]+'_T'+t;
+                        const e=(a.evaluaciones&&a.evaluaciones[evalK])||'NI';
+                        trimData[t][e]++;
+                        trimData[t].total++;
+                    });
+                });
+
+                const pendientes=[];
+                objs.forEach((obj,oi)=>{
+                    if(parseInt(obj.trimestre)!==3) return;
+                    (obj.indicadores||[]).forEach((ind,ii)=>{
+                        const k=pId+'_'+oi+'_'+ii+'_T3';
+                        const e=(a.evaluaciones&&a.evaluaciones[k])||'NI';
+                        if(e==='P'||e==='NC'){
+                            pendientes.push({obj:obj.descripcion,ind,estado:e,criterio:obj.criterio||''});
+                            if(obj.criterio) res.criteriosPendientes.push(obj.criterio);
+                        }
+                    });
+                });
+                Object.keys(pasadosAqui).forEach(k=>{
+                    if(pasadosAqui[k]!==3) return;
+                    const parts=k.split('_');
+                    if(parts[0]!==pId) return;
+                    const oi=parseInt(parts[1]),ii=parseInt(parts[2]);
+                    const obj=objs[oi]; if(!obj)return;
+                    const ind=(obj.indicadores||[])[ii]||'';
+                    const evalK=pId+'_'+oi+'_'+ii+'_T3';
+                    const e=(a.evaluaciones&&a.evaluaciones[evalK])||'NI';
+                    if(e==='P'||e==='NC'){
+                        pendientes.push({obj:obj.descripcion,ind,estado:e,criterio:obj.criterio||''});
+                        if(obj.criterio) res.criteriosPendientes.push(obj.criterio);
+                    }
+                });
+
+                const t3=trimData[3];
+                const pctC=t3.total?Math.round(t3.C/t3.total*100):0;
+                res.programas.push({pId,tipo:p.tipo,nombre:info.nombre,icon:info.icon,color:info.color,trimData,pctC,pendientes});
+            });
+
+            res.criteriosTrabajados=[...res.criteriosTrabajados];
+            res.criteriosPendientes=[...new Set(res.criteriosPendientes)];
+            return res;
+        }
+
+        function memoriaRenderPanel(id, a, res){
+            if(!res.programas.length) return '<div style="text-align:center;padding:24px;color:var(--text-light)">Este alumno no tiene programas</div>';
+            const pct=t=>t.total?Math.round(t.C/t.total*100):0;
+
+            let h=`<div style="border:1px solid var(--border);border-radius:10px;padding:14px;background:white">
+                <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px">
+                    <div>
+                        <span style="font-size:1.3rem;font-weight:800;color:var(--primary)">${a.siglas}</span>
+                        <span style="font-size:.82rem;color:var(--text-light);margin-left:8px">${a.curso}</span>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-ai btn-sm" onclick="memoriaGenerarPrompt('${id}')">👁️ Vista previa</button>
+                        <button class="btn btn-primary btn-sm" onclick="memoriaCopiar('${id}')">📋 Copiar prompt</button>
+                        <button class="btn btn-secondary btn-sm" onclick="memoriaAbrirChatGPT('${id}')">🚀 ChatGPT</button>
+                    </div>
+                </div>`;
+
+            // Charts per program using Chart.js
+            res.programas.forEach((p,pi)=>{
+                h+=`<div style="margin-bottom:16px;border-left:4px solid ${p.color};padding-left:10px">
+                    <div style="font-size:.85rem;font-weight:700;margin-bottom:6px">${p.icon} ${p.nombre}</div>
+                    <div style="display:flex;gap:12px;align-items:flex-start">
+                        <div style="flex:1;max-width:280px">
+                            <canvas id="memChart_${id}_${pi}" height="120"></canvas>
+                        </div>
+                        <div style="flex:1;font-size:.72rem">`;
+
+                // T3 final bar
+                const t3=p.trimData[3];
+                const tot=t3.total||1;
+                const pctC=pct(t3), pctP=t3.total?Math.round(t3.P/tot*100):0, pctNC=t3.total?Math.round(t3.NC/tot*100):0;
+                h+=`<div style="margin-bottom:6px;font-weight:600;color:var(--text-light)">Final T3:</div>
+                    <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+                        <span style="min-width:60px;font-weight:600;color:${pctC>=60?'#16a34a':pctC>=30?'#f59e0b':'#ef4444'}">${pctC}% C</span>
+                        <div style="flex:1;height:14px;background:#e5e7eb;border-radius:6px;overflow:hidden;display:flex">
+                            <div style="width:${pctC}%;background:#22c55e"></div>
+                            <div style="width:${pctP}%;background:#3b82f6"></div>
+                            <div style="width:${pctNC}%;background:#ef4444"></div>
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:8px;font-size:.65rem;color:var(--text-light);margin-bottom:8px">
+                        <span>🟩 C:${t3.C}</span><span>🟦 P:${t3.P}</span><span>🟥 NC:${t3.NC}</span>
+                    </div>`;
+
+                if(p.pendientes.length){
+                    h+=`<div style="font-size:.68rem;color:#c2410c;font-weight:600;margin-bottom:4px">Pendientes (${p.pendientes.length}):</div>`;
+                    p.pendientes.slice(0,4).forEach(x=>{
+                        h+=`<div style="padding:2px 0;border-bottom:1px solid #f9fafb;font-size:.66rem">
+                            <span style="padding:1px 5px;border-radius:8px;background:${x.estado==='P'?'#dbeafe':'#fee2e2'};color:${x.estado==='P'?'#1d4ed8':'#dc2626'};font-size:.62rem;margin-right:4px">${x.estado}</span>
+                            ${x.ind.substring(0,32)}${x.ind.length>32?'…':''}
+                        </div>`;
+                    });
+                    if(p.pendientes.length>4) h+=`<div style="font-size:.65rem;color:var(--text-light);margin-top:2px">+${p.pendientes.length-4} más</div>`;
+                } else {
+                    h+=`<div style="font-size:.72rem;color:#16a34a">✓ Todo conseguido en T3</div>`;
+                }
+
+                h+=`</div></div></div>`;
+            });
+
+            // Criterios trabajados
+            if(res.criteriosTrabajados.length){
+                h+=`<div style="margin-top:10px;padding:10px;background:#eff6ff;border-radius:8px;font-size:.72rem">
+                    <strong style="color:var(--primary)">Criterios LOMLOE trabajados este curso:</strong>
+                    <div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:4px">`;
+                res.criteriosTrabajados.forEach(c=>{
+                    h+=`<span style="padding:2px 7px;border-radius:8px;background:white;border:1px solid #bfdbfe;color:#1d4ed8;font-family:monospace;font-size:.68rem">${c}</span>`;
+                });
+                h+=`</div></div>`;
+            }
+
+            // Criterios pendientes para el año siguiente
+            if(res.criteriosPendientes.length){
+                h+=`<div style="margin-top:8px;padding:10px;background:#fff7ed;border-radius:8px;font-size:.72rem">
+                    <strong style="color:#c2410c">Criterios a priorizar el curso siguiente:</strong>
+                    <div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:4px">`;
+                res.criteriosPendientes.forEach(c=>{
+                    h+=`<span style="padding:2px 7px;border-radius:8px;background:white;border:1px solid #fed7aa;color:#c2410c;font-family:monospace;font-size:.68rem">${c}</span>`;
+                });
+                h+=`</div></div>`;
+            }
+
+            h+=`<div id="memoriaPrompt_${id}" style="display:none;margin-top:12px;background:#1e293b;color:#e2e8f0;border-radius:8px;padding:12px;font-size:.72rem;font-family:monospace;white-space:pre-wrap;max-height:300px;overflow-y:auto;line-height:1.5"></div>`;
+            h+=`</div>`;
+            return h;
+        }
+
+        function memoriaRenderCharts(id, res){
+            res.programas.forEach((p,pi)=>{
+                const ctx = document.getElementById('memChart_'+id+'_'+pi);
+                if(!ctx) return;
+                const pct=t=>t.total?Math.round(t.C/t.total*100):0;
+                const pctP=t=>t.total?Math.round(t.P/t.total*100):0;
+                const pctNC=t=>t.total?Math.round(t.NC/t.total*100):0;
+                new Chart(ctx, {
+                    type:'bar',
+                    data:{
+                        labels:['T1','T2','T3'],
+                        datasets:[
+                            {label:'Conseguido',data:[pct(p.trimData[1]),pct(p.trimData[2]),pct(p.trimData[3])],backgroundColor:'#22c55e'},
+                            {label:'En proceso',data:[pctP(p.trimData[1]),pctP(p.trimData[2]),pctP(p.trimData[3])],backgroundColor:'#3b82f6'},
+                            {label:'No conseguido',data:[pctNC(p.trimData[1]),pctNC(p.trimData[2]),pctNC(p.trimData[3])],backgroundColor:'#ef4444'}
+                        ]
+                    },
+                    options:{
+                        responsive:true,
+                        plugins:{
+                            legend:{display:true,position:'bottom',labels:{font:{size:9},boxWidth:10}},
+                            title:{display:true,text:p.nombre,font:{size:10},color:'#1e293b'}
+                        },
+                        scales:{
+                            x:{stacked:true,ticks:{font:{size:10}}},
+                            y:{stacked:true,max:100,ticks:{font:{size:9},callback:v=>v+'%'}}
+                        }
+                    }
+                });
+            });
+        }
+
+        function memoriaConstructPrompt(id){
+            const a = alumnos[id];
+            if(!a) return '';
+            const res = memoriaCalcularResumen(a);
+            const pct=t=>t.total?Math.round(t.C/t.total*100):0;
+            const cursoEscolar = memoriaGetCursoEscolar();
+
+            let txt = `# PROMPT PARA GENERAR MEMORIA FINAL DE PEDAGOGÍA TERAPÉUTICA (ANDALUCÍA)\n\n`;
+            txt += `Actúa como **especialista en Pedagogía Terapéutica experto en normativa educativa andaluza (LOMLOE, Orden de 30 de mayo de 2023, atención a la diversidad en Andalucía)**.\n\n`;
+            txt += `Debes elaborar una **MEMORIA FINAL DEL ESPECIALISTA DE PEDAGOGÍA TERAPÉUTICA** correspondiente al curso escolar indicado, con un estilo **formal, técnico e institucional**, adecuado para documentación oficial de un centro público de Educación Primaria en Andalucía.\n\n`;
+            txt += `El documento debe ser **claro, bien estructuado y listo para incorporar a la Memoria Final del centro o al Plan de Atención a la Diversidad**.\n\n`;
+            txt += `Redacta en **primera persona del plural (hemos desarrollado, se ha trabajado, se ha observado...)**.\n\n`;
+            txt += `---\n\n`;
+
+            txt += `# DATOS DEL CENTRO\n\n`;
+            txt += `Centro: CEIP Capitulaciones de Santa Fe\n`;
+            txt += `Localidad: Santa Fe\n`;
+            txt += `Provincia: Granada\n`;
+            txt += `Curso escolar: ${cursoEscolar}\n`;
+            txt += `Especialista PT: Víctor\n`;
+            txt += `Etapas atendidas: Educación Infantil y Educación Primaria\n\n`;
+            txt += `---\n\n`;
+
+            txt += `# DATOS DEL ALUMNO/A\n\n`;
+            txt += `- Identificación: ${a.siglas}\n`;
+            txt += `- Curso: ${a.curso||''}\n`;
+            txt += `- Sesiones semanales de PT: ${(a.diasSesion||[]).length}\n\n`;
+
+            txt += `# PROGRAMAS ESPECÍFICOS DESARROLLADOS\n\n`;
+            res.programas.forEach(p=>{
+                txt += `## ${p.nombre}\n\n`;
+                txt += `Evolución trimestral (% de indicadores conseguidos):\n\n`;
+                txt += `| Trimestre | Conseguidos (C) | En proceso (P) | No conseguidos (NC) | % Consecución |\n`;
+                txt += `|-----------|----------------|----------------|---------------------|---------------|\n`;
+                [1,2,3].forEach(t=>{
+                    const d=p.trimData[t];
+                    txt += `| T${t} | ${d.C} | ${d.P} | ${d.NC} | ${pct(d)}% |\n`;
+                });
+                txt += `\n`;
+                if(p.pendientes.length){
+                    txt += `**Indicadores pendientes al final del curso (${p.pendientes.length}):**\n\n`;
+                    p.pendientes.forEach(x=>{
+                        txt += `- [${x.estado}] ${x.obj} → ${x.ind}${x.criterio?' ('+x.criterio+')':''}\n`;
+                    });
+                } else {
+                    txt += `✓ Todos los indicadores de T3 conseguidos.\n`;
+                }
+                txt += `\n`;
+            });
+
+            if(res.criteriosTrabajados.length){
+                txt += `# CRITERIOS LOMLOE TRABAJADOS ESTE CURSO\n\n`;
+                txt += res.criteriosTrabajados.join(', ') + '\n\n';
+            }
+
+            if(res.criteriosPendientes.length){
+                txt += `# CRITERIOS A PRIORIZAR EL CURSO SIGUIENTE\n\n`;
+                txt += `Los siguientes criterios corresponden a indicadores no conseguidos (P o NC) al final de T3:\n\n`;
+                txt += res.criteriosPendientes.join(', ') + '\n\n';
+            }
+
+            txt += `---\n\n`;
+            txt += `# TAREA\n\n`;
+            txt += `Elabora una **MEMORIA FINAL DEL ESPECIALISTA DE PEDAGOGÍA TERAPÉUTICA** con los siguientes apartados:\n\n`;
+            txt += `## 1. Introducción\nMarco de actuación del especialista PT dentro del Plan de Atención a la Diversidad del centro y relación con la normativa educativa andaluza.\n\n`;
+            txt += `## 2. Datos del alumnado atendido\nDescripción del alumno/a, tipología de necesidades educativas, distribución de sesiones.\n\n`;
+            txt += `## 3. Organización de la intervención\nModalidades de apoyo, criterios de organización y frecuencia de intervención.\n\n`;
+            txt += `## 4. Programas específicos desarrollados\nObjetivos de cada programa trabajado, competencias desarrolladas y progresión trimestral según los datos aportados.\n\n`;
+            txt += `## 5. Metodología de intervención\nEstrategias metodológicas utilizadas (aprendizaje manipulativo, apoyos visuales, enseñanza explícita, refuerzo positivo, descomposición de tareas, adaptación de materiales).\n\n`;
+            txt += `## 6. Coordinación docente\nCómo se ha realizado la coordinación con tutores, equipo de orientación y especialistas.\n\n`;
+            txt += `## 7. Coordinación con las familias\nActuaciones realizadas: entrevistas, orientación educativa, seguimiento del progreso.\n\n`;
+            txt += `## 8. Valoración global del curso\nProgresos observados, áreas de mayor avance, áreas de mejora e impacto de la intervención PT.\n\n`;
+            txt += `## 9. Dificultades encontradas\nDificultades relacionadas con organización del apoyo, diversidad de niveles, recursos, coordinación.\n\n`;
+            txt += `## 10. Propuestas de mejora para el próximo curso\nMejoras realistas para el próximo curso relacionadas con intervención, coordinación, recursos y organización.\n\n`;
+            txt += `## 11. Recomendaciones para el curso siguiente\n`;
+            txt += `Basándote en los indicadores pendientes y criterios a priorizar (${res.criteriosPendientes.slice(0,5).join(', ')||'ver listado'}):\n\n`;
+            txt += `a) Objetivos prioritarios a trabajar\n`;
+            txt += `b) Metodología y estrategias recomendadas\n`;
+            txt += `c) Materiales y recursos sugeridos\n`;
+            txt += `d) Tipo y frecuencia de apoyo PT recomendado\n`;
+            txt += `e) Orientaciones para la coordinación con el tutor/a del próximo curso\n`;
+            txt += `f) Orientaciones para la familia\n\n`;
+            txt += `## 12. Conclusión\nBreve conclusión sobre la importancia del trabajo del especialista PT en el desarrollo de una educación inclusiva y equitativa.\n\n`;
+            txt += `---\n\n`;
+            txt += `# FORMATO DEL DOCUMENTO\n\n`;
+            txt += `El texto debe:\n- Tener entre 1200 y 1800 palabras\n- Usar lenguaje técnico educativo\n- Estar estructurado con títulos y subtítulos claros\n- Incluir alguna tabla para los datos de evolución trimestral\n- Ser apto para documento oficial de centro\n\n`;
+            txt += `No inventes datos que no estén en la información proporcionada.\n`;
+
+            return txt;
+        }
+
+        function memoriaGenerarPrompt(id){
+            const txt = memoriaConstructPrompt(id);
+            const el = document.getElementById('memoriaPrompt_'+id);
+            if(el){ el.style.display=el.style.display==='none'?'block':'none'; el.textContent=txt; }
+        }
+
+        function memoriaCopiar(id){
+            const txt = memoriaConstructPrompt(id);
+            navigator.clipboard.writeText(txt).then(()=>toast('Prompt copiado \uD83D\uDCCB','success'));
+        }
+
+        function memoriaAbrirChatGPT(id){
+            memoriaCopiar(id);
+            setTimeout(()=>window.open('https://chatgpt.com','_blank'),400);
+        }
+
+        function memoriaGenerarTodos(){
+            const ids = Object.keys(alumnos);
+            if(!ids.length){ toast('Sin alumnos','error'); return; }
+            let all = '';
+            ids.forEach(id=>{
+                all += memoriaConstructPrompt(id);
+                all += '\n\n' + '-'.repeat(60) + '\n\n';
+            });
+            navigator.clipboard.writeText(all).then(()=>{
+                toast('Prompts de todos los alumnos copiados \uD83D\uDCCB','success');
+                setTimeout(()=>window.open('https://chatgpt.com','_blank'),400);
+            });
+        }
+
 
         function generarActividades(objAgrupado,tipo){
             const actividadesBase={
