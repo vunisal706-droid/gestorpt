@@ -223,6 +223,35 @@
         .area-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}
         .area-chip{padding:4px 10px;border-radius:16px;border:1.5px solid var(--border);font-size:.75rem;background:var(--bg);cursor:pointer;font-weight:600;transition:all .15s;user-select:none}
         .area-chip.active{border-color:var(--primary);background:var(--primary);color:#fff}
+        /* GEU */
+        .geu-card{background:var(--bg-card);border-radius:var(--radius);padding:14px;margin-top:10px;box-shadow:var(--shadow);border-left:5px solid #f59e0b}
+        .geu-row{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--border);flex-wrap:wrap}
+        .geu-row:last-child{border-bottom:none}
+        .geu-label{font-size:.8rem;font-weight:700;min-width:170px}
+        .geu-nivel{font-size:.75rem;color:var(--text-light);min-width:55px}
+        .geu-ficha-wrap{display:flex;align-items:center;gap:6px;margin-left:auto}
+        .geu-ficha-num{font-size:1.1rem;font-weight:700;color:var(--primary);min-width:36px;text-align:center}
+        .geu-btn{width:30px;height:30px;border-radius:50%;border:2px solid var(--border);background:#fff;font-size:.9rem;cursor:pointer;font-weight:700;display:inline-flex;align-items:center;justify-content:center}
+        .geu-btn:hover{border-color:var(--primary);background:rgba(26,95,74,.08)}
+        .geu-progress{flex:1;height:8px;background:#e5e7eb;border-radius:4px;overflow:hidden;min-width:60px}
+        .geu-progress-bar{height:100%;background:#f59e0b;border-radius:4px;transition:width .3s}
+        /* GRUPOS */
+        .grupo-card{background:var(--bg-card);border-radius:var(--radius);padding:14px;margin-bottom:12px;box-shadow:var(--shadow);border-left:5px solid var(--primary)}
+        .grupo-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+        .grupo-titulo{font-size:1rem;font-weight:700;display:flex;align-items:center;gap:8px}
+        .grupo-alumnos-strip{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+        .grupo-alumno-chip{padding:5px 12px;border-radius:20px;font-size:.78rem;font-weight:700;font-family:monospace;cursor:pointer;border:2px solid transparent;transition:all .2s}
+        .grupo-alumno-chip:hover{filter:brightness(.92)}
+        .grupo-cuadrante-wrap{overflow-x:auto}
+        .grupo-cuadrante{width:100%;border-collapse:collapse;font-size:.7rem}
+        .grupo-cuadrante th{background:var(--primary);color:#fff;padding:5px;text-align:center;border:1px solid var(--border);white-space:nowrap}
+        .grupo-cuadrante td{border:1px solid var(--border);padding:4px;vertical-align:top;min-width:90px}
+        .grupo-cuadrante td:first-child{background:var(--primary-light);color:#fff;text-align:center;font-weight:700;width:30px;min-width:30px}
+        .grupo-sesion-alumno{margin-bottom:3px;padding:2px 5px;border-radius:4px;font-size:.65rem;line-height:1.3}
+        .grupo-alumno-nombre{font-weight:700;margin-bottom:1px}
+        .grupo-alumno-ind{color:var(--text-light);font-size:.6rem}
+        .chip-alumno-sel{display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:8px;border:2px solid var(--border);cursor:pointer;font-size:.82rem;font-weight:600;transition:all .2s;background:var(--bg)}
+        .chip-alumno-sel.active{border-color:var(--primary);background:rgba(26,95,74,.08)}
     </style>
 
 </head>
@@ -238,6 +267,7 @@
         <div class="container">
             <div class="nav-tabs no-print">
                 <button class="nav-tab active" onclick="cambiarSeccion('alumnos',this)">👥 Alumnos</button>
+                <button class="nav-tab" onclick="cambiarSeccion('grupos',this)">👨‍👧‍👦 Grupos</button>
                 <button class="nav-tab" onclick="cambiarSeccion('estadisticas',this)">📊 Estadísticas</button>
                 <button class="nav-tab" onclick="cambiarSeccion('sda',this)">🎓 SDA</button>
                 <button class="nav-tab" onclick="cambiarSeccion('biblioteca',this)">📚 Biblioteca</button>
@@ -492,6 +522,26 @@
                 <div id="seguimientoContenido" style="margin-top:0"></div>
             </div>
             <!-- ══ SECCIÓN ACI ══════════════════════════════════════════════ -->
+            <!-- ══ SECCIÓN GRUPOS ════════════════════════════════════════════ -->
+            <div id="seccionGrupos" style="display:none">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">👨‍👧‍👦 Grupos de PT</h2>
+                        <div class="btn-group">
+                            <select class="form-select" id="gruposMes" style="min-width:130px;font-size:.82rem" onchange="renderGrupos()">
+                                <option value="0">Sep</option><option value="1">Oct</option><option value="2">Nov</option>
+                                <option value="3">Dic</option><option value="4">Ene</option><option value="5">Feb</option>
+                                <option value="6">Mar</option><option value="7">Abr</option><option value="8">May</option><option value="9">Jun</option>
+                            </select>
+                            <button class="btn btn-primary btn-sm" onclick="abrirModalNuevoGrupo()">➕ Nuevo grupo</button>
+                        </div>
+                    </div>
+                    <div style="background:#e0f2fe;border-radius:8px;padding:10px;margin-bottom:14px;font-size:.8rem;color:#0369a1">
+                        💡 Organiza el trabajo en grupo. Cada grupo tiene su cuadrante compartido y generador de actividades adaptadas a todos los alumnos a la vez.
+                    </div>
+                    <div id="gruposContenido"></div>
+                </div>
+            </div>
             <div id="seccionACI" style="display:none">
                 <div class="card">
                     <div class="card-header">
@@ -546,12 +596,14 @@
                 <button class="tab" onclick="cambiarTab('programacion')">📅 Programación</button>
                 <button class="tab" onclick="cambiarTab('evaluacion')">📊 Evaluación</button>
                 <button class="tab" onclick="cambiarTab('asistencia')">📈 Resumen</button>
+                <button class="tab" onclick="cambiarTab('geu')">📚 GEU</button>
                 <button class="tab" onclick="cambiarTab('seneca')">🏛️ Séneca</button>
             </div>
             <div id="tabProgramas" class="tab-content active"></div>
             <div id="tabProgramacion" class="tab-content"></div>
             <div id="tabEvaluacion" class="tab-content"></div>
             <div id="tabAsistencia" class="tab-content"></div>
+            <div id="tabGeu" class="tab-content"></div>
             <div id="tabSeneca" class="tab-content"></div>
         </div>
     </div>
@@ -1690,7 +1742,7 @@
         // Renderizar biblioteca aunque Firebase no conecte
         renderBiblioteca();
 
-        function cambiarSeccion(s,btn){document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');document.getElementById('seccionAlumnos').style.display=s==='alumnos'?'block':'none';document.getElementById('seccionEstadisticas').style.display=s==='estadisticas'?'block':'none';document.getElementById('seccionSDA').style.display=s==='sda'?'block':'none';document.getElementById('seccionBiblioteca').style.display=s==='biblioteca'?'block':'none';document.getElementById('seccionRecursos').style.display=s==='recursos'?'block':'none';document.getElementById('seccionSeguimiento').style.display=s==='seguimiento'?'block':'none';document.getElementById('seccionACI').style.display=s==='aci'?'block':'none';document.getElementById('seccionMemoria').style.display=s==='memoria'?'block':'none';if(s==='estadisticas')renderEstadisticasGlobal();if(s==='recursos')inicializarRecursos();if(s==='seguimiento')renderSeguimiento();if(s==='aci')renderAciSeccion();if(s==='memoria')memoriaIniciar();}
+        function cambiarSeccion(s,btn){document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');document.getElementById('seccionAlumnos').style.display=s==='alumnos'?'block':'none';document.getElementById('seccionEstadisticas').style.display=s==='estadisticas'?'block':'none';document.getElementById('seccionSDA').style.display=s==='sda'?'block':'none';document.getElementById('seccionBiblioteca').style.display=s==='biblioteca'?'block':'none';document.getElementById('seccionRecursos').style.display=s==='recursos'?'block':'none';document.getElementById('seccionSeguimiento').style.display=s==='seguimiento'?'block':'none';document.getElementById('seccionGrupos').style.display=s==='grupos'?'block':'none';document.getElementById('seccionACI').style.display=s==='aci'?'block':'none';document.getElementById('seccionMemoria').style.display=s==='memoria'?'block':'none';if(s==='estadisticas')renderEstadisticasGlobal();if(s==='recursos')inicializarRecursos();if(s==='seguimiento')renderSeguimiento();if(s==='grupos')renderGrupos();if(s==='aci')renderAciSeccion();if(s==='memoria')memoriaIniciar();}
         function renderInicio(){const g=document.getElementById('alumnosGrid'),ids=Object.keys(alumnos);if(!ids.length){g.innerHTML='<div class="alumno-card alumno-card-add" onclick="abrirModalNuevo()"><span style="font-size:1.3rem">➕</span><span style="font-size:.8rem">Añadir</span></div>';return;}let h=ids.map(id=>{const a=alumnos[id],n=a.programas?Object.keys(a.programas).length:0;return'<div class="alumno-card" onclick="abrirAlumno(\''+id+'\')"><div class="alumno-siglas">'+a.siglas+'</div><div class="alumno-curso">'+a.curso+'</div><div class="alumno-progs">'+n+' prog.</div></div>';}).join('');h+='<div class="alumno-card alumno-card-add" onclick="abrirModalNuevo()"><span style="font-size:1.3rem">➕</span></div>';g.innerHTML=h;}
         
         // BIBLIOTECA
@@ -1718,11 +1770,64 @@
         function crearAlumno(){const siglas=document.getElementById('nuevoSiglas').value.trim().toUpperCase();if(!siglas){toast('Introduce siglas','error');return;}const cursoSel=document.getElementById('nuevoCurso'),cursoTexto=cursoSel.options[cursoSel.selectedIndex].text,ciclo=cursoSel.value;db.ref('gestorpe/alumnos').push().set({siglas:siglas,curso:cursoTexto,ciclo:ciclo,diasSesion:diasSel.slice(),programas:{},programacion:{},evaluaciones:{},ausencias:{},sincole:{},resultados:{},pasados:{}}).then(()=>{cerrarModal('modalNuevo');toast(siglas+' creado ✓','success');});}
         function abrirAlumno(id){alumnoActual=id;mesActual=getMesEscolarActual();evalTrim=1;document.getElementById('screenInicio').classList.remove('active');document.getElementById('screenAlumno').classList.add('active');const a=alumnos[id],diasStr=(a.diasSesion||[0,2,4]).map(d=>DIAS_C[d]).join('-');document.getElementById('alumnoHeader').innerHTML='<div class="alumno-header-siglas">'+a.siglas+'</div><div><h2 style="font-size:.95rem">'+a.curso+'</h2><p style="color:var(--text-light);font-size:.75rem">'+diasStr+'</p></div><div style="margin-left:auto" class="btn-group no-print"><button class="btn btn-secondary btn-sm" onclick="volverInicio()">← Volver</button><button class="btn btn-secondary btn-sm" onclick="window.print()">🖨️</button><button class="btn btn-danger btn-sm" onclick="eliminarAlumno(\''+id+'\')">🗑️</button></div>';document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===0));document.querySelectorAll('.tab-content').forEach((c,i)=>c.classList.toggle('active',i===0));renderProgs();renderProg();renderEval();renderAsis();}
         function volverInicio(){alumnoActual=null;document.getElementById('screenAlumno').classList.remove('active');document.getElementById('screenInicio').classList.add('active');}
-        function cambiarTab(t){document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));event.target.classList.add('active');document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));document.getElementById('tab'+t.charAt(0).toUpperCase()+t.slice(1)).classList.add('active');if(t==='asistencia')setTimeout(renderAsisCharts,100);if(t==='evaluacion')setTimeout(renderEvalCharts,100);if(t==='seneca')renderSeneca();}
+        function cambiarTab(t){document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));event.target.classList.add('active');document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));document.getElementById('tab'+t.charAt(0).toUpperCase()+t.slice(1)).classList.add('active');if(t==='asistencia')setTimeout(renderAsisCharts,100);if(t==='evaluacion')setTimeout(renderEvalCharts,100);if(t==='seneca')renderSeneca();if(t==='geu')renderGEUTab();}
         function eliminarAlumno(id){if(confirm('¿Eliminar alumno?')){db.ref('gestorpe/alumnos/'+id).remove();volverInicio();toast('Eliminado','success');}}
 
         // PROGRAMAS
-        function renderProgs(){const a=alumnos[alumnoActual];let h='<div class="card"><div class="card-header"><h3 class="card-title">📄 Programas</h3><button class="btn btn-primary btn-sm no-print" onclick="abrirModalAddProg()">➕</button></div>';if(!a.programas||!Object.keys(a.programas).length){h+='<div class="empty-state">Sin programas</div>';}else{Object.keys(a.programas).forEach(pId=>{const p=a.programas[pId],info=AREAS[p.tipo]||{icon:'📄',nombre:p.tipo,color:'#666'};h+='<div class="programa-card" style="border-left-color:'+info.color+'"><div class="programa-header"><span class="programa-titulo">'+info.icon+' '+info.nombre+'</span><button class="btn btn-danger btn-sm no-print" onclick="elimProg(\''+pId+'\')">🗑️</button></div>';(p.objetivos||[]).forEach(obj=>{h+='<div class="objetivo-card"><div class="objetivo-header"><span class="objetivo-num">O'+obj.numero+'</span><span class="trimestre-badge t'+obj.trimestre+'">T'+obj.trimestre+'</span></div><div class="objetivo-desc">'+obj.descripcion+'</div>';if(obj.indicadores&&obj.indicadores.length){h+='<ul class="indicadores-list">'+obj.indicadores.map(x=>'<li>• '+x+'</li>').join('')+'</ul>';}h+='</div>';});h+='</div>';});}h+='<div class="btn-group no-print" style="margin-top:12px"><button class="btn btn-secondary btn-sm" onclick="regenerarProg()">🔄 Regenerar</button><button class="btn btn-ai btn-sm" onclick="generarPromptIA()">🤖 IA</button><button class="btn btn-warning btn-sm" onclick="abrirModal(\'modalImportJSON\')">📥 JSON</button><button class="btn btn-secondary btn-sm" onclick="actualizarCriteriosLOMLOE()" title="Añade los criterios LOMLOE sin borrar nada">🏷️ Criterios</button></div></div>';document.getElementById('tabProgramas').innerHTML=h;}
+        function renderProgs(){const a=alumnos[alumnoActual];let h='<div class="card"><div class="card-header"><h3 class="card-title">📄 Programas</h3><button class="btn btn-primary btn-sm no-print" onclick="abrirModalAddProg()">➕</button></div>';if(!a.programas||!Object.keys(a.programas).length){h+='<div class="empty-state">Sin programas</div>';}else{Object.keys(a.programas).forEach(pId=>{const p=a.programas[pId],info=AREAS[p.tipo]||{icon:'📄',nombre:p.tipo,color:'#666'};h+='<div class="programa-card" style="border-left-color:'+info.color+'"><div class="programa-header"><span class="programa-titulo">'+info.icon+' '+info.nombre+'</span><button class="btn btn-danger btn-sm no-print" onclick="elimProg(\''+pId+'\')">🗑️</button></div>';(p.objetivos||[]).forEach(obj=>{h+='<div class="objetivo-card"><div class="objetivo-header"><span class="objetivo-num">O'+obj.numero+'</span><span class="trimestre-badge t'+obj.trimestre+'">T'+obj.trimestre+'</span></div><div class="objetivo-desc">'+obj.descripcion+'</div>';if(obj.indicadores&&obj.indicadores.length){h+='<ul class="indicadores-list">'+obj.indicadores.map(x=>'<li>• '+x+'</li>').join('')+'</ul>';}h+='</div>';});h+='</div>';});}h+='<div class="btn-group no-print" style="margin-top:12px"><button class="btn btn-secondary btn-sm" onclick="regenerarProg()">🔄 Regenerar</button><button class="btn btn-ai btn-sm" onclick="generarPromptIA()">🤖 IA</button><button class="btn btn-warning btn-sm" onclick="abrirModal(\'modalImportJSON\')">📥 JSON</button><button class="btn btn-secondary btn-sm" onclick="actualizarCriteriosLOMLOE()" title="Añade los criterios LOMLOE sin borrar nada">🏷️ Criterios</button></div></div>';
+        document.getElementById('tabProgramas').innerHTML=h;}
+
+        function renderGEUTab(){
+            const a=alumnos[alumnoActual];
+            const geu=a.geu||{};
+            let h='<div class="card"><div class="card-header"><h3 class="card-title">📚 Material GEU</h3><button class="btn btn-primary btn-sm" onclick="geuAbrirModal(\''+alumnoActual+'\')">⚙️ Configurar cuadernos</button></div>';
+            h+='<p style="font-size:.8rem;color:var(--text-light);margin-bottom:14px">Registra en qué ficha va el alumno en cada cuaderno GEU. Pulsa <strong>+</strong> tras cada sesión para avanzar.</p>';
+
+            const activos=GEU_COLECCIONES.flatMap(col=>
+                col.niveles.filter(nv=>geu[nv.id]!==undefined).map(nv=>({col,nv,ficha:geu[nv.id]||1}))
+            );
+
+            if(!activos.length){
+                h+='<div class="empty-state" style="padding:24px"><div style="font-size:2rem;margin-bottom:8px">📚</div><div style="font-weight:600;margin-bottom:4px">Sin cuadernos asignados</div><div style="font-size:.82rem;margin-bottom:14px">Pulsa "⚙️ Configurar cuadernos" para añadir los cuadernos GEU que trabaja este alumno</div></div>';
+            } else {
+                GEU_COLECCIONES.forEach(col=>{
+                    const activosCol=activos.filter(x=>x.col.id===col.id);
+                    if(!activosCol.length)return;
+                    h+=`<div style="margin-bottom:16px">
+                        <div style="font-weight:700;color:${col.color};margin-bottom:10px;font-size:.9rem;display:flex;align-items:center;gap:6px">${col.icon} ${col.nombre}</div>`;
+                    activosCol.forEach(({nv,ficha})=>{
+                        const pct=Math.min(Math.round((ficha-1)/nv.fichas*100),100);
+                        const completo=ficha>nv.fichas;
+                        h+=`<div style="background:${completo?'#f0fdf4':'var(--bg)'};border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:8px;border:1px solid ${completo?'#86efac':'var(--border)'}">
+                            <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+                                <div style="flex:1">
+                                    <div style="font-weight:700;font-size:.88rem;color:${col.color}">${nv.label}</div>
+                                    <div style="font-size:.72rem;color:var(--text-light)">${nv.fichas} fichas en total</div>
+                                </div>
+                                <div style="display:flex;align-items:center;gap:8px">
+                                    <button class="geu-btn" onclick="geuCambiarFicha('${alumnoActual}','${nv.id}',${ficha-1})">−</button>
+                                    <div style="text-align:center;min-width:50px">
+                                        <div style="font-size:1.4rem;font-weight:800;color:${col.color};line-height:1">${completo?'✅':ficha}</div>
+                                        <div style="font-size:.65rem;color:var(--text-light)">${completo?'Completado':'de '+nv.fichas}</div>
+                                    </div>
+                                    <button class="geu-btn" style="background:${col.color};border-color:${col.color};color:#fff" onclick="geuCambiarFicha('${alumnoActual}','${nv.id}',${ficha+1})">+</button>
+                                </div>
+                            </div>
+                            <div style="height:10px;background:#e5e7eb;border-radius:5px;overflow:hidden">
+                                <div style="height:100%;width:${pct}%;background:${col.color};border-radius:5px;transition:width .4s"></div>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:.68rem;color:var(--text-light)">
+                                <span>${pct}% completado</span>
+                                <span>${completo?'Listo para el siguiente nivel':'Faltan '+(nv.fichas-ficha+1)+' fichas'}</span>
+                            </div>
+                        </div>`;
+                    });
+                    h+='</div>';
+                });
+            }
+            h+='</div>';
+            document.getElementById('tabGeu').innerHTML=h;
+        }
         function abrirModalAddProg(){const a=alumnos[alumnoActual];const cicloAlumno=a.ciclo||'ciclo1';const sel=document.getElementById('selPlantilla');sel.innerHTML='<option value="">-- Elegir plantilla --</option>';Object.keys(plantillas).forEach(id=>{const p=plantillas[id];if(p.ciclo===cicloAlumno){const area=AREAS[p.tipo]||{icon:'📄'};sel.innerHTML+='<option value="'+id+'">'+area.icon+' '+p.nombre+'</option>';}});document.getElementById('previewPlantilla').style.display='none';document.getElementById('addProgTipo').value='';document.getElementById('addProgTexto').value='';document.getElementById('uploadZone').innerHTML='📄 Toca para seleccionar';document.getElementById('uploadZone').classList.remove('has-file');document.getElementById('previewProg').style.display='none';document.getElementById('zonaDocx').style.display='block';document.getElementById('zonaLecto').style.display='none';docExtraido=null;abrirModal('modalAddProg');}
         function previsualizarPlantilla(){const id=document.getElementById('selPlantilla').value;if(!id){document.getElementById('previewPlantilla').style.display='none';return;}const p=plantillas[id];if(!p)return;const nObj=p.objetivos?p.objetivos.length:0;const nInd=p.objetivos?p.objetivos.reduce((s,o)=>s+(o.indicadores?o.indicadores.length:0),0):0;document.getElementById('previewPlantilla').innerHTML='<strong>'+p.nombre+'</strong><br>'+nObj+' objetivos · '+nInd+' indicadores';document.getElementById('previewPlantilla').style.display='block';}
         function cambioTipoProg(){const t=document.getElementById('addProgTipo').value;document.getElementById('zonaDocx').style.display=t==='lectoescritura'?'none':'block';document.getElementById('zonaLecto').style.display=t==='lectoescritura'?'block':'none';}
@@ -5922,6 +6027,487 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
             toast('Próximamente: Vista detallada de actividad', 'success');
         }
         // ══════════════════════════════════════════════════════════════════
+        // MATERIAL GEU — Lecturas Comprensivas + Matemáticas Fáciles
+        // ══════════════════════════════════════════════════════════════════
+        const GEU_COLECCIONES = [
+            {id:'lc', nombre:'Lecturas Comprensivas', icon:'📖', color:'#3b82f6',
+             niveles:[
+                {id:'lc1',  label:'Nivel 1',  fichas:30},
+                {id:'lc2',  label:'Nivel 2',  fichas:30},
+                {id:'lc3',  label:'Nivel 3',  fichas:30},
+                {id:'lc4',  label:'Nivel 4',  fichas:30},
+                {id:'lc5',  label:'Nivel 5',  fichas:30},
+                {id:'lc6',  label:'Nivel 6',  fichas:30},
+                {id:'lc7',  label:'Nivel 7',  fichas:30},
+                {id:'lc8',  label:'Nivel 8',  fichas:30},
+                {id:'lc9',  label:'Nivel 9',  fichas:30},
+                {id:'lc10', label:'Nivel 10', fichas:30},
+            ]},
+            {id:'mf', nombre:'Matemáticas Fáciles', icon:'🔢', color:'#10b981',
+             niveles:[
+                {id:'mf1a', label:'1A', fichas:40},
+                {id:'mf1b', label:'1B', fichas:40},
+                {id:'mf2a', label:'2A', fichas:40},
+                {id:'mf2b', label:'2B', fichas:40},
+                {id:'mf3a', label:'3A', fichas:40},
+                {id:'mf3b', label:'3B', fichas:40},
+                {id:'mf4a', label:'4A', fichas:40},
+                {id:'mf4b', label:'4B', fichas:40},
+            ]},
+        ];
+
+        function renderGEUCard(a){
+            const geu = a.geu || {};
+            let h = `<div class="geu-card no-print">
+                <div class="card-header" style="margin-bottom:10px">
+                    <h3 class="card-title" style="color:#d97706">📚 Material GEU</h3>
+                    <button class="btn btn-sm" style="background:#fef3c7;color:#92400e;font-size:.72rem" onclick="geuAbrirModal('${alumnoActual}')">⚙️ Configurar</button>
+                </div>`;
+            const activos = GEU_COLECCIONES.flatMap(col =>
+                col.niveles.filter(nv => geu[nv.id] !== undefined)
+                .map(nv => ({col, nv, ficha: geu[nv.id] || 1}))
+            );
+            if(!activos.length){
+                h += `<div style="font-size:.8rem;color:var(--text-light);padding:6px 0">Sin cuadernos asignados. Pulsa ⚙️ Configurar.</div>`;
+            } else {
+                activos.forEach(({col, nv, ficha}) => {
+                    const pct = Math.min(Math.round((ficha-1)/nv.fichas*100), 100);
+                    h += `<div class="geu-row">
+                        <span style="font-size:1rem">${col.icon}</span>
+                        <div style="flex:1;min-width:0">
+                            <div class="geu-label" style="color:${col.color}">${col.nombre} <span style="font-weight:400;color:var(--text-light)">${nv.label}</span></div>
+                            <div class="geu-progress"><div class="geu-progress-bar" style="width:${pct}%;background:${col.color}"></div></div>
+                        </div>
+                        <div class="geu-ficha-wrap">
+                            <button class="geu-btn" onclick="geuCambiarFicha('${alumnoActual}','${nv.id}',${ficha-1})" title="Retroceder">−</button>
+                            <span class="geu-ficha-num">${ficha}</span>
+                            <span style="font-size:.65rem;color:var(--text-light)">/${nv.fichas}</span>
+                            <button class="geu-btn" style="background:${col.color};border-color:${col.color};color:#fff" onclick="geuCambiarFicha('${alumnoActual}','${nv.id}',${ficha+1})" title="Avanzar">+</button>
+                        </div>
+                    </div>`;
+                });
+            }
+            h += '</div>';
+            return h;
+        }
+
+        function geuCambiarFicha(alumId, nivelId, nuevaFicha){
+            const nv=GEU_COLECCIONES.flatMap(c=>c.niveles).find(n=>n.id===nivelId);
+            if(!nv)return;
+            const f=Math.max(1,Math.min(nv.fichas+1,nuevaFicha));
+            db.ref('gestorpe/alumnos/'+alumId+'/geu/'+nivelId).set(f).then(()=>{
+                alumnos[alumId].geu=alumnos[alumId].geu||{};
+                alumnos[alumId].geu[nivelId]=f;
+                if(document.getElementById('tabGeu').classList.contains('active')) renderGEUTab();
+                if(f>nv.fichas) toast('✅ '+nv.label+' completado!','success');
+            });
+        }
+
+        function geuAbrirModal(alumId){
+            const a = alumnos[alumId];
+            const geu = a.geu || {};
+            const modal = document.getElementById('modalGEU');
+            const cont  = document.getElementById('geuModalContenido');
+            document.getElementById('geuModalAlumno').textContent = a.siglas + ' — ' + a.curso;
+            let h = '';
+            GEU_COLECCIONES.forEach(col => {
+                h += `<div style="margin-bottom:14px">
+                    <div style="font-weight:700;color:${col.color};margin-bottom:8px;font-size:.88rem">${col.icon} ${col.nombre}</div>
+                    <div style="display:flex;flex-wrap:wrap;gap:6px">`;
+                col.niveles.forEach(nv => {
+                    const activo = geu[nv.id] !== undefined;
+                    h += `<div data-nv="${nv.id}" onclick="geuToggleNivel(this,'${col.id}')"
+                        style="padding:5px 12px;border-radius:16px;border:2px solid ${activo?col.color:'var(--border)'};background:${activo?col.color+'22':'var(--bg)'};color:${activo?col.color:'var(--text-light)'};font-size:.78rem;font-weight:700;cursor:pointer">
+                        ${nv.label}${activo?' ✓':''}
+                    </div>`;
+                });
+                h += '</div></div>';
+            });
+            cont.innerHTML = h;
+            modal.setAttribute('data-alumid', alumId);
+            abrirModal('modalGEU');
+        }
+
+        function geuToggleNivel(el, colId){
+            const nvId = el.dataset.nv;
+            const col  = GEU_COLECCIONES.find(c=>c.id===colId);
+            const nv   = col.niveles.find(n=>n.id===nvId);
+            const esActivo = el.textContent.includes('✓');
+            if(esActivo){
+                el.style.borderColor = 'var(--border)';
+                el.style.background  = 'var(--bg)';
+                el.style.color       = 'var(--text-light)';
+                el.textContent       = nv.label;
+            } else {
+                el.style.borderColor = col.color;
+                el.style.background  = col.color+'22';
+                el.style.color       = col.color;
+                el.textContent       = nv.label+' ✓';
+            }
+        }
+
+        function geuGuardarConfig(){
+            const modal  = document.getElementById('modalGEU');
+            const alumId = modal.getAttribute('data-alumid');
+            const a      = alumnos[alumId];
+            const geuActual = a.geu || {};
+            const updates = {};
+            document.querySelectorAll('#geuModalContenido [data-nv]').forEach(el => {
+                const nvId   = el.dataset.nv;
+                const activo = el.textContent.includes('✓');
+                if(activo && geuActual[nvId] === undefined){
+                    updates['gestorpe/alumnos/'+alumId+'/geu/'+nvId] = 1;
+                    geuActual[nvId] = 1;
+                } else if(!activo && geuActual[nvId] !== undefined){
+                    updates['gestorpe/alumnos/'+alumId+'/geu/'+nvId] = null;
+                    delete geuActual[nvId];
+                }
+            });
+            if(!Object.keys(updates).length){ cerrarModal('modalGEU'); return; }
+            db.ref().update(updates).then(()=>{
+                a.geu = geuActual;
+                cerrarModal('modalGEU');
+                renderGEUTab();
+                toast('Cuadernos GEU actualizados ✓','success');
+            });
+        }
+
+        // ══════════════════════════════════════════════════════════════════
+        // GRUPOS DE PT  (Firebase — sincronizado entre dispositivos)
+        // ══════════════════════════════════════════════════════════════════
+        let grupos = {};
+        let grupoEditandoId = null;
+        let diasGrupoSel = [1,3];
+        let grupoIAActual = null;
+
+        db.ref('gestorpe/grupos').on('value', snap => {
+            grupos = snap.val() || {};
+            if(document.getElementById('seccionGrupos').style.display !== 'none') renderGrupos();
+        });
+
+        // ─── Mes actual al abrir ──────────────────────────────────────────
+        function gruposSetMesActual(){
+            const sel = document.getElementById('gruposMes');
+            if(sel && sel.value === '0') sel.value = String(getMesEscolarActual());
+        }
+
+        // ─── Render principal ─────────────────────────────────────────────
+        function renderGrupos(){
+            gruposSetMesActual();
+            const mesIdx = parseInt(document.getElementById('gruposMes').value);
+            const cont = document.getElementById('gruposContenido');
+            const ids = Object.keys(grupos);
+            if(!ids.length){
+                cont.innerHTML = `<div class="empty-state" style="padding:30px">
+                    <div style="font-size:2rem;margin-bottom:8px">👨‍👧‍👦</div>
+                    <div style="font-weight:600;margin-bottom:4px">Sin grupos creados</div>
+                    <div style="font-size:.82rem;margin-bottom:14px">Crea tu primer grupo para trabajar la programación compartida</div>
+                    <button class="btn btn-primary btn-sm" onclick="abrirModalNuevoGrupo()">➕ Crear primer grupo</button>
+                </div>`;
+                return;
+            }
+            cont.innerHTML = ids.map(id => renderGrupoCard(id, mesIdx)).join('');
+        }
+
+        function renderGrupoCard(gId, mesIdx){
+            const g = grupos[gId];
+            if(!g) return '';
+            const color = g.color || '#1a5f4a';
+            const icono = g.icono || '👥';
+            const dias = g.diasSesion || [1,3];
+            const mes = MESES[mesIdx];
+            const DIAS_C2 = {0:'L',1:'M',2:'X',3:'J',4:'V'};
+            const diasStr = dias.map(d=>DIAS_C2[d]||d).join('-');
+            const alumnosGrupo = (g.alumnos||[]).filter(id=>alumnos[id]);
+
+            // ── Stats rápidas del trimestre actual ───────────────────────
+            const trim = mes.trim;
+            let statsHTML = alumnosGrupo.map(id=>{
+                const a = alumnos[id];
+                let nC=0,nP=0,nNC=0;
+                if(a.programas && a.evaluaciones){
+                    Object.keys(a.programas).forEach(pId=>{
+                        const p=a.programas[pId];
+                        (p.objetivos||[]).filter(o=>o.trimestre===trim).forEach((obj,oi)=>{
+                            (obj.indicadores||[]).forEach((_,ii)=>{
+                                const k=pId+'_'+oi+'_'+ii+'_T'+trim, e=a.evaluaciones[k];
+                                if(e==='C')nC++; else if(e==='P')nP++; else if(e==='NC')nNC++;
+                            });
+                        });
+                    });
+                }
+                const tot=nC+nP+nNC;
+                const pct=tot?Math.round(nC/tot*100):0;
+                const chipBg = pct>=60?'#dcfce7':pct>=30?'#fef3c7':'#fee2e2';
+                const chipCol = pct>=60?'#166534':pct>=30?'#92400e':'#991b1b';
+                return `<div class="grupo-alumno-chip" style="background:${chipBg};color:${chipCol}" onclick="abrirAlumno('${id}')" title="${a.curso} · T${trim}: ${nC}✓ ${nP}◐ ${nNC}✗">
+                    ${a.siglas}
+                    <span style="font-size:.65rem;font-weight:400;margin-left:4px">${tot?pct+'%':'—'}</span>
+                </div>`;
+            }).join('');
+
+            // ── Cuadrante compartido del mes ─────────────────────────────
+            let cuadranteHTML = _renderCuadranteGrupo(alumnosGrupo, mesIdx, dias, color);
+
+            return `<div class="grupo-card" style="border-left-color:${color}">
+                <div class="grupo-header">
+                    <div class="grupo-titulo">
+                        <span style="font-size:1.4rem">${icono}</span>
+                        <span style="color:${color}">${g.nombre}</span>
+                        <span style="font-size:.72rem;font-weight:400;color:var(--text-light);background:var(--bg);padding:2px 8px;border-radius:10px">${diasStr} · ${alumnosGrupo.length} alumnos</span>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-ai btn-sm" onclick="abrirGrupoIA('${gId}')">🤖 Actividades IA</button>
+                        <button class="btn btn-secondary btn-sm" onclick="editarGrupo('${gId}')">✏️</button>
+                        <button class="btn btn-danger btn-sm" onclick="eliminarGrupo('${gId}')">🗑️</button>
+                    </div>
+                </div>
+                <!-- Chips de alumnos con % consecución -->
+                <div class="grupo-alumnos-strip">${statsHTML}</div>
+                <!-- Cuadrante compartido -->
+                ${cuadranteHTML}
+            </div>`;
+        }
+
+        function _renderCuadranteGrupo(alumnosIds, mesIdx, dias, color){
+            const mes = MESES[mesIdx];
+            const DIAS_N = {0:'L',1:'M',2:'X',3:'J',4:'V'};
+            if(!alumnosIds.length) return '<div style="color:var(--text-light);font-size:.8rem;padding:8px">Sin alumnos asignados.</div>';
+
+            let h = '<div class="grupo-cuadrante-wrap"><table class="grupo-cuadrante"><thead><tr><th>S</th>';
+            dias.forEach(d=>{ h+=`<th>${DIAS_N[d]||d}</th>`; });
+            h+='</tr></thead><tbody>';
+
+            for(let si=0; si<mes.semanas; si++){
+                const sem=si+1;
+                h+=`<tr><td>${sem}</td>`;
+                dias.forEach(d=>{
+                    const k = `${mesIdx}_${sem}_${d}`;
+                    h+='<td>';
+                    alumnosIds.forEach(id=>{
+                        const a = alumnos[id];
+                        const cel = a.programacion ? a.programacion[k] : null;
+                        const isAus = a.ausencias && a.ausencias[k];
+                        const isSC  = a.sincole  && a.sincole[k];
+                        const bgA   = isAus?'#fee2e2':isSC?'#e0e7ff':'#f0fdf4';
+                        let contenido='';
+                        if(!isAus && !isSC && cel && cel.pId && a.programas && a.programas[cel.pId]){
+                            const p=a.programas[cel.pId];
+                            const obj=p.objetivos?p.objetivos[cel.oIdx]:null;
+                            const ind=obj&&obj.indicadores?obj.indicadores[cel.iIdx]||'':'';
+                            const info=AREAS[p.tipo]||{icon:'📌'};
+                            contenido=`<div class="grupo-alumno-nombre">${info.icon} O${obj?obj.numero:'?'}</div><div class="grupo-alumno-ind">${ind.substring(0,28)}</div>`;
+                        }else if(isAus){
+                            contenido='<div class="grupo-alumno-ind" style="color:#991b1b">Ausencia</div>';
+                        }else if(isSC){
+                            contenido='<div class="grupo-alumno-ind" style="color:#4338ca">Sin cole</div>';
+                        }else{
+                            contenido='<div class="grupo-alumno-ind">—</div>';
+                        }
+                        h+=`<div class="grupo-sesion-alumno" style="background:${bgA};border-left:2px solid ${color}">
+                            <div style="font-size:.62rem;font-weight:700;color:${color}">${a.siglas}</div>
+                            ${contenido}
+                        </div>`;
+                    });
+                    h+='</td>';
+                });
+                h+='</tr>';
+            }
+            h+='</tbody></table></div>';
+            return h;
+        }
+
+        // ─── Modal nuevo/editar grupo ──────────────────────────────────────
+        function abrirModalNuevoGrupo(){
+            grupoEditandoId = null;
+            document.getElementById('modalGrupoTitulo').textContent='➕ Nuevo Grupo';
+            document.getElementById('grupoNombre').value='';
+            document.getElementById('grupoIcono').value='👥';
+            document.getElementById('grupoColor').value='#1a5f4a';
+            diasGrupoSel=[1,3];
+            _actualizarDiasBtnsGrupo();
+            _rellenarAlumnosSelect([]);
+            abrirModal('modalNuevoGrupo');
+        }
+
+        function editarGrupo(id){
+            grupoEditandoId=id;
+            const g=grupos[id];
+            document.getElementById('modalGrupoTitulo').textContent='✏️ Editar Grupo';
+            document.getElementById('grupoNombre').value=g.nombre||'';
+            document.getElementById('grupoIcono').value=g.icono||'👥';
+            document.getElementById('grupoColor').value=g.color||'#1a5f4a';
+            diasGrupoSel=[...(g.diasSesion||[1,3])];
+            _actualizarDiasBtnsGrupo();
+            _rellenarAlumnosSelect(g.alumnos||[]);
+            abrirModal('modalNuevoGrupo');
+        }
+
+        function _rellenarAlumnosSelect(seleccionados){
+            const cont=document.getElementById('grupoAlumnosSelect');
+            const ids=Object.keys(alumnos).sort((a,b)=>(alumnos[a].curso||'').localeCompare(alumnos[b].curso||'','es'));
+            cont.innerHTML=ids.map(id=>{
+                const a=alumnos[id];
+                const activo=seleccionados.includes(id);
+                return `<div class="chip-alumno-sel ${activo?'active':''}" data-id="${id}" onclick="toggleAlumnoGrupo(this)">
+                    <span style="font-size:.9rem">${activo?'✅':'⬜'}</span>
+                    <span style="font-family:monospace;font-weight:700">${a.siglas}</span>
+                    <span style="font-size:.75rem;color:var(--text-light);margin-left:4px">${a.curso}</span>
+                </div>`;
+            }).join('');
+        }
+
+        function toggleAlumnoGrupo(el){
+            const activo=el.classList.toggle('active');
+            el.querySelector('span').textContent=activo?'✅':'⬜';
+        }
+
+        function toggleDiaGrupo(d){
+            const idx=diasGrupoSel.indexOf(d);
+            if(idx>-1){if(diasGrupoSel.length>1)diasGrupoSel.splice(idx,1);}
+            else{diasGrupoSel.push(d);diasGrupoSel.sort((a,b)=>a-b);}
+            _actualizarDiasBtnsGrupo();
+        }
+        function _actualizarDiasBtnsGrupo(){
+            document.querySelectorAll('#grupoDiasBtns .dia-btn').forEach(btn=>{
+                btn.classList.toggle('active',diasGrupoSel.includes(parseInt(btn.dataset.dia)));
+            });
+        }
+
+        function guardarGrupo(){
+            const nombre=document.getElementById('grupoNombre').value.trim();
+            if(!nombre){toast('Introduce un nombre','error');return;}
+            const ids2=[...document.querySelectorAll('#grupoAlumnosSelect .chip-alumno-sel.active')].map(el=>el.dataset.id).filter(Boolean);
+            const key=grupoEditandoId||('g_'+Date.now());
+            const data={
+                nombre,
+                icono:document.getElementById('grupoIcono').value.trim()||'👥',
+                color:document.getElementById('grupoColor').value||'#1a5f4a',
+                diasSesion:diasGrupoSel.length?[...diasGrupoSel]:[1,3],
+                alumnos:ids2.length?ids2:[]
+            };
+            db.ref('gestorpe/grupos/'+key).set(data)
+                .then(()=>{
+                    cerrarModal('modalNuevoGrupo');
+                    grupoEditandoId=null;
+                    toast((key===grupoEditandoId?'Grupo actualizado':'Grupo creado')+' ✓','success');
+                })
+                .catch(e=>toast('Error: '+e.message+' — revisa las reglas de Firebase','error'));
+        }
+
+        function eliminarGrupo(id){
+            if(!confirm('¿Eliminar el grupo "'+grupos[id].nombre+'"?'))return;
+            db.ref('gestorpe/grupos/'+id).remove().then(()=>toast('Grupo eliminado','success'));
+        }
+
+        // ─── Modal actividades IA de grupo ────────────────────────────────
+        function abrirGrupoIA(gId){
+            grupoIAActual=gId;
+            const g=grupos[gId];
+            const trim=getMesEscolarActual()<3?1:getMesEscolarActual()<7?2:3;
+            document.getElementById('grupoIATrim').value=trim;
+            document.getElementById('modalGrupoIATitulo').textContent='🤖 Actividades — '+g.nombre;
+            const alumnosGrupo=(g.alumnos?Object.values(g.alumnos):[]).filter(id=>alumnos[id]);
+            document.getElementById('grupoIAResumen').innerHTML=
+                `<strong>${g.nombre}</strong> · ${alumnosGrupo.length} alumnos: ${alumnosGrupo.map(id=>alumnos[id].siglas).join(', ')} · Días: ${(g.diasSesion||[]).map(d=>({0:'L',1:'M',2:'X',3:'J',4:'V'})[d]).join('-')}`;
+            document.getElementById('grupoIAPrompt').textContent='Pulsa "Generar" para previsualizar…';
+            abrirModal('modalGrupoIA');
+        }
+
+        function grupoIAGenerarPrompt(){
+            if(!grupoIAActual)return;
+            const g=grupos[grupoIAActual];
+            const trim=parseInt(document.getElementById('grupoIATrim').value);
+            const tematica=document.getElementById('grupoIATematica').value.trim();
+            const alumnosGrupo=(g.alumnos?Object.values(g.alumnos):[]).filter(id=>alumnos[id]);
+            if(!alumnosGrupo.length){toast('El grupo no tiene alumnos','error');return;}
+
+            // Build per-student data
+            let datosAlumnos='';
+            alumnosGrupo.forEach(id=>{
+                const a=alumnos[id];
+                const areas=new Set(), objetivos=[], neaes=[];
+                if(a.diagnostico||a.deficit||a.neae) neaes.push(a.diagnostico||a.deficit||a.neae);
+                if(a.programas){
+                    Object.keys(a.programas).forEach(pId=>{
+                        const p=a.programas[pId],info=AREAS[p.tipo]||{nombre:p.tipo};
+                        areas.add(info.nombre);
+                        (p.objetivos||[]).filter(o=>o.trimestre===trim).forEach(obj=>{
+                            objetivos.push(`O${obj.numero}: ${obj.descripcion}`);
+                        });
+                    });
+                }
+                // GEU info
+                const geuInfo=[];
+                if(a.geu){
+                    GEU_COLECCIONES.forEach(col=>{
+                        col.niveles.filter(nv=>a.geu[nv.id]!==undefined).forEach(nv=>{
+                            geuInfo.push(`${col.nombre} ${nv.label} (ficha ${a.geu[nv.id]}/${nv.fichas})`);
+                        });
+                    });
+                }
+                datosAlumnos+=`\n── ${a.siglas} (${a.curso})${neaes.length?' ['+neaes.join(', ')+']':''}\n`;
+                if(areas.size) datosAlumnos+=`   Áreas PT: ${[...areas].join(', ')}\n`;
+                if(objetivos.length) datosAlumnos+=`   Objetivos T${trim}: ${objetivos.slice(0,4).join(' · ')}${objetivos.length>4?` +${objetivos.length-4} más`:''}\n`;
+                if(geuInfo.length) datosAlumnos+=`   Material GEU: ${geuInfo.join(' | ')}\n`;
+            });
+
+            const dias=(g.diasSesion||[1,3]).map(d=>({0:'Lunes',1:'Martes',2:'Miércoles',3:'Jueves',4:'Viernes'})[d]||d).join(', ');
+            const totalSes=MESES.filter(m=>m.trim===trim).reduce((s,m)=>s+m.semanas*(g.diasSesion||[1,3]).length,0);
+
+            const prompt=`# ACTIVIDADES DE GRUPO — PEDAGOGÍA TERAPÉUTICA
+## CONTEXTO
+Eres especialista en Pedagogía Terapéutica (PT). Diseñas actividades para trabajo en GRUPO PEQUEÑO dentro del aula de apoyo, atendiendo a las diferencias individuales de cada alumno mediante niveles de adaptación.
+
+## DATOS DEL GRUPO
+- Nombre: ${g.nombre}
+- Días de sesión: ${dias}
+- Sesiones T${trim}: ~${totalSes}
+- Trimestre: ${trim}
+${tematica?'- Temática: '+tematica:''}
+
+## ALUMNOS DEL GRUPO
+${datosAlumnos}
+## INSTRUCCIONES
+Diseña 3 actividades para trabajar en grupo que:
+1. Permitan participar a TODOS los alumnos simultáneamente
+2. Incluyan un nivel de ejecución diferente para cada alumno según sus objetivos
+3. Usen el mismo material base con adaptaciones individuales
+4. Sean ejecutables en sesiones de 45-60 minutos
+
+### ESTRUCTURA DE CADA ACTIVIDAD:
+#### ACTIVIDAD [N]: [TÍTULO]
+**Objetivo común del grupo:** breve
+**Material:** concreto y accesible
+**Dinámica:** descripción paso a paso de cómo funciona en grupo
+
+**ADAPTACIÓN POR ALUMNO:**
+${alumnosGrupo.map(id=>`- ${alumnos[id].siglas}: [qué hace específicamente este alumno, con qué nivel de apoyo]`).join('\n')}
+
+**Evaluación:** cómo observar y registrar cada alumno durante la actividad
+**DUA aplicado:** qué principio universal se garantiza para todo el grupo
+
+---
+Genera las 3 actividades completas.`;
+
+            document.getElementById('grupoIAPrompt').textContent=prompt;
+            toast('Prompt generado ✓','success');
+        }
+
+        function grupoIACopiarPrompt(){
+            grupoIAGenerarPrompt();
+            const txt=document.getElementById('grupoIAPrompt').textContent;
+            if(txt.includes('Pulsa')){toast('Primero pulsa "Generar"','error');return;}
+            navigator.clipboard.writeText(txt).then(()=>toast('Prompt copiado 📋','success'))
+                .catch(()=>{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);toast('Prompt copiado 📋','success');});
+        }
+
+        function grupoIAAbrir(){
+            grupoIACopiarPrompt();
+            setTimeout(()=>window.open('https://gemini.google.com','_blank'),400);
+        }
+
+        // ══════════════════════════════════════════════════════════════════
         // SEGUIMIENTO TRIMESTRAL — SÉNECA
         // ══════════════════════════════════════════════════════════════════
 
@@ -6121,6 +6707,101 @@ Genera ahora un resumen por cada alumno en el formato indicado. No añadas nada 
                 .catch(()=>{ta.select();document.execCommand('copy');toast('Copiado ✓','success');});
         }
     </script>
+    <!-- MODAL GEU -->
+    <div class="modal-overlay" id="modalGEU">
+        <div class="modal" style="max-width:480px">
+            <div class="modal-header">
+                <h3 class="modal-title">📚 Cuadernos GEU — <span id="geuModalAlumno"></span></h3>
+                <button class="modal-close" onclick="cerrarModal('modalGEU')">×</button>
+            </div>
+            <div class="modal-body" style="padding:16px">
+                <p style="font-size:.78rem;color:var(--text-light);margin-bottom:12px">Marca los cuadernos que trabaja este alumno. La ficha se iniciará en 1 y podrás avanzarla desde la pestaña Programas.</p>
+                <div id="geuModalContenido"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="cerrarModal('modalGEU')">Cancelar</button>
+                <button class="btn btn-primary" onclick="geuGuardarConfig()">💾 Guardar</button>
+            </div>
+        </div>
+    </div>
+    <!-- MODAL NUEVO/EDITAR GRUPO -->
+    <div class="modal-overlay" id="modalNuevoGrupo">
+        <div class="modal" style="max-width:520px">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modalGrupoTitulo">➕ Nuevo Grupo</h3>
+                <button class="modal-close" onclick="cerrarModal('modalNuevoGrupo')">×</button>
+            </div>
+            <div class="modal-body" style="padding:16px">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Nombre del grupo *</label>
+                        <input type="text" class="form-input" id="grupoNombre" placeholder="Ej: 5 años + 1º Primaria">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Icono + Color</label>
+                        <div style="display:flex;gap:6px">
+                            <input type="text" class="form-input" id="grupoIcono" placeholder="👫" style="max-width:60px;text-align:center;font-size:1.2rem">
+                            <input type="color" id="grupoColor" value="#1a5f4a" style="height:44px;width:50px;border:2px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;padding:2px">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Días de sesión del grupo</label>
+                    <div class="dias-btns" id="grupoDiasBtns">
+                        <button type="button" class="dia-btn" data-dia="0" onclick="toggleDiaGrupo(0)">L</button>
+                        <button type="button" class="dia-btn active" data-dia="1" onclick="toggleDiaGrupo(1)">M</button>
+                        <button type="button" class="dia-btn" data-dia="2" onclick="toggleDiaGrupo(2)">X</button>
+                        <button type="button" class="dia-btn active" data-dia="3" onclick="toggleDiaGrupo(3)">J</button>
+                        <button type="button" class="dia-btn" data-dia="4" onclick="toggleDiaGrupo(4)">V</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Alumnos del grupo</label>
+                    <div id="grupoAlumnosSelect" style="display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto;padding:4px"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="cerrarModal('modalNuevoGrupo')">Cancelar</button>
+                <button class="btn btn-primary" onclick="guardarGrupo()">💾 Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL ACTIVIDADES GRUPO IA -->
+    <div class="modal-overlay" id="modalGrupoIA">
+        <div class="modal" style="max-width:680px">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modalGrupoIATitulo">🤖 Actividades de grupo con IA</h3>
+                <button class="modal-close" onclick="cerrarModal('modalGrupoIA')">×</button>
+            </div>
+            <div class="modal-body" style="padding:16px">
+                <div id="grupoIAResumen" style="background:var(--bg);border-radius:8px;padding:10px;margin-bottom:12px;font-size:.8rem"></div>
+                <div class="form-row" style="margin-bottom:12px">
+                    <div class="form-group">
+                        <label class="form-label">Trimestre</label>
+                        <select class="form-select" id="grupoIATrim">
+                            <option value="1">T1</option><option value="2">T2</option><option value="3">T3</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Temática (opcional)</label>
+                        <input type="text" class="form-input" id="grupoIATematica" placeholder="Ej: El otoño, Los animales…">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Vista previa del prompt</label>
+                    <div id="grupoIAPrompt" style="background:#1e293b;color:#e2e8f0;border-radius:8px;padding:12px;max-height:240px;overflow-y:auto;font-size:.72rem;font-family:monospace;white-space:pre-wrap;line-height:1.5">Pulsa "Generar" para previsualizar…</div>
+                </div>
+            </div>
+            <div class="modal-footer" style="gap:8px;flex-wrap:wrap">
+                <button class="btn btn-secondary" onclick="cerrarModal('modalGrupoIA')">Cerrar</button>
+                <button class="btn btn-secondary btn-sm" onclick="grupoIAGenerarPrompt()">👁️ Generar</button>
+                <button class="btn btn-primary" onclick="grupoIACopiarPrompt()">📋 Copiar</button>
+                <button class="btn btn-ai btn-sm" onclick="grupoIAAbrir()">🤖 Abrir Gemini</button>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL DETALLE ACTIVIDAD IA -->
     <div class="modal-overlay" id="modalActDetalle">
         <div class="modal" style="max-width:420px">
