@@ -844,6 +844,31 @@
                     <div class="form-group"><label class="form-label">🎯 Recurso vinculado (opcional)</label><select class="form-select" id="selRecurso"><option value="">Sin recurso</option></select></div>
                     <div id="infoRecurso" style="display:none;background:var(--bg);padding:10px;border-radius:8px;margin-top:8px;font-size:.8rem"></div>
                     <div class="form-group"><label class="form-label">Resultado</label><div class="resultado-btns"><button type="button" class="resultado-btn conseguido" onclick="setResultado('conseguido',this)">✅ Conseguido</button><button type="button" class="resultado-btn repetir" onclick="setResultado('repetir',this)">🔄 Repetir</button></div></div>
+                    <div id="geuCeldaWrap" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.85rem;font-weight:600">
+                            <input type="checkbox" id="geuHecho" onchange="geuToggleModal()" style="width:16px;height:16px;accent-color:var(--primary)">
+                            📚 ¿Se trabajó cuaderno GEU?
+                        </label>
+                        <div id="geuDetalleModal" style="display:none;margin-top:10px;background:#fef9c3;border:1px solid #fde68a;border-radius:8px;padding:10px">
+                            <div class="form-row" style="margin-bottom:8px">
+                                <div class="form-group" style="margin-bottom:0">
+                                    <label class="form-label" style="font-size:.75rem">Colección</label>
+                                    <select class="form-select" id="geuColSel" onchange="geuActualizarNiveles()" style="font-size:.82rem">
+                                        <option value="lc">📖 Lecturas Comprensivas</option>
+                                        <option value="cf">🔢 Cálculo Fácil</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" style="margin-bottom:0">
+                                    <label class="form-label" style="font-size:.75rem">Cuaderno</label>
+                                    <select class="form-select" id="geuNvSel" style="font-size:.82rem"></select>
+                                </div>
+                            </div>
+                            <div class="form-group" style="margin-bottom:0">
+                                <label class="form-label" style="font-size:.75rem">Ficha trabajada</label>
+                                <input type="number" id="geuFichaInput" class="form-input" min="1" max="40" placeholder="Nº ficha" style="font-size:.82rem">
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer"><button class="btn btn-danger btn-sm" onclick="borrarCelda()">🗑️</button><button class="btn btn-secondary" onclick="cerrarModal('modalCelda')">Cancelar</button><button class="btn btn-primary" onclick="guardarCelda()">💾 Guardar</button></div>
@@ -2275,9 +2300,74 @@
             }
         }
 
-        function renderCelda(a,k,d){const c=a.programacion?a.programacion[k]:null,aus=a.ausencias?a.ausencias[k]:false,sc=a.sincole?a.sincole[k]:false,res=a.resultados?a.resultados[k]:null;let cls='celda',icon='';if(sc){cls+=' celda-sincole';icon='🏫';}else if(aus){cls+=' celda-ausencia';icon='❌';}else if(res==='conseguido'){icon='✅';}else if(res==='repetir'){icon='🔄';}if(!c||!a.programas||!a.programas[c.pId]){return'<td class="'+cls+' celda-vacia" onclick="editarCelda(\''+k+'\','+d+')">'+(icon?'<span class="celda-icon">'+icon+'</span>':'')+'+</td>';}const p=a.programas[c.pId],obj=p.objetivos?p.objetivos[c.oIdx]:null;if(!obj)return'<td class="'+cls+'">?</td>';const info=AREAS[p.tipo]||{color:'#666'},ind=obj.indicadores?(obj.indicadores[c.iIdx]||''):'';const criterio=obj.criterio?'<div style="font-size:.55rem;color:#888;margin-top:2px;font-family:monospace">'+obj.criterio+'</div>':'';const recursoIcon=c.recursoId?'<span style="position:absolute;bottom:2px;left:2px;font-size:.6rem" title="Recurso vinculado">🔗</span>':'';return'<td class="'+cls+'" onclick="editarCelda(\''+k+'\','+d+')">'+(icon?'<span class="celda-icon">'+icon+'</span>':'')+recursoIcon+'<div class="celda-obj" style="color:'+info.color+'">O'+obj.numero+'</div><div class="celda-ind">'+ind.substring(0,25)+(ind.length>25?'...':'')+'</div>'+criterio+'</td>';}
+        function geuFichaEnSesion(a, k){
+            // Calcula qué ficha GEU corresponde a la sesión k,
+            // contando cuántas sesiones válidas (asistidas) hubo antes.
+            const geu = a.geu || {};
+            const activos = GEU_COLECCIONES.flatMap(col =>
+                col.niveles.filter(nv => geu[nv.id] !== undefined)
+                .map(nv => ({col, nv, ficha: geu[nv.id] || 1}))
+            );
+            if(!activos.length) return null;
+            // Sesiones anteriores a k que no sean ausencia
+            const todasSesiones = getTodasLasSesiones(a);
+            const idxK = todasSesiones.indexOf(k);
+            if(idxK < 0) return null;
+            let sesionesAntes = 0;
+            for(let i = 0; i < idxK; i++){
+                const ki = todasSesiones[i];
+                const ausente = (a.ausencias && a.ausencias[ki]) || (a.sincole && a.sincole[ki]);
+                if(!ausente) sesionesAntes++;
+            }
+            // Para cada colección activa, calcular la ficha proyectada
+            return activos.map(function(item){
+                const fichaProyectada = item.ficha + sesionesAntes;
+                const fichaReal = Math.min(fichaProyectada, item.nv.fichas);
+                return {
+                    col: item.col,
+                    nv: item.nv,
+                    fichaProyectada: fichaReal,
+                    completado: fichaProyectada > item.nv.fichas
+                };
+            });
+        }
+        function renderCelda(a,k,d){
+            const c=a.programacion?a.programacion[k]:null,
+                  aus=a.ausencias?a.ausencias[k]:false,
+                  sc=a.sincole?a.sincole[k]:false,
+                  res=a.resultados?a.resultados[k]:null;
+            let cls='celda',icon='';
+            if(sc){cls+=' celda-sincole';icon='🏫';}
+            else if(aus){cls+=' celda-ausencia';icon='❌';}
+            else if(res==='conseguido'){icon='✅';}
+            else if(res==='repetir'){icon='🔄';}
+            // Badge GEU manual (solo si el usuario lo registró en esta celda)
+            let geuHtml='';
+            const geuCelda = c && c.geu;
+            if(geuCelda && !aus && !sc){
+                const colObj = GEU_COLECCIONES.find(function(col){return col.id===geuCelda.colId;});
+                const nvObj  = colObj && colObj.niveles.find(function(nv){return nv.id===geuCelda.nvId;});
+                if(colObj && nvObj){
+                    geuHtml='<div style="margin-top:3px"><span style="font-size:.55rem;background:'+colObj.color+'18;color:'+colObj.color+';border-radius:4px;padding:1px 5px;font-weight:700">'+colObj.icon+' '+nvObj.label+' · F'+geuCelda.ficha+'</span></div>';
+                }
+            }
+            if(!c||!a.programas||!a.programas[c.pId]){
+                return '<td class="'+cls+' celda-vacia" onclick="editarCelda(\''+k+'\','+d+')">'+(icon?'<span class="celda-icon">'+icon+'</span>':'')+'+'+geuHtml+'</td>';
+            }
+            const p=a.programas[c.pId],obj=p.objetivos?p.objetivos[c.oIdx]:null;
+            if(!obj)return '<td class="'+cls+'">?</td>';
+            const info=AREAS[p.tipo]||{color:'#666'},
+                  ind=obj.indicadores?(obj.indicadores[c.iIdx]||''):'';
+            const criterio=obj.criterio?'<div style="font-size:.55rem;color:#888;margin-top:2px;font-family:monospace">'+obj.criterio+'</div>':'';
+            const recursoIcon=c.recursoId?'<span style="position:absolute;bottom:2px;left:2px;font-size:.6rem" title="Recurso vinculado">🔗</span>':'';
+            return '<td class="'+cls+'" onclick="editarCelda(\''+k+'\','+d+')">'+(icon?'<span class="celda-icon">'+icon+'</span>':'')+recursoIcon+'<div class="celda-obj" style="color:'+info.color+'">O'+obj.numero+'</div><div class="celda-ind">'+ind.substring(0,25)+(ind.length>25?'...':'')+'</div>'+criterio+geuHtml+'</td>';
+        }
         function cambiarMes(dir){mesActual=Math.max(0,Math.min(9,mesActual+dir));renderProg();}
-        function editarCelda(k,d){celdaEditando=k;estadoCelda='asiste';resultadoCelda=null;const a=alumnos[alumnoActual],c=a.programacion?a.programacion[k]:{};document.getElementById('celdaTitulo').textContent=DIAS[d];document.querySelectorAll('.asist-btn').forEach(b=>b.classList.remove('selected'));document.querySelectorAll('.resultado-btn').forEach(b=>b.classList.remove('selected'));if(a.sincole&&a.sincole[k]){estadoCelda='sincole';document.querySelector('.asist-btn.sincole').classList.add('selected');document.getElementById('contenidoSesion').style.display='none';}else if(a.ausencias&&a.ausencias[k]){estadoCelda='ausencia';document.querySelector('.asist-btn.ausencia').classList.add('selected');document.getElementById('contenidoSesion').style.display='none';}else{document.querySelector('.asist-btn.asiste').classList.add('selected');document.getElementById('contenidoSesion').style.display='block';}resultadoCelda=(a.resultados&&a.resultados[k])?a.resultados[k]:null;if(resultadoCelda){const btn=document.querySelector('.resultado-btn.'+resultadoCelda);if(btn)btn.classList.add('selected');}const sel=document.getElementById('selPrograma');sel.innerHTML='<option value="">-</option>';if(a.programas){Object.keys(a.programas).forEach(pId=>{const p=a.programas[pId],info=AREAS[p.tipo]||{icon:'📄'};sel.innerHTML+='<option value="'+pId+'"'+(c.pId===pId?' selected':'')+'>'+info.icon+' '+(info.nombre||p.tipo)+'</option>';});}if(c.pId){cargarObjetivos();setTimeout(()=>{document.getElementById('selObjetivo').value=c.oIdx!==undefined?c.oIdx:'';cargarIndicadores();setTimeout(()=>{document.getElementById('selIndicador').value=c.iIdx!==undefined?c.iIdx:'';cargarRecursosSugeridos();setTimeout(()=>{document.getElementById('selRecurso').value=c.recursoId||'';if(c.recursoId)mostrarInfoRecurso(c.recursoId);},30);},30);},30);}else{document.getElementById('selObjetivo').innerHTML='<option value="">-</option>';document.getElementById('selIndicador').innerHTML='<option value="">-</option>';document.getElementById('selRecurso').innerHTML='<option value="">Sin recurso</option>';}abrirModal('modalCelda');}
+        function editarCelda(k,d){celdaEditando=k;estadoCelda='asiste';resultadoCelda=null;const a=alumnos[alumnoActual],c=a.programacion?a.programacion[k]:{};document.getElementById('celdaTitulo').textContent=DIAS[d];document.querySelectorAll('.asist-btn').forEach(b=>b.classList.remove('selected'));document.querySelectorAll('.resultado-btn').forEach(b=>b.classList.remove('selected'));if(a.sincole&&a.sincole[k]){estadoCelda='sincole';document.querySelector('.asist-btn.sincole').classList.add('selected');document.getElementById('contenidoSesion').style.display='none';}else if(a.ausencias&&a.ausencias[k]){estadoCelda='ausencia';document.querySelector('.asist-btn.ausencia').classList.add('selected');document.getElementById('contenidoSesion').style.display='none';}else{document.querySelector('.asist-btn.asiste').classList.add('selected');document.getElementById('contenidoSesion').style.display='block';}resultadoCelda=(a.resultados&&a.resultados[k])?a.resultados[k]:null;if(resultadoCelda){const btn=document.querySelector('.resultado-btn.'+resultadoCelda);if(btn)btn.classList.add('selected');}const sel=document.getElementById('selPrograma');sel.innerHTML='<option value="">-</option>';if(a.programas){Object.keys(a.programas).forEach(pId=>{const p=a.programas[pId],info=AREAS[p.tipo]||{icon:'📄'};sel.innerHTML+='<option value="'+pId+'"'+(c.pId===pId?' selected':'')+'>'+info.icon+' '+(info.nombre||p.tipo)+'</option>';});}if(c.pId){cargarObjetivos();setTimeout(()=>{document.getElementById('selObjetivo').value=c.oIdx!==undefined?c.oIdx:'';cargarIndicadores();setTimeout(()=>{document.getElementById('selIndicador').value=c.iIdx!==undefined?c.iIdx:'';cargarRecursosSugeridos();setTimeout(()=>{document.getElementById('selRecurso').value=c.recursoId||'';if(c.recursoId)mostrarInfoRecurso(c.recursoId);},30);},30);},30);}else{document.getElementById('selObjetivo').innerHTML='<option value="">-</option>';document.getElementById('selIndicador').innerHTML='<option value="">-</option>';document.getElementById('selRecurso').innerHTML='<option value="">Sin recurso</option>';}abrirModal('modalCelda');
+            // Cargar datos GEU guardados en esta celda (si los hay)
+            const geuGuardado = c ? c.geu : null;
+            geuCargarEnModal(geuGuardado);
+        }
         function setEstado(e,btn){estadoCelda=e;document.querySelectorAll('.asist-btn').forEach(b=>b.classList.remove('selected'));btn.classList.add('selected');document.getElementById('contenidoSesion').style.display=e==='asiste'?'block':'none';}
         function setResultado(r,btn){if(resultadoCelda===r){resultadoCelda=null;btn.classList.remove('selected');}else{resultadoCelda=r;document.querySelectorAll('.resultado-btn').forEach(b=>b.classList.remove('selected'));btn.classList.add('selected');}}
         function cargarObjetivos(){const a=alumnos[alumnoActual],pId=document.getElementById('selPrograma').value,sel=document.getElementById('selObjetivo');sel.innerHTML='<option value="">-</option>';document.getElementById('selIndicador').innerHTML='<option value="">-</option>';if(!pId||!a.programas||!a.programas[pId])return;a.programas[pId].objetivos.forEach((o,i)=>{sel.innerHTML+='<option value="'+i+'">O'+o.numero+': '+o.descripcion.substring(0,20)+'...</option>';});}
@@ -2286,7 +2376,31 @@
         function cargarRecursosSugeridos(){const pId=document.getElementById('selPrograma').value;const sel=document.getElementById('selRecurso');sel.innerHTML='<option value="">Sin recurso</option>';sel.onchange=function(){mostrarInfoRecurso(this.value);};if(!pId)return;const a=alumnos[alumnoActual];if(!a.programas||!a.programas[pId])return;const area=a.programas[pId].tipo;const ciclo=a.curso.includes('Infantil')?'infantil':a.curso.includes('1º')||a.curso.includes('2º')?'ciclo1':a.curso.includes('3º')||a.curso.includes('4º')?'ciclo2':'ciclo3';const recursosFiltrados=RECURSOS_ONLINE.filter(r=>r.area===area&&r.nivel.includes(ciclo));recursosFiltrados.slice(0,10).forEach(r=>{sel.innerHTML+='<option value="'+r.id+'">'+r.titulo+'</option>';});if(recursosFiltrados.length===0){sel.innerHTML+='<option disabled>-- No hay recursos para esta área --</option>';}}
         
         function mostrarInfoRecurso(id){const info=document.getElementById('infoRecurso');if(!id){info.style.display='none';return;}const recurso=RECURSOS_ONLINE.find(r=>r.id===id);if(!recurso){info.style.display='none';return;}const fuente=recurso.fuente==='orientacion-andujar'?'🌍 Orientación Andújar':recurso.fuente==='arasaac'?'🎨 ARASAAC':recurso.fuente==='superpt'?'✨ SuperPT':recurso.fuente==='ptyal'?'📚 PTYAL':recurso.fuente==='aulapt'?'📋 AulaPT':recurso.fuente==='liveworksheets'?'💻 LiveWorksheets':'🔗 '+recurso.fuente;info.innerHTML='<strong>'+fuente+'</strong><br>'+recurso.descripcion+'<br><a href="'+recurso.url+'" target="_blank" style="color:#3b82f6;font-size:.75rem">Abrir recurso →</a>';info.style.display='block';}
-        function guardarCelda(){const a=alumnos[alumnoActual];const updates={};const contenidoActual=a.programacion?a.programacion[celdaEditando]:null;updates['gestorpe/alumnos/'+alumnoActual+'/ausencias/'+celdaEditando]=null;updates['gestorpe/alumnos/'+alumnoActual+'/sincole/'+celdaEditando]=null;updates['gestorpe/alumnos/'+alumnoActual+'/resultados/'+celdaEditando]=null;if(estadoCelda==='ausencia'||estadoCelda==='sincole'){const tipo=estadoCelda==='ausencia'?'ausencias':'sincole';updates['gestorpe/alumnos/'+alumnoActual+'/'+tipo+'/'+celdaEditando]=true;if(contenidoActual){const nuevaProg=reajustarDesde(a,celdaEditando);updates['gestorpe/alumnos/'+alumnoActual+'/programacion']=nuevaProg;}}else{const pId=document.getElementById('selPrograma').value;const oIdx=document.getElementById('selObjetivo').value;const iIdx=document.getElementById('selIndicador').value;const recursoId=document.getElementById('selRecurso').value;if(pId&&oIdx!==''){const nuevoContenido={pId:pId,oIdx:parseInt(oIdx),iIdx:iIdx!==''?parseInt(iIdx):0};if(recursoId)nuevoContenido.recursoId=recursoId;if(resultadoCelda==='repetir'){a.programacion=a.programacion||{};a.programacion[celdaEditando]=nuevoContenido;const nuevaProg=insertarRepeticion(a,celdaEditando,nuevoContenido);updates['gestorpe/alumnos/'+alumnoActual+'/programacion']=nuevaProg;}else{updates['gestorpe/alumnos/'+alumnoActual+'/programacion/'+celdaEditando]=nuevoContenido;}}if(resultadoCelda){updates['gestorpe/alumnos/'+alumnoActual+'/resultados/'+celdaEditando]=resultadoCelda;}}db.ref().update(updates).then(()=>{cerrarModal('modalCelda');toast(resultadoCelda==='repetir'?'Repetición insertada ✓':'Guardado ✓','success');});}
+        function guardarCelda(){const a=alumnos[alumnoActual];const updates={};const contenidoActual=a.programacion?a.programacion[celdaEditando]:null;updates['gestorpe/alumnos/'+alumnoActual+'/ausencias/'+celdaEditando]=null;updates['gestorpe/alumnos/'+alumnoActual+'/sincole/'+celdaEditando]=null;updates['gestorpe/alumnos/'+alumnoActual+'/resultados/'+celdaEditando]=null;if(estadoCelda==='ausencia'||estadoCelda==='sincole'){const tipo=estadoCelda==='ausencia'?'ausencias':'sincole';updates['gestorpe/alumnos/'+alumnoActual+'/'+tipo+'/'+celdaEditando]=true;if(contenidoActual){const nuevaProg=reajustarDesde(a,celdaEditando);updates['gestorpe/alumnos/'+alumnoActual+'/programacion']=nuevaProg;}}else{const pId=document.getElementById('selPrograma').value;const oIdx=document.getElementById('selObjetivo').value;const iIdx=document.getElementById('selIndicador').value;const recursoId=document.getElementById('selRecurso').value;if(pId&&oIdx!==''){const nuevoContenido={pId:pId,oIdx:parseInt(oIdx),iIdx:iIdx!==''?parseInt(iIdx):0};if(recursoId)nuevoContenido.recursoId=recursoId;if(resultadoCelda==='repetir'){a.programacion=a.programacion||{};a.programacion[celdaEditando]=nuevoContenido;const nuevaProg=insertarRepeticion(a,celdaEditando,nuevoContenido);updates['gestorpe/alumnos/'+alumnoActual+'/programacion']=nuevaProg;}else{updates['gestorpe/alumnos/'+alumnoActual+'/programacion/'+celdaEditando]=nuevoContenido;}}if(resultadoCelda){updates['gestorpe/alumnos/'+alumnoActual+'/resultados/'+celdaEditando]=resultadoCelda;}}// Guardar dato GEU manual en la celda si está marcado
+            const geuCb = document.getElementById('geuHecho');
+            if(geuCb && geuCb.checked && estadoCelda === 'asiste'){
+                const colId = document.getElementById('geuColSel').value;
+                const nvId  = document.getElementById('geuNvSel').value;
+                const ficha = parseInt(document.getElementById('geuFichaInput').value) || 1;
+                if(colId && nvId){
+                    updates['gestorpe/alumnos/'+alumnoActual+'/programacion/'+celdaEditando+'/geu'] = {colId:colId, nvId:nvId, ficha:ficha};
+                    // Actualizar también la ficha actual del cuaderno si es mayor que la guardada
+                    const fichaActual = (alumnos[alumnoActual].geu && alumnos[alumnoActual].geu[nvId]) || 1;
+                    if(ficha >= fichaActual){
+                        updates['gestorpe/alumnos/'+alumnoActual+'/geu/'+nvId] = ficha + 1;
+                        alumnos[alumnoActual].geu = alumnos[alumnoActual].geu || {};
+                        alumnos[alumnoActual].geu[nvId] = ficha + 1;
+                    }
+                }
+            } else if(geuCb && !geuCb.checked && estadoCelda === 'asiste'){
+                // Si desmarca, borrar el dato GEU de la celda
+                updates['gestorpe/alumnos/'+alumnoActual+'/programacion/'+celdaEditando+'/geu'] = null;
+            }
+            db.ref().update(updates).then(()=>{
+                cerrarModal('modalCelda');
+                toast(resultadoCelda==='repetir'?'Repetición insertada ✓':'Guardado ✓','success');
+                if(document.getElementById('tabGeu') && document.getElementById('tabGeu').classList.contains('active')) renderGEUTab();
+            });}
         function borrarCelda(){const updates={};['programacion','ausencias','sincole','resultados'].forEach(t=>{updates['gestorpe/alumnos/'+alumnoActual+'/'+t+'/'+celdaEditando]=null;});db.ref().update(updates).then(()=>{cerrarModal('modalCelda');toast('Eliminado','success');});}
         function calcStats(a){const aus=a.ausencias||{},res=a.resultados||{};let ausencias=0,conseguidos=0,repetir=0;const dias=a.diasSesion||[1,3,4],porMes={},porTrim={1:{aus:0},2:{aus:0},3:{aus:0}};for(let mi=0;mi<MESES.length;mi++){const m=MESES[mi];porMes[mi]={aus:0};for(let s=1;s<=m.semanas;s++){for(let di=0;di<dias.length;di++){const k=mi+'_'+s+'_'+dias[di];if(aus[k]){ausencias++;porMes[mi].aus++;porTrim[m.trim].aus++;}if(res[k]==='conseguido')conseguidos++;if(res[k]==='repetir')repetir++;}}}return{ausencias:ausencias,conseguidos:conseguidos,repetir:repetir,porMes:porMes,porTrim:porTrim};}
 
@@ -3324,6 +3438,11 @@
             renderAciAlumnoPanel();
         }
 
+        function aciSanitizeCode(code){
+            // Firebase no permite '.' en claves — los sustituimos por '_'
+            return (code||'').replace(/\./, '_').replace(/\./g,'_').replace(/[\[\]#$]/g,'_');
+        }
+
         function renderAciAlumnoPanel(){
             const cont=document.getElementById('aciContenidoPrincipal');
             if(!aciAlumnoSel||!alumnos[aciAlumnoSel]){cont.innerHTML='<div style="text-align:center;padding:24px;color:var(--text-light)">Selecciona un alumno para ver sus ACI</div>';return;}
@@ -3363,7 +3482,7 @@
                 const eval_=aci.evaluacion||{};
                 const criteriosCurso=aciGetCriteriosCurso(aciMateriaActual,aci.cursoRef||cursoNum);
                 let nC=0,nP=0,nNC=0;
-                criterios.forEach(c=>{const e=eval_[c]||'NI';if(e==='C')nC++;else if(e==='P')nP++;else if(e==='NC')nNC++;});
+                criterios.forEach(c=>{const sc=aciSanitizeCode(c);const e=eval_[sc]||'NI';if(e==='C')nC++;else if(e==='P')nP++;else if(e==='NC')nNC++;});
                 const totEv=nC+nP+nNC,total=criterios.length;
                 const pct=totEv?Math.round(nC/totEv*100):0;
 
@@ -3392,10 +3511,16 @@
 
                 // Criterios con botones eval
                 criterios.forEach(code=>{
+                    const safeCode=aciSanitizeCode(code);
                     const desc=criteriosCurso[code]||code;
-                    const estado=eval_[code]||'NI';
+                    const estado=eval_[safeCode]||'NI';
                     const lbls={C:'✓',P:'◐',NC:'✗',NI:'○'};
-                    let btns=['C','P','NC','NI'].map(e=>`<button style="width:26px;height:26px;border-radius:5px;border:2px solid ${estado===e?(e==='C'?'#16a34a':e==='P'?'#2563eb':e==='NC'?'#dc2626':'#9ca3af'):'#e2e8f0'};background:${estado===e?(e==='C'?'#22c55e':e==='P'?'#3b82f6':e==='NC'?'#ef4444':'#e5e7eb'):'white'};color:${estado===e?'white':'#9ca3af'};cursor:pointer;font-weight:700;font-size:.75rem" onclick="aciSetEval('${key}','${code}','${e}')" title="${e}">${lbls[e]}</button>`).join('');
+                    let btns=['C','P','NC','NI'].map(function(e){
+                        const borde=estado===e?(e==='C'?'#16a34a':e==='P'?'#2563eb':e==='NC'?'#dc2626':'#9ca3af'):'#e2e8f0';
+                        const bg=estado===e?(e==='C'?'#22c55e':e==='P'?'#3b82f6':e==='NC'?'#ef4444':'#e5e7eb'):'white';
+                        const col=estado===e?'white':'#9ca3af';
+                        return '<button class="aci-eval-btn" data-key="'+key+'" data-code="'+safeCode+'" data-e="'+e+'" style="width:26px;height:26px;border-radius:5px;border:2px solid '+borde+';background:'+bg+';color:'+col+';cursor:pointer;font-weight:700;font-size:.75rem" title="'+e+'">'+lbls[e]+'</button>';
+                    }).join('');
                     h+=`<div style="display:flex;align-items:flex-start;gap:8px;padding:7px 0;border-bottom:1px solid #f1f5f9">
                         <span style="font-size:.62rem;font-weight:700;color:var(--text-light);min-width:68px;padding-top:4px;font-family:monospace">${code}</span>
                         <span style="font-size:.78rem;flex:1;line-height:1.35">${desc}</span>
@@ -3420,19 +3545,34 @@
         }
 
         function aciSetEval(key,code,estado){
-            if(!aciAlumnoSel)return;
+            if(!aciAlumnoSel){ toast('Sin alumno seleccionado','error'); return; }
+            const safeCode = aciSanitizeCode(code);
             const current=((aciData[aciAlumnoSel]||{})[key]||{}).evaluacion||{};
-            const newE=current[code]===estado?'NI':estado;
-            db.ref(`gestorpe/alumnos/${aciAlumnoSel}/aci/${key}/evaluacion/${code}`).set(newE).then(()=>{
+            const newE=current[safeCode]===estado?'NI':estado;
+            const path='gestorpe/alumnos/'+aciAlumnoSel+'/aci/'+key+'/evaluacion/'+safeCode;
+            db.ref(path).set(newE).then(function(){
                 if(!alumnos[aciAlumnoSel])alumnos[aciAlumnoSel]={};
                 if(!alumnos[aciAlumnoSel].aci)alumnos[aciAlumnoSel].aci={};
                 if(!alumnos[aciAlumnoSel].aci[key])alumnos[aciAlumnoSel].aci[key]={};
                 if(!alumnos[aciAlumnoSel].aci[key].evaluacion)alumnos[aciAlumnoSel].aci[key].evaluacion={};
-                alumnos[aciAlumnoSel].aci[key].evaluacion[code]=newE;
+                alumnos[aciAlumnoSel].aci[key].evaluacion[safeCode]=newE;
                 aciData[aciAlumnoSel]=alumnos[aciAlumnoSel].aci;
+                toast('Evaluación guardada ✓','success');
                 renderAciAlumnoPanel();
+            }).catch(function(err){
+                toast('Error al guardar: '+err.message,'error');
             });
         }
+
+        // Event delegation para botones ACI (evita problemas con caracteres especiales en onclick)
+        document.addEventListener('click', function(ev){
+            const btn = ev.target.closest('.aci-eval-btn');
+            if(!btn) return;
+            const key  = btn.dataset.key;
+            const code = btn.dataset.code;
+            const e    = btn.dataset.e;
+            aciSetEval(key, code, e);
+        });
 
         function aciNuevaDesdeSeccion(){
             if(!aciAlumnoSel){toast('Selecciona un alumno primero','error');return;}
@@ -6032,59 +6172,259 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
         const GEU_COLECCIONES = [
             {id:'lc', nombre:'Lecturas Comprensivas', icon:'📖', color:'#3b82f6',
              niveles:[
-                {id:'lc1',  label:'Nivel 1',  fichas:30},
-                {id:'lc2',  label:'Nivel 2',  fichas:30},
-                {id:'lc3',  label:'Nivel 3',  fichas:30},
-                {id:'lc4',  label:'Nivel 4',  fichas:30},
-                {id:'lc5',  label:'Nivel 5',  fichas:30},
-                {id:'lc6',  label:'Nivel 6',  fichas:30},
-                {id:'lc7',  label:'Nivel 7',  fichas:30},
-                {id:'lc8',  label:'Nivel 8',  fichas:30},
-                {id:'lc9',  label:'Nivel 9',  fichas:30},
-                {id:'lc10', label:'Nivel 10', fichas:30},
+                {id:'lc1',  label:'C-1',  curso:'Infantil', fichas:30,
+                 contenidos:'Sílabas directas I (pa, pe, pi, po, pu / ma, me…). Lectura de sílabas y palabras simples. Discriminación visual. Mayúsculas básicas.'},
+                {id:'lc2',  label:'C-2',  curso:'Infantil', fichas:30,
+                 contenidos:'Sílabas directas II (ra, re, ri / fa, fe… / ca, co, cu…). Lectura de palabras y frases cortas. Punto final.'},
+                {id:'lc3',  label:'C-3',  curso:'Infantil', fichas:30,
+                 contenidos:'Sílabas inversas (al, el, il / an, en…) y mixtas. Lectura de frases breves. Signos de puntuación básicos.'},
+                {id:'lc4',  label:'C-4',  curso:'1º Primaria', fichas:30,
+                 contenidos:'Sílabas trabadas (bra, bla, cra, fla…). Lectura fluida de palabras con grupos consonánticos. Ortografía: uso de mayúsculas y punto.'},
+                {id:'lc5',  label:'C-5',  curso:'1º Primaria', fichas:30,
+                 contenidos:'Lectura de frases completas. Vocabulario básico. Comprensión de oraciones simples. Ortografía: signos de interrogación y exclamación.'},
+                {id:'lc6',  label:'C-6',  curso:'1º Primaria', fichas:30,
+                 contenidos:'Textos breves (3-5 líneas). Comprensión lectora inicial. Vocabulario por campos semánticos. Ortografía: la coma en enumeraciones.'},
+                {id:'lc7',  label:'C-7',  curso:'2º Primaria', fichas:30,
+                 contenidos:'Textos I (hasta 100 palabras). Comprensión: preguntas literales. Vocabulario: sinónimos y antónimos básicos. Ortografía: uso de b/v (introducción).'},
+                {id:'lc8',  label:'C-8',  curso:'2º Primaria', fichas:30,
+                 contenidos:'Textos II (hasta 150 palabras). Comprensión: idea principal. Gramática: artículos, sustantivos y adjetivos. Ortografía: uso de la h.'},
+                {id:'lc9',  label:'C-9',  curso:'2º Primaria', fichas:30,
+                 contenidos:'Textos III (hasta 200 palabras). Comprensión: secuencia de hechos. Gramática: género y número. Ortografía: mp/mb, grupos –nv–.'},
+                {id:'lc10', label:'C-10', curso:'3º Primaria', fichas:30,
+                 contenidos:'Textos IV (hasta 250 palabras). Comprensión: personajes y escenarios. Vocabulario: familias de palabras. Ortografía: uso de g/j (introducción).'},
+                {id:'lc11', label:'C-11', curso:'3º Primaria', fichas:30,
+                 contenidos:'Textos V (hasta 300 palabras). Comprensión: causa-efecto. Gramática: el verbo (tiempo y persona). Ortografía: uso de c/z y c/qu.'},
+                {id:'lc12', label:'C-12', curso:'3º Primaria', fichas:30,
+                 contenidos:'Textos VI (hasta 400 palabras). Comprensión: resumen. Gramática: tipos de oraciones. Ortografía: uso de r/rr y ll/y (introducción).'},
+                {id:'lc13', label:'C-13', curso:'4º Primaria', fichas:30,
+                 contenidos:'Textos VII (hasta 550 palabras). Comprensión: inferencias. Dictados. Crucigramas. Sopas de letras. Ortografía: sílaba tónica y uso de la h y la b.'},
+                {id:'lc14', label:'C-14', curso:'4º Primaria', fichas:30,
+                 contenidos:'Textos VIII. Comprensión: valoración crítica. Gramática: clases de palabras. Ortografía: uso de b/v (ampliación) y palabras con g/j.'},
+                {id:'lc15', label:'C-15', curso:'4º Primaria', fichas:30,
+                 contenidos:'Textos IX. Comprensión: título y estructura. Vocabulario: polisemia y homonimia. Ortografía: uso de ll/y y palabras homófonas.'},
+                {id:'lc16', label:'C-16', curso:'5º Primaria', fichas:30,
+                 contenidos:'Textos X. Comprensión: tipos de texto (narrativo, descriptivo). Vocabulario: prefijos y sufijos. Ortografía: b/v, g/j, diéresis, c/cc/ct, y/ll/h.'},
+                {id:'lc17', label:'C-17', curso:'5º Primaria', fichas:30,
+                 contenidos:'Textos XI. Comprensión: textos expositivos. Gramática: el sustantivo y sus complementos. Ortografía: normas de acentuación (agudas, llanas, esdrújulas).'},
+                {id:'lc18', label:'C-18', curso:'5º Primaria', fichas:30,
+                 contenidos:'Textos XII. Comprensión: intención del autor. Gramática: el adjetivo y los grados. Ortografía: signos de puntuación (punto y coma, dos puntos, guion).'},
+                {id:'lc19', label:'C-19', curso:'6º Primaria', fichas:30,
+                 contenidos:'Textos XIII. Comprensión: textos argumentativos. Vocabulario: locuciones y refranes. Ortografía: signos de puntuación integrados en texto.'},
+                {id:'lc20', label:'C-20', curso:'6º Primaria', fichas:30,
+                 contenidos:'Textos XIV. Comprensión: textos instructivos y periodísticos. Gramática: clases de oraciones. Ortografía: palabras con dificultad ortográfica (ampliación).'},
+                {id:'lc21', label:'C-21', curso:'6º Primaria', fichas:30,
+                 contenidos:'Textos XV. Comprensión: textos retóricos y literarios. Vocabulario: paronimias, metáforas, metonimias, onomatopeyas. Gramática: análisis sintáctico. Ortografía: normas de acentuación (diptongos, hiatos, tilde diacrítica).'},
             ]},
-            {id:'mf', nombre:'Matemáticas Fáciles', icon:'🔢', color:'#10b981',
+            {id:'cf', nombre:'Cálculo Fácil', icon:'🔢', color:'#10b981',
              niveles:[
-                {id:'mf1a', label:'1A', fichas:40},
-                {id:'mf1b', label:'1B', fichas:40},
-                {id:'mf2a', label:'2A', fichas:40},
-                {id:'mf2b', label:'2B', fichas:40},
-                {id:'mf3a', label:'3A', fichas:40},
-                {id:'mf3b', label:'3B', fichas:40},
-                {id:'mf4a', label:'4A', fichas:40},
-                {id:'mf4b', label:'4B', fichas:40},
+                {id:'cf1',  label:'C-1',  curso:'1º Primaria', fichas:40,
+                 contenidos:'Iniciación a la suma sin llevar (hasta 30). Signo de sumar. Sumas en vertical y horizontal con 1 y 2 dígitos. Sumas con 3 sumandos.'},
+                {id:'cf2',  label:'C-2',  curso:'1º Primaria', fichas:40,
+                 contenidos:'Sumas sin llevar hasta el 99. Sumas con decenas de más de un dígito. Sumas con 3 sumandos. Completado de tablas.'},
+                {id:'cf3',  label:'C-3',  curso:'1º Primaria', fichas:40,
+                 contenidos:'Iniciación a la resta sin llevar (hasta 30). Signo de restar. Restas en vertical con apoyo gráfico. Series sencillas.'},
+                {id:'cf4',  label:'C-4',  curso:'2º Primaria', fichas:40,
+                 contenidos:'Restas sin llevar hasta el 99. Ampliación de restas con decenas. Relación suma-resta. Completado de operaciones.'},
+                {id:'cf5',  label:'C-5',  curso:'2º Primaria', fichas:40,
+                 contenidos:'Sumas llevando con 1 y 2 cifras. Sumas en horizontal y vertical con 2-3 sumandos. Llevadas en unidades y decenas.'},
+                {id:'cf6',  label:'C-6',  curso:'2º Primaria', fichas:40,
+                 contenidos:'Sumas llevando con 2 y 3 cifras. Agrupación en decenas. Colocación en vertical. Sumas de centenas. Llevadas dobles. Juegos numéricos.'},
+                {id:'cf7',  label:'C-7',  curso:'3º Primaria', fichas:40,
+                 contenidos:'Restas llevando con decenas y centenas. Restas coloreando decenas y centenas. "Vamos de compras". Series numéricas.'},
+                {id:'cf8',  label:'C-8',  curso:'3º Primaria', fichas:40,
+                 contenidos:'Restas llevando (ampliación). Reconocimiento de términos (minuendo, sustraendo, diferencia). Expresiones que indican resta. Cálculo mental. Series y juegos.'},
+                {id:'cf9',  label:'C-9',  curso:'3º Primaria', fichas:40,
+                 contenidos:'Sumas y restas llevando combinadas. Multiplicación por 2 cifras. Divisiones por 1 cifra (divisor hasta el 5).'},
+                {id:'cf10', label:'C-10', curso:'4º Primaria', fichas:40,
+                 contenidos:'Multiplicación por 1 cifra (tablas del 2 al 5). Transformación suma→multiplicación. Multiplicaciones con llevadas. Doble y triple con gráficos.'},
+                {id:'cf11', label:'C-11', curso:'4º Primaria', fichas:40,
+                 contenidos:'Multiplicación por 1 cifra (tablas del 6 al 9). Términos de la multiplicación. Multiplicar con llevadas. Multiplicación por 10, 100 y 1000.'},
+                {id:'cf12', label:'C-12', curso:'4º Primaria', fichas:40,
+                 contenidos:'Multiplicación por 2 y 3 cifras. Ceros intermedios y finales. Completado de tablas de operaciones. Series y juegos numéricos.'},
+                {id:'cf13', label:'C-13', curso:'4º Primaria', fichas:40,
+                 contenidos:'Iniciación a la división. División por 1 cifra y repartos. Relación multiplicación-división. Mitad y tercio. División exacta e inexacta. Cero en el cociente.'},
+                {id:'cf14', label:'C-14', curso:'5º Primaria', fichas:40,
+                 contenidos:'División por 1 y 2 cifras. División exacta e inexacta. La prueba de la división. Cero en el cociente. Mitad, tercio y cuarto. División por la unidad seguida de ceros.'},
+                {id:'cf15', label:'C-15', curso:'5º Primaria', fichas:40,
+                 contenidos:'División por 2 y 3 cifras. La prueba de la división. Enunciados frecuentes. Mitad, tercio y cuarta parte. División gráfica. Crucigramas con conceptos de la división.'},
+                {id:'cf16', label:'C-16', curso:'5º Primaria', fichas:40,
+                 contenidos:'Suma y resta con 3-4 cifras. Multiplicación y división por 1 y 2 cifras. Juegos numéricos y gráficos. Situaciones de la vida real. Búsqueda de términos que faltan.'},
+                {id:'cf17', label:'C-17', curso:'6º Primaria', fichas:40,
+                 contenidos:'Números de hasta 9 cifras. Operaciones enteras combinadas. Divisores y múltiplos. Jerarquía de operaciones. Potencias de base 10. Cálculo mental avanzado.'},
+                {id:'cf18', label:'C-18', curso:'6º Primaria', fichas:40,
+                 contenidos:'Fracciones: escritura, lectura y representación hasta cienmilésimas. Fracciones equivalentes. Conversión fracción-decimal. Comparación de fracciones.'},
+                {id:'cf19', label:'C-19', curso:'6º Primaria', fichas:40,
+                 contenidos:'Números decimales: operaciones (suma, resta, multiplicación, división). Sistema métrico decimal. Conversiones de unidades. Porcentajes básicos.'},
+                {id:'cf20', label:'C-20', curso:'6º Primaria', fichas:40,
+                 contenidos:'Raíz cuadrada. M.C.D. y m.c.m. Operaciones combinadas con fracciones y decimales. Perímetros y áreas de figuras planas.'},
+                {id:'cf21', label:'C-21', curso:'6º Primaria', fichas:40,
+                 contenidos:'Repaso global 6º: todas las operaciones. Problemas de varias operaciones. Porcentajes, proporcionalidad y estadística básica. Preparación ESO.'},
             ]},
         ];
 
-        function renderGEUCard(a){
+        function geuToggleModal(){
+            const cb = document.getElementById('geuHecho');
+            document.getElementById('geuDetalleModal').style.display = cb.checked ? 'block' : 'none';
+            if(cb.checked) geuActualizarNiveles();
+        }
+
+        function geuActualizarNiveles(){
+            const colId = document.getElementById('geuColSel').value;
+            const a = alumnos[alumnoActual];
+            const geu = a ? (a.geu || {}) : {};
+            const col = GEU_COLECCIONES.find(function(c){return c.id===colId;});
+            if(!col) return;
+            const sel = document.getElementById('geuNvSel');
+            sel.innerHTML = '';
+            // Mostrar solo los cuadernos que el alumno tiene asignados, o todos si no tiene ninguno
+            const asignados = col.niveles.filter(function(nv){return geu[nv.id] !== undefined;});
+            const lista = asignados.length ? asignados : col.niveles;
+            lista.forEach(function(nv){
+                sel.innerHTML += '<option value="'+nv.id+'">'+nv.label+' — '+nv.curso+'</option>';
+            });
+            // Prellenar ficha con la actual del cuaderno seleccionado
+            geuPrellenarFicha();
+            sel.onchange = geuPrellenarFicha;
+        }
+
+        function geuPrellenarFicha(){
+            const nvId = document.getElementById('geuNvSel').value;
+            const a = alumnos[alumnoActual];
+            const geu = a ? (a.geu || {}) : {};
+            const ficha = geu[nvId] || 1;
+            document.getElementById('geuFichaInput').value = ficha;
+        }
+
+        function geuCargarEnModal(geuGuardado){
+            // Cargar datos GEU previamente guardados en la celda
+            const cb = document.getElementById('geuHecho');
+            if(geuGuardado && geuGuardado.colId){
+                cb.checked = true;
+                document.getElementById('geuDetalleModal').style.display = 'block';
+                document.getElementById('geuColSel').value = geuGuardado.colId;
+                geuActualizarNiveles();
+                setTimeout(function(){
+                    document.getElementById('geuNvSel').value = geuGuardado.nvId;
+                    document.getElementById('geuFichaInput').value = geuGuardado.ficha || 1;
+                }, 30);
+            } else {
+                cb.checked = false;
+                document.getElementById('geuDetalleModal').style.display = 'none';
+            }
+        }
+
+                function geuProponerAvance(alumId, k){
+            const a = alumnos[alumId];
             const geu = a.geu || {};
-            let h = `<div class="geu-card no-print">
-                <div class="card-header" style="margin-bottom:10px">
-                    <h3 class="card-title" style="color:#d97706">📚 Material GEU</h3>
-                    <button class="btn btn-sm" style="background:#fef3c7;color:#92400e;font-size:.72rem" onclick="geuAbrirModal('${alumnoActual}')">⚙️ Configurar</button>
-                </div>`;
+            const activos = GEU_COLECCIONES.flatMap(col =>
+                col.niveles.filter(nv => geu[nv.id] !== undefined)
+                .map(nv => ({col, nv, ficha: geu[nv.id] || 1}))
+            );
+            if(!activos.length) return;
+            // Calcular cuántas sesiones asistidas hay hasta k (inclusive)
+            const todasSesiones = getTodasLasSesiones(a);
+            const idxK = todasSesiones.indexOf(k);
+            if(idxK < 0) return;
+            let sesionesHasta = 0;
+            for(let i = 0; i <= idxK; i++){
+                const ki = todasSesiones[i];
+                const ausente = (a.ausencias && a.ausencias[ki]) || (a.sincole && a.sincole[ki]);
+                if(!ausente) sesionesHasta++;
+            }
+            // La ficha esperada es la actual + sesiones antes (0-indexed)
+            const fichasEsperadas = activos.map(function(item){
+                return {
+                    col: item.col, nv: item.nv,
+                    fichaActual: item.ficha,
+                    fichaEsperada: Math.min(item.ficha + (sesionesHasta - 1), item.nv.fichas + 1)
+                };
+            });
+            // Solo proponer si hay alguna ficha que avanzar
+            const queAvanzar = fichasEsperadas.filter(f => f.fichaEsperada > f.fichaActual && f.fichaActual <= f.nv.fichas);
+            if(!queAvanzar.length) return;
+            // Mostrar toast interactivo de confirmación
+            geuMostrarToastAvance(alumId, queAvanzar);
+        }
+
+        function geuMostrarToastAvance(alumId, items){
+            // Eliminar toast anterior si existe
+            const old = document.getElementById('geuToastAvance');
+            if(old) old.remove();
+            const div = document.createElement('div');
+            div.id = 'geuToastAvance';
+            div.style.cssText = 'position:fixed;bottom:70px;left:50%;transform:translateX(-50%);background:#1e293b;color:#f1f5f9;padding:14px 18px;border-radius:14px;z-index:3000;box-shadow:0 8px 32px rgba(0,0,0,.35);max-width:340px;width:90%;font-size:.82rem;line-height:1.5';
+            let html = '<div style="font-weight:700;margin-bottom:8px;color:#fbbf24">📚 ¿Avanzar fichas GEU?</div>';
+            items.forEach(function(f){
+                html += '<div style="margin-bottom:3px">'+f.col.icon+' <span style="color:'+f.col.color+';font-weight:700">'+f.col.nombre+' '+f.nv.label+'</span>: F'+f.fichaActual+' → <span style="color:#4ade80;font-weight:700">F'+f.fichaEsperada+'</span></div>';
+            });
+            html += '<div style="display:flex;gap:8px;margin-top:10px">';
+            html += '<button id="geuBtnSi" style="flex:1;padding:8px;background:#22c55e;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:.82rem">✅ Sí, avanzar</button>';
+            html += '<button id="geuBtnNo" style="flex:1;padding:8px;background:#475569;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:.82rem">❌ No</button>';
+            html += '</div>';
+            div.innerHTML = html;
+            document.body.appendChild(div);
+            document.getElementById('geuBtnSi').onclick = function(){
+                div.remove();
+                const updates = {};
+                items.forEach(function(f){
+                    updates['gestorpe/alumnos/'+alumId+'/geu/'+f.nv.id] = f.fichaEsperada;
+                    alumnos[alumId].geu = alumnos[alumId].geu || {};
+                    alumnos[alumId].geu[f.nv.id] = f.fichaEsperada;
+                });
+                db.ref().update(updates).then(function(){
+                    toast('Fichas GEU avanzadas ✓','success');
+                    if(document.getElementById('tabGeu') && document.getElementById('tabGeu').classList.contains('active')) renderGEUTab();
+                });
+            };
+            document.getElementById('geuBtnNo').onclick = function(){ div.remove(); };
+            // Auto-cerrar tras 10 segundos
+            setTimeout(function(){ if(document.getElementById('geuToastAvance')) div.remove(); }, 10000);
+        }
+
+                function renderGEUCard(a){
+            const geu = a.geu || {};
+            let h = '<div class="geu-card no-print">';
+            h += '<div class="card-header" style="margin-bottom:10px">';
+            h += '<h3 class="card-title" style="color:#d97706">📚 Material GEU</h3>';
+            h += '<button class="btn btn-sm" style="background:#fef3c7;color:#92400e;font-size:.72rem" onclick="geuAbrirModal(\''+alumnoActual+'\')">⚙️ Configurar</button>';
+            h += '</div>';
             const activos = GEU_COLECCIONES.flatMap(col =>
                 col.niveles.filter(nv => geu[nv.id] !== undefined)
                 .map(nv => ({col, nv, ficha: geu[nv.id] || 1}))
             );
             if(!activos.length){
-                h += `<div style="font-size:.8rem;color:var(--text-light);padding:6px 0">Sin cuadernos asignados. Pulsa ⚙️ Configurar.</div>`;
+                h += '<div style="font-size:.8rem;color:var(--text-light);padding:6px 0">Sin cuadernos asignados. Pulsa ⚙️ Configurar.</div>';
             } else {
-                activos.forEach(({col, nv, ficha}) => {
+                activos.forEach(function(item){
+                    const col = item.col, nv = item.nv, ficha = item.ficha;
                     const pct = Math.min(Math.round((ficha-1)/nv.fichas*100), 100);
-                    h += `<div class="geu-row">
-                        <span style="font-size:1rem">${col.icon}</span>
-                        <div style="flex:1;min-width:0">
-                            <div class="geu-label" style="color:${col.color}">${col.nombre} <span style="font-weight:400;color:var(--text-light)">${nv.label}</span></div>
-                            <div class="geu-progress"><div class="geu-progress-bar" style="width:${pct}%;background:${col.color}"></div></div>
-                        </div>
-                        <div class="geu-ficha-wrap">
-                            <button class="geu-btn" onclick="geuCambiarFicha('${alumnoActual}','${nv.id}',${ficha-1})" title="Retroceder">−</button>
-                            <span class="geu-ficha-num">${ficha}</span>
-                            <span style="font-size:.65rem;color:var(--text-light)">/${nv.fichas}</span>
-                            <button class="geu-btn" style="background:${col.color};border-color:${col.color};color:#fff" onclick="geuCambiarFicha('${alumnoActual}','${nv.id}',${ficha+1})" title="Avanzar">+</button>
-                        </div>
-                    </div>`;
+                    const completado = ficha > nv.fichas;
+                    const fichaReal = completado ? nv.fichas : ficha;
+                    h += '<div class="geu-row" style="flex-direction:column;align-items:stretch;gap:6px">';
+                    h += '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">';
+                    h += '<span style="font-size:1rem">'+col.icon+'</span>';
+                    h += '<div style="flex:1;min-width:0">';
+                    h += '<div style="display:flex;align-items:baseline;gap:5px;flex-wrap:wrap">';
+                    h += '<span class="geu-label" style="color:'+col.color+'">'+col.nombre+'</span>';
+                    h += '<span style="font-size:.78rem;font-weight:700;background:'+col.color+'22;color:'+col.color+';padding:1px 7px;border-radius:10px">'+nv.label+'</span>';
+                    h += '<span style="font-size:.68rem;color:var(--text-light)">'+nv.curso+'</span>';
+                    if(completado) h += '<span style="font-size:.65rem;background:#dcfce7;color:#166534;padding:1px 6px;border-radius:8px;font-weight:700">✅ Completado</span>';
+                    h += '</div>';
+                    h += '<div class="geu-progress" style="margin-top:4px"><div class="geu-progress-bar" style="width:'+pct+'%;background:'+col.color+'"></div></div>';
+                    h += '<div style="font-size:.62rem;color:var(--text-light);margin-top:2px">'+pct+'% completado · Ficha '+fichaReal+'/'+nv.fichas+'</div>';
+                    h += '</div>';
+                    h += '<div class="geu-ficha-wrap">';
+                    h += '<button class="geu-btn" onclick="geuCambiarFicha(\''+alumnoActual+'\',\''+nv.id+'\','+(ficha-1)+')" title="Retroceder">−</button>';
+                    h += '<span class="geu-ficha-num">'+fichaReal+'</span>';
+                    h += '<button class="geu-btn" style="background:'+col.color+';border-color:'+col.color+';color:#fff" onclick="geuCambiarFicha(\''+alumnoActual+'\',\''+nv.id+'\','+(ficha+1)+')" title="Avanzar">+</button>';
+                    h += '</div>';
+                    h += '</div>';
+                    if(nv.contenidos){
+                        h += '<div style="font-size:.72rem;color:var(--text);background:'+col.color+'0d;border-left:3px solid '+col.color+';border-radius:0 6px 6px 0;padding:6px 10px;line-height:1.5">';
+                        h += '<span style="font-weight:700;color:'+col.color+'">📋 Contenidos: </span>'+nv.contenidos;
+                        h += '</div>';
+                    }
+                    h += '</div>';
                 });
             }
             h += '</div>';
@@ -6110,16 +6450,19 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
             const cont  = document.getElementById('geuModalContenido');
             document.getElementById('geuModalAlumno').textContent = a.siglas + ' — ' + a.curso;
             let h = '';
-            GEU_COLECCIONES.forEach(col => {
-                h += `<div style="margin-bottom:14px">
-                    <div style="font-weight:700;color:${col.color};margin-bottom:8px;font-size:.88rem">${col.icon} ${col.nombre}</div>
-                    <div style="display:flex;flex-wrap:wrap;gap:6px">`;
-                col.niveles.forEach(nv => {
+            GEU_COLECCIONES.forEach(function(col){
+                h += '<div style="margin-bottom:16px">';
+                h += '<div style="font-weight:700;color:'+col.color+';margin-bottom:8px;font-size:.88rem">'+col.icon+' '+col.nombre+'</div>';
+                h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px">';
+                col.niveles.forEach(function(nv){
                     const activo = geu[nv.id] !== undefined;
-                    h += `<div data-nv="${nv.id}" onclick="geuToggleNivel(this,'${col.id}')"
-                        style="padding:5px 12px;border-radius:16px;border:2px solid ${activo?col.color:'var(--border)'};background:${activo?col.color+'22':'var(--bg)'};color:${activo?col.color:'var(--text-light)'};font-size:.78rem;font-weight:700;cursor:pointer">
-                        ${nv.label}${activo?' ✓':''}
-                    </div>`;
+                    h += '<div data-nv="'+nv.id+'" onclick="geuToggleNivel(this,\''+col.id+'\''+')"'
+                        +' style="padding:7px 10px;border-radius:10px;border:2px solid '+(activo?col.color:'var(--border)')
+                        +';background:'+(activo?col.color+'18':'var(--bg)')+';color:'+(activo?col.color:'var(--text-light)')
+                        +';font-size:.75rem;font-weight:700;cursor:pointer;line-height:1.4">'
+                        +'<div>'+nv.label+(activo?' ✓':'')+'</div>'
+                        +'<div style="font-size:.62rem;font-weight:400;opacity:.75">'+nv.curso+'</div>'
+                        +'</div>';
                 });
                 h += '</div></div>';
             });
@@ -6130,19 +6473,22 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
 
         function geuToggleNivel(el, colId){
             const nvId = el.dataset.nv;
-            const col  = GEU_COLECCIONES.find(c=>c.id===colId);
-            const nv   = col.niveles.find(n=>n.id===nvId);
-            const esActivo = el.textContent.includes('✓');
+            const col  = GEU_COLECCIONES.find(function(c){return c.id===colId;});
+            const nv   = col.niveles.find(function(n){return n.id===nvId;});
+            const labelEl = el.querySelector('div');
+            const esActivo = (labelEl ? labelEl.textContent : el.textContent).includes('✓');
             if(esActivo){
                 el.style.borderColor = 'var(--border)';
                 el.style.background  = 'var(--bg)';
                 el.style.color       = 'var(--text-light)';
-                el.textContent       = nv.label;
+                if(labelEl) labelEl.textContent = nv.label;
+                else el.firstChild.textContent = nv.label;
             } else {
                 el.style.borderColor = col.color;
-                el.style.background  = col.color+'22';
+                el.style.background  = col.color+'18';
                 el.style.color       = col.color;
-                el.textContent       = nv.label+' ✓';
+                if(labelEl) labelEl.textContent = nv.label+' ✓';
+                else el.firstChild.textContent = nv.label+' ✓';
             }
         }
 
