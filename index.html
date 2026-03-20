@@ -252,6 +252,11 @@
         .grupo-alumno-ind{color:var(--text-light);font-size:.6rem}
         .chip-alumno-sel{display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:8px;border:2px solid var(--border);cursor:pointer;font-size:.82rem;font-weight:600;transition:all .2s;background:var(--bg)}
         .chip-alumno-sel.active{border-color:var(--primary);background:rgba(26,95,74,.08)}
+
+        /* SdA GRUPAL TABS */
+        .sda-tab{flex:0 0 auto;padding:8px 12px;border:none;background:var(--bg);color:var(--text-light);font-family:inherit;font-size:.75rem;font-weight:600;cursor:pointer;border-radius:8px 8px 0 0;white-space:nowrap}
+        .sda-tab.active{background:var(--primary);color:#fff}
+        .sda-tab-content{display:none}.sda-tab-content.active{display:block}
     </style>
 
 </head>
@@ -6604,6 +6609,7 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
                     </div>
                     <div class="btn-group">
                         <button class="btn btn-ai btn-sm" onclick="abrirGrupoIA('${gId}')">🤖 Actividades IA</button>
+                        <button class="btn btn-primary btn-sm" onclick="abrirGrupoSdA('${gId}')">🎓 SdA Grupal</button>
                         <button class="btn btn-secondary btn-sm" onclick="editarGrupo('${gId}')">✏️</button>
                         <button class="btn btn-danger btn-sm" onclick="eliminarGrupo('${gId}')">🗑️</button>
                     </div>
@@ -7052,6 +7058,231 @@ Genera ahora un resumen por cada alumno en el formato indicado. No añadas nada 
                 .then(()=>toast('Copiado ✓ — pega en Séneca','success'))
                 .catch(()=>{ta.select();document.execCommand('copy');toast('Copiado ✓','success');});
         }
+
+        // SDA GRUPAL PT
+        function sdaGrupoTab(btn){
+            document.querySelectorAll('.sda-tab').forEach(t=>t.classList.remove('active'));
+            document.querySelectorAll('.sda-tab-content').forEach(c=>c.classList.remove('active'));
+            btn.classList.add('active');
+            const tab=document.getElementById(btn.dataset.tab);
+            if(tab)tab.classList.add('active');
+        }
+        function grupoSdACalcSemanas(){
+            const ini=document.getElementById('grupoSdAFechaIni').value;
+            const fin=document.getElementById('grupoSdAFechaFin').value;
+            if(ini&&fin){const d=(new Date(fin)-new Date(ini))/(864e5);document.getElementById('grupoSdASemanas').value=Math.max(1,Math.round(d/7));}
+        }
+        function abrirGrupoSdA(gId){
+            const g=grupos[gId];
+            if(!g){toast('Grupo no encontrado','error');return;}
+            window._gSdA=gId;
+            const trim=getMesEscolarActual()<3?1:getMesEscolarActual()<7?2:3;
+            document.querySelectorAll('.sda-tab').forEach(t=>t.classList.remove('active'));
+            document.querySelectorAll('.sda-tab-content').forEach(c=>c.classList.remove('active'));
+            document.querySelector('.sda-tab[data-tab="sdaCtx"]').classList.add('active');
+            document.getElementById('sdaCtx').classList.add('active');
+            ['grupoSdATrim','grupoSdANum','grupoSdATipo','grupoSdASesiones','grupoSdADuracion','grupoSdASemanas','grupoSdAFechaIni','grupoSdAFechaFin','grupoSdANCC','grupoSdATitulo','grupoSdATematica','grupoSdAPregunta','grupoSdAPlanes','grupoSdAEfemerides','grupoSdATransv','grupoSdACritsManual','grupoSdASabManual'].forEach(id=>{
+                const el=document.getElementById(id);
+                if(!el)return;
+                if(el.tagName==='SELECT')el.selectedIndex=0;
+                else el.value='';
+            });
+            document.getElementById('grupoSdATrim').value=trim;
+            document.getElementById('grupoSdASesiones').value='6';
+            document.getElementById('grupoSdADuracion').value='45';
+            document.getElementById('grupoSdASemanas').value='4';
+            document.getElementById('grupoSdAPrompt').textContent='Rellena las pestañas y pulsa "Generar prompt"…';
+            document.querySelectorAll('#grupoSdAAreasChips .area-chip').forEach(c=>c.classList.remove('active'));
+            document.querySelectorAll('#grupoSdAAreasChips .area-chip')[0].classList.add('active');
+            const ag=Object.values(g.alumnos||{}).filter(id=>alumnos[id]);
+            document.getElementById('modalGrupoSdATitulo').textContent='🎓 SdA Grupal — '+g.nombre;
+            document.getElementById('grupoSdAResumen').innerHTML=ag.map(id=>'<strong>'+alumnos[id].siglas+'</strong> ('+alumnos[id].curso+')').join(', ')+' · '+(g.diasSesion||[]).map(d=>({0:'L',1:'M',2:'X',3:'J',4:'V'})[d]||d).join('-');
+            _sdaCargarCriterios(ag,trim);
+            _sdaCargarAlumnos(ag,trim);
+            abrirModal('modalGrupoSdA');
+        }
+        function _sdaCargarCriterios(ag,trim){
+            const lista=document.getElementById('grupoSdACriteriosLista');
+            if(!lista)return;
+            const crits={};
+            ag.forEach(id=>{
+                const a=alumnos[id];
+                if(!a.programas)return;
+                Object.values(a.programas).forEach(p=>{
+                    (p.objetivos||[]).filter(o=>o.trimestre===trim).forEach(obj=>{
+                        const k=obj.criterio||('obj_'+obj.numero);
+                        if(!crits[k])crits[k]={texto:obj.descripcion,als:[]};
+                        crits[k].als.push(alumnos[id].siglas);
+                    });
+                });
+            });
+            const keys=Object.keys(crits);
+            if(!keys.length){lista.innerHTML='<div style="font-size:.8rem;color:var(--text-light);padding:8px">No hay criterios en los programas del grupo para T'+trim+'. Añádelos manualmente.</div>';_sdaCargarSaberes(ag,trim,[]);return;}
+            lista.innerHTML=keys.map(k=>{
+                const cr=crits[k],uid='crit_'+k.replace(/\W/g,'_');
+                return '<label style="display:flex;align-items:flex-start;gap:8px;padding:8px;background:var(--bg);border-radius:8px;cursor:pointer;font-size:.8rem"><input type="checkbox" id="'+uid+'" value="'+k+'" data-texto="'+cr.texto.replace(/"/g,'&quot;')+'" checked onchange="_sdaActSaberes()" style="margin-top:2px;flex-shrink:0"><div><strong>'+k+'</strong> — '+cr.texto+'<br><span style="font-size:.7rem;color:var(--primary)">'+cr.als.join(', ')+'</span></div></label>';
+            }).join('');
+            _sdaActSaberes();
+        }
+        function _sdaActSaberes(){
+            const g=grupos[window._gSdA];
+            const trim=parseInt(document.getElementById('grupoSdATrim').value);
+            const ag=Object.values(g.alumnos||{}).filter(id=>alumnos[id]);
+            const sel=[...document.querySelectorAll('#grupoSdACriteriosLista input:checked')].map(cb=>cb.value);
+            _sdaCargarSaberes(ag,trim,sel);
+        }
+        function _sdaCargarSaberes(ag,trim,sel){
+            const lista=document.getElementById('grupoSdASaberesLista');
+            if(!lista)return;
+            if(!sel||!sel.length){lista.innerHTML='<div style="font-size:.8rem;color:var(--text-light);padding:8px">Selecciona criterios en pestaña 3, o añade saberes manualmente.</div>';return;}
+            const sabs={};
+            ag.forEach(id=>{
+                const a=alumnos[id];
+                if(!a.programas)return;
+                Object.values(a.programas).forEach(p=>{
+                    (p.objetivos||[]).filter(o=>o.trimestre===trim&&sel.includes(o.criterio||('obj_'+o.numero))).forEach(obj=>{
+                        (obj.indicadores||[]).forEach((ind,ii)=>{
+                            const k=(obj.criterio||'obj')+'_'+ii;
+                            if(!sabs[k])sabs[k]={texto:ind,crit:obj.criterio||''};
+                        });
+                    });
+                });
+            });
+            const keys=Object.keys(sabs);
+            if(!keys.length){lista.innerHTML='<div style="font-size:.8rem;color:var(--text-light);padding:8px">No hay indicadores vinculados. Añade saberes manualmente.</div>';return;}
+            lista.innerHTML=keys.map(k=>{
+                const sb=sabs[k],uid='sab_'+k.replace(/\W/g,'_');
+                return '<label style="display:flex;align-items:flex-start;gap:8px;padding:7px;background:var(--bg);border-radius:7px;cursor:pointer;font-size:.78rem"><input type="checkbox" id="'+uid+'" value="'+k+'" data-texto="'+sb.texto.replace(/"/g,'&quot;')+'" checked style="margin-top:2px;flex-shrink:0"><div>'+sb.texto+'<br><span style="font-size:.68rem;color:var(--text-light)">'+sb.crit+'</span></div></label>';
+            }).join('');
+        }
+        function _sdaCargarAlumnos(ag,trim){
+            const tabla=document.getElementById('grupoSdAAlumnosTabla');
+            if(!tabla)return;
+            tabla.innerHTML=ag.map(id=>{
+                const a=alumnos[id],nee=a.diagnostico||a.deficit||a.neae||'';
+                let p1='';
+                if(a.programas){for(const p of Object.values(a.programas)){const ob=(p.objetivos||[]).find(o=>o.trimestre===trim);if(ob){p1='O'+ob.numero+': '+ob.descripcion;break;}}}
+                return '<div style="background:var(--bg);border-radius:8px;padding:12px;border-left:3px solid var(--primary)"><div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><span style="font-family:monospace;font-weight:700;color:var(--primary);font-size:1rem">'+a.siglas+'</span><span style="font-size:.78rem;color:var(--text-light)">'+a.curso+(nee?' · <strong>'+nee+'</strong>':'')+'</span></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><label style="font-size:.72rem;font-weight:600;display:block;margin-bottom:3px">NCC individual</label><input type="text" class="form-input" id="sda_ncc_'+id+'" style="font-size:.8rem;padding:7px" placeholder="Nivel específico"></div><div><label style="font-size:.72rem;font-weight:600;display:block;margin-bottom:3px">Objetivo principal T'+trim+'</label><input type="text" class="form-input" id="sda_obj_'+id+'" style="font-size:.8rem;padding:7px" value="'+p1.replace(/"/g,'&quot;')+'"></div></div></div>';
+            }).join('');
+        }
+        function grupoSdAGenerarPrompt(){
+            const gId=window._gSdA;if(!gId)return;
+            const g=grupos[gId];
+            const trim=parseInt(document.getElementById('grupoSdATrim').value);
+            const tiposD={producto:'🎨 Producto',desempeno:'🎭 Desempeño',indagacion:'🔍 Indagación',resolucion:'🧩 Resolución'};
+            const tipoL=tiposD[document.getElementById('grupoSdATipo').value]||'Producto';
+            const ses=parseInt(document.getElementById('grupoSdASesiones').value)||6;
+            const dur=parseInt(document.getElementById('grupoSdADuracion').value)||45;
+            const sem=document.getElementById('grupoSdASemanas').value||'4';
+            const fi=document.getElementById('grupoSdAFechaIni').value;
+            const ff=document.getElementById('grupoSdAFechaFin').value;
+            const tit=document.getElementById('grupoSdATitulo').value.trim()||'SdA Grupo PT';
+            const tem=document.getElementById('grupoSdATematica').value.trim();
+            const preg=document.getElementById('grupoSdAPregunta').value.trim();
+            const plan=document.getElementById('grupoSdAPlanes').value.trim();
+            const efem=document.getElementById('grupoSdAEfemerides').value.trim();
+            const transv=document.getElementById('grupoSdATransv').value.trim();
+            const ncc=document.getElementById('grupoSdANCC').value.trim();
+            const areas=[...document.querySelectorAll('#grupoSdAAreasChips .area-chip.active')].map(c=>c.textContent.trim()).join(', ')||'A determinar';
+            const met=[...document.querySelectorAll('#grupoSdAMetodos .area-chip.active')].map(c=>c.textContent.trim()).join(', ')||'Aprendizaje Cooperativo';
+            const her=[...document.querySelectorAll('#grupoSdAHerramientas .area-chip.active')].map(c=>c.textContent.trim()).join(', ')||'A criterio PT';
+            const dua=[...document.querySelectorAll('#grupoSdADUA input:checked')].map(c=>c.value).join(' | ')||'(ninguno)';
+            const med=[...document.querySelectorAll('#grupoSdAMedidas input:checked')].map(c=>c.value).join(' | ')||'Apoyo PT';
+            const crM=document.getElementById('grupoSdACritsManual').value.trim();
+            const sabM=document.getElementById('grupoSdASabManual').value.trim();
+            const ag=Object.values(g.alumnos||{}).filter(id=>alumnos[id]);
+            if(!ag.length){toast('El grupo no tiene alumnos','error');return;}
+            const dias=(g.diasSesion||[1,3]).map(d=>({0:'Lunes',1:'Martes',2:'Miércoles',3:'Jueves',4:'Viernes'})[d]||d).join(', ');
+            const crSel=[...document.querySelectorAll('#grupoSdACriteriosLista input:checked')];
+            let crT=crSel.map(cb=>'  - ['+cb.value+'] '+cb.getAttribute('data-texto')).join('\n');
+            if(crM)crT+='\n  '+crM;if(!crT)crT='  (añade criterios en pestaña 3)';
+            const sabSel=[...document.querySelectorAll('#grupoSdASaberesLista input:checked')];
+            let sabT=sabSel.map(cb=>'  - '+cb.getAttribute('data-texto')).join('\n');
+            if(sabM)sabT+='\n  '+sabM;if(!sabT)sabT='  (añade saberes en pestaña 4)';
+            let perfiles='';
+            ag.forEach(id=>{
+                const a=alumnos[id],nee=a.diagnostico||a.deficit||a.neae||'No especificado';
+                const ni=(document.getElementById('sda_ncc_'+id)||{value:''}).value.trim();
+                const oi=(document.getElementById('sda_obj_'+id)||{value:''}).value.trim();
+                let objP=[];
+                if(a.programas)Object.values(a.programas).forEach(p=>(p.objetivos||[]).filter(o=>o.trimestre===trim).forEach(o=>objP.push('O'+o.numero+': '+o.descripcion+(o.indicadores&&o.indicadores.length?' ['+o.indicadores.slice(0,3).join('; ')+']':''))));
+                perfiles+='\n  '+a.siglas+' ('+a.curso+') — NEE: '+nee+'\n';
+                if(ni)perfiles+='    NCC: '+ni+'\n';
+                if(oi)perfiles+='    Objetivo SdA: '+oi+'\n';
+                if(objP.length)perfiles+='    Objetivos T'+trim+': '+objP.slice(0,4).join(' | ')+'\n';
+            });
+            let acts='';
+            for(let i=1;i<=ses;i++){
+                const nv=i===1?'Accesible (máximo andamiaje)':i===ses?'Avanzado / Transferencia':i<=Math.ceil(ses/2)?'Intermedio-bajo':'Intermedio-alto';
+                const i1=Math.round(dur*.15),d1=Math.round(dur*.65),c1=Math.round(dur*.20);
+                acts+='\n▸ ACTIVIDAD '+i+' — SESIÓN '+i+': [TÍTULO CREATIVO]\n  Nivel: '+nv+' | Áreas: '+areas+'\n\n  a) Descripción: "[nombre]: [descripción en una línea]"\n     Criterios: [códigos]\n\n  b) Desarrollo ('+dur+' min):\n     • Inicio ('+i1+' min): activación, motivación, presentación del reto\n     • Desarrollo ('+d1+' min): tarea — CADA ALUMNO en su nivel\n     • Cierre ('+c1+' min): síntesis, puesta en común'+(i===ses?'\n     • Producto final del grupo':'')+'\n\n  c) ADAPTACIÓN INDIVIDUAL (OBLIGATORIO):\n'+ag.map(id=>'     · '+alumnos[id].siglas+' ('+alumnos[id].curso+'): [qué hace, con qué apoyo, con qué material]').join('\n')+'\n\n  d) Criterios de evaluación:\n     Criterio común: [código Orden 30/05/2023] — [descripción]\n     Cómo se evidencia: [explicación]\n\n  e) Evaluación PT:\n     | Alumno | Indicadores | C | P | NC | Observación |\n     |--------|-------------|---|---|----|-------------|\n'+ag.map(id=>'     | '+alumnos[id].siglas+' | [indicadores] | | | | |').join('\n')+'\n\n  f) DUA:\n     Pauta: [número y nombre — rota cada sesión, no repitas]\n     Estrategia: [qué hace el PT en ESTA sesión]\n     Herramienta: [recurso que materializa la estrategia]\n\n  g) Materiales: comunes: [lista] | '+ag.map(id=>alumnos[id].siglas+': [específico]').join(' | ')+'\n\n  h) Observaciones PT: [incidencias, ritmo, ajustes]\n';
+            }
+            let fechaS=sem+' semanas';
+            if(fi&&ff){try{const a=new Date(fi+'T12:00:00').toLocaleDateString('es-ES',{day:'numeric',month:'long',year:'numeric'}),b=new Date(ff+'T12:00:00').toLocaleDateString('es-ES',{day:'numeric',month:'long',year:'numeric'});fechaS='Del '+a+' al '+b+' ('+sem+' semanas)';}catch(e){}}
+            const prompt='# SdA GRUPAL — AULA PT\n# Orden 30/05/2023 · LOMLOE · Decreto 101/2023\n\n'+
+'═══════════════════════════════════════════════════════════\nROL Y MARCO NORMATIVO\n═══════════════════════════════════════════════════════════\n\n'+
+'Actúas como especialista en PT, experto en SdA para grupos pequeños en aula de apoyo, con dominio del currículo LOMLOE andaluz.\n'+
+'Normativa: LOMLOE (3/2022) · Orden 30/05/2023 · Decreto 101/2023 · RD 157/2022\n\n'+
+'⚠️ 7 apartados oficiales. Formato "1 — IDENTIFICACIÓN" (nunca "BLOQUE N").\n'+
+'⚠️ Apartado c) con adaptación individual OBLIGATORIA de CADA alumno en CADA sesión.\n\n'+
+'═══════════════════════════════════════════════════════════\nDATOS\n═══════════════════════════════════════════════════════════\n\n'+
+'  Tipo: '+tipoL+' | Grupo: '+g.nombre+' | SdA Nº: '+document.getElementById('grupoSdANum').value+' | T'+trim+'\n'+
+'  Alumnos: '+ag.map(id=>alumnos[id].siglas+' ('+alumnos[id].curso+')').join(', ')+'\n'+
+'  Días: '+dias+' | '+fechaS+'\n'+
+'  Sesiones: '+ses+' × '+dur+' min = '+(ses*dur)+' min totales\n'+
+'  Áreas: '+areas+'  |  Título: "'+tit+'"\n'+
+(tem?'  Temática: '+tem+'\n':'')+(ncc?'  NCC del grupo: '+ncc+'\n':'')+
+'  Metodologías: '+met+'  |  Herramientas: '+her+'\n\n'+
+'═══════════════════════════════════════════════════════════\nSABERES BÁSICOS\n═══════════════════════════════════════════════════════════\n'+sabT+'\n\n'+
+'═══════════════════════════════════════════════════════════\nCRITERIOS DE EVALUACIÓN (Orden 30/05/2023)\n═══════════════════════════════════════════════════════════\n'+crT+'\n\n'+
+'═══════════════════════════════════════════════════════════\nPERFILES INDIVIDUALES\n═══════════════════════════════════════════════════════════\n'+perfiles+'\n'+
+'═══════════════════════════════════════════════════════════\nATENCIÓN A LA DIVERSIDAD\n═══════════════════════════════════════════════════════════\n'+
+'  DUA: '+dua+'\n  Medidas PT: '+med+'\n  ⚠️ Integrar en cada bloque y actividad\n\n'+
+'━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n1 — IDENTIFICACIÓN Y LOCALIZACIÓN DE UN CENTRO DE INTERÉS\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'+
+'• Grupo PT: '+g.nombre+' | Alumnos: '+ag.map(id=>alumnos[id].siglas).join(', ')+'\n'+
+'• Temporalización: '+fechaS+' | '+ses+' sesiones × '+dur+' min | Días: '+dias+'\n'+
+'• Título: "'+tit+'"'+(tem?'\n• Temática: '+tem:'')+'\n'+(plan?'• Planes: '+plan+'\n':'')+
+'\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n2 — JUSTIFICACIÓN Y CONTEXTO DE APLICACIÓN\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'+
+'2.1 Agrupación: NCC similar ('+( ncc||'a concretar')+'), objetivos afines T'+trim+'.\n'+
+'2.2 Conexión con programas individuales:\n'+ag.map(id=>'    · '+alumnos[id].siglas+': [cómo conecta su programa con esta SdA]').join('\n')+'\n'+
+'2.3 Principios pedagógicos PT: aprendizaje multisensorial, andamiaje graduado, motivación intrínseca.\n'+
+'2.4 Pregunta motriz: "'+( preg||'(propón una adecuada al nivel y centro de interés)')+'"'+(transv?'\n2.5 Transversalidad: '+transv:'')+(efem?'\n2.6 Efemérides: '+efem:'')+'\n'+
+'\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n3 — DESCRIPCIÓN DEL PRODUCTO FINAL ('+tipoL+')\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'+
+'Producto grupal accesible para todos los niveles, con aportación visible de cada alumno.\n'+
+'• Fase inicial (S1-'+Math.ceil(ses/3)+'): [producto parcial]\n• Fase desarrollo (S'+(Math.ceil(ses/3)+1)+'-'+Math.ceil(ses*2/3)+'): [producto parcial]\n• Producto final (S'+ses+'): [presentación o entrega grupal]\n'+
+'\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n4 — CONCRECIÓN CURRICULAR\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'+
+'4.1 Objetivos comunes ('+ses+' objetivos, uno por sesión, verbos observables)\n'+
+'4.2 Objetivos individuales:\n'+ag.map(id=>'    · '+alumnos[id].siglas+': [adaptado a su NCC y programa]').join('\n')+'\n'+
+'4.3 Criterios:\n'+crT+'\n4.4 Saberes:\n'+sabT+'\n4.5 Transversalidad: '+(transv||'inclusión, autonomía, cooperación, igualdad')+'\n'+
+'\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n5 — SECUENCIA DIDÁCTICA ('+ses+' SESIONES)\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n'+
+'Fases: MOTIVACIÓN (S1) → ACTIVACIÓN (S2) → DESARROLLO (S3-'+Math.max(3,ses-1)+') → CONSOLIDACIÓN (S'+ses+')\n\nGENERA EXACTAMENTE '+ses+' ACTIVIDADES:\n'+acts+'\n'+
+'━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n6 — MEDIDAS DE ATENCIÓN A LA DIVERSIDAD\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'+
+'6.1 El propio grupo PT es la medida (ratio reducida, especialista, objetivos individualizados).\n'+
+'6.2 DUA: '+dua+'\n    → Apartado f) de cada sesión: PAUTA + ESTRATEGIA CONCRETA + HERRAMIENTA (rota)\n'+
+'6.3 Medidas generales: '+med+'\n'+
+'6.4 NEE/NEAE individual:\n'+ag.map(id=>{const a=alumnos[id],nee=a.diagnostico||a.deficit||a.neae||'a esp.';return '    · '+a.siglas+' ['+nee+']: [medida concreta, sin modificar criterios]';}).join('\n')+'\n'+
+'\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n7 — VALORACIÓN DE LO APRENDIDO\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'+
+'7.1 Instrumentos: observación sistemática, lista de cotejo individual, registro anecdótico, producto final.\n'+
+'7.2 Tabla por criterio:\n    | Alumno | Criterio | C | P | NC | Observación |\n    |--------|----------|---|---|----|-------------|\n'+ag.map(id=>'    | '+alumnos[id].siglas+' ('+alumnos[id].curso+') | [criterio] | | | | |').join('\n')+'\n    C=Conseguido / P=En proceso / NC=No conseguido\n'+
+'7.3 Desempeño esperado:\n'+ag.map(id=>'    · '+alumnos[id].siglas+': [qué sabrá hacer al finalizar]').join('\n')+'\n'+
+'7.4 Evaluación docente PT: autoevaluación + registro coordinación tutores.\n\n'+
+'═══════════════════════════════════════════════════════════\nFORMATO DE ENTREGA\n═══════════════════════════════════════════════════════════\n'+
+'✅ 7 apartados "N — TÍTULO" (sin "BLOQUE") | ✅ '+ses+' actividades con a-h completos\n'+
+'✅ Adaptación individual CADA alumno CADA sesión (apartado c)\n'+
+'✅ DUA 3 capas en apartado f) | ✅ Tabla evaluación en apartado e)\n'+
+'✅ Lenguaje PT profesional, directo, aplicable en aula de apoyo';
+            document.getElementById('grupoSdAPrompt').textContent=prompt;
+            const tp=document.querySelector('.sda-tab[data-tab="sdaPrev"]');if(tp)sdaGrupoTab(tp);
+            toast('Prompt SdA generado ✓','success');
+        }
+        function grupoSdACopiarPrompt(){
+            grupoSdAGenerarPrompt();
+            const txt=document.getElementById('grupoSdAPrompt').textContent;
+            if(txt.startsWith('Rellena')){toast('Primero genera el prompt','error');return;}
+            navigator.clipboard.writeText(txt).then(()=>toast('Prompt copiado 📋','success')).catch(()=>{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);toast('Prompt copiado 📋','success');});
+        }
+        function grupoSdAAbrirIA(){grupoSdACopiarPrompt();setTimeout(()=>window.open('https://claude.ai','_blank'),400);}
+
     </script>
     <!-- MODAL GEU -->
     <div class="modal-overlay" id="modalGEU">
@@ -7144,6 +7375,138 @@ Genera ahora un resumen por cada alumno en el formato indicado. No añadas nada 
                 <button class="btn btn-secondary btn-sm" onclick="grupoIAGenerarPrompt()">👁️ Generar</button>
                 <button class="btn btn-primary" onclick="grupoIACopiarPrompt()">📋 Copiar</button>
                 <button class="btn btn-ai btn-sm" onclick="grupoIAAbrir()">🤖 Abrir Gemini</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL SDA GRUPAL PT -->
+    <div class="modal-overlay" id="modalGrupoSdA">
+        <div class="modal" style="max-width:760px;max-height:92vh;display:flex;flex-direction:column">
+            <div class="modal-header" style="flex-shrink:0">
+                <div><h3 class="modal-title" id="modalGrupoSdATitulo">🎓 SdA Grupal PT</h3>
+                <div id="grupoSdAResumen" style="font-size:.75rem;color:var(--text-light);margin-top:2px"></div></div>
+                <button class="modal-close" onclick="cerrarModal('modalGrupoSdA')">×</button>
+            </div>
+            <div style="display:flex;gap:3px;padding:8px 16px 0;background:var(--bg-card);flex-shrink:0;overflow-x:auto;scrollbar-width:none">
+                <button class="sda-tab active" data-tab="sdaCtx" onclick="sdaGrupoTab(this)">1 Contexto</button>
+                <button class="sda-tab" data-tab="sdaTit" onclick="sdaGrupoTab(this)">2 Título</button>
+                <button class="sda-tab" data-tab="sdaCrit" onclick="sdaGrupoTab(this)">3 Criterios</button>
+                <button class="sda-tab" data-tab="sdaSab" onclick="sdaGrupoTab(this)">4 Saberes</button>
+                <button class="sda-tab" data-tab="sdaDiv" onclick="sdaGrupoTab(this)">5 Diversidad</button>
+                <button class="sda-tab" data-tab="sdaAlu" onclick="sdaGrupoTab(this)">6 Alumnos</button>
+                <button class="sda-tab" data-tab="sdaPrev" onclick="sdaGrupoTab(this)">7 Prompt</button>
+            </div>
+            <div class="modal-body" style="flex:1;overflow-y:auto;padding:16px">
+                <div class="sda-tab-content active" id="sdaCtx">
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px">
+                        <div class="form-group" style="margin:0"><label class="form-label">Trimestre *</label>
+                            <select class="form-select" id="grupoSdATrim"><option value="1">1º Trimestre</option><option value="2">2º Trimestre</option><option value="3">3º Trimestre</option></select></div>
+                        <div class="form-group" style="margin:0"><label class="form-label">Nº SdA</label>
+                            <input type="number" class="form-input" id="grupoSdANum" value="1" min="1" max="30"></div>
+                        <div class="form-group" style="margin:0"><label class="form-label">Tipo SdA *</label>
+                            <select class="form-select" id="grupoSdATipo"><option value="producto">🎨 Producto</option><option value="desempeno">🎭 Desempeño</option><option value="indagacion">🔍 Indagación</option><option value="resolucion">🧩 Resolución</option></select></div>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+                        <div class="form-group" style="margin:0"><label class="form-label">📅 Fecha inicio</label><input type="date" class="form-input" id="grupoSdAFechaIni" onchange="grupoSdACalcSemanas()"></div>
+                        <div class="form-group" style="margin:0"><label class="form-label">📅 Fecha fin</label><input type="date" class="form-input" id="grupoSdAFechaFin" onchange="grupoSdACalcSemanas()"></div>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px">
+                        <div class="form-group" style="margin:0"><label class="form-label">Semanas <span style="color:var(--primary);font-size:.7rem">(auto)</span></label><input type="number" class="form-input" id="grupoSdASemanas" value="4" readonly style="background:#f1f5f9"></div>
+                        <div class="form-group" style="margin:0"><label class="form-label">Nº sesiones *</label><input type="number" class="form-input" id="grupoSdASesiones" value="6" min="2" max="20"></div>
+                        <div class="form-group" style="margin:0"><label class="form-label">Duración (min) *</label><input type="number" class="form-input" id="grupoSdADuracion" value="45" min="20" max="90" step="5"></div>
+                    </div>
+                    <div class="form-group" style="margin-bottom:12px"><label class="form-label">Áreas *</label>
+                        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px" id="grupoSdAAreasChips">
+                            <span class="area-chip active" onclick="this.classList.toggle('active')">📖 Lengua</span>
+                            <span class="area-chip" onclick="this.classList.toggle('active')">🔢 Matemáticas</span>
+                            <span class="area-chip" onclick="this.classList.toggle('active')">🗣️ Comunicativo</span>
+                            <span class="area-chip" onclick="this.classList.toggle('active')">🧠 Cognitivo</span>
+                            <span class="area-chip" onclick="this.classList.toggle('active')">🤝 Social-Emocional</span>
+                            <span class="area-chip" onclick="this.classList.toggle('active')">🎒 Autonomía</span>
+                            <span class="area-chip" onclick="this.classList.toggle('active')">✏️ Lectoescritura</span>
+                            <span class="area-chip" onclick="this.classList.toggle('active')">🏃 Psicomotor</span>
+                        </div>
+                    </div>
+                    <div class="form-group"><label class="form-label">NCC del grupo</label>
+                        <input type="text" class="form-input" id="grupoSdANCC" placeholder="Ej: 1º-2º Primaria · lector inicial · sin automatización">
+                        <small style="font-size:.73rem;color:var(--text-light)">Nivel que justifica trabajar juntos en PT.</small></div>
+                </div>
+                <div class="sda-tab-content" id="sdaTit">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+                        <div class="form-group" style="margin:0"><label class="form-label">Título *</label><input type="text" class="form-input" id="grupoSdATitulo" placeholder="Ej: El mundo de las palabras"></div>
+                        <div class="form-group" style="margin:0"><label class="form-label">Temática / Centro de interés</label><input type="text" class="form-input" id="grupoSdATematica" placeholder="Ej: Los dinosaurios…"></div>
+                    </div>
+                    <div class="form-group" style="margin-bottom:12px"><label class="form-label">Pregunta motriz</label><input type="text" class="form-input" id="grupoSdAPregunta" placeholder="Ej: ¿Podríamos escribirle una carta a un dinosaurio?"></div>
+                    <div class="form-group" style="margin-bottom:12px"><label class="form-label">Planes y proyectos del centro</label><textarea class="form-textarea" id="grupoSdAPlanes" rows="2" placeholder="Plan de Igualdad, Plan de Biblioteca…"></textarea></div>
+                    <div class="form-group" style="margin-bottom:12px"><label class="form-label">Efemérides / Saberes eventuales</label><textarea class="form-textarea" id="grupoSdAEfemerides" rows="2" placeholder="Día del Libro (23 abril)…"></textarea></div>
+                    <div class="form-group"><label class="form-label">Transversalidad</label><input type="text" class="form-input" id="grupoSdATransv" placeholder="Igualdad de género, sostenibilidad…"></div>
+                </div>
+                <div class="sda-tab-content" id="sdaCrit">
+                    <div style="background:#fffbeb;border:1px solid #f59e0b;border-radius:8px;padding:10px;margin-bottom:12px;font-size:.78rem;color:#78350f">💡 Criterios de los programas PT del grupo para el trimestre. Selecciona los que trabajará esta SdA.</div>
+                    <div id="grupoSdACriteriosLista" style="display:flex;flex-direction:column;gap:6px;max-height:300px;overflow-y:auto"></div>
+                    <div class="form-group" style="margin-top:10px"><label class="form-label">Criterios adicionales (manual)</label><textarea class="form-textarea" id="grupoSdACritsManual" rows="2" placeholder="Añade criterios de la Orden 30/05/2023…"></textarea></div>
+                </div>
+                <div class="sda-tab-content" id="sdaSab">
+                    <div style="background:#f0fdf4;border:1px solid #22c55e;border-radius:8px;padding:10px;margin-bottom:12px;font-size:.78rem;color:#166534">💡 Indicadores vinculados a los criterios seleccionados.</div>
+                    <div id="grupoSdASaberesLista" style="display:flex;flex-direction:column;gap:6px;max-height:260px;overflow-y:auto"></div>
+                    <div class="form-group" style="margin-top:10px"><label class="form-label">Saberes adicionales (manual)</label><textarea class="form-textarea" id="grupoSdASabManual" rows="2" placeholder="Añade saberes básicos de la Orden 30/05/2023…"></textarea></div>
+                </div>
+                <div class="sda-tab-content" id="sdaDiv">
+                    <div class="form-group" style="margin-bottom:12px"><label class="form-label">Metodologías activas</label>
+                        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px" id="grupoSdAMetodos">
+                            <span class="area-chip active" onclick="this.classList.toggle('active')">Aprendizaje Cooperativo</span>
+                            <span class="area-chip" onclick="this.classList.toggle('active')">ABP</span>
+                            <span class="area-chip" onclick="this.classList.toggle('active')">Gamificación</span>
+                            <span class="area-chip active" onclick="this.classList.toggle('active')">Multisensorial</span>
+                            <span class="area-chip" onclick="this.classList.toggle('active')">Tutoría entre iguales</span>
+                            <span class="area-chip" onclick="this.classList.toggle('active')">Rincones de trabajo</span>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-bottom:12px"><label class="form-label">Herramientas digitales</label>
+                        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px" id="grupoSdAHerramientas">
+                            <span class="area-chip" onclick="this.classList.toggle('active')">Canva</span>
+                            <span class="area-chip" onclick="this.classList.toggle('active')">Genially</span>
+                            <span class="area-chip" onclick="this.classList.toggle('active')">Book Creator</span>
+                            <span class="area-chip" onclick="this.classList.toggle('active')">Padlet</span>
+                            <span class="area-chip" onclick="this.classList.toggle('active')">Kahoot</span>
+                            <span class="area-chip" onclick="this.classList.toggle('active')">Google Forms</span>
+                            <span class="area-chip" onclick="this.classList.toggle('active')">Pictogramas ARASAAC</span>
+                            <span class="area-chip" onclick="this.classList.toggle('active')">IA generativa</span>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-bottom:12px"><label class="form-label">Principios DUA</label>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:4px;font-size:.78rem" id="grupoSdADUA">
+                            <label style="display:flex;align-items:flex-start;gap:5px;padding:5px 7px;background:var(--bg);border-radius:6px;cursor:pointer"><input type="checkbox" value="2.1 Uso del lenguaje y símbolos" checked> 2.1 Uso del lenguaje y símbolos</label>
+                            <label style="display:flex;align-items:flex-start;gap:5px;padding:5px 7px;background:var(--bg);border-radius:6px;cursor:pointer"><input type="checkbox" value="3.1 Activar conocimientos previos"> 3.1 Activar conocimientos previos</label>
+                            <label style="display:flex;align-items:flex-start;gap:5px;padding:5px 7px;background:var(--bg);border-radius:6px;cursor:pointer"><input type="checkbox" value="4.1 Variedad en métodos de respuesta" checked> 4.1 Variedad en métodos de respuesta</label>
+                            <label style="display:flex;align-items:flex-start;gap:5px;padding:5px 7px;background:var(--bg);border-radius:6px;cursor:pointer"><input type="checkbox" value="7.2 Relevancia y autenticidad" checked> 7.2 Relevancia y autenticidad</label>
+                            <label style="display:flex;align-items:flex-start;gap:5px;padding:5px 7px;background:var(--bg);border-radius:6px;cursor:pointer"><input type="checkbox" value="8.3 Fomentar la colaboración" checked> 8.3 Fomentar la colaboración</label>
+                            <label style="display:flex;align-items:flex-start;gap:5px;padding:5px 7px;background:var(--bg);border-radius:6px;cursor:pointer"><input type="checkbox" value="9.3 Desarrollar la autoevaluación"> 9.3 Desarrollar la autoevaluación</label>
+                        </div>
+                    </div>
+                    <div class="form-group"><label class="form-label">Medidas generales PT</label>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:4px;font-size:.78rem" id="grupoSdAMedidas">
+                            <label style="display:flex;align-items:flex-start;gap:5px;padding:5px 7px;background:var(--bg);border-radius:6px;cursor:pointer"><input type="checkbox" value="Apoyo PT especializado (ratio reducida)" checked> Apoyo PT (ratio reducida)</label>
+                            <label style="display:flex;align-items:flex-start;gap:5px;padding:5px 7px;background:var(--bg);border-radius:6px;cursor:pointer"><input type="checkbox" value="Acción tutorial personalizada" checked> Acción tutorial personalizada</label>
+                            <label style="display:flex;align-items:flex-start;gap:5px;padding:5px 7px;background:var(--bg);border-radius:6px;cursor:pointer"><input type="checkbox" value="Materiales adaptados al NCC"> Materiales adaptados al NCC</label>
+                            <label style="display:flex;align-items:flex-start;gap:5px;padding:5px 7px;background:var(--bg);border-radius:6px;cursor:pointer"><input type="checkbox" value="Metodologías colaborativas PT" checked> Metodologías colaborativas PT</label>
+                            <label style="display:flex;align-items:flex-start;gap:5px;padding:5px 7px;background:var(--bg);border-radius:6px;cursor:pointer"><input type="checkbox" value="Coordinación con tutores y familias"> Coordinación tutores y familias</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="sda-tab-content" id="sdaAlu">
+                    <div style="font-size:.78rem;color:var(--text-light);margin-bottom:10px">NCC individual y objetivo principal de cada alumno para esta SdA.</div>
+                    <div id="grupoSdAAlumnosTabla" style="display:flex;flex-direction:column;gap:10px"></div>
+                </div>
+                <div class="sda-tab-content" id="sdaPrev">
+                    <div id="grupoSdAPrompt" style="background:#1e293b;color:#e2e8f0;border-radius:8px;padding:12px;max-height:400px;overflow-y:auto;font-size:.72rem;font-family:monospace;white-space:pre-wrap;line-height:1.5">Rellena las pestañas y pulsa "Generar prompt"…</div>
+                </div>
+            </div>
+            <div class="modal-footer" style="gap:8px;flex-wrap:wrap;flex-shrink:0">
+                <button class="btn btn-secondary" onclick="cerrarModal('modalGrupoSdA')">Cerrar</button>
+                <button class="btn btn-secondary btn-sm" onclick="sdaGrupoTab(document.querySelector('.sda-tab[data-tab=sdaPrev]'));grupoSdAGenerarPrompt()">👁️ Generar prompt</button>
+                <button class="btn btn-primary" onclick="grupoSdACopiarPrompt()">📋 Copiar para IA</button>
+                <button class="btn btn-ai btn-sm" onclick="grupoSdAAbrirIA()">🤖 Abrir Claude</button>
             </div>
         </div>
     </div>
