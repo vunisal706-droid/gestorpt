@@ -801,6 +801,50 @@
     </div>
 
         <!-- MODALES -->
+    <!-- MODAL EDITAR ALUMNO -->
+    <div class="modal-overlay" id="modalEditarAlumno">
+        <div class="modal" style="max-width:420px">
+            <div class="modal-header">
+                <h3 class="modal-title">✏️ Editar alumno</h3>
+                <button class="modal-close" onclick="cerrarModal('modalEditarAlumno')">×</button>
+            </div>
+            <div class="modal-body" style="padding:16px">
+                <div class="form-group">
+                    <label class="form-label">Siglas *</label>
+                    <input type="text" class="form-input" id="editSiglas" placeholder="M.G.L." maxlength="10">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Curso *</label>
+                    <select class="form-select" id="editCurso">
+                        <option value="infantil">Infantil 3 años</option>
+                        <option value="infantil">Infantil 4 años</option>
+                        <option value="infantil">Infantil 5 años</option>
+                        <option value="ciclo1">1º Primaria</option>
+                        <option value="ciclo1">2º Primaria</option>
+                        <option value="ciclo2">3º Primaria</option>
+                        <option value="ciclo2">4º Primaria</option>
+                        <option value="ciclo3">5º Primaria</option>
+                        <option value="ciclo3">6º Primaria</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Días de sesión PT</label>
+                    <div class="dias-btns" id="editDiasBtns">
+                        <button class="dia-btn" data-dia="0" onclick="toggleDiaEdit(0)">L</button>
+                        <button class="dia-btn" data-dia="1" onclick="toggleDiaEdit(1)">M</button>
+                        <button class="dia-btn" data-dia="2" onclick="toggleDiaEdit(2)">X</button>
+                        <button class="dia-btn" data-dia="3" onclick="toggleDiaEdit(3)">J</button>
+                        <button class="dia-btn" data-dia="4" onclick="toggleDiaEdit(4)">V</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="cerrarModal('modalEditarAlumno')">Cancelar</button>
+                <button class="btn btn-primary" onclick="guardarEdicionAlumno()">💾 Guardar</button>
+            </div>
+        </div>
+    </div>
+
     <div class="modal-overlay" id="modalNuevo">
         <div class="modal">
             <div class="modal-header"><h3 class="modal-title">➕ Nuevo Alumno</h3><button class="modal-close" onclick="cerrarModal('modalNuevo')">×</button></div>
@@ -970,21 +1014,21 @@
         // PLANTILLAS BASE - 12 plantillas completas
         const PLANTILLAS_BASE = [
             {nombre:'Desarrollo Cognitivo',ciclo:'infantil',tipo:'cognitivo',objetivos:[
-                {numero:1,descripcion:'Mejorar atención sostenida',trimestre:1,criterio:'DE.2.1',indicadores:['Mantiene atención 3 min','Sigue con mirada objetos','Permanece sentado en actividad','Atiende a cuentos breves']},
-                {numero:2,descripcion:'Desarrollar atención selectiva',trimestre:1,criterio:'DE.2.1',indicadores:['Discrimina figura-fondo','Localiza objetos en imágenes','Identifica sonidos del entorno','Selecciona objetos por color']},
-                {numero:3,descripcion:'Mejorar memoria visual',trimestre:1,criterio:'DE.1.1',indicadores:['Recuerda 2-3 imágenes','Encuentra objeto escondido','Empareja imágenes iguales','Completa puzzles 4-6 piezas']},
-                {numero:4,descripcion:'Desarrollar memoria auditiva',trimestre:1,criterio:'CR.2.2',indicadores:['Repite secuencia 2 sonidos','Sigue instrucciones 1 paso','Recuerda nombres compañeros','Reproduce ritmos sencillos']},
-                {numero:5,descripcion:'Mejorar percepción visual',trimestre:1,criterio:'DE.1.1',indicadores:['Discrimina colores básicos','Reconoce formas geométricas','Identifica grande-pequeño','Completa series 2 elementos']},
-                {numero:6,descripcion:'Desarrollar razonamiento básico',trimestre:2,criterio:'DE.1.3',indicadores:['Clasifica por un atributo','Agrupa objetos iguales','Identifica diferente en grupo','Ordena por tamaño 3 objetos']},
-                {numero:7,descripcion:'Mejorar orientación espacial',trimestre:2,criterio:'DE.1.2',indicadores:['Identifica arriba-abajo','Reconoce dentro-fuera','Sitúa delante-detrás','Sigue caminos sencillos']},
-                {numero:8,descripcion:'Desarrollar orientación temporal',trimestre:2,criterio:'DE.1.2',indicadores:['Diferencia día-noche','Conoce rutinas diarias','Ordena secuencia 2 imágenes','Identifica antes-después']},
-                {numero:9,descripcion:'Ampliar atención conjunta',trimestre:2,criterio:'CR.2.2',indicadores:['Señala objeto de interés','Comparte atención con adulto','Mira donde señala otro','Responde a su nombre']},
-                {numero:10,descripcion:'Mejorar funciones ejecutivas',trimestre:2,criterio:'CA.1.3',indicadores:['Espera turno con apoyo','Inhibe respuesta ante STOP','Cambia actividad sin rabieta','Sigue rutina 2 pasos']},
-                {numero:11,descripcion:'Desarrollar pensamiento simbólico',trimestre:3,criterio:'DE.2.1',indicadores:['Juega a ser otro personaje','Usa objeto como si fuera otro','Imita acciones cotidianas','Representa con plastilina']},
-                {numero:12,descripcion:'Mejorar resolución problemas',trimestre:3,criterio:'DE.1.3',indicadores:['Busca objeto no visible','Usa herramienta para alcanzar','Pide ayuda cuando necesita','Intenta varias soluciones']},
-                {numero:13,descripcion:'Ampliar conocimiento entorno',trimestre:3,criterio:'DE.3.1',indicadores:['Nombra animales comunes','Identifica alimentos básicos','Reconoce transportes','Conoce partes del cuerpo']},
-                {numero:14,descripcion:'Desarrollar creatividad',trimestre:3,criterio:'CR.3.2',indicadores:['Garabatea con intención','Construye con bloques','Experimenta con materiales','Propone juegos nuevos']},
-                {numero:15,descripcion:'Generalizar aprendizajes',trimestre:3,criterio:'CA.1.3',indicadores:['Aplica en otros contextos','Transfiere a casa','Recuerda tras vacaciones','Muestra progreso acumulado']}
+                {numero:1,descripcion:'Mejorar atención sostenida',trimestre:1,criterio:'CPSAA.1',indicadores:['Mantiene atención 3 min','Sigue con mirada objetos','Permanece sentado en actividad','Atiende a cuentos breves']},
+                {numero:2,descripcion:'Desarrollar atención selectiva',trimestre:1,criterio:'CPSAA.1',indicadores:['Discrimina figura-fondo','Localiza objetos en imágenes','Identifica sonidos del entorno','Selecciona objetos por color']},
+                {numero:3,descripcion:'Mejorar memoria visual',trimestre:1,criterio:'CPSAA.4',indicadores:['Recuerda 2-3 imágenes','Encuentra objeto escondido','Empareja imágenes iguales','Completa puzzles 4-6 piezas']},
+                {numero:4,descripcion:'Desarrollar memoria auditiva',trimestre:1,criterio:'CCL.2',indicadores:['Repite secuencia 2 sonidos','Sigue instrucciones 1 paso','Recuerda nombres compañeros','Reproduce ritmos sencillos']},
+                {numero:5,descripcion:'Mejorar percepción visual',trimestre:1,criterio:'CPSAA.4',indicadores:['Discrimina colores básicos','Reconoce formas geométricas','Identifica grande-pequeño','Completa series 2 elementos']},
+                {numero:6,descripcion:'Desarrollar razonamiento básico',trimestre:2,criterio:'CPSAA.4',indicadores:['Clasifica por un atributo','Agrupa objetos iguales','Identifica diferente en grupo','Ordena por tamaño 3 objetos']},
+                {numero:7,descripcion:'Mejorar orientación espacial',trimestre:2,criterio:'STEM.4',indicadores:['Identifica arriba-abajo','Reconoce dentro-fuera','Sitúa delante-detrás','Sigue caminos sencillos']},
+                {numero:8,descripcion:'Desarrollar orientación temporal',trimestre:2,criterio:'STEM.4',indicadores:['Diferencia día-noche','Conoce rutinas diarias','Ordena secuencia 2 imágenes','Identifica antes-después']},
+                {numero:9,descripcion:'Ampliar atención conjunta',trimestre:2,criterio:'CCL.2',indicadores:['Señala objeto de interés','Comparte atención con adulto','Mira donde señala otro','Responde a su nombre']},
+                {numero:10,descripcion:'Mejorar funciones ejecutivas',trimestre:2,criterio:'CPSAA.2',indicadores:['Espera turno con apoyo','Inhibe respuesta ante STOP','Cambia actividad sin rabieta','Sigue rutina 2 pasos']},
+                {numero:11,descripcion:'Desarrollar pensamiento simbólico',trimestre:3,criterio:'CPSAA.1',indicadores:['Juega a ser otro personaje','Usa objeto como si fuera otro','Imita acciones cotidianas','Representa con plastilina']},
+                {numero:12,descripcion:'Mejorar resolución problemas',trimestre:3,criterio:'CPSAA.4',indicadores:['Busca objeto no visible','Usa herramienta para alcanzar','Pide ayuda cuando necesita','Intenta varias soluciones']},
+                {numero:13,descripcion:'Ampliar conocimiento entorno',trimestre:3,criterio:'CPSAA.3',indicadores:['Nombra animales comunes','Identifica alimentos básicos','Reconoce transportes','Conoce partes del cuerpo']},
+                {numero:14,descripcion:'Desarrollar creatividad',trimestre:3,criterio:'CCL.5',indicadores:['Garabatea con intención','Construye con bloques','Experimenta con materiales','Propone juegos nuevos']},
+                {numero:15,descripcion:'Generalizar aprendizajes',trimestre:3,criterio:'CPSAA.2',indicadores:['Aplica en otros contextos','Transfiere a casa','Recuerda tras vacaciones','Muestra progreso acumulado']}
             ]},
             {nombre:'Desarrollo Cognitivo',ciclo:'ciclo1',tipo:'cognitivo',objetivos:[
                 {numero:1,descripcion:'Mejorar atención sostenida',trimestre:1,criterio:'MA.1.5.2',indicadores:['Mantiene atención 10 min','Finaliza tareas cortas','Trabaja sin distraerse','Sigue explicaciones grupales']},
@@ -1004,21 +1048,21 @@
                 {numero:15,descripcion:'Generalizar aprendizajes',trimestre:3,criterio:'MA.1.4.2',indicadores:['Aplica en otras áreas','Transfiere a casa','Mantiene logros','Muestra autonomía creciente']}
             ]},
             {nombre:'Desarrollo Social-Emocional',ciclo:'infantil',tipo:'social',objetivos:[
-                {numero:1,descripcion:'Desarrollar conciencia emocional',trimestre:1,criterio:'CA.2.1',indicadores:['Identifica alegría','Reconoce tristeza','Expresa enfado básico','Identifica miedo']},
-                {numero:2,descripcion:'Reconocer emociones en otros',trimestre:1,criterio:'CA.2.2',indicadores:['Identifica caras alegres','Reconoce tristeza otros','Detecta enfado en otros','Responde a llanto']},
-                {numero:3,descripcion:'Mejorar regulación emocional',trimestre:1,criterio:'CA.2.1',indicadores:['Acepta consuelo adulto','Usa objeto de apego','Se calma con estrategias','Tolera pequeñas frustraciones']},
-                {numero:4,descripcion:'Desarrollar vínculo adultos',trimestre:1,criterio:'CA.4.1',indicadores:['Busca proximidad adulto','Acepta separación','Muestra preferencia figuras','Comparte con adulto']},
-                {numero:5,descripcion:'Iniciar relación iguales',trimestre:1,criterio:'CA.4.1',indicadores:['Muestra interés otros niños','Juega al lado de otros','Observa juego compañeros','Acepta presencia otros']},
-                {numero:6,descripcion:'Desarrollar juego social',trimestre:2,criterio:'CA.4.1',indicadores:['Participa juego paralelo','Comparte espacio juego','Imita compañeros','Inicia interacción simple']},
-                {numero:7,descripcion:'Mejorar comunicación social',trimestre:2,criterio:'CR.1.1',indicadores:['Saluda con apoyo','Se despide','Responde cuando llaman','Pide por favor']},
-                {numero:8,descripcion:'Desarrollar conductas prosociales',trimestre:2,criterio:'CA.4.2',indicadores:['Ayuda a recoger','Ofrece objeto a otro','Muestra preocupación','Consuela básico']},
-                {numero:9,descripcion:'Mejorar tolerancia frustración',trimestre:2,criterio:'CA.2.3',indicadores:['Espera turno apoyo visual','Acepta no ser primero','Tolera perder','Acepta límites adulto']},
-                {numero:10,descripcion:'Desarrollar autoconcepto',trimestre:2,criterio:'CA.1.1',indicadores:['Dice su nombre','Reconoce pertenencias','Muestra logros','Expresa preferencias']},
-                {numero:11,descripcion:'Ampliar juego cooperativo',trimestre:3,criterio:'CA.4.1',indicadores:['Participa con otros','Acepta propuestas','Sigue reglas simples','Comparte materiales']},
-                {numero:12,descripcion:'Mejorar resolución conflictos',trimestre:3,criterio:'CA.4.2',indicadores:['Pide ayuda ante conflicto','Acepta mediación','Usa palabras no pegar','Propone solución']},
-                {numero:13,descripcion:'Desarrollar empatía básica',trimestre:3,criterio:'CA.2.2',indicadores:['Preocupación otro triste','Ofrece ayuda espontánea','Adapta conducta','Celebra logros otros']},
-                {numero:14,descripcion:'Ampliar autonomía emocional',trimestre:3,criterio:'CA.2.1',indicadores:['Expresa emociones verbal','Pide lo que necesita','Acepta ayuda','Orgullo por logros']},
-                {numero:15,descripcion:'Generalizar habilidades',trimestre:3,criterio:'CA.4.1',indicadores:['Aplica en recreo','Conductas en casa','Interactúa adultos','Mantiene amistades']}
+                {numero:1,descripcion:'Desarrollar conciencia emocional',trimestre:1,criterio:'CPSAA.1',indicadores:['Identifica alegría','Reconoce tristeza','Expresa enfado básico','Identifica miedo']},
+                {numero:2,descripcion:'Reconocer emociones en otros',trimestre:1,criterio:'CC.2',indicadores:['Identifica caras alegres','Reconoce tristeza otros','Detecta enfado en otros','Responde a llanto']},
+                {numero:3,descripcion:'Mejorar regulación emocional',trimestre:1,criterio:'CPSAA.1',indicadores:['Acepta consuelo adulto','Usa objeto de apego','Se calma con estrategias','Tolera pequeñas frustraciones']},
+                {numero:4,descripcion:'Desarrollar vínculo adultos',trimestre:1,criterio:'CC.1',indicadores:['Busca proximidad adulto','Acepta separación','Muestra preferencia figuras','Comparte con adulto']},
+                {numero:5,descripcion:'Iniciar relación iguales',trimestre:1,criterio:'CC.1',indicadores:['Muestra interés otros niños','Juega al lado de otros','Observa juego compañeros','Acepta presencia otros']},
+                {numero:6,descripcion:'Desarrollar juego social',trimestre:2,criterio:'CC.1',indicadores:['Participa juego paralelo','Comparte espacio juego','Imita compañeros','Inicia interacción simple']},
+                {numero:7,descripcion:'Mejorar comunicación social',trimestre:2,criterio:'CCL.1',indicadores:['Saluda con apoyo','Se despide','Responde cuando llaman','Pide por favor']},
+                {numero:8,descripcion:'Desarrollar conductas prosociales',trimestre:2,criterio:'CC.4',indicadores:['Ayuda a recoger','Ofrece objeto a otro','Muestra preocupación','Consuela básico']},
+                {numero:9,descripcion:'Mejorar tolerancia frustración',trimestre:2,criterio:'CC.3',indicadores:['Espera turno apoyo visual','Acepta no ser primero','Tolera perder','Acepta límites adulto']},
+                {numero:10,descripcion:'Desarrollar autoconcepto',trimestre:2,criterio:'STEM.3',indicadores:['Dice su nombre','Reconoce pertenencias','Muestra logros','Expresa preferencias']},
+                {numero:11,descripcion:'Ampliar juego cooperativo',trimestre:3,criterio:'CC.1',indicadores:['Participa con otros','Acepta propuestas','Sigue reglas simples','Comparte materiales']},
+                {numero:12,descripcion:'Mejorar resolución conflictos',trimestre:3,criterio:'CC.4',indicadores:['Pide ayuda ante conflicto','Acepta mediación','Usa palabras no pegar','Propone solución']},
+                {numero:13,descripcion:'Desarrollar empatía básica',trimestre:3,criterio:'CC.2',indicadores:['Preocupación otro triste','Ofrece ayuda espontánea','Adapta conducta','Celebra logros otros']},
+                {numero:14,descripcion:'Ampliar autonomía emocional',trimestre:3,criterio:'CPSAA.1',indicadores:['Expresa emociones verbal','Pide lo que necesita','Acepta ayuda','Orgullo por logros']},
+                {numero:15,descripcion:'Generalizar habilidades',trimestre:3,criterio:'CC.1',indicadores:['Aplica en recreo','Conductas en casa','Interactúa adultos','Mantiene amistades']}
             ]},
             {nombre:'Desarrollo Social-Emocional',ciclo:'ciclo1',tipo:'social',objetivos:[
                 {numero:1,descripcion:'Ampliar vocabulario emocional',trimestre:1,criterio:'EF.01.09',indicadores:['Nombra emociones básicas','Describe situaciones','Usa palabras emocionales','Diferencia intensidad']},
@@ -1038,21 +1082,21 @@
                 {numero:15,descripcion:'Generalizar competencias',trimestre:3,criterio:'EF.01.13',indicadores:['Aplica en contextos','Mejora en casa','Relaciones positivas','Gestiona emociones']}
             ]},
             {nombre:'Desarrollo Comunicativo',ciclo:'infantil',tipo:'comunicativo',objetivos:[
-                {numero:1,descripcion:'Desarrollar intención comunicativa',trimestre:1,criterio:'CR.1.1',indicadores:['Usa gestos comunicar','Señala para pedir','Muestra objetos','Busca atención adulto']},
-                {numero:2,descripcion:'Ampliar comprensión verbal',trimestre:1,criterio:'CR.2.1',indicadores:['Comprende palabras familiares','Sigue órdenes simples','Identifica objetos','Responde sí/no']},
-                {numero:3,descripcion:'Mejorar expresión oral',trimestre:1,criterio:'CR.3.1',indicadores:['Emite vocalizaciones','Produce primeras palabras','Nombra objetos','Pide mediante palabra']},
-                {numero:4,descripcion:'Desarrollar vocabulario',trimestre:1,criterio:'CR.3.1',indicadores:['Comprende 50+ palabras','Produce 10+ palabras','Aprende nuevas','Usa nombres cercanos']},
-                {numero:5,descripcion:'Mejorar articulación',trimestre:1,criterio:'CR.3.1',indicadores:['Produce vocales','Articula consonantes iniciales','Produce sílabas directas','Inteligible cercanos']},
-                {numero:6,descripcion:'Ampliar estructura frases',trimestre:2,criterio:'CR.3.1',indicadores:['Combina dos palabras','Usa frase 3 elementos','Usa artículos','Incorpora verbos']},
-                {numero:7,descripcion:'Desarrollar comprensión oraciones',trimestre:2,criterio:'CR.2.1',indicadores:['Comprende órdenes 2 pasos','Entiende qué/quién','Sigue instrucciones','Comprende negaciones']},
-                {numero:8,descripcion:'Mejorar pragmática',trimestre:2,criterio:'CR.1.1',indicadores:['Saluda apropiadamente','Responde a saludos','Participa intercambios','Mantiene tema breve']},
-                {numero:9,descripcion:'Desarrollar narración',trimestre:2,criterio:'CR.3.1',indicadores:['Cuenta experiencias','Secuencia 2 eventos','Describe imágenes','Responde sobre cuentos']},
-                {numero:10,descripcion:'Ampliar comprensión cuentos',trimestre:2,criterio:'CR.2.1',indicadores:['Atiende cuentos cortos','Identifica personajes','Responde preguntas','Anticipa eventos']},
-                {numero:11,descripcion:'Mejorar conciencia fonológica',trimestre:3,criterio:'CR.3.1',indicadores:['Identifica rimas','Reconoce sonido inicial','Segmenta sílabas','Discrimina sonidos']},
-                {numero:12,descripcion:'Desarrollar lenguaje descriptivo',trimestre:3,criterio:'CR.3.1',indicadores:['Usa adjetivos básicos','Describe objetos','Compara tamaño/color','Describe acciones']},
-                {numero:13,descripcion:'Ampliar uso preguntas',trimestre:3,criterio:'CR.1.1',indicadores:['Hace preguntas qué','Pregunta dónde','Usa por qué','Responde abiertas']},
-                {numero:14,descripcion:'Mejorar discurso',trimestre:3,criterio:'CR.3.1',indicadores:['Narra inicio-fin','Usa conectores básicos','Mantiene coherencia','Adapta interlocutor']},
-                {numero:15,descripcion:'Preparar lectoescritura',trimestre:3,criterio:'CR.4.2',indicadores:['Reconoce nombre escrito','Identifica letras','Garabatea intención','Diferencia dibujo-escritura']}
+                {numero:1,descripcion:'Desarrollar intención comunicativa',trimestre:1,criterio:'CCL.1',indicadores:['Usa gestos comunicar','Señala para pedir','Muestra objetos','Busca atención adulto']},
+                {numero:2,descripcion:'Ampliar comprensión verbal',trimestre:1,criterio:'CCL.3',indicadores:['Comprende palabras familiares','Sigue órdenes simples','Identifica objetos','Responde sí/no']},
+                {numero:3,descripcion:'Mejorar expresión oral',trimestre:1,criterio:'CCL.4',indicadores:['Emite vocalizaciones','Produce primeras palabras','Nombra objetos','Pide mediante palabra']},
+                {numero:4,descripcion:'Desarrollar vocabulario',trimestre:1,criterio:'CCL.4',indicadores:['Comprende 50+ palabras','Produce 10+ palabras','Aprende nuevas','Usa nombres cercanos']},
+                {numero:5,descripcion:'Mejorar articulación',trimestre:1,criterio:'CCL.4',indicadores:['Produce vocales','Articula consonantes iniciales','Produce sílabas directas','Inteligible cercanos']},
+                {numero:6,descripcion:'Ampliar estructura frases',trimestre:2,criterio:'CCL.4',indicadores:['Combina dos palabras','Usa frase 3 elementos','Usa artículos','Incorpora verbos']},
+                {numero:7,descripcion:'Desarrollar comprensión oraciones',trimestre:2,criterio:'CCL.3',indicadores:['Comprende órdenes 2 pasos','Entiende qué/quién','Sigue instrucciones','Comprende negaciones']},
+                {numero:8,descripcion:'Mejorar pragmática',trimestre:2,criterio:'CCL.1',indicadores:['Saluda apropiadamente','Responde a saludos','Participa intercambios','Mantiene tema breve']},
+                {numero:9,descripcion:'Desarrollar narración',trimestre:2,criterio:'CCL.4',indicadores:['Cuenta experiencias','Secuencia 2 eventos','Describe imágenes','Responde sobre cuentos']},
+                {numero:10,descripcion:'Ampliar comprensión cuentos',trimestre:2,criterio:'CCL.3',indicadores:['Atiende cuentos cortos','Identifica personajes','Responde preguntas','Anticipa eventos']},
+                {numero:11,descripcion:'Mejorar conciencia fonológica',trimestre:3,criterio:'CCL.4',indicadores:['Identifica rimas','Reconoce sonido inicial','Segmenta sílabas','Discrimina sonidos']},
+                {numero:12,descripcion:'Desarrollar lenguaje descriptivo',trimestre:3,criterio:'CCL.4',indicadores:['Usa adjetivos básicos','Describe objetos','Compara tamaño/color','Describe acciones']},
+                {numero:13,descripcion:'Ampliar uso preguntas',trimestre:3,criterio:'CCL.1',indicadores:['Hace preguntas qué','Pregunta dónde','Usa por qué','Responde abiertas']},
+                {numero:14,descripcion:'Mejorar discurso',trimestre:3,criterio:'CCL.4',indicadores:['Narra inicio-fin','Usa conectores básicos','Mantiene coherencia','Adapta interlocutor']},
+                {numero:15,descripcion:'Preparar lectoescritura',trimestre:3,criterio:'CCL.4',indicadores:['Reconoce nombre escrito','Identifica letras','Garabatea intención','Diferencia dibujo-escritura']}
             ]},
             {nombre:'Desarrollo Comunicativo',ciclo:'ciclo1',tipo:'comunicativo',objetivos:[
                 {numero:1,descripcion:'Mejorar conciencia fonológica',trimestre:1,criterio:'LCL.1.3.1',indicadores:['Segmenta en sílabas','Identifica sílaba inicial','Reconoce rimas','Manipula fonemas']},
@@ -1072,21 +1116,21 @@
                 {numero:15,descripcion:'Consolidar comunicativa',trimestre:3,criterio:'LCL.1.3.1',indicadores:['Comunica eficazmente','Lee comprensión funcional','Escribe para comunicar','Disfruta leer/escribir']}
             ]},
             {nombre:'Autonomía Personal',ciclo:'infantil',tipo:'autonomia',objetivos:[
-                {numero:1,descripcion:'Desarrollar autonomía alimentación',trimestre:1,criterio:'CA.3.1',indicadores:['Come con cuchara','Bebe de vaso','Permanece sentado','Muestra preferencias']},
-                {numero:2,descripcion:'Mejorar control esfínteres',trimestre:1,criterio:'CA.3.1',indicadores:['Avisa necesidad','Usa WC con ayuda','Permanece seco','Colabora limpieza']},
-                {numero:3,descripcion:'Desarrollar autonomía vestido',trimestre:1,criterio:'CA.3.1',indicadores:['Colabora vestirse','Se quita prendas','Identifica partes ropa','Señala su ropa']},
-                {numero:4,descripcion:'Mejorar higiene personal',trimestre:1,criterio:'CA.3.1',indicadores:['Acepta lavado manos','Colabora lavado cara','Se limpia nariz','Acepta peinarse']},
-                {numero:5,descripcion:'Desarrollar organización',trimestre:1,criterio:'CA.1.3',indicadores:['Guarda juguetes','Reconoce pertenencias','Sigue rutina','Acepta transiciones']},
-                {numero:6,descripcion:'Ampliar autonomía alimentación',trimestre:2,criterio:'CA.3.1',indicadores:['Usa tenedor','Se sirve con ayuda','Limpia derramado','Come variedad']},
-                {numero:7,descripcion:'Consolidar control esfínteres',trimestre:2,criterio:'CA.3.1',indicadores:['Va WC solo','Se limpia supervisión','Permanece seco día','Avisa anticipación']},
-                {numero:8,descripcion:'Mejorar autonomía vestido',trimestre:2,criterio:'CA.3.1',indicadores:['Se pone ropa sencilla','Se quita zapatos','Intenta abrochar','Elige entre opciones']},
-                {numero:9,descripcion:'Ampliar higiene personal',trimestre:2,criterio:'CA.3.1',indicadores:['Se lava manos solo','Se lava cara','Cepilla dientes','Usa jabón']},
-                {numero:10,descripcion:'Desarrollar seguridad',trimestre:2,criterio:'CA.3.2',indicadores:['Conoce normas seguridad','Identifica peligros','Pide ayuda','Se orienta espacios']},
-                {numero:11,descripcion:'Consolidar alimentación',trimestre:3,criterio:'CA.3.1',indicadores:['Come autónomamente','Usa servilleta','Pone/quita mesa','Prueba nuevos']},
-                {numero:12,descripcion:'Ampliar autonomía vestido',trimestre:3,criterio:'CA.3.1',indicadores:['Se viste completamente','Abrocha velcro/botones','Calza zapatos','Cuelga abrigo']},
-                {numero:13,descripcion:'Consolidar higiene',trimestre:3,criterio:'CA.3.1',indicadores:['Rutina autónoma','Reconoce cuándo lavarse','Tira cisterna','Usa WC público']},
-                {numero:14,descripcion:'Desarrollar autonomía tareas',trimestre:3,criterio:'CA.1.3',indicadores:['Prepara material','Recoge tras actividad','Sigue rutina clase','Realiza encargos']},
-                {numero:15,descripcion:'Generalizar autonomía',trimestre:3,criterio:'CA.1.3',indicadores:['Autónomo rutinas','Transfiere a casa','Pide ayuda apropiada','Muestra iniciativa']}
+                {numero:1,descripcion:'Desarrollar autonomía alimentación',trimestre:1,criterio:'CE.1',indicadores:['Come con cuchara','Bebe de vaso','Permanece sentado','Muestra preferencias']},
+                {numero:2,descripcion:'Mejorar control esfínteres',trimestre:1,criterio:'CE.1',indicadores:['Avisa necesidad','Usa WC con ayuda','Permanece seco','Colabora limpieza']},
+                {numero:3,descripcion:'Desarrollar autonomía vestido',trimestre:1,criterio:'CE.1',indicadores:['Colabora vestirse','Se quita prendas','Identifica partes ropa','Señala su ropa']},
+                {numero:4,descripcion:'Mejorar higiene personal',trimestre:1,criterio:'CE.1',indicadores:['Acepta lavado manos','Colabora lavado cara','Se limpia nariz','Acepta peinarse']},
+                {numero:5,descripcion:'Desarrollar organización',trimestre:1,criterio:'CPSAA.2',indicadores:['Guarda juguetes','Reconoce pertenencias','Sigue rutina','Acepta transiciones']},
+                {numero:6,descripcion:'Ampliar autonomía alimentación',trimestre:2,criterio:'CE.1',indicadores:['Usa tenedor','Se sirve con ayuda','Limpia derramado','Come variedad']},
+                {numero:7,descripcion:'Consolidar control esfínteres',trimestre:2,criterio:'CE.1',indicadores:['Va WC solo','Se limpia supervisión','Permanece seco día','Avisa anticipación']},
+                {numero:8,descripcion:'Mejorar autonomía vestido',trimestre:2,criterio:'CE.1',indicadores:['Se pone ropa sencilla','Se quita zapatos','Intenta abrochar','Elige entre opciones']},
+                {numero:9,descripcion:'Ampliar higiene personal',trimestre:2,criterio:'CE.1',indicadores:['Se lava manos solo','Se lava cara','Cepilla dientes','Usa jabón']},
+                {numero:10,descripcion:'Desarrollar seguridad',trimestre:2,criterio:'CE.2',indicadores:['Conoce normas seguridad','Identifica peligros','Pide ayuda','Se orienta espacios']},
+                {numero:11,descripcion:'Consolidar alimentación',trimestre:3,criterio:'CE.1',indicadores:['Come autónomamente','Usa servilleta','Pone/quita mesa','Prueba nuevos']},
+                {numero:12,descripcion:'Ampliar autonomía vestido',trimestre:3,criterio:'CE.1',indicadores:['Se viste completamente','Abrocha velcro/botones','Calza zapatos','Cuelga abrigo']},
+                {numero:13,descripcion:'Consolidar higiene',trimestre:3,criterio:'CE.1',indicadores:['Rutina autónoma','Reconoce cuándo lavarse','Tira cisterna','Usa WC público']},
+                {numero:14,descripcion:'Desarrollar autonomía tareas',trimestre:3,criterio:'CPSAA.2',indicadores:['Prepara material','Recoge tras actividad','Sigue rutina clase','Realiza encargos']},
+                {numero:15,descripcion:'Generalizar autonomía',trimestre:3,criterio:'CPSAA.2',indicadores:['Autónomo rutinas','Transfiere a casa','Pide ayuda apropiada','Muestra iniciativa']}
             ]},
             {nombre:'Autonomía Personal',ciclo:'ciclo1',tipo:'autonomia',objetivos:[
                 {numero:1,descripcion:'Consolidar hábitos higiene',trimestre:1,criterio:'EF.01.05',indicadores:['Aseo autónomo','Cuida aspecto','Usa WC correctamente','Lava manos solo']},
@@ -1106,21 +1150,21 @@
                 {numero:15,descripcion:'Generalizar autonomía',trimestre:3,criterio:'EF.01.05',indicadores:['Autónomo rutinas','Actúa responsable','Muestra iniciativa','Generaliza habilidades']}
             ]},
             {nombre:'Desarrollo Motor',ciclo:'infantil',tipo:'motor',objetivos:[
-                {numero:1,descripcion:'Desarrollar prensión',trimestre:1,criterio:'CA.1.2',indicadores:['Agarra objetos gruesos','Usa pinza digital','Manipula plastilina','Ensarta cuentas grandes']},
-                {numero:2,descripcion:'Mejorar coordinación óculo-manual',trimestre:1,criterio:'CA.1.2',indicadores:['Apila 4-5 bloques','Encaja piezas','Abre/cierra tapones','Vierte con ayuda']},
-                {numero:3,descripcion:'Desarrollar grafomotricidad',trimestre:1,criterio:'CR.4.2',indicadores:['Garabatea con agarre','Traza líneas verticales','Imita trazos','Colorea sin límites']},
-                {numero:4,descripcion:'Mejorar destreza manual',trimestre:1,criterio:'CA.1.2',indicadores:['Abre recipientes','Pasa páginas','Usa pegamento','Rasga papel']},
-                {numero:5,descripcion:'Desarrollar lateralidad',trimestre:1,criterio:'CA.1.1',indicadores:['Preferencia mano','Usa dominante','Cruza línea media','Identifica manos']},
-                {numero:6,descripcion:'Ampliar precisión manual',trimestre:2,criterio:'CA.1.2',indicadores:['Recorta con tijeras','Pica con punzón','Moldea formas','Dobla papel']},
-                {numero:7,descripcion:'Mejorar grafomotricidad',trimestre:2,criterio:'CR.4.2',indicadores:['Traza horizontales','Dibuja círculos','Copia formas','Colorea contorno']},
-                {numero:8,descripcion:'Desarrollar coordinación bimanual',trimestre:2,criterio:'CA.1.2',indicadores:['Usa manos coordinadas','Enrosca/desenrosca','Abre cremalleras','Abotona grandes']},
-                {numero:9,descripcion:'Mejorar manejo utensilios',trimestre:2,criterio:'CA.1.2',indicadores:['Usa tijeras bien','Maneja pincel','Agarre correcto lápiz','Usa goma']},
-                {numero:10,descripcion:'Ampliar destrezas finas',trimestre:2,criterio:'CA.1.2',indicadores:['Ensarta pequeñas','Construye piezas pequeñas','Manipula pequeños','Pliega papel']},
-                {numero:11,descripcion:'Consolidar grafomotricidad',trimestre:3,criterio:'CR.4.2',indicadores:['Dibuja figura humana','Copia letras','Escribe nombre','Controla presión']},
-                {numero:12,descripcion:'Mejorar precisión',trimestre:3,criterio:'CA.1.2',indicadores:['Recorta líneas','Pega precisión','Colorea sin salir','Dibuja detalles']},
-                {numero:13,descripcion:'Desarrollar autonomía manipulativa',trimestre:3,criterio:'CA.1.3',indicadores:['Manualidades guiadas','Completa tareas solo','Organiza materiales','Cuida herramientas']},
-                {numero:14,descripcion:'Ampliar destreza juegos',trimestre:3,criterio:'CA.1.2',indicadores:['Construye bloques pequeños','Puzzles 12+ piezas','Juegos construcciones','Manipula mesa']},
-                {numero:15,descripcion:'Preparar para escritura',trimestre:3,criterio:'CR.4.2',indicadores:['Postura correcta','Agarre maduro','Traza con fluidez','Controla espacio']}
+                {numero:1,descripcion:'Desarrollar prensión',trimestre:1,criterio:'STEM.2',indicadores:['Agarra objetos gruesos','Usa pinza digital','Manipula plastilina','Ensarta cuentas grandes']},
+                {numero:2,descripcion:'Mejorar coordinación óculo-manual',trimestre:1,criterio:'STEM.2',indicadores:['Apila 4-5 bloques','Encaja piezas','Abre/cierra tapones','Vierte con ayuda']},
+                {numero:3,descripcion:'Desarrollar grafomotricidad',trimestre:1,criterio:'CCL.4',indicadores:['Garabatea con agarre','Traza líneas verticales','Imita trazos','Colorea sin límites']},
+                {numero:4,descripcion:'Mejorar destreza manual',trimestre:1,criterio:'STEM.2',indicadores:['Abre recipientes','Pasa páginas','Usa pegamento','Rasga papel']},
+                {numero:5,descripcion:'Desarrollar lateralidad',trimestre:1,criterio:'STEM.3',indicadores:['Preferencia mano','Usa dominante','Cruza línea media','Identifica manos']},
+                {numero:6,descripcion:'Ampliar precisión manual',trimestre:2,criterio:'STEM.2',indicadores:['Recorta con tijeras','Pica con punzón','Moldea formas','Dobla papel']},
+                {numero:7,descripcion:'Mejorar grafomotricidad',trimestre:2,criterio:'CCL.4',indicadores:['Traza horizontales','Dibuja círculos','Copia formas','Colorea contorno']},
+                {numero:8,descripcion:'Desarrollar coordinación bimanual',trimestre:2,criterio:'STEM.2',indicadores:['Usa manos coordinadas','Enrosca/desenrosca','Abre cremalleras','Abotona grandes']},
+                {numero:9,descripcion:'Mejorar manejo utensilios',trimestre:2,criterio:'STEM.2',indicadores:['Usa tijeras bien','Maneja pincel','Agarre correcto lápiz','Usa goma']},
+                {numero:10,descripcion:'Ampliar destrezas finas',trimestre:2,criterio:'STEM.2',indicadores:['Ensarta pequeñas','Construye piezas pequeñas','Manipula pequeños','Pliega papel']},
+                {numero:11,descripcion:'Consolidar grafomotricidad',trimestre:3,criterio:'CCL.4',indicadores:['Dibuja figura humana','Copia letras','Escribe nombre','Controla presión']},
+                {numero:12,descripcion:'Mejorar precisión',trimestre:3,criterio:'STEM.2',indicadores:['Recorta líneas','Pega precisión','Colorea sin salir','Dibuja detalles']},
+                {numero:13,descripcion:'Desarrollar autonomía manipulativa',trimestre:3,criterio:'CPSAA.2',indicadores:['Manualidades guiadas','Completa tareas solo','Organiza materiales','Cuida herramientas']},
+                {numero:14,descripcion:'Ampliar destreza juegos',trimestre:3,criterio:'STEM.2',indicadores:['Construye bloques pequeños','Puzzles 12+ piezas','Juegos construcciones','Manipula mesa']},
+                {numero:15,descripcion:'Preparar para escritura',trimestre:3,criterio:'CCL.4',indicadores:['Postura correcta','Agarre maduro','Traza con fluidez','Controla espacio']}
             ]},
             {nombre:'Desarrollo Motor',ciclo:'ciclo1',tipo:'motor',objetivos:[
                 {numero:1,descripcion:'Consolidar agarre lápiz',trimestre:1,criterio:'LCL.1.4.1',indicadores:['Agarre trípode correcto','Presión adecuada','Postura correcta','Fluidez en trazo']},
@@ -1140,21 +1184,21 @@
                 {numero:15,descripcion:'Generalizar destrezas',trimestre:3,criterio:'EF.01.06',indicadores:['Aplica en contextos','Transfiere habilidades','Muestra destreza','Autonomía motora']}
             ]},
             {nombre:'Desarrollo Psicomotor',ciclo:'infantil',tipo:'psicomotor',objetivos:[
-                {numero:1,descripcion:'Desarrollar control postural',trimestre:1,criterio:'CA.1.1',indicadores:['Equilibrio de pie','Se sienta correcto','Cambia posición','Mantiene postura']},
-                {numero:2,descripcion:'Mejorar desplazamientos',trimestre:1,criterio:'CA.1.2',indicadores:['Camina seguro','Corre sin caer','Sube escaleras','Baja con apoyo']},
-                {numero:3,descripcion:'Desarrollar coordinación global',trimestre:1,criterio:'CA.1.2',indicadores:['Salta dos pies','Lanza pelota','Atrapa grande','Patea balón']},
-                {numero:4,descripcion:'Mejorar esquema corporal',trimestre:1,criterio:'CA.1.1',indicadores:['Señala partes cuerpo','Nombra principales','Dibuja figura básica','Imita posiciones']},
-                {numero:5,descripcion:'Desarrollar equilibrio estático',trimestre:1,criterio:'CA.1.2',indicadores:['Pata coja','De puntillas','Posturas estatua','Equilibrio un pie']},
-                {numero:6,descripcion:'Ampliar desplazamientos',trimestre:2,criterio:'CA.1.2',indicadores:['Salta obstáculos','Corre cambiando','Galopa','Desplaza atrás']},
-                {numero:7,descripcion:'Mejorar coordinación dinámica',trimestre:2,criterio:'CA.1.2',indicadores:['Intenta saltar cuerda','Bota pelota','Camina línea','Sigue circuitos']},
-                {numero:8,descripcion:'Desarrollar lateralidad corporal',trimestre:2,criterio:'CA.1.1',indicadores:['Diferencia derecha-izquierda','Usa lado dominante','Cruza línea media','Movimientos bilaterales']},
-                {numero:9,descripcion:'Mejorar ritmo movimiento',trimestre:2,criterio:'CR.3.2',indicadores:['Sigue ritmos cuerpo','Baila con música','Reproduce secuencias','Coordina con sonido']},
-                {numero:10,descripcion:'Desarrollar conciencia espacial',trimestre:2,criterio:'DE.1.2',indicadores:['Arriba/abajo/dentro','Sigue direcciones','Calcula distancias','Se orienta']},
-                {numero:11,descripcion:'Consolidar equilibrio dinámico',trimestre:3,criterio:'CA.1.2',indicadores:['Camina barra baja','Salta alternando','Equilibrio movimiento','Supera circuitos']},
-                {numero:12,descripcion:'Ampliar habilidades motrices',trimestre:3,criterio:'CA.1.2',indicadores:['Trepa','Se cuelga','Voltereta con ayuda','Usa aparatos parque']},
-                {numero:13,descripcion:'Mejorar coordinación objetos',trimestre:3,criterio:'CA.1.2',indicadores:['Bota y camina','Lanza con dirección','Atrapa pequeñas','Maneja implementos']},
-                {numero:14,descripcion:'Desarrollar expresión corporal',trimestre:3,criterio:'CR.3.2',indicadores:['Representa cuerpo','Imita animales','Expresa emociones','Participa dramatizaciones']},
-                {numero:15,descripcion:'Preparar deportes',trimestre:3,criterio:'CA.4.1',indicadores:['Juegos grupales motrices','Sigue reglas','Deportividad básica','Disfruta actividad']}
+                {numero:1,descripcion:'Desarrollar control postural',trimestre:1,criterio:'STEM.3',indicadores:['Equilibrio de pie','Se sienta correcto','Cambia posición','Mantiene postura']},
+                {numero:2,descripcion:'Mejorar desplazamientos',trimestre:1,criterio:'STEM.2',indicadores:['Camina seguro','Corre sin caer','Sube escaleras','Baja con apoyo']},
+                {numero:3,descripcion:'Desarrollar coordinación global',trimestre:1,criterio:'STEM.2',indicadores:['Salta dos pies','Lanza pelota','Atrapa grande','Patea balón']},
+                {numero:4,descripcion:'Mejorar esquema corporal',trimestre:1,criterio:'STEM.3',indicadores:['Señala partes cuerpo','Nombra principales','Dibuja figura básica','Imita posiciones']},
+                {numero:5,descripcion:'Desarrollar equilibrio estático',trimestre:1,criterio:'STEM.2',indicadores:['Pata coja','De puntillas','Posturas estatua','Equilibrio un pie']},
+                {numero:6,descripcion:'Ampliar desplazamientos',trimestre:2,criterio:'STEM.2',indicadores:['Salta obstáculos','Corre cambiando','Galopa','Desplaza atrás']},
+                {numero:7,descripcion:'Mejorar coordinación dinámica',trimestre:2,criterio:'STEM.2',indicadores:['Intenta saltar cuerda','Bota pelota','Camina línea','Sigue circuitos']},
+                {numero:8,descripcion:'Desarrollar lateralidad corporal',trimestre:2,criterio:'STEM.3',indicadores:['Diferencia derecha-izquierda','Usa lado dominante','Cruza línea media','Movimientos bilaterales']},
+                {numero:9,descripcion:'Mejorar ritmo movimiento',trimestre:2,criterio:'CCL.5',indicadores:['Sigue ritmos cuerpo','Baila con música','Reproduce secuencias','Coordina con sonido']},
+                {numero:10,descripcion:'Desarrollar conciencia espacial',trimestre:2,criterio:'STEM.4',indicadores:['Arriba/abajo/dentro','Sigue direcciones','Calcula distancias','Se orienta']},
+                {numero:11,descripcion:'Consolidar equilibrio dinámico',trimestre:3,criterio:'STEM.2',indicadores:['Camina barra baja','Salta alternando','Equilibrio movimiento','Supera circuitos']},
+                {numero:12,descripcion:'Ampliar habilidades motrices',trimestre:3,criterio:'STEM.2',indicadores:['Trepa','Se cuelga','Voltereta con ayuda','Usa aparatos parque']},
+                {numero:13,descripcion:'Mejorar coordinación objetos',trimestre:3,criterio:'STEM.2',indicadores:['Bota y camina','Lanza con dirección','Atrapa pequeñas','Maneja implementos']},
+                {numero:14,descripcion:'Desarrollar expresión corporal',trimestre:3,criterio:'CCL.5',indicadores:['Representa cuerpo','Imita animales','Expresa emociones','Participa dramatizaciones']},
+                {numero:15,descripcion:'Preparar deportes',trimestre:3,criterio:'CC.1',indicadores:['Juegos grupales motrices','Sigue reglas','Deportividad básica','Disfruta actividad']}
             ]},
             // COGNITIVO 2º CICLO - Con matemáticas nivel 2º Primaria
             {nombre:'Desarrollo Cognitivo',ciclo:'ciclo2',tipo:'cognitivo',objetivos:[
@@ -1534,57 +1578,57 @@
             ]},
             // ── TEA PT — Ciclo 1 (1º-2º) ─────────────────────────────────────
             {nombre:'TEA (PT)',ciclo:'ciclo1',tipo:'tea',objetivos:[
-                {numero:1,descripcion:'Desarrollar anticipacion y comprension de rutinas',trimestre:1,criterio:'CA.1.3',indicadores:['Sigue la secuencia de la jornada con apoyo visual','Anticipa el cambio de actividad con aviso previo','Reconoce las senales que indican inicio y fin','Tolera variaciones en la rutina con soporte']},
-                {numero:2,descripcion:'Mejorar uso funcional de apoyos visuales',trimestre:1,criterio:'CA.1.3',indicadores:['Usa pictogramas para anticipar actividades','Consulta el horario visual de forma autonoma','Asocia imagen con accion esperada','Solicita apoyo visual cuando lo necesita']},
-                {numero:3,descripcion:'Desarrollar comprension de normas sociales basicas',trimestre:1,criterio:'CA.4.1',indicadores:['Conoce las normas del aula con apoyo visual','Sigue turnos en actividades estructuradas','Respeta el espacio personal','Comprende que sus acciones afectan a otros']},
-                {numero:4,descripcion:'Mejorar reconocimiento de emociones en imagenes y situaciones',trimestre:1,criterio:'CA.2.2',indicadores:['Identifica alegria y tristeza en fotografias','Asocia situacion con emocion esperada','Nombra emociones basicas con apoyo','Distingue caras expresivas en materiales visuales']},
-                {numero:5,descripcion:'Desarrollar flexibilidad ante cambios sencillos',trimestre:1,criterio:'CA.2.3',indicadores:['Acepta el cambio de actividad con anticipo de 5 min','Maneja el error en tareas con apoyo emocional','Tolera que un resultado sea distinto al esperado','Recupera la calma con estrategia conocida']},
+                {numero:1,descripcion:'Desarrollar anticipacion y comprension de rutinas',trimestre:1,criterio:'CPSAA.2',indicadores:['Sigue la secuencia de la jornada con apoyo visual','Anticipa el cambio de actividad con aviso previo','Reconoce las senales que indican inicio y fin','Tolera variaciones en la rutina con soporte']},
+                {numero:2,descripcion:'Mejorar uso funcional de apoyos visuales',trimestre:1,criterio:'CPSAA.2',indicadores:['Usa pictogramas para anticipar actividades','Consulta el horario visual de forma autonoma','Asocia imagen con accion esperada','Solicita apoyo visual cuando lo necesita']},
+                {numero:3,descripcion:'Desarrollar comprension de normas sociales basicas',trimestre:1,criterio:'CC.1',indicadores:['Conoce las normas del aula con apoyo visual','Sigue turnos en actividades estructuradas','Respeta el espacio personal','Comprende que sus acciones afectan a otros']},
+                {numero:4,descripcion:'Mejorar reconocimiento de emociones en imagenes y situaciones',trimestre:1,criterio:'CC.2',indicadores:['Identifica alegria y tristeza en fotografias','Asocia situacion con emocion esperada','Nombra emociones basicas con apoyo','Distingue caras expresivas en materiales visuales']},
+                {numero:5,descripcion:'Desarrollar flexibilidad ante cambios sencillos',trimestre:1,criterio:'CC.3',indicadores:['Acepta el cambio de actividad con anticipo de 5 min','Maneja el error en tareas con apoyo emocional','Tolera que un resultado sea distinto al esperado','Recupera la calma con estrategia conocida']},
                 {numero:6,descripcion:'Mejorar comprension literal de textos e instrucciones',trimestre:2,criterio:'LCL.1.3.2',indicadores:['Comprende instrucciones escritas de un paso','Identifica informacion explicita en texto breve','Responde preguntas literales con apoyo','Sigue enunciados escritos de ficha']},
-                {numero:7,descripcion:'Desarrollar teoria de la mente basica',trimestre:2,criterio:'CA.2.2',indicadores:['Comprende que otros tienen perspectivas distintas','Predice lo que buscara alguien que no vio algo','Distingue lo que sabe el del lo que sabe otro','Interpreta intenciones sencillas en historias']},
-                {numero:8,descripcion:'Mejorar habilidades de atencion conjunta funcional',trimestre:2,criterio:'CA.4.1',indicadores:['Dirige la atencion del adulto hacia algo de interes','Sigue la mirada o gesto del interlocutor','Comparte referencia en actividades de pareja','Usa senal para comunicar interes']},
+                {numero:7,descripcion:'Desarrollar teoria de la mente basica',trimestre:2,criterio:'CC.2',indicadores:['Comprende que otros tienen perspectivas distintas','Predice lo que buscara alguien que no vio algo','Distingue lo que sabe el del lo que sabe otro','Interpreta intenciones sencillas en historias']},
+                {numero:8,descripcion:'Mejorar habilidades de atencion conjunta funcional',trimestre:2,criterio:'CC.1',indicadores:['Dirige la atencion del adulto hacia algo de interes','Sigue la mirada o gesto del interlocutor','Comparte referencia en actividades de pareja','Usa senal para comunicar interes']},
                 {numero:9,descripcion:'Desarrollar comprension del lenguaje no literal basico',trimestre:2,criterio:'LCL.1.3.2',indicadores:['Comprende frases hechas frecuentes con explicacion','Distingue broma de realidad en contexto conocido','Interpreta el tono emocional de una frase','Reconoce la ironia mas evidente con apoyo']},
-                {numero:10,descripcion:'Mejorar autonomia en tareas escolares estructuradas',trimestre:2,criterio:'CA.1.3',indicadores:['Inicia la tarea con el apoyo visual del paso a paso','Trabaja de forma autonoma en actividades conocidas','Finaliza la tarea y la entrega','Solicita ayuda cuando se bloquea']},
-                {numero:11,descripcion:'Consolidar gestion sensorial en el aula',trimestre:3,criterio:'CA.2.1',indicadores:['Identifica cuando se siente desbordado sensorialmente','Usa el rincón de calma de forma autonoma','Comunica la necesidad sensorial al adulto','Aplica estrategia de regulacion sensorial conocida']},
-                {numero:12,descripcion:'Ampliar comprension de situaciones sociales escolares',trimestre:3,criterio:'CA.4.1',indicadores:['Comprende las reglas del juego en el recreo','Interpreta situaciones sociales con soporte visual','Sabe como pedir unirse a un juego','Reconoce senales de rechazo o aceptacion']},
-                {numero:13,descripcion:'Desarrollar habilidades de trabajo en pareja',trimestre:3,criterio:'CA.4.2',indicadores:['Participa en actividad de pareja estructurada','Respeta el turno del companero','Acepta la propuesta del otro aunque no sea la suya','Pide ayuda al companero de forma adecuada']},
-                {numero:14,descripcion:'Mejorar autoconocimiento y autoregulacion emocional',trimestre:3,criterio:'CA.2.1',indicadores:['Identifica sus propias emociones con apoyo visual','Verbaliza como se siente en distintas situaciones','Usa tecnica de calma ante frustracion','Diferencia situaciones agradables de desagradables']},
-                {numero:15,descripcion:'Generalizar estrategias al aula ordinaria',trimestre:3,criterio:'CA.1.3',indicadores:['Aplica apoyos visuales en el aula ordinaria','Usa estrategias de regulacion fuera del PT','Mantiene autonomia en rutinas del aula','Transfiere habilidades a contextos nuevos con apoyo']}
+                {numero:10,descripcion:'Mejorar autonomia en tareas escolares estructuradas',trimestre:2,criterio:'CPSAA.2',indicadores:['Inicia la tarea con el apoyo visual del paso a paso','Trabaja de forma autonoma en actividades conocidas','Finaliza la tarea y la entrega','Solicita ayuda cuando se bloquea']},
+                {numero:11,descripcion:'Consolidar gestion sensorial en el aula',trimestre:3,criterio:'CPSAA.1',indicadores:['Identifica cuando se siente desbordado sensorialmente','Usa el rincón de calma de forma autonoma','Comunica la necesidad sensorial al adulto','Aplica estrategia de regulacion sensorial conocida']},
+                {numero:12,descripcion:'Ampliar comprension de situaciones sociales escolares',trimestre:3,criterio:'CC.1',indicadores:['Comprende las reglas del juego en el recreo','Interpreta situaciones sociales con soporte visual','Sabe como pedir unirse a un juego','Reconoce senales de rechazo o aceptacion']},
+                {numero:13,descripcion:'Desarrollar habilidades de trabajo en pareja',trimestre:3,criterio:'CC.4',indicadores:['Participa en actividad de pareja estructurada','Respeta el turno del companero','Acepta la propuesta del otro aunque no sea la suya','Pide ayuda al companero de forma adecuada']},
+                {numero:14,descripcion:'Mejorar autoconocimiento y autoregulacion emocional',trimestre:3,criterio:'CPSAA.1',indicadores:['Identifica sus propias emociones con apoyo visual','Verbaliza como se siente en distintas situaciones','Usa tecnica de calma ante frustracion','Diferencia situaciones agradables de desagradables']},
+                {numero:15,descripcion:'Generalizar estrategias al aula ordinaria',trimestre:3,criterio:'CPSAA.2',indicadores:['Aplica apoyos visuales en el aula ordinaria','Usa estrategias de regulacion fuera del PT','Mantiene autonomia en rutinas del aula','Transfiere habilidades a contextos nuevos con apoyo']}
             ]},
             // ── TEA PT — Ciclo 2 (3º-4º) ─────────────────────────────────────
             {nombre:'TEA (PT)',ciclo:'ciclo2',tipo:'tea',objetivos:[
-                {numero:1,descripcion:'Consolidar comprension de normas sociales implicitas',trimestre:1,criterio:'CA.4.1',indicadores:['Comprende normas no escritas del grupo','Identifica comportamientos adecuados al contexto','Distingue tono formal e informal','Adapta su conducta segun el grupo y la situacion']},
-                {numero:2,descripcion:'Desarrollar teoria de la mente intermedia',trimestre:1,criterio:'CA.2.2',indicadores:['Predice emociones de personajes ante situaciones','Comprende la perspectiva de segunda orden','Distingue mentira de error en historias','Interpreta intenciones en situaciones sociales complejas']},
+                {numero:1,descripcion:'Consolidar comprension de normas sociales implicitas',trimestre:1,criterio:'CC.1',indicadores:['Comprende normas no escritas del grupo','Identifica comportamientos adecuados al contexto','Distingue tono formal e informal','Adapta su conducta segun el grupo y la situacion']},
+                {numero:2,descripcion:'Desarrollar teoria de la mente intermedia',trimestre:1,criterio:'CC.2',indicadores:['Predice emociones de personajes ante situaciones','Comprende la perspectiva de segunda orden','Distingue mentira de error en historias','Interpreta intenciones en situaciones sociales complejas']},
                 {numero:3,descripcion:'Mejorar comprension inferencial de textos',trimestre:1,criterio:'LCL.2.3.2',indicadores:['Infiere el estado emocional de personajes','Comprende causas no explicitas en el texto','Deduce el significado de frases contextuales','Responde preguntas de por que sobre el texto']},
-                {numero:4,descripcion:'Desarrollar gestion de cambios y situaciones imprevistas',trimestre:1,criterio:'CA.2.3',indicadores:['Usa el mapa de contingencias ante cambios','Anticipa posibles alternativas al plan','Tolera cambios en la rutina con soporte reducido','Aplica estrategia de resolucion ante lo inesperado']},
-                {numero:5,descripcion:'Mejorar vocabulario emocional y social',trimestre:1,criterio:'CA.2.1',indicadores:['Nombra emociones complejas como orgullo o verguenza','Relaciona causa-emocion-consecuencia','Usa vocabulario emocional en conversacion','Describe estados emocionales propios y ajenos']},
-                {numero:6,descripcion:'Desarrollar habilidades conversacionales funcionales',trimestre:2,criterio:'CA.4.1',indicadores:['Inicia conversacion con tema adecuado al contexto','Mantiene el hilo conversacional varios turnos','Cambia de tema de forma apropiada','Cierra la conversacion con cortesia']},
+                {numero:4,descripcion:'Desarrollar gestion de cambios y situaciones imprevistas',trimestre:1,criterio:'CC.3',indicadores:['Usa el mapa de contingencias ante cambios','Anticipa posibles alternativas al plan','Tolera cambios en la rutina con soporte reducido','Aplica estrategia de resolucion ante lo inesperado']},
+                {numero:5,descripcion:'Mejorar vocabulario emocional y social',trimestre:1,criterio:'CPSAA.1',indicadores:['Nombra emociones complejas como orgullo o verguenza','Relaciona causa-emocion-consecuencia','Usa vocabulario emocional en conversacion','Describe estados emocionales propios y ajenos']},
+                {numero:6,descripcion:'Desarrollar habilidades conversacionales funcionales',trimestre:2,criterio:'CC.1',indicadores:['Inicia conversacion con tema adecuado al contexto','Mantiene el hilo conversacional varios turnos','Cambia de tema de forma apropiada','Cierra la conversacion con cortesia']},
                 {numero:7,descripcion:'Mejorar comprension del lenguaje figurado y humor',trimestre:2,criterio:'LCL.2.3.2',indicadores:['Interpreta metaforas frecuentes con apoyo','Comprende chistes sencillos de su entorno','Distingue ironia de literalidad en contextos conocidos','Reconoce el humor como forma de relacion social']},
-                {numero:8,descripcion:'Desarrollar habilidades de resolucion de conflictos',trimestre:2,criterio:'CA.4.2',indicadores:['Identifica el conflicto y su causa','Genera dos o mas soluciones posibles','Elige la solucion mas adecuada razonando','Repara la relacion tras el conflicto']},
-                {numero:9,descripcion:'Mejorar autonomia en el aprendizaje con apoyos reducidos',trimestre:2,criterio:'CA.1.3',indicadores:['Reduce la dependencia del apoyo adulto en tareas conocidas','Organiza su material de forma autonoma','Gestiona el tiempo con apoyo minimo','Solicita apoyo de forma apropiada y proporcional']},
-                {numero:10,descripcion:'Desarrollar comprension del contexto escolar ampliado',trimestre:2,criterio:'CA.4.1',indicadores:['Conoce los distintos espacios y normas del centro','Comprende los diferentes roles de los adultos del cole','Interpreta la finalidad de las actividades escolares','Se adapta a distintos profesores con apoyo']},
-                {numero:11,descripcion:'Consolidar estrategias de regulacion emocional',trimestre:3,criterio:'CA.2.1',indicadores:['Usa estrategias variadas segun intensidad emocional','Aplica relajacion de forma autonoma','Identifica desencadenantes de sus reacciones','Pide apoyo antes de llegar al punto de explosion']},
+                {numero:8,descripcion:'Desarrollar habilidades de resolucion de conflictos',trimestre:2,criterio:'CC.4',indicadores:['Identifica el conflicto y su causa','Genera dos o mas soluciones posibles','Elige la solucion mas adecuada razonando','Repara la relacion tras el conflicto']},
+                {numero:9,descripcion:'Mejorar autonomia en el aprendizaje con apoyos reducidos',trimestre:2,criterio:'CPSAA.2',indicadores:['Reduce la dependencia del apoyo adulto en tareas conocidas','Organiza su material de forma autonoma','Gestiona el tiempo con apoyo minimo','Solicita apoyo de forma apropiada y proporcional']},
+                {numero:10,descripcion:'Desarrollar comprension del contexto escolar ampliado',trimestre:2,criterio:'CC.1',indicadores:['Conoce los distintos espacios y normas del centro','Comprende los diferentes roles de los adultos del cole','Interpreta la finalidad de las actividades escolares','Se adapta a distintos profesores con apoyo']},
+                {numero:11,descripcion:'Consolidar estrategias de regulacion emocional',trimestre:3,criterio:'CPSAA.1',indicadores:['Usa estrategias variadas segun intensidad emocional','Aplica relajacion de forma autonoma','Identifica desencadenantes de sus reacciones','Pide apoyo antes de llegar al punto de explosion']},
                 {numero:12,descripcion:'Ampliar comprension de textos expositivos en areas curriculares',trimestre:3,criterio:'LCL.2.3.2',indicadores:['Comprende textos de Naturales y Sociales con apoyo grafico','Extrae informacion relevante con subrayado guiado','Relaciona conceptos con mapa visual','Responde preguntas de comprension de area']},
-                {numero:13,descripcion:'Desarrollar habilidades para la participacion grupal',trimestre:3,criterio:'CA.4.1',indicadores:['Participa en proyectos de grupo con rol definido','Aporta ideas al grupo con apoyo','Acepta decisiones del grupo aunque no coincidan','Comparte el exito grupal']},
-                {numero:14,descripcion:'Mejorar autoconciencia de las propias dificultades',trimestre:3,criterio:'CA.2.1',indicadores:['Identifica las situaciones que le resultan dificiles','Verbaliza lo que necesita en esas situaciones','Solicita adaptaciones de forma asertiva','Conoce sus puntos fuertes y los usa']},
-                {numero:15,descripcion:'Generalizar habilidades a contextos naturales',trimestre:3,criterio:'CA.4.1',indicadores:['Aplica habilidades sociales en el recreo','Usa estrategias emocionales en casa con apoyo familiar','Generaliza comprension social al aula ordinaria','Muestra mayor autonomia en situaciones conocidas']}
+                {numero:13,descripcion:'Desarrollar habilidades para la participacion grupal',trimestre:3,criterio:'CC.1',indicadores:['Participa en proyectos de grupo con rol definido','Aporta ideas al grupo con apoyo','Acepta decisiones del grupo aunque no coincidan','Comparte el exito grupal']},
+                {numero:14,descripcion:'Mejorar autoconciencia de las propias dificultades',trimestre:3,criterio:'CPSAA.1',indicadores:['Identifica las situaciones que le resultan dificiles','Verbaliza lo que necesita en esas situaciones','Solicita adaptaciones de forma asertiva','Conoce sus puntos fuertes y los usa']},
+                {numero:15,descripcion:'Generalizar habilidades a contextos naturales',trimestre:3,criterio:'CC.1',indicadores:['Aplica habilidades sociales en el recreo','Usa estrategias emocionales en casa con apoyo familiar','Generaliza comprension social al aula ordinaria','Muestra mayor autonomia en situaciones conocidas']}
             ]},
             // ── TEA PT — Ciclo 3 (5º-6º) ─────────────────────────────────────
             {nombre:'TEA (PT)',ciclo:'ciclo3',tipo:'tea',objetivos:[
-                {numero:1,descripcion:'Desarrollar comprension social avanzada en contextos escolares',trimestre:1,criterio:'CA.4.1',indicadores:['Interpreta dinamicas de grupo con apoyo','Comprende jerarquias y roles sociales del centro','Identifica conductas de inclusion y exclusion','Adapta su comunicacion al interlocutor']},
+                {numero:1,descripcion:'Desarrollar comprension social avanzada en contextos escolares',trimestre:1,criterio:'CC.1',indicadores:['Interpreta dinamicas de grupo con apoyo','Comprende jerarquias y roles sociales del centro','Identifica conductas de inclusion y exclusion','Adapta su comunicacion al interlocutor']},
                 {numero:2,descripcion:'Mejorar comprension lectora de textos academicos complejos',trimestre:1,criterio:'LCL.3.3.2',indicadores:['Comprende textos argumentativos con apoyo de estructura','Extrae ideas principales con esquema guiado','Responde preguntas inferenciales de textos de area','Usa organizadores graficos para procesar el texto']},
-                {numero:3,descripcion:'Desarrollar flexibilidad cognitiva ante problemas abiertos',trimestre:1,criterio:'CA.2.3',indicadores:['Genera mas de una solucion ante un problema','Acepta que no existe una unica respuesta correcta','Cambia de estrategia sin bloqueo cuando falla','Tolera la incertidumbre en tareas academicas']},
+                {numero:3,descripcion:'Desarrollar flexibilidad cognitiva ante problemas abiertos',trimestre:1,criterio:'CC.3',indicadores:['Genera mas de una solucion ante un problema','Acepta que no existe una unica respuesta correcta','Cambia de estrategia sin bloqueo cuando falla','Tolera la incertidumbre en tareas academicas']},
                 {numero:4,descripcion:'Mejorar comprension de subtexto e intencion comunicativa',trimestre:1,criterio:'LCL.3.3.2',indicadores:['Interpreta la intencion del autor en textos','Comprende el lenguaje ironico y figurado en contexto','Distingue el tono emocional de un texto escrito','Infiere lo que no se dice explicitamente']},
-                {numero:5,descripcion:'Desarrollar autogestion y planificacion del estudio',trimestre:1,criterio:'CA.1.3',indicadores:['Planifica el estudio con agenda o checklist','Organiza el material de cada asignatura','Gestiona el tiempo con apoyo decreciente','Anticipa dificultades y busca estrategias']},
-                {numero:6,descripcion:'Mejorar habilidades de comunicacion social con iguales',trimestre:2,criterio:'CA.4.1',indicadores:['Mantiene conversaciones de temas variados','Comprende las reglas informales del grupo de iguales','Identifica cuando alguien quiere terminar la conversacion','Adapta el tema de conversacion al contexto social']},
-                {numero:7,descripcion:'Desarrollar comprension de la amistad y las relaciones',trimestre:2,criterio:'CA.4.1',indicadores:['Distingue amigo de conocido','Comprende la reciprocidad en las relaciones','Identifica conductas que fortalecen o danan la amistad','Gestiona el rechazo o la exclusion con estrategia']},
+                {numero:5,descripcion:'Desarrollar autogestion y planificacion del estudio',trimestre:1,criterio:'CPSAA.2',indicadores:['Planifica el estudio con agenda o checklist','Organiza el material de cada asignatura','Gestiona el tiempo con apoyo decreciente','Anticipa dificultades y busca estrategias']},
+                {numero:6,descripcion:'Mejorar habilidades de comunicacion social con iguales',trimestre:2,criterio:'CC.1',indicadores:['Mantiene conversaciones de temas variados','Comprende las reglas informales del grupo de iguales','Identifica cuando alguien quiere terminar la conversacion','Adapta el tema de conversacion al contexto social']},
+                {numero:7,descripcion:'Desarrollar comprension de la amistad y las relaciones',trimestre:2,criterio:'CC.1',indicadores:['Distingue amigo de conocido','Comprende la reciprocidad en las relaciones','Identifica conductas que fortalecen o danan la amistad','Gestiona el rechazo o la exclusion con estrategia']},
                 {numero:8,descripcion:'Mejorar produccion escrita estructurada',trimestre:2,criterio:'LCL.3.4.2',indicadores:['Planifica el texto antes de escribir con esquema','Organiza las ideas en parrafos con coherencia','Revisa el texto escrito con lista de verificacion','Produce textos academicos con estructura clara']},
-                {numero:9,descripcion:'Desarrollar habilidades para la transicion a la ESO',trimestre:2,criterio:'CA.1.3',indicadores:['Conoce la estructura organizativa de la ESO','Identifica los apoyos que necesitara en ESO','Anticipa cambios de dinamica y profesores','Prepara estrategias de adaptacion al cambio']},
-                {numero:10,descripcion:'Mejorar gestion emocional ante presion academica',trimestre:2,criterio:'CA.2.1',indicadores:['Identifica senales fisicas de ansiedad ante examenes','Aplica tecnicas de reduccion de ansiedad','Regula la frustracion ante el error academico','Usa estrategias de afrontamiento en situaciones de evaluacion']},
-                {numero:11,descripcion:'Consolidar autonomia en el uso de adaptaciones y apoyos',trimestre:3,criterio:'CA.1.3',indicadores:['Usa apoyos visuales de forma autonoma sin que se los den','Solicita adaptaciones de examen de forma asertiva','Aplica estrategias compensatorias con iniciativa','Reduce la dependencia del adulto en situaciones conocidas']},
-                {numero:12,descripcion:'Ampliar teoria de la mente en situaciones complejas',trimestre:3,criterio:'CA.2.2',indicadores:['Comprende emociones de tercero en situaciones complejas','Interpreta doble intencion en conversaciones','Distingue sinceridad de cortesia social','Predice reacciones en situaciones sociales nuevas']},
-                {numero:13,descripcion:'Desarrollar proyecto personal y autoconocimiento',trimestre:3,criterio:'CA.2.1',indicadores:['Identifica sus fortalezas y areas de mejora','Verbaliza sus intereses y metas personales','Comprende como le perciben los demas con apoyo','Construye autoconcepto realista y positivo']},
-                {numero:14,descripcion:'Mejorar participacion en actividades academicas grupales',trimestre:3,criterio:'CA.4.2',indicadores:['Contribuye a proyectos grupales con rol claro','Negocia y cede en el trabajo en equipo','Comunica sus ideas al grupo con apoyo','Acepta el resultado colectivo aunque difiera del suyo']},
-                {numero:15,descripcion:'Generalizar competencia social y autonomia escolar',trimestre:3,criterio:'CA.4.1',indicadores:['Aplica habilidades sociales en entornos no estructurados','Muestra autonomia escolar en situaciones variadas','Transfiere estrategias de regulacion a nuevos contextos','Afronta la ESO con recursos personales consolidados']}
+                {numero:9,descripcion:'Desarrollar habilidades para la transicion a la ESO',trimestre:2,criterio:'CPSAA.2',indicadores:['Conoce la estructura organizativa de la ESO','Identifica los apoyos que necesitara en ESO','Anticipa cambios de dinamica y profesores','Prepara estrategias de adaptacion al cambio']},
+                {numero:10,descripcion:'Mejorar gestion emocional ante presion academica',trimestre:2,criterio:'CPSAA.1',indicadores:['Identifica senales fisicas de ansiedad ante examenes','Aplica tecnicas de reduccion de ansiedad','Regula la frustracion ante el error academico','Usa estrategias de afrontamiento en situaciones de evaluacion']},
+                {numero:11,descripcion:'Consolidar autonomia en el uso de adaptaciones y apoyos',trimestre:3,criterio:'CPSAA.2',indicadores:['Usa apoyos visuales de forma autonoma sin que se los den','Solicita adaptaciones de examen de forma asertiva','Aplica estrategias compensatorias con iniciativa','Reduce la dependencia del adulto en situaciones conocidas']},
+                {numero:12,descripcion:'Ampliar teoria de la mente en situaciones complejas',trimestre:3,criterio:'CC.2',indicadores:['Comprende emociones de tercero en situaciones complejas','Interpreta doble intencion en conversaciones','Distingue sinceridad de cortesia social','Predice reacciones en situaciones sociales nuevas']},
+                {numero:13,descripcion:'Desarrollar proyecto personal y autoconocimiento',trimestre:3,criterio:'CPSAA.1',indicadores:['Identifica sus fortalezas y areas de mejora','Verbaliza sus intereses y metas personales','Comprende como le perciben los demas con apoyo','Construye autoconcepto realista y positivo']},
+                {numero:14,descripcion:'Mejorar participacion en actividades academicas grupales',trimestre:3,criterio:'CC.4',indicadores:['Contribuye a proyectos grupales con rol claro','Negocia y cede en el trabajo en equipo','Comunica sus ideas al grupo con apoyo','Acepta el resultado colectivo aunque difiera del suyo']},
+                {numero:15,descripcion:'Generalizar competencia social y autonomia escolar',trimestre:3,criterio:'CC.1',indicadores:['Aplica habilidades sociales en entornos no estructurados','Muestra autonomia escolar en situaciones variadas','Transfiere estrategias de regulacion a nuevos contextos','Afronta la ESO con recursos personales consolidados']}
             ]},
             // ── TEL/DISFASIA PT — Ciclo 1 (1º-2º) ──────────────────────────────
             {nombre:'TEL / Disfasia (PT)',ciclo:'ciclo1',tipo:'tel',objetivos:[
@@ -1646,17 +1690,17 @@
                 {numero:2,descripcion:'Mejorar comprension de textos breves con apoyo pictografico',trimestre:1,criterio:'LCL.1.3.2',indicadores:['Comprende frases simples apoyadas en pictogramas','Responde preguntas sobre texto con imagen','Identifica de que trata un texto corto','Relaciona pictograma con la idea del texto']},
                 {numero:3,descripcion:'Desarrollar numeracion funcional hasta el 20',trimestre:1,criterio:'MA.1.5.2',indicadores:['Cuenta objetos con correspondencia uno a uno hasta 20','Lee y escribe numeros hasta 20 con apoyo','Compara cantidades con materiales manipulativos','Ordena numeros hasta 20 en recta con apoyo']},
                 {numero:4,descripcion:'Mejorar comprension y uso del vocabulario basico de area',trimestre:1,criterio:'LCL.1.8.1',indicadores:['Aprende vocabulario del entorno inmediato','Asocia palabra con objeto real o imagen','Usa el vocabulario en situaciones cotidianas','Reconoce palabras de uso habitual en el aula']},
-                {numero:5,descripcion:'Desarrollar autonomia en rutinas escolares basicas',trimestre:1,criterio:'CA.1.3',indicadores:['Sigue la rutina del aula con apoyo visual','Prepara el material necesario para cada actividad','Recoge y organiza su espacio al terminar','Sigue las normas basicas del aula']},
+                {numero:5,descripcion:'Desarrollar autonomia en rutinas escolares basicas',trimestre:1,criterio:'CPSAA.2',indicadores:['Sigue la rutina del aula con apoyo visual','Prepara el material necesario para cada actividad','Recoge y organiza su espacio al terminar','Sigue las normas basicas del aula']},
                 {numero:6,descripcion:'Mejorar resolucion de problemas cotidianos con manipulativos',trimestre:2,criterio:'MA.1.1.1',indicadores:['Resuelve situaciones de suma con objetos reales','Comprende situaciones de quitar y anadir en contexto real','Modela el problema con materiales manipulativos','Verifica el resultado con material concreto']},
                 {numero:7,descripcion:'Desarrollar expresion escrita funcional basica',trimestre:2,criterio:'LCL.1.4.1',indicadores:['Copia palabras y frases significativas','Escribe palabras frecuentes con apoyo','Completa frases con vocabulario trabajado','Produce mensaje corto con ayuda del modelo']},
                 {numero:8,descripcion:'Ampliar comprension de instrucciones orales y escritas simples',trimestre:2,criterio:'LCL.1.1.1',indicadores:['Sigue instruccion de un paso oral','Comprende instruccion escrita con pictograma','Ejecuta la actividad pedida con apoyo minimo','Pide que le repitan si no ha comprendido']},
-                {numero:9,descripcion:'Desarrollar habilidades sociales basicas en el aula',trimestre:2,criterio:'CA.4.1',indicadores:['Saluda y se despide de forma apropiada','Espera su turno en actividades','Pide las cosas con educacion','Responde cuando le hablan']},
+                {numero:9,descripcion:'Desarrollar habilidades sociales basicas en el aula',trimestre:2,criterio:'CC.1',indicadores:['Saluda y se despide de forma apropiada','Espera su turno en actividades','Pide las cosas con educacion','Responde cuando le hablan']},
                 {numero:10,descripcion:'Mejorar lectoescritura funcional de palabras y frases',trimestre:2,criterio:'LCL.1.3.1',indicadores:['Lee palabras frecuentes por vision global','Lee frases cortas con imagen de apoyo','Escribe el propio nombre con autonomia','Asocia palabra escrita con su referente real']},
                 {numero:11,descripcion:'Consolidar numeracion y calculo funcional',trimestre:3,criterio:'MA.1.2.1',indicadores:['Suma numeros pequenos con apoyo manipulativo','Resta en situaciones de quitar con objetos','Usa el dinero de forma muy basica (monedas)','Aplica el numero en situaciones de la vida real']},
                 {numero:12,descripcion:'Ampliar comprension de textos con pictogramas de todas las areas',trimestre:3,criterio:'LCL.1.3.2',indicadores:['Comprende texto adaptado con pictogramas de Conocimiento','Lee ficha de Sociales o Naturales adaptada','Extrae informacion del texto apoyado en imagen','Responde preguntas sobre texto adaptado']},
-                {numero:13,descripcion:'Desarrollar habilidades de autonomia personal en el colegio',trimestre:3,criterio:'CA.3.1',indicadores:['Gestiona sus necesidades fisicas basicas con autonomia','Cuida su higiene personal en el cole','Maneja su material escolar','Se desplaza por el centro con independencia creciente']},
+                {numero:13,descripcion:'Desarrollar habilidades de autonomia personal en el colegio',trimestre:3,criterio:'CE.1',indicadores:['Gestiona sus necesidades fisicas basicas con autonomia','Cuida su higiene personal en el cole','Maneja su material escolar','Se desplaza por el centro con independencia creciente']},
                 {numero:14,descripcion:'Mejorar comunicacion funcional en situaciones cotidianas',trimestre:3,criterio:'LCL.1.1.1',indicadores:['Pide lo que necesita de forma verbal o con apoyo','Expresa que algo no le gusta de forma adecuada','Comunica como se siente con vocabulario basico','Responde a preguntas sencillas sobre su experiencia']},
-                {numero:15,descripcion:'Generalizar aprendizajes funcionales a nuevos contextos',trimestre:3,criterio:'CA.1.3',indicadores:['Aplica lo aprendido en situaciones de la vida real','Transfiere habilidades escolares a contextos del hogar','Muestra iniciativa en situaciones conocidas','Generaliza con apoyo a entornos nuevos']}
+                {numero:15,descripcion:'Generalizar aprendizajes funcionales a nuevos contextos',trimestre:3,criterio:'CPSAA.2',indicadores:['Aplica lo aprendido en situaciones de la vida real','Transfiere habilidades escolares a contextos del hogar','Muestra iniciativa en situaciones conocidas','Generaliza con apoyo a entornos nuevos']}
             ]},
             // ── DISCAPACIDAD INTELECTUAL PT — Ciclo 2 (3º-4º) ──────────────────
             {nombre:'Discapacidad Intelectual (PT)',ciclo:'ciclo2',tipo:'di',objetivos:[
@@ -1667,14 +1711,14 @@
                 {numero:5,descripcion:'Mejorar produccion escrita funcional',trimestre:1,criterio:'LCL.2.4.1',indicadores:['Escribe frases con estructura sencilla','Produce texto breve a partir de modelo','Completa textos con huecos con vocabulario trabajado','Escribe su informacion personal de forma autonoma']},
                 {numero:6,descripcion:'Desarrollar comprension de contenidos curriculares adaptados',trimestre:2,criterio:'LCL.2.3.2',indicadores:['Comprende las ideas principales del tema adaptado','Identifica los conceptos clave con apoyo visual','Asocia termino con definicion sencilla','Responde preguntas sobre el tema con frases completas']},
                 {numero:7,descripcion:'Mejorar resolucion de problemas matematicos funcionales',trimestre:2,criterio:'MA.2.1.1',indicadores:['Identifica los datos del problema con apoyo','Elige la operacion adecuada en problemas de una operacion','Modela el problema con material o dibujo','Verifica si el resultado tiene sentido en el contexto']},
-                {numero:8,descripcion:'Desarrollar habilidades de organizacion y estudio adaptado',trimestre:2,criterio:'CA.1.3',indicadores:['Organiza el material de estudio con apoyo visual','Usa un esquema sencillo para preparar un tema','Sigue una rutina de estudio adaptada','Identifica lo que sabe y lo que no sabe de un tema']},
-                {numero:9,descripcion:'Ampliar autonomia academica con apoyos ajustados',trimestre:2,criterio:'CA.1.3',indicadores:['Trabaja de forma semi-autonoma en tareas conocidas','Inicia la tarea con el apoyo del paso a paso','Solicita ayuda de forma adecuada cuando la necesita','Reduce la dependencia del adulto en situaciones dominadas']},
+                {numero:8,descripcion:'Desarrollar habilidades de organizacion y estudio adaptado',trimestre:2,criterio:'CPSAA.2',indicadores:['Organiza el material de estudio con apoyo visual','Usa un esquema sencillo para preparar un tema','Sigue una rutina de estudio adaptada','Identifica lo que sabe y lo que no sabe de un tema']},
+                {numero:9,descripcion:'Ampliar autonomia academica con apoyos ajustados',trimestre:2,criterio:'CPSAA.2',indicadores:['Trabaja de forma semi-autonoma en tareas conocidas','Inicia la tarea con el apoyo del paso a paso','Solicita ayuda de forma adecuada cuando la necesita','Reduce la dependencia del adulto en situaciones dominadas']},
                 {numero:10,descripcion:'Mejorar medida y geometria funcionales',trimestre:2,criterio:'MA.2.4.1',indicadores:['Mide con regla en actividades practicas','Conoce las unidades de medida de uso cotidiano','Reconoce formas geometricas en el entorno','Aplica la medida en proyectos practicos y manuales']},
                 {numero:11,descripcion:'Consolidar lectura y escritura para el aprendizaje de area',trimestre:3,criterio:'LCL.2.3.2',indicadores:['Lee y comprende texto adaptado de Naturales y Sociales','Escribe respuestas breves sobre el tema estudiado','Completa fichas adaptadas de forma semi-autonoma','Muestra comprension del contenido curricular basico']},
                 {numero:12,descripcion:'Desarrollar habilidades matematicas de datos y estadistica',trimestre:3,criterio:'MA.2.5.1',indicadores:['Lee pictogramas sencillos de datos','Responde preguntas sobre tablas con apoyo','Extrae informacion basica de graficos','Construye grafico sencillo con datos propios']},
-                {numero:13,descripcion:'Ampliar habilidades sociales y de convivencia',trimestre:3,criterio:'CA.4.1',indicadores:['Resuelve conflictos menores con ayuda','Trabaja en pareja con compañero','Respeta normas de convivencia del aula','Muestra habilidades de relacion positiva con iguales']},
+                {numero:13,descripcion:'Ampliar habilidades sociales y de convivencia',trimestre:3,criterio:'CC.1',indicadores:['Resuelve conflictos menores con ayuda','Trabaja en pareja con compañero','Respeta normas de convivencia del aula','Muestra habilidades de relacion positiva con iguales']},
                 {numero:14,descripcion:'Mejorar competencia comunicativa oral en situaciones academicas',trimestre:3,criterio:'LCL.2.2.1',indicadores:['Participa en dialogo estructurado de aula','Responde preguntas sobre el tema con frase completa','Expone un trabajo sencillo con apoyo de imagenes','Comunica sus necesidades academicas al docente']},
-                {numero:15,descripcion:'Generalizar aprendizajes funcionales a la vida cotidiana',trimestre:3,criterio:'CA.1.3',indicadores:['Aplica calculo y lectura en situaciones reales','Usa habilidades de autonomia en el hogar y la calle','Transfiere lo aprendido a entornos naturales','Muestra competencia funcional en situaciones cotidianas']}
+                {numero:15,descripcion:'Generalizar aprendizajes funcionales a la vida cotidiana',trimestre:3,criterio:'CPSAA.2',indicadores:['Aplica calculo y lectura en situaciones reales','Usa habilidades de autonomia en el hogar y la calle','Transfiere lo aprendido a entornos naturales','Muestra competencia funcional en situaciones cotidianas']}
             ]},
             // ── DISCAPACIDAD INTELECTUAL PT — Ciclo 3 (5º-6º) ──────────────────
             {nombre:'Discapacidad Intelectual (PT)',ciclo:'ciclo3',tipo:'di',objetivos:[
@@ -1682,71 +1726,71 @@
                 {numero:2,descripcion:'Mejorar comprension de textos informativos y academicos adaptados',trimestre:1,criterio:'LCL.3.3.2',indicadores:['Comprende texto adaptado de Naturales Sociales e Historia','Extrae la idea principal con estrategia','Responde preguntas de comprension con frase completa','Relaciona el contenido con su experiencia']},
                 {numero:3,descripcion:'Desarrollar calculo y matematicas funcionales avanzadas',trimestre:1,criterio:'MA.3.1.2',indicadores:['Gestiona dinero en situaciones reales de compra','Calcula precios cantidades y cambios en contexto','Usa el tiempo y el calendario de forma funcional','Aplica la medida en proyectos practicos de la vida real']},
                 {numero:4,descripcion:'Ampliar acceso al curriculo de todas las areas con ACS',trimestre:1,criterio:'LCL.3.3.2',indicadores:['Trabaja los contenidos adaptados de todas las asignaturas','Usa materiales adaptados de forma autonoma','Alcanza los objetivos minimos del ACS','Muestra aprendizaje de los contenidos esenciales']},
-                {numero:5,descripcion:'Mejorar habilidades de organizacion autonoma del aprendizaje',trimestre:1,criterio:'CA.1.3',indicadores:['Organiza su agenda y material de forma autonoma','Sigue la planificacion del dia sin apoyo constante','Prepara los materiales necesarios para cada actividad','Gestiona los deberes con apoyo familiar minimo']},
+                {numero:5,descripcion:'Mejorar habilidades de organizacion autonoma del aprendizaje',trimestre:1,criterio:'CPSAA.2',indicadores:['Organiza su agenda y material de forma autonoma','Sigue la planificacion del dia sin apoyo constante','Prepara los materiales necesarios para cada actividad','Gestiona los deberes con apoyo familiar minimo']},
                 {numero:6,descripcion:'Desarrollar produccion escrita funcional y de area',trimestre:2,criterio:'LCL.3.4.1',indicadores:['Redacta respuestas de examen adaptado con coherencia','Escribe textos breves sobre temas trabajados','Produce resumen con esquema previo','Usa vocabulario de area en la produccion escrita']},
                 {numero:7,descripcion:'Mejorar resolucion de problemas matematicos de la vida real',trimestre:2,criterio:'MA.3.1.2',indicadores:['Resuelve problemas de una operacion en contexto real','Aplica porcentajes basicos en situaciones cotidianas (descuentos)','Usa la proporcionalidad en recetas y medidas','Interpreta datos de documentos cotidianos (facturas, horarios)']},
-                {numero:8,descripcion:'Desarrollar habilidades para la transicion post-escolar',trimestre:2,criterio:'CA.1.3',indicadores:['Conoce sus fortalezas y capacidades personales','Identifica actividades que le gustan y en las que destaca','Comprende la importancia de la autonomia personal','Prepara la transicion a la secundaria o a otros itinerarios']},
-                {numero:9,descripcion:'Ampliar habilidades sociales y de ciudadania activa',trimestre:2,criterio:'CA.4.2',indicadores:['Conoce sus derechos y responsabilidades basicas','Participa en actividades colectivas del centro','Resuelve conflictos con mediacion creciente','Muestra respeto y empatia en las relaciones']},
-                {numero:10,descripcion:'Mejorar uso funcional de la tecnologia',trimestre:2,criterio:'DE.2.3',indicadores:['Usa el dispositivo digital para actividades educativas','Navega con supervision en entornos seguros','Usa aplicaciones de apoyo al aprendizaje','Produce contenido digital sencillo con apoyo']},
-                {numero:11,descripcion:'Consolidar autonomia personal y escolar plena',trimestre:3,criterio:'CA.1.3',indicadores:['Gestiona sus necesidades personales en el colegio','Se desplaza con autonomia por el entorno escolar y conocido','Cumple responsabilidades escolares sin recordatorio constante','Muestra iniciativa en situaciones cotidianas']},
-                {numero:12,descripcion:'Desarrollar preparacion para la ESO o recurso alternativo',trimestre:3,criterio:'CA.1.3',indicadores:['Conoce el itinerario que seguira el proximo curso','Tiene objetivos personales para la siguiente etapa','Muestra recursos personales para afrontar el cambio','Prepara la despedida del colegio de forma positiva']},
+                {numero:8,descripcion:'Desarrollar habilidades para la transicion post-escolar',trimestre:2,criterio:'CPSAA.2',indicadores:['Conoce sus fortalezas y capacidades personales','Identifica actividades que le gustan y en las que destaca','Comprende la importancia de la autonomia personal','Prepara la transicion a la secundaria o a otros itinerarios']},
+                {numero:9,descripcion:'Ampliar habilidades sociales y de ciudadania activa',trimestre:2,criterio:'CC.4',indicadores:['Conoce sus derechos y responsabilidades basicas','Participa en actividades colectivas del centro','Resuelve conflictos con mediacion creciente','Muestra respeto y empatia en las relaciones']},
+                {numero:10,descripcion:'Mejorar uso funcional de la tecnologia',trimestre:2,criterio:'CPSAA.5',indicadores:['Usa el dispositivo digital para actividades educativas','Navega con supervision en entornos seguros','Usa aplicaciones de apoyo al aprendizaje','Produce contenido digital sencillo con apoyo']},
+                {numero:11,descripcion:'Consolidar autonomia personal y escolar plena',trimestre:3,criterio:'CPSAA.2',indicadores:['Gestiona sus necesidades personales en el colegio','Se desplaza con autonomia por el entorno escolar y conocido','Cumple responsabilidades escolares sin recordatorio constante','Muestra iniciativa en situaciones cotidianas']},
+                {numero:12,descripcion:'Desarrollar preparacion para la ESO o recurso alternativo',trimestre:3,criterio:'CPSAA.2',indicadores:['Conoce el itinerario que seguira el proximo curso','Tiene objetivos personales para la siguiente etapa','Muestra recursos personales para afrontar el cambio','Prepara la despedida del colegio de forma positiva']},
                 {numero:13,descripcion:'Ampliar competencia matematica funcional completa',trimestre:3,criterio:'MA.3.1.2',indicadores:['Aplica matematicas en todas las situaciones cotidianas','Usa el calculo como herramienta con autonomia','Interpreta informacion numerica del entorno','Muestra competencia matematica funcional para la vida']},
-                {numero:14,descripcion:'Mejorar autoconcepto y autoestima academica',trimestre:3,criterio:'CA.2.1',indicadores:['Reconoce sus logros y capacidades','Afronta nuevas tareas con confianza','Valora su esfuerzo por encima del resultado','Muestra motivacion intrinseca hacia el aprendizaje']},
-                {numero:15,descripcion:'Generalizar competencias funcionales a la vida cotidiana',trimestre:3,criterio:'CA.1.3',indicadores:['Aplica con autonomia lectura calculo y comunicacion en contextos reales','Muestra independencia en situaciones de la vida diaria','Transfiere aprendizajes escolares al entorno familiar y social','Muestra preparacion funcional para la siguiente etapa']}
+                {numero:14,descripcion:'Mejorar autoconcepto y autoestima academica',trimestre:3,criterio:'CPSAA.1',indicadores:['Reconoce sus logros y capacidades','Afronta nuevas tareas con confianza','Valora su esfuerzo por encima del resultado','Muestra motivacion intrinseca hacia el aprendizaje']},
+                {numero:15,descripcion:'Generalizar competencias funcionales a la vida cotidiana',trimestre:3,criterio:'CPSAA.2',indicadores:['Aplica con autonomia lectura calculo y comunicacion en contextos reales','Muestra independencia en situaciones de la vida diaria','Transfiere aprendizajes escolares al entorno familiar y social','Muestra preparacion funcional para la siguiente etapa']}
             ,
             // ── TEA PT — Infantil ────────────────────────────────────────────
             {nombre:'TEA (PT)',ciclo:'infantil',tipo:'tea',objetivos:[
-                {numero:1,descripcion:'Desarrollar anticipacion mediante apoyos visuales',trimestre:1,criterio:'CA.1.3',indicadores:['Comprende el horario visual del dia','Anticipa la siguiente actividad con pictograma','Acepta el cambio de actividad con aviso previo','Tolera la espera con apoyo visual']},
-                {numero:2,descripcion:'Mejorar respuesta a la atencion conjunta',trimestre:1,criterio:'CR.1.1',indicadores:['Sigue la mirada o gesto del adulto','Senala para mostrar algo de interes','Comparte referencia con el adulto en actividad','Dirige la atencion de otro hacia algo']},
-                {numero:3,descripcion:'Desarrollar comprension de ordenes simples con contexto visual',trimestre:1,criterio:'CR.2.1',indicadores:['Responde a su nombre','Sigue orden de un paso con apoyo gestual','Identifica objetos conocidos cuando se le pide','Comprende no y para con consecuencia inmediata']},
-                {numero:4,descripcion:'Mejorar contacto social basico con adultos conocidos',trimestre:1,criterio:'CA.4.1',indicadores:['Acepta la proximidad del adulto de referencia','Inicia contacto con adulto conocido','Responde a la interaccion social del adulto','Muestra preferencia por adultos conocidos']},
-                {numero:5,descripcion:'Desarrollar juego funcional con objetos',trimestre:1,criterio:'DE.2.1',indicadores:['Usa objetos para su funcion habitual','Explora materiales de forma intencional','Imita acciones sencillas con objetos','Mantiene juego funcional breve']},
-                {numero:6,descripcion:'Ampliar tolerancia a nuevas situaciones y entornos',trimestre:2,criterio:'CA.2.3',indicadores:['Acepta actividad nueva con anticipacion visual','Permanece en espacio diferente al habitual','Tolera cambio en el orden de actividades con apoyo','Se recupera tras situacion inesperada']},
-                {numero:7,descripcion:'Mejorar imitacion como base del aprendizaje',trimestre:2,criterio:'CR.3.2',indicadores:['Imita gestos simples del adulto','Imita acciones con objetos','Reproduce movimientos en canciones','Imita expresiones faciales basicas']},
-                {numero:8,descripcion:'Desarrollar reconocimiento de emociones basicas',trimestre:2,criterio:'CA.2.1',indicadores:['Identifica cara alegre y triste en foto','Asocia imagen de emocion con la palabra','Reconoce su propia expresion en espejo','Responde al estado emocional del adulto']},
-                {numero:9,descripcion:'Mejorar participacion en rutinas estructuradas de aula',trimestre:2,criterio:'CA.1.3',indicadores:['Participa en la asamblea con apoyo','Sigue el orden de la rutina de clase','Realiza la transicion entre actividades','Completa la rutina de entrada y salida']},
-                {numero:10,descripcion:'Desarrollar juego con otro nino con mediacion',trimestre:2,criterio:'CA.4.1',indicadores:['Juega en paralelo junto a un igual','Acepta la presencia de otro nino en su espacio','Interactua brevemente con igual con apoyo adulto','Comparte material con mediacion']},
-                {numero:11,descripcion:'Ampliar comprension de vocabulario basico del entorno',trimestre:3,criterio:'CR.2.1',indicadores:['Identifica objetos del aula por su nombre','Comprende vocabulario de rutinas diarias','Senala imagenes de objetos conocidos','Responde a preguntas simples con apoyo visual']},
-                {numero:12,descripcion:'Mejorar gestion sensorial en el entorno escolar',trimestre:3,criterio:'CA.2.1',indicadores:['Tolera los ruidos habituales del aula','Acepta el contacto fisico en actividades dirigidas','Usa el rincon de calma de forma funcional','Comunica malestar sensorial al adulto']},
-                {numero:13,descripcion:'Desarrollar comunicacion funcional basica',trimestre:3,criterio:'CR.1.1',indicadores:['Pide lo que necesita con gesto imagen o palabra','Rechaza lo que no quiere de forma apropiada','Hace peticiones con apoyo del sistema de comunicacion','Usa la comunicacion para interactuar socialmente']},
-                {numero:14,descripcion:'Mejorar autonomia en actividades de la vida diaria',trimestre:3,criterio:'CA.3.1',indicadores:['Realiza el aseo con apoyo minimo','Colabora en el vestido y desvestido','Come de forma semi-autonoma','Sigue la secuencia de higiene con pictogramas']},
-                {numero:15,descripcion:'Generalizar aprendizajes a distintos contextos del cole',trimestre:3,criterio:'CA.1.3',indicadores:['Aplica rutinas en distintos espacios del centro','Responde a adultos diferentes con apoyo','Usa apoyos visuales de forma funcional fuera del aula PT','Muestra habilidades aprendidas en aula ordinaria']}
+                {numero:1,descripcion:'Desarrollar anticipacion mediante apoyos visuales',trimestre:1,criterio:'CPSAA.2',indicadores:['Comprende el horario visual del dia','Anticipa la siguiente actividad con pictograma','Acepta el cambio de actividad con aviso previo','Tolera la espera con apoyo visual']},
+                {numero:2,descripcion:'Mejorar respuesta a la atencion conjunta',trimestre:1,criterio:'CCL.1',indicadores:['Sigue la mirada o gesto del adulto','Senala para mostrar algo de interes','Comparte referencia con el adulto en actividad','Dirige la atencion de otro hacia algo']},
+                {numero:3,descripcion:'Desarrollar comprension de ordenes simples con contexto visual',trimestre:1,criterio:'CCL.3',indicadores:['Responde a su nombre','Sigue orden de un paso con apoyo gestual','Identifica objetos conocidos cuando se le pide','Comprende no y para con consecuencia inmediata']},
+                {numero:4,descripcion:'Mejorar contacto social basico con adultos conocidos',trimestre:1,criterio:'CC.1',indicadores:['Acepta la proximidad del adulto de referencia','Inicia contacto con adulto conocido','Responde a la interaccion social del adulto','Muestra preferencia por adultos conocidos']},
+                {numero:5,descripcion:'Desarrollar juego funcional con objetos',trimestre:1,criterio:'CPSAA.1',indicadores:['Usa objetos para su funcion habitual','Explora materiales de forma intencional','Imita acciones sencillas con objetos','Mantiene juego funcional breve']},
+                {numero:6,descripcion:'Ampliar tolerancia a nuevas situaciones y entornos',trimestre:2,criterio:'CC.3',indicadores:['Acepta actividad nueva con anticipacion visual','Permanece en espacio diferente al habitual','Tolera cambio en el orden de actividades con apoyo','Se recupera tras situacion inesperada']},
+                {numero:7,descripcion:'Mejorar imitacion como base del aprendizaje',trimestre:2,criterio:'CCL.5',indicadores:['Imita gestos simples del adulto','Imita acciones con objetos','Reproduce movimientos en canciones','Imita expresiones faciales basicas']},
+                {numero:8,descripcion:'Desarrollar reconocimiento de emociones basicas',trimestre:2,criterio:'CPSAA.1',indicadores:['Identifica cara alegre y triste en foto','Asocia imagen de emocion con la palabra','Reconoce su propia expresion en espejo','Responde al estado emocional del adulto']},
+                {numero:9,descripcion:'Mejorar participacion en rutinas estructuradas de aula',trimestre:2,criterio:'CPSAA.2',indicadores:['Participa en la asamblea con apoyo','Sigue el orden de la rutina de clase','Realiza la transicion entre actividades','Completa la rutina de entrada y salida']},
+                {numero:10,descripcion:'Desarrollar juego con otro nino con mediacion',trimestre:2,criterio:'CC.1',indicadores:['Juega en paralelo junto a un igual','Acepta la presencia de otro nino en su espacio','Interactua brevemente con igual con apoyo adulto','Comparte material con mediacion']},
+                {numero:11,descripcion:'Ampliar comprension de vocabulario basico del entorno',trimestre:3,criterio:'CCL.3',indicadores:['Identifica objetos del aula por su nombre','Comprende vocabulario de rutinas diarias','Senala imagenes de objetos conocidos','Responde a preguntas simples con apoyo visual']},
+                {numero:12,descripcion:'Mejorar gestion sensorial en el entorno escolar',trimestre:3,criterio:'CPSAA.1',indicadores:['Tolera los ruidos habituales del aula','Acepta el contacto fisico en actividades dirigidas','Usa el rincon de calma de forma funcional','Comunica malestar sensorial al adulto']},
+                {numero:13,descripcion:'Desarrollar comunicacion funcional basica',trimestre:3,criterio:'CCL.1',indicadores:['Pide lo que necesita con gesto imagen o palabra','Rechaza lo que no quiere de forma apropiada','Hace peticiones con apoyo del sistema de comunicacion','Usa la comunicacion para interactuar socialmente']},
+                {numero:14,descripcion:'Mejorar autonomia en actividades de la vida diaria',trimestre:3,criterio:'CE.1',indicadores:['Realiza el aseo con apoyo minimo','Colabora en el vestido y desvestido','Come de forma semi-autonoma','Sigue la secuencia de higiene con pictogramas']},
+                {numero:15,descripcion:'Generalizar aprendizajes a distintos contextos del cole',trimestre:3,criterio:'CPSAA.2',indicadores:['Aplica rutinas en distintos espacios del centro','Responde a adultos diferentes con apoyo','Usa apoyos visuales de forma funcional fuera del aula PT','Muestra habilidades aprendidas en aula ordinaria']}
             ]},
             // ── TEL/DISFASIA PT — Infantil ────────────────────────────────────
             {nombre:'TEL / Disfasia (PT)',ciclo:'infantil',tipo:'tel',objetivos:[
-                {numero:1,descripcion:'Desarrollar comprension de vocabulario basico del entorno',trimestre:1,criterio:'CR.2.1',indicadores:['Identifica objetos del entorno por su nombre','Comprende vocabulario de rutinas diarias','Asocia imagen con palabra en materiales visuales','Responde a su nombre y a palabras clave']},
-                {numero:2,descripcion:'Mejorar comprension de ordenes simples',trimestre:1,criterio:'CR.2.1',indicadores:['Sigue orden de un paso en contexto familiar','Ejecuta peticion acompanada de gesto','Comprende orden de dos pasos con apoyo','Responde a instrucciones de la rutina diaria']},
-                {numero:3,descripcion:'Ampliar vocabulario comprensivo por categorias',trimestre:1,criterio:'CR.2.1',indicadores:['Identifica animales comunes en imagen','Reconoce alimentos y objetos del hogar','Comprende vocabulario del aula y rutinas','Asocia palabras con su categoria con apoyo']},
-                {numero:4,descripcion:'Desarrollar atencion y escucha activa',trimestre:1,criterio:'CR.2.2',indicadores:['Mantiene atencion en cuento corto con imagenes','Escucha cuando el adulto habla directamente','Mira al interlocutor durante la comunicacion','Responde con gesto o accion a lo escuchado']},
-                {numero:5,descripcion:'Mejorar comprension de textos orales breves',trimestre:1,criterio:'CR.2.1',indicadores:['Comprende cuento breve con apoyo visual','Identifica personaje principal con ayuda','Responde donde esta o quien es con senalar','Anticipa que viene en cuento conocido']},
-                {numero:6,descripcion:'Desarrollar acceso a textos emergentes con imagen',trimestre:2,criterio:'CR.4.1',indicadores:['Muestra interes por los libros y cuentos','Segun la imagen anticipa lo que dice el texto','Identifica para que sirve un texto escrito','Relaciona imagen y texto en material del aula']},
-                {numero:7,descripcion:'Ampliar vocabulario expresivo con apoyo',trimestre:2,criterio:'CR.3.1',indicadores:['Nombra objetos conocidos con apoyo de imagen','Usa palabras para pedir y rechazar','Etiqueta verbalmente lo que ve en imagen','Amplia vocabulario con actividades semanticas']},
-                {numero:8,descripcion:'Mejorar comprension de nociones basicas',trimestre:2,criterio:'DE.1.2',indicadores:['Comprende grande-pequeno aplicado a objetos','Identifica arriba-abajo dentro-fuera','Comprende mucho-poco mas-menos','Usa nociones basicas en actividades cotidianas']},
-                {numero:9,descripcion:'Desarrollar escucha y comprension en situaciones de grupo',trimestre:2,criterio:'CR.2.2',indicadores:['Atiende a la explicacion del adulto en asamblea','Comprende lo que se pide en actividad grupal','Responde a pregunta dirigida al grupo','Sigue el ritmo de la actividad grupal']},
-                {numero:10,descripcion:'Mejorar acceso al vocabulario de areas de aprendizaje',trimestre:2,criterio:'CR.2.1',indicadores:['Comprende vocabulario de matematicas basicas','Identifica palabras del area de naturales','Comprende terminos de las rutinas de aprendizaje','Asocia vocabulario con la actividad correspondiente']},
-                {numero:11,descripcion:'Consolidar comprension de cuentos y narraciones',trimestre:3,criterio:'CR.4.1',indicadores:['Comprende cuento con estructura simple','Identifica inicio y final con apoyo','Responde preguntas sobre el cuento con imagen','Ordena dos o tres imagenes del cuento']},
-                {numero:12,descripcion:'Ampliar comprension del lenguaje en situaciones de juego',trimestre:3,criterio:'CR.2.1',indicadores:['Comprende propuestas de juego del adulto','Sigue las reglas del juego explicadas oralmente','Comprende los turnos del juego','Interpreta el lenguaje en contexto ludico']},
-                {numero:13,descripcion:'Desarrollar estrategias de comprension con apoyo visual',trimestre:3,criterio:'CR.2.1',indicadores:['Usa la imagen para comprender cuando no entiende la palabra','Pide que le ensenlen la imagen cuando no comprende','Asocia pictograma con la informacion oral','Usa el contexto visual para dar significado']},
-                {numero:14,descripcion:'Mejorar acceso al codigo escrito emergente',trimestre:3,criterio:'CR.4.2',indicadores:['Reconoce su nombre escrito','Diferencia dibujo de escritura','Muestra interes por las letras del entorno','Garabatea con intencion comunicativa']},
-                {numero:15,descripcion:'Generalizar comprension a todos los contextos del cole',trimestre:3,criterio:'CR.2.1',indicadores:['Comprende lo que se le pide en diferentes espacios','Responde adecuadamente en situaciones variadas','Usa el vocabulario aprendido fuera del aula PT','Muestra avance funcional en la comprension']}
+                {numero:1,descripcion:'Desarrollar comprension de vocabulario basico del entorno',trimestre:1,criterio:'CCL.3',indicadores:['Identifica objetos del entorno por su nombre','Comprende vocabulario de rutinas diarias','Asocia imagen con palabra en materiales visuales','Responde a su nombre y a palabras clave']},
+                {numero:2,descripcion:'Mejorar comprension de ordenes simples',trimestre:1,criterio:'CCL.3',indicadores:['Sigue orden de un paso en contexto familiar','Ejecuta peticion acompanada de gesto','Comprende orden de dos pasos con apoyo','Responde a instrucciones de la rutina diaria']},
+                {numero:3,descripcion:'Ampliar vocabulario comprensivo por categorias',trimestre:1,criterio:'CCL.3',indicadores:['Identifica animales comunes en imagen','Reconoce alimentos y objetos del hogar','Comprende vocabulario del aula y rutinas','Asocia palabras con su categoria con apoyo']},
+                {numero:4,descripcion:'Desarrollar atencion y escucha activa',trimestre:1,criterio:'CCL.2',indicadores:['Mantiene atencion en cuento corto con imagenes','Escucha cuando el adulto habla directamente','Mira al interlocutor durante la comunicacion','Responde con gesto o accion a lo escuchado']},
+                {numero:5,descripcion:'Mejorar comprension de textos orales breves',trimestre:1,criterio:'CCL.3',indicadores:['Comprende cuento breve con apoyo visual','Identifica personaje principal con ayuda','Responde donde esta o quien es con senalar','Anticipa que viene en cuento conocido']},
+                {numero:6,descripcion:'Desarrollar acceso a textos emergentes con imagen',trimestre:2,criterio:'CCL.3',indicadores:['Muestra interes por los libros y cuentos','Segun la imagen anticipa lo que dice el texto','Identifica para que sirve un texto escrito','Relaciona imagen y texto en material del aula']},
+                {numero:7,descripcion:'Ampliar vocabulario expresivo con apoyo',trimestre:2,criterio:'CCL.4',indicadores:['Nombra objetos conocidos con apoyo de imagen','Usa palabras para pedir y rechazar','Etiqueta verbalmente lo que ve en imagen','Amplia vocabulario con actividades semanticas']},
+                {numero:8,descripcion:'Mejorar comprension de nociones basicas',trimestre:2,criterio:'STEM.4',indicadores:['Comprende grande-pequeno aplicado a objetos','Identifica arriba-abajo dentro-fuera','Comprende mucho-poco mas-menos','Usa nociones basicas en actividades cotidianas']},
+                {numero:9,descripcion:'Desarrollar escucha y comprension en situaciones de grupo',trimestre:2,criterio:'CCL.2',indicadores:['Atiende a la explicacion del adulto en asamblea','Comprende lo que se pide en actividad grupal','Responde a pregunta dirigida al grupo','Sigue el ritmo de la actividad grupal']},
+                {numero:10,descripcion:'Mejorar acceso al vocabulario de areas de aprendizaje',trimestre:2,criterio:'CCL.3',indicadores:['Comprende vocabulario de matematicas basicas','Identifica palabras del area de naturales','Comprende terminos de las rutinas de aprendizaje','Asocia vocabulario con la actividad correspondiente']},
+                {numero:11,descripcion:'Consolidar comprension de cuentos y narraciones',trimestre:3,criterio:'CCL.3',indicadores:['Comprende cuento con estructura simple','Identifica inicio y final con apoyo','Responde preguntas sobre el cuento con imagen','Ordena dos o tres imagenes del cuento']},
+                {numero:12,descripcion:'Ampliar comprension del lenguaje en situaciones de juego',trimestre:3,criterio:'CCL.3',indicadores:['Comprende propuestas de juego del adulto','Sigue las reglas del juego explicadas oralmente','Comprende los turnos del juego','Interpreta el lenguaje en contexto ludico']},
+                {numero:13,descripcion:'Desarrollar estrategias de comprension con apoyo visual',trimestre:3,criterio:'CCL.3',indicadores:['Usa la imagen para comprender cuando no entiende la palabra','Pide que le ensenlen la imagen cuando no comprende','Asocia pictograma con la informacion oral','Usa el contexto visual para dar significado']},
+                {numero:14,descripcion:'Mejorar acceso al codigo escrito emergente',trimestre:3,criterio:'CCL.4',indicadores:['Reconoce su nombre escrito','Diferencia dibujo de escritura','Muestra interes por las letras del entorno','Garabatea con intencion comunicativa']},
+                {numero:15,descripcion:'Generalizar comprension a todos los contextos del cole',trimestre:3,criterio:'CCL.3',indicadores:['Comprende lo que se le pide en diferentes espacios','Responde adecuadamente en situaciones variadas','Usa el vocabulario aprendido fuera del aula PT','Muestra avance funcional en la comprension']}
             ]},
             // ── DISCAPACIDAD INTELECTUAL PT — Infantil ────────────────────────
             {nombre:'Discapacidad Intelectual (PT)',ciclo:'infantil',tipo:'di',objetivos:[
-                {numero:1,descripcion:'Desarrollar atencion sostenida en actividades estructuradas',trimestre:1,criterio:'CA.1.3',indicadores:['Permanece en la actividad 3-5 minutos','Atiende al adulto durante la explicacion','Completa actividad corta sin abandonar','Muestra interes por materiales de aprendizaje']},
-                {numero:2,descripcion:'Mejorar comprension de vocabulario basico',trimestre:1,criterio:'CR.2.1',indicadores:['Identifica objetos del entorno inmediato','Comprende palabras de uso cotidiano','Asocia imagen con objeto real','Responde a palabras clave del aula']},
-                {numero:3,descripcion:'Desarrollar nociones logico-matematicas basicas con manipulativos',trimestre:1,criterio:'DE.1.1',indicadores:['Clasifica objetos por un atributo con apoyo','Agrupa objetos iguales','Identifica grande y pequeno','Ordena dos objetos por tamano']},
-                {numero:4,descripcion:'Ampliar autonomia en rutinas basicas del aula',trimestre:1,criterio:'CA.3.1',indicadores:['Sigue la rutina del aula con apoyo visual','Colabora en el aseo personal','Prepara su material con ayuda','Realiza la transicion entre actividades']},
-                {numero:5,descripcion:'Desarrollar comunicacion funcional basica',trimestre:1,criterio:'CR.1.1',indicadores:['Pide lo que necesita con gesto o palabra','Rechaza lo que no quiere de forma apropiada','Atrae la atencion del adulto','Responde a preguntas simples con si o no']},
-                {numero:6,descripcion:'Mejorar coordinacion visomotora para preescritura',trimestre:2,criterio:'CA.1.2',indicadores:['Garabatea con intencion','Traza lineas verticales y horizontales','Colorea sin salirse en espacios grandes','Usa pinza digital para material manipulativo']},
-                {numero:7,descripcion:'Ampliar vocabulario y comprension de nociones',trimestre:2,criterio:'CR.2.1',indicadores:['Comprende vocabulario de los temas del aula','Identifica nociones de cantidad (mucho-poco)','Comprende dentro-fuera arriba-abajo','Asocia palabra con imagen en actividades']},
-                {numero:8,descripcion:'Desarrollar iniciacion al numero con manipulativos',trimestre:2,criterio:'DE.1.2',indicadores:['Cuenta objetos hasta 5 con apoyo','Reconoce los numeros 1 2 3 en tarjetas','Asocia cantidad con numero con material concreto','Compara uno y muchos']},
-                {numero:9,descripcion:'Mejorar participacion en actividades de grupo',trimestre:2,criterio:'CA.4.1',indicadores:['Participa en actividades grupales del aula','Respeta el turno en actividad de grupo','Acepta las normas con apoyo visual','Interactua con iguales en actividades mediadas']},
-                {numero:10,descripcion:'Desarrollar comprension y uso de pictogramas',trimestre:2,criterio:'CR.4.1',indicadores:['Identifica pictogramas del horario visual','Asocia pictograma con actividad','Usa pictograma para comunicar','Comprende el mensaje de una imagen simple']},
-                {numero:11,descripcion:'Ampliar autonomia personal en el colegio',trimestre:3,criterio:'CA.3.1',indicadores:['Realiza el aseo con supervisinn minima','Come de forma autonoma','Se viste con apoyo puntual','Conoce los espacios del colegio y se orienta']},
-                {numero:12,descripcion:'Mejorar iniciacion a la lectura funcional',trimestre:3,criterio:'CR.4.1',indicadores:['Reconoce su nombre escrito','Diferencia textos de dibujos','Muestra interes por libros y cuentos','Identifica palabras muy frecuentes del entorno']},
-                {numero:13,descripcion:'Desarrollar calculo funcional inicial',trimestre:3,criterio:'DE.1.3',indicadores:['Resuelve situaciones de anadir y quitar con objetos','Comprende que si anado hay mas','Cuenta hasta 5 con correspondencia','Usa el numero en situaciones cotidianas del aula']},
-                {numero:14,descripcion:'Mejorar relaciones sociales basicas con iguales',trimestre:3,criterio:'CA.4.2',indicadores:['Juega junto a otros ninos','Acepta propuesta de juego del companero','Comparte material con mediacion adulta','Muestra afecto hacia companeros conocidos']},
-                {numero:15,descripcion:'Generalizar habilidades a contextos cotidianos',trimestre:3,criterio:'CA.1.3',indicadores:['Aplica rutinas aprendidas en distintos contextos','Usa comunicacion funcional fuera del aula PT','Transfiere habilidades al aula ordinaria con apoyo','Muestra progreso funcional generalizado']}
+                {numero:1,descripcion:'Desarrollar atencion sostenida en actividades estructuradas',trimestre:1,criterio:'CPSAA.2',indicadores:['Permanece en la actividad 3-5 minutos','Atiende al adulto durante la explicacion','Completa actividad corta sin abandonar','Muestra interes por materiales de aprendizaje']},
+                {numero:2,descripcion:'Mejorar comprension de vocabulario basico',trimestre:1,criterio:'CCL.3',indicadores:['Identifica objetos del entorno inmediato','Comprende palabras de uso cotidiano','Asocia imagen con objeto real','Responde a palabras clave del aula']},
+                {numero:3,descripcion:'Desarrollar nociones logico-matematicas basicas con manipulativos',trimestre:1,criterio:'CPSAA.4',indicadores:['Clasifica objetos por un atributo con apoyo','Agrupa objetos iguales','Identifica grande y pequeno','Ordena dos objetos por tamano']},
+                {numero:4,descripcion:'Ampliar autonomia en rutinas basicas del aula',trimestre:1,criterio:'CE.1',indicadores:['Sigue la rutina del aula con apoyo visual','Colabora en el aseo personal','Prepara su material con ayuda','Realiza la transicion entre actividades']},
+                {numero:5,descripcion:'Desarrollar comunicacion funcional basica',trimestre:1,criterio:'CCL.1',indicadores:['Pide lo que necesita con gesto o palabra','Rechaza lo que no quiere de forma apropiada','Atrae la atencion del adulto','Responde a preguntas simples con si o no']},
+                {numero:6,descripcion:'Mejorar coordinacion visomotora para preescritura',trimestre:2,criterio:'STEM.2',indicadores:['Garabatea con intencion','Traza lineas verticales y horizontales','Colorea sin salirse en espacios grandes','Usa pinza digital para material manipulativo']},
+                {numero:7,descripcion:'Ampliar vocabulario y comprension de nociones',trimestre:2,criterio:'CCL.3',indicadores:['Comprende vocabulario de los temas del aula','Identifica nociones de cantidad (mucho-poco)','Comprende dentro-fuera arriba-abajo','Asocia palabra con imagen en actividades']},
+                {numero:8,descripcion:'Desarrollar iniciacion al numero con manipulativos',trimestre:2,criterio:'STEM.4',indicadores:['Cuenta objetos hasta 5 con apoyo','Reconoce los numeros 1 2 3 en tarjetas','Asocia cantidad con numero con material concreto','Compara uno y muchos']},
+                {numero:9,descripcion:'Mejorar participacion en actividades de grupo',trimestre:2,criterio:'CC.1',indicadores:['Participa en actividades grupales del aula','Respeta el turno en actividad de grupo','Acepta las normas con apoyo visual','Interactua con iguales en actividades mediadas']},
+                {numero:10,descripcion:'Desarrollar comprension y uso de pictogramas',trimestre:2,criterio:'CCL.3',indicadores:['Identifica pictogramas del horario visual','Asocia pictograma con actividad','Usa pictograma para comunicar','Comprende el mensaje de una imagen simple']},
+                {numero:11,descripcion:'Ampliar autonomia personal en el colegio',trimestre:3,criterio:'CE.1',indicadores:['Realiza el aseo con supervisinn minima','Come de forma autonoma','Se viste con apoyo puntual','Conoce los espacios del colegio y se orienta']},
+                {numero:12,descripcion:'Mejorar iniciacion a la lectura funcional',trimestre:3,criterio:'CCL.3',indicadores:['Reconoce su nombre escrito','Diferencia textos de dibujos','Muestra interes por libros y cuentos','Identifica palabras muy frecuentes del entorno']},
+                {numero:13,descripcion:'Desarrollar calculo funcional inicial',trimestre:3,criterio:'CPSAA.4',indicadores:['Resuelve situaciones de anadir y quitar con objetos','Comprende que si anado hay mas','Cuenta hasta 5 con correspondencia','Usa el numero en situaciones cotidianas del aula']},
+                {numero:14,descripcion:'Mejorar relaciones sociales basicas con iguales',trimestre:3,criterio:'CC.4',indicadores:['Juega junto a otros ninos','Acepta propuesta de juego del companero','Comparte material con mediacion adulta','Muestra afecto hacia companeros conocidos']},
+                {numero:15,descripcion:'Generalizar habilidades a contextos cotidianos',trimestre:3,criterio:'CPSAA.2',indicadores:['Aplica rutinas aprendidas en distintos contextos','Usa comunicacion funcional fuera del aula PT','Transfiere habilidades al aula ordinaria con apoyo','Muestra progreso funcional generalizado']}
             ]}
             ]}
         ];
@@ -1798,9 +1842,50 @@
         function toggleDia(d){const idx=diasSel.indexOf(d);if(idx>-1){if(diasSel.length>1)diasSel.splice(idx,1);}else{diasSel.push(d);diasSel.sort((a,b)=>a-b);}actualizarDiasBtns();}
         function actualizarDiasBtns(){document.querySelectorAll('#diasBtns .dia-btn').forEach(btn=>{btn.classList.toggle('active',diasSel.includes(parseInt(btn.dataset.dia)));});}
         function crearAlumno(){const siglas=document.getElementById('nuevoSiglas').value.trim().toUpperCase();if(!siglas){toast('Introduce siglas','error');return;}const cursoSel=document.getElementById('nuevoCurso'),cursoTexto=cursoSel.options[cursoSel.selectedIndex].text,ciclo=cursoSel.value;db.ref('gestorpe/alumnos').push().set({siglas:siglas,curso:cursoTexto,ciclo:ciclo,diasSesion:diasSel.slice(),programas:{},programacion:{},evaluaciones:{},ausencias:{},sincole:{},resultados:{},pasados:{}}).then(()=>{cerrarModal('modalNuevo');toast(siglas+' creado ✓','success');});}
-        function abrirAlumno(id){alumnoActual=id;mesActual=getMesEscolarActual();evalTrim=1;document.getElementById('screenInicio').classList.remove('active');document.getElementById('screenAlumno').classList.add('active');const a=alumnos[id],diasStr=(a.diasSesion||[0,2,4]).map(d=>DIAS_C[d]).join('-');document.getElementById('alumnoHeader').innerHTML='<div class="alumno-header-siglas">'+a.siglas+'</div><div><h2 style="font-size:.95rem">'+a.curso+'</h2><p style="color:var(--text-light);font-size:.75rem">'+diasStr+'</p></div><div style="margin-left:auto" class="btn-group no-print"><button class="btn btn-secondary btn-sm" onclick="volverInicio()">← Volver</button><button class="btn btn-secondary btn-sm" onclick="window.print()">🖨️</button><button class="btn btn-danger btn-sm" onclick="eliminarAlumno(\''+id+'\')">🗑️</button></div>';document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===0));document.querySelectorAll('.tab-content').forEach((c,i)=>c.classList.toggle('active',i===0));renderProgs();renderProg();renderEval();renderAsis();}
+        function abrirAlumno(id){alumnoActual=id;mesActual=getMesEscolarActual();evalTrim=1;document.getElementById('screenInicio').classList.remove('active');document.getElementById('screenAlumno').classList.add('active');const a=alumnos[id],diasStr=(a.diasSesion||[0,2,4]).map(d=>DIAS_C[d]).join('-');document.getElementById('alumnoHeader').innerHTML='<div class="alumno-header-siglas">'+a.siglas+'</div><div><h2 style="font-size:.95rem">'+a.curso+'</h2><p style="color:var(--text-light);font-size:.75rem">'+diasStr+'</p></div><div style="margin-left:auto" class="btn-group no-print"><button class="btn btn-secondary btn-sm" onclick="volverInicio()">← Volver</button><button class="btn btn-secondary btn-sm" onclick="window.print()">🖨️</button><button class="btn btn-danger btn-sm" onclick="eliminarAlumno(\''+id+'\')">🗑️</button><button class=\"btn btn-secondary btn-sm\" onclick=\"abrirEditarAlumno(\''+id+'\')\">✏️ Editar</button></div>';document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===0));document.querySelectorAll('.tab-content').forEach((c,i)=>c.classList.toggle('active',i===0));renderProgs();renderProg();renderEval();renderAsis();}
         function volverInicio(){alumnoActual=null;document.getElementById('screenAlumno').classList.remove('active');document.getElementById('screenInicio').classList.add('active');}
         function cambiarTab(t){document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));event.target.classList.add('active');document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));document.getElementById('tab'+t.charAt(0).toUpperCase()+t.slice(1)).classList.add('active');if(t==='asistencia')setTimeout(renderAsisCharts,100);if(t==='evaluacion')setTimeout(renderEvalCharts,100);if(t==='seneca')renderSeneca();if(t==='geu')renderGEUTab();}
+        var _diasEdit=[];
+
+        function abrirEditarAlumno(id){
+            const a=alumnos[id];if(!a)return;
+            window._editandoAlumno=id;
+            document.getElementById('editSiglas').value=a.siglas||'';
+            const sel=document.getElementById('editCurso');
+            for(let i=0;i<sel.options.length;i++){
+                if(sel.options[i].text===a.curso){sel.selectedIndex=i;break;}
+            }
+            _diasEdit=[...(a.diasSesion||[1,3,4])];
+            _actualizarDiasBtnsEdit();
+            abrirModal('modalEditarAlumno');
+        }
+        function toggleDiaEdit(d){
+            const idx=_diasEdit.indexOf(d);
+            if(idx>-1){if(_diasEdit.length>1)_diasEdit.splice(idx,1);}
+            else{_diasEdit.push(d);_diasEdit.sort((a,b)=>a-b);}
+            _actualizarDiasBtnsEdit();
+        }
+        function _actualizarDiasBtnsEdit(){
+            document.querySelectorAll('#editDiasBtns .dia-btn').forEach(btn=>{
+                btn.classList.toggle('active',_diasEdit.includes(parseInt(btn.dataset.dia)));
+            });
+        }
+        function guardarEdicionAlumno(){
+            const id=window._editandoAlumno;if(!id)return;
+            const siglas=document.getElementById('editSiglas').value.trim().toUpperCase();
+            if(!siglas){toast('Introduce las siglas','error');return;}
+            const sel=document.getElementById('editCurso');
+            const cursoTexto=sel.options[sel.selectedIndex].text;
+            const ciclo=sel.options[sel.selectedIndex].value;
+            db.ref('gestorpe/alumnos/'+id).update({siglas,curso:cursoTexto,ciclo,diasSesion:_diasEdit.slice()})
+                .then(()=>{
+                    cerrarModal('modalEditarAlumno');
+                    toast(siglas+' actualizado ✓','success');
+                    if(alumnoActual===id)abrirAlumno(id);
+                })
+                .catch(e=>toast('Error: '+e.message,'error'));
+        }
+
         function eliminarAlumno(id){if(confirm('¿Eliminar alumno?')){db.ref('gestorpe/alumnos/'+id).remove();volverInicio();toast('Eliminado','success');}}
 
         // PROGRAMAS
@@ -7059,7 +7144,124 @@ Genera ahora un resumen por cada alumno en el formato indicado. No añadas nada 
                 .catch(()=>{ta.select();document.execCommand('copy');toast('Copiado ✓','success');});
         }
 
-        // SDA GRUPAL PT
+        // ══ SdA GRUPAL PT ══════════════════════════════════════════════
+        const _CRITS_PT = {
+          LCL:[
+            {c:'LCL.2.1.a',t:'Comprender el sentido global de textos orales y multimodales sencillos, identificando las ideas principales.'},
+            {c:'LCL.3.1.a',t:'Producir textos orales y multimodales sencillos con planificación acompañada.'},
+            {c:'LCL.4.1.a',t:'Leer textos escritos y multimodales adecuados, desarrollando el sentido global.'},
+            {c:'LCL.5.1.a',t:'Producir textos escritos y multimodales sencillos y coherentes, ajustándose a modelos dados.'},
+            {c:'LCL.2.1.b',t:'Comprender el sentido de textos orales y multimodales, reconociendo ideas principales e implícitas.'},
+            {c:'LCL.4.1.b',t:'Comprender el sentido global de textos sencillos realizando inferencias a partir de estrategias básicas.'},
+            {c:'LCL.5.1.b',t:'Producir textos escritos y multimodales sencillos, con coherencia y adecuación, en distintos soportes.'},
+            {c:'LCL.2.1.c',t:'Comprender textos orales y multimodales, valorando el contenido y los elementos no verbales.'},
+            {c:'LCL.4.1.c',t:'Comprender el sentido global e información relevante de textos escritos y multimodales.'},
+            {c:'LCL.5.1.c',t:'Producir textos escritos y multimodales seleccionando el modelo discursivo adecuado.'},
+          ],
+          MAT:[
+            {c:'MAT.1.1.a',t:'Comprender preguntas planteadas a través de diferentes estrategias y percibir mensajes verbales y visuales.'},
+            {c:'MAT.2.1.a',t:'Organizar datos de situaciones sencillas utilizando recursos manipulativos y representaciones.'},
+            {c:'MAT.3.1.a',t:'Formular y resolver problemas de suma y resta en contextos cotidianos con apoyo manipulativo.'},
+            {c:'MAT.4.1.a',t:'Reconocer figuras geométricas en el entorno y describir sus características básicas.'},
+            {c:'MAT.5.1.a',t:'Medir longitudes, masas y capacidades usando instrumentos cotidianos.'},
+            {c:'MAT.3.1.b',t:'Resolver problemas de las cuatro operaciones en contextos cotidianos.'},
+            {c:'MAT.6.1.b',t:'Recoger, organizar e interpretar datos usando tablas, diagramas de barras y pictogramas.'},
+          ],
+          CMN:[
+            {c:'CMN.1.1.a',t:'Identificar las características de los seres vivos del entorno próximo y algunas interacciones.'},
+            {c:'CMN.5.1.a',t:'Planificar y realizar proyectos de investigación sencillos sobre el entorno natural y social.'},
+            {c:'CMN.8.1.a',t:'Identificar algunos problemas ambientales y valorar conductas sostenibles cotidianas.'},
+          ],
+          EF:[
+            {c:'EF.1.1.a',t:'Adaptar las habilidades motrices básicas a situaciones de juego y actividad física variadas.'},
+            {c:'EF.2.1.a',t:'Participar en juegos y actividades físicas respetando las normas y a los compañeros.'},
+            {c:'EF.3.1.a',t:'Reconocer los efectos beneficiosos de la actividad física sobre la salud y el bienestar.'},
+            {c:'EF.1.1.b',t:'Ajustar las habilidades motrices básicas a situaciones de juego con mayor complejidad.'},
+            {c:'EF.2.1.b',t:'Participar en actividades físicas colaborando con los compañeros y respetando las normas.'},
+          ],
+          PT_Cognitivo:[
+            {c:'CPSAA.1',t:'Desarrollar estrategias de autorregulación emocional y cognitiva en situaciones de aprendizaje.'},
+            {c:'CPSAA.2',t:'Reconocer y gestionar las emociones en situaciones cotidianas del aula.'},
+            {c:'CPSAA.3',t:'Mostrar iniciativa y participar en actividades de aprendizaje cooperativo.'},
+            {c:'CPSAA.4',t:'Identificar y aplicar estrategias básicas de resolución de problemas.'},
+            {c:'CPSAA.5',t:'Planificar y organizar tareas sencillas con progresiva autonomía.'},
+          ],
+          PT_Comunicativo:[
+            {c:'CCL.1',t:'Expresar ideas, necesidades y sentimientos oralmente en situaciones comunicativas cotidianas.'},
+            {c:'CCL.2',t:'Comprender mensajes orales sencillos y responder adecuadamente.'},
+            {c:'CCL.3',t:'Iniciarse en el uso funcional de la lectura y escritura en situaciones significativas.'},
+            {c:'CCL.4',t:'Ampliar el vocabulario y mejorar la articulación en contextos de comunicación real.'},
+            {c:'CCL.5',t:'Desarrollar la conciencia fonológica como base del aprendizaje lector.'},
+          ],
+          PT_Social:[
+            {c:'CC.1',t:'Participar en situaciones de convivencia respetando normas básicas del grupo.'},
+            {c:'CC.2',t:'Establecer relaciones positivas con compañeros mostrando empatía y respeto.'},
+            {c:'CC.3',t:'Resolver conflictos sencillos de forma dialogada con apoyo del adulto.'},
+            {c:'CC.4',t:'Reconocer y respetar la diversidad del entorno próximo.'},
+          ],
+          PT_Autonomia:[
+            {c:'CE.1',t:'Desarrollar hábitos de autonomía personal en rutinas cotidianas básicas.'},
+            {c:'CE.2',t:'Adquirir habilidades de autocuidado e higiene con progresiva independencia.'},
+            {c:'CE.3',t:'Utilizar herramientas y materiales escolares de forma autónoma y responsable.'},
+            {c:'CE.4',t:'Iniciarse en la organización del material y el espacio de trabajo personal.'},
+          ],
+          PT_Motor:[
+            {c:'STEM.1',t:'Desarrollar la coordinación motriz gruesa en actividades de movimiento.'},
+            {c:'STEM.2',t:'Mejorar la coordinación visomotriz y motricidad fina en tareas manipulativas.'},
+            {c:'STEM.3',t:'Controlar el tono muscular y la postura en diferentes situaciones.'},
+            {c:'STEM.4',t:'Desarrollar el esquema corporal y la orientación espacial.'},
+          ],
+          INF_CA:[
+            {c:'CA.02.1.1',t:'Progresar en el conocimiento de su cuerpo, ajustando acciones y reacciones y desarrollando el equilibrio, la percepción sensorial y la coordinación en el movimiento.'},
+            {c:'CA.02.1.2',t:'Manifestar sentimientos de seguridad personal y de disfrute en la participación en situaciones cotidianas, confiando en las propias posibilidades.'},
+            {c:'CA.02.1.3',t:'Manejar diferentes objetos, útiles y herramientas en situaciones de juego, mostrando control progresivo de coordinación fina.'},
+            {c:'CA.02.1.4',t:'Participar en contextos de juego dirigido y espontáneo, ajustándose a sus posibilidades personales.'},
+            {c:'CA.02.2.1',t:'Identificar y expresar sus necesidades y sentimientos ajustando progresivamente el control de sus emociones.'},
+            {c:'CA.02.2.2',t:'Ofrecer y pedir ayuda en situaciones cotidianas, estableciendo vínculos afectivos equilibrados.'},
+            {c:'CA.02.2.3',t:'Expresar inquietudes, gustos y preferencias, aceptando y mostrando afecto de manera libre y respetuosa.'},
+            {c:'CA.02.2.4',t:'Mostrar satisfacción y seguridad sobre los logros conseguidos, valorando los beneficios de la cooperación.'},
+            {c:'CA.02.3.1',t:'Realizar actividades de autocuidado y cuidado del entorno con actitud de respeto, mostrando autoconfianza e iniciativa.'},
+            {c:'CA.02.3.2',t:'Respetar la secuencia temporal asociada a las actividades cotidianas, adaptándose a las rutinas del grupo.'},
+            {c:'CA.02.3.3',t:'Participar en la satisfacción de las necesidades básicas de manera progresivamente autónoma, avanzando en hábitos saludables.'},
+            {c:'CA.02.4.1',t:'Participar con iniciativa en juegos y actividades colectivas relacionándose con actitudes de afecto y empatía.'},
+            {c:'CA.02.4.2',t:'Reproducir conductas a través del juego simbólico, identificando y rechazando estereotipos.'},
+            {c:'CA.02.4.3',t:'Participar en situaciones que impliquen reflexión sobre normas sociales de convivencia y respeto a la diversidad.'},
+            {c:'CA.02.4.4',t:'Desarrollar destrezas para la gestión de conflictos de forma positiva, proponiendo alternativas creativas.'},
+          ],
+          INF_DEE:[
+            {c:'DEE.02.1.1',t:'Establecer distintas relaciones entre objetos a partir de sus cualidades o atributos, mostrando curiosidad e interés.'},
+            {c:'DEE.02.1.2',t:'Emplear los cuantificadores básicos en el contexto del juego, la vida cotidiana y en la interacción con los demás.'},
+            {c:'DEE.02.1.3',t:'Ubicarse adecuadamente en los espacios habituales, tanto en reposo como en movimiento, aplicando nociones espaciales básicas.'},
+            {c:'DEE.02.1.5',t:'Organizar su actividad, ordenando las secuencias y utilizando las nociones temporales básicas.'},
+            {c:'DEE.02.1.7',t:'Reconocer las formas y cuerpos geométricos presentes en el entorno mediante actividades manipulativas.'},
+            {c:'DEE.02.1.8',t:'Construir con sentido las principales funciones de los números, aplicándolos a la vida cotidiana.'},
+            {c:'DEE.02.2.1',t:'Afrontar retos o problemas planificando secuencias de actividades, mostrando interés, iniciativa y actitud colaborativa.'},
+            {c:'DEE.02.2.3',t:'Plantear hipótesis sobre el comportamiento de elementos o materiales, verificándolas a través de la manipulación.'},
+            {c:'DEE.02.2.5',t:'Programar secuencias de acciones básicas para resolución de tareas, desarrollando pensamiento computacional.'},
+            {c:'DEE.02.3.1',t:'Mostrar actitud de respeto y cuidado hacia el medio natural, identificando el impacto de acciones humanas.'},
+            {c:'DEE.02.3.2',t:'Iniciarse en procedimientos de cuidado del entorno mostrando actitud sostenible: cuidar, reducir, reciclar, reutilizar.'},
+            {c:'DEE.02.3.3',t:'Identificar rasgos comunes y diferentes entre seres vivos e inertes.'},
+            {c:'DEE.02.3.4',t:'Conocer los componentes básicos del medio natural y establecer relaciones entre el medio natural y social.'},
+          ],
+          INF_CRR:[
+            {c:'CRR.02.1.1',t:'Participar de manera activa, espontánea y respetuosa en situaciones comunicativas de progresiva complejidad.'},
+            {c:'CRR.02.1.2',t:'Utilizar las posibilidades expresivas de los diferentes lenguajes, ajustando el repertorio comunicativo al contexto.'},
+            {c:'CRR.02.2.1',t:'Interpretar de forma eficaz los mensajes, emociones e intenciones comunicativas de los demás.'},
+            {c:'CRR.02.2.3',t:'Reproducir textos orales sencillos de la literatura infantil andaluza o tradición oral.'},
+            {c:'CRR.02.3.1',t:'Hacer un uso funcional del lenguaje oral, aumentando el repertorio lingüístico y construyendo un discurso organizado.'},
+            {c:'CRR.02.3.2',t:'Utilizar el lenguaje oral como instrumento regulador de la acción en las interacciones con los demás.'},
+            {c:'CRR.02.3.4',t:'Elaborar creaciones plásticas, explorando y utilizando diferentes técnicas y materiales.'},
+            {c:'CRR.02.3.5',t:'Interpretar propuestas dramáticas y musicales, utilizando y explorando diferentes instrumentos y técnicas.'},
+            {c:'CRR.02.4.1',t:'Mostrar interés por comunicarse a través de códigos escritos, convencionales o no, valorando su función.'},
+            {c:'CRR.02.4.3',t:'Recurrir a la biblioteca como fuente de información y disfrute, respetando sus normas.'},
+            {c:'CRR.02.4.4',t:'Participar en las situaciones de lectura que se producen en el aula.'},
+            {c:'CRR.02.5.3',t:'Participar en actividades de aproximación a la literatura infantil, apreciando la belleza del lenguaje literario.'},
+            {c:'CRR.02.5.4',t:'Expresar emociones, ideas y pensamientos a través de manifestaciones artísticas, disfrutando del proceso creativo.'},
+          ]
+        };
+
+        var _sdaCritsSelec=[];
+
         function sdaGrupoTab(btn){
             document.querySelectorAll('.sda-tab').forEach(t=>t.classList.remove('active'));
             document.querySelectorAll('.sda-tab-content').forEach(c=>c.classList.remove('active'));
@@ -7072,96 +7274,68 @@ Genera ahora un resumen por cada alumno en el formato indicado. No añadas nada 
             const fin=document.getElementById('grupoSdAFechaFin').value;
             if(ini&&fin){const d=(new Date(fin)-new Date(ini))/(864e5);document.getElementById('grupoSdASemanas').value=Math.max(1,Math.round(d/7));}
         }
+        function sdaFiltrarCriterios(area,btn){
+            document.querySelectorAll('#sdaCritAreaFiltros button').forEach(b=>b.classList.remove('btn-primary'));
+            btn.classList.add('btn-primary');
+            const crits=_CRITS_PT[area]||[];
+            const lista=document.getElementById('grupoSdACriteriosLista');
+            if(!crits.length){lista.innerHTML='<div style="font-size:.8rem;color:var(--text-light);padding:4px">Sin criterios.</div>';return;}
+            const isInf=area.startsWith('INF_');
+            lista.innerHTML=crits.map(cr=>{
+                const uid='cr_'+cr.c.replace(/\W/g,'_');
+                const sel=_sdaCritsSelec.some(s=>s.c===cr.c);
+                return '<label style="display:flex;align-items:flex-start;gap:7px;padding:7px;background:'+(isInf?'#f0fdf4':'white')
+                    +';border-radius:7px;cursor:pointer;font-size:.78rem;border:1px solid '+(isInf?'#86efac':'var(--border)')+';">'
+                    +'<input type="checkbox" id="'+uid+'" value="'+cr.c+'" data-texto="'+cr.t.replace(/"/g,'&quot;')+'" '+(sel?'checked':'')
+                    +' onchange="sdaToggleCrit(this,\''+area+'\')" style="margin-top:2px;flex-shrink:0">'
+                    +'<div><strong style="color:'+(isInf?'#065f46':'var(--primary)')+'">'+cr.c+'</strong> — '+cr.t+'</div></label>';
+            }).join('');
+        }
+        function sdaToggleCrit(cb,area){
+            if(cb.checked){if(!_sdaCritsSelec.some(s=>s.c===cb.value))_sdaCritsSelec.push({c:cb.value,t:cb.getAttribute('data-texto'),area});}
+            else{_sdaCritsSelec=_sdaCritsSelec.filter(s=>s.c!==cb.value);}
+            _sdaRenderCritsSelec();
+        }
+        function sdaQuitarCrit(cod){
+            _sdaCritsSelec=_sdaCritsSelec.filter(s=>s.c!==cod);
+            _sdaRenderCritsSelec();
+            const cb=document.querySelector('#grupoSdACriteriosLista input[value="'+cod+'"]');
+            if(cb)cb.checked=false;
+        }
+        function _sdaRenderCritsSelec(){
+            const div=document.getElementById('grupoSdACritsSelec');if(!div)return;
+            if(!_sdaCritsSelec.length){div.innerHTML='<span style="font-size:.75rem;color:var(--text-light);font-style:italic">Ninguno</span>';return;}
+            div.innerHTML=_sdaCritsSelec.map(s=>'<span style="display:inline-flex;align-items:center;gap:4px;background:var(--primary);color:white;border-radius:12px;padding:2px 8px;font-size:.72rem;font-weight:600">'+s.c+' <button onclick="sdaQuitarCrit(\''+s.c+'\')" style="background:none;border:none;color:white;cursor:pointer;font-size:.85rem;padding:0">×</button></span>').join('');
+        }
         function abrirGrupoSdA(gId){
-            const g=grupos[gId];
-            if(!g){toast('Grupo no encontrado','error');return;}
-            window._gSdA=gId;
+            const g=grupos[gId];if(!g){toast('Grupo no encontrado','error');return;}
+            window._gSdA=gId;_sdaCritsSelec=[];
             const trim=getMesEscolarActual()<3?1:getMesEscolarActual()<7?2:3;
             document.querySelectorAll('.sda-tab').forEach(t=>t.classList.remove('active'));
             document.querySelectorAll('.sda-tab-content').forEach(c=>c.classList.remove('active'));
             document.querySelector('.sda-tab[data-tab="sdaCtx"]').classList.add('active');
             document.getElementById('sdaCtx').classList.add('active');
-            ['grupoSdATrim','grupoSdANum','grupoSdATipo','grupoSdASesiones','grupoSdADuracion','grupoSdASemanas','grupoSdAFechaIni','grupoSdAFechaFin','grupoSdANCC','grupoSdATitulo','grupoSdATematica','grupoSdAPregunta','grupoSdAPlanes','grupoSdAEfemerides','grupoSdATransv','grupoSdACritsManual','grupoSdASabManual'].forEach(id=>{
-                const el=document.getElementById(id);
-                if(!el)return;
-                if(el.tagName==='SELECT')el.selectedIndex=0;
-                else el.value='';
-            });
+            ['grupoSdANum','grupoSdAFechaIni','grupoSdAFechaFin','grupoSdANCC','grupoSdATitulo','grupoSdATematica','grupoSdAPregunta','grupoSdACritsManual','grupoSdASabManual'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
             document.getElementById('grupoSdATrim').value=trim;
             document.getElementById('grupoSdASesiones').value='6';
             document.getElementById('grupoSdADuracion').value='45';
             document.getElementById('grupoSdASemanas').value='4';
             document.getElementById('grupoSdAPrompt').textContent='Rellena las pestañas y pulsa "Generar prompt"…';
-            document.querySelectorAll('#grupoSdAAreasChips .area-chip').forEach(c=>c.classList.remove('active'));
-            document.querySelectorAll('#grupoSdAAreasChips .area-chip')[0].classList.add('active');
+            document.querySelectorAll('#grupoSdAAreasChips .area-chip').forEach((c,i)=>{c.classList.toggle('active',i===0);});
+            document.getElementById('grupoSdACriteriosLista').innerHTML='<div style="font-size:.8rem;color:var(--text-light);padding:4px">Pulsa un área para ver sus criterios.</div>';
+            document.getElementById('grupoSdACritsSelec').innerHTML='<span style="font-size:.75rem;color:var(--text-light);font-style:italic">Ninguno</span>';
+            document.querySelectorAll('#sdaCritAreaFiltros button').forEach(b=>b.classList.remove('btn-primary'));
             const ag=Object.values(g.alumnos||{}).filter(id=>alumnos[id]);
             document.getElementById('modalGrupoSdATitulo').textContent='🎓 SdA Grupal — '+g.nombre;
             document.getElementById('grupoSdAResumen').innerHTML=ag.map(id=>'<strong>'+alumnos[id].siglas+'</strong> ('+alumnos[id].curso+')').join(', ')+' · '+(g.diasSesion||[]).map(d=>({0:'L',1:'M',2:'X',3:'J',4:'V'})[d]||d).join('-');
-            _sdaCargarCriterios(ag,trim);
             _sdaCargarAlumnos(ag,trim);
             abrirModal('modalGrupoSdA');
         }
-        function _sdaCargarCriterios(ag,trim){
-            const lista=document.getElementById('grupoSdACriteriosLista');
-            if(!lista)return;
-            const crits={};
-            ag.forEach(id=>{
-                const a=alumnos[id];
-                if(!a.programas)return;
-                Object.values(a.programas).forEach(p=>{
-                    (p.objetivos||[]).filter(o=>o.trimestre===trim).forEach(obj=>{
-                        const k=obj.criterio||('obj_'+obj.numero);
-                        if(!crits[k])crits[k]={texto:obj.descripcion,als:[]};
-                        crits[k].als.push(alumnos[id].siglas);
-                    });
-                });
-            });
-            const keys=Object.keys(crits);
-            if(!keys.length){lista.innerHTML='<div style="font-size:.8rem;color:var(--text-light);padding:8px">No hay criterios en los programas del grupo para T'+trim+'. Añádelos manualmente.</div>';_sdaCargarSaberes(ag,trim,[]);return;}
-            lista.innerHTML=keys.map(k=>{
-                const cr=crits[k],uid='crit_'+k.replace(/\W/g,'_');
-                return '<label style="display:flex;align-items:flex-start;gap:8px;padding:8px;background:var(--bg);border-radius:8px;cursor:pointer;font-size:.8rem"><input type="checkbox" id="'+uid+'" value="'+k+'" data-texto="'+cr.texto.replace(/"/g,'&quot;')+'" checked onchange="_sdaActSaberes()" style="margin-top:2px;flex-shrink:0"><div><strong>'+k+'</strong> — '+cr.texto+'<br><span style="font-size:.7rem;color:var(--primary)">'+cr.als.join(', ')+'</span></div></label>';
-            }).join('');
-            _sdaActSaberes();
-        }
-        function _sdaActSaberes(){
-            const g=grupos[window._gSdA];
-            const trim=parseInt(document.getElementById('grupoSdATrim').value);
-            const ag=Object.values(g.alumnos||{}).filter(id=>alumnos[id]);
-            const sel=[...document.querySelectorAll('#grupoSdACriteriosLista input:checked')].map(cb=>cb.value);
-            _sdaCargarSaberes(ag,trim,sel);
-        }
-        function _sdaCargarSaberes(ag,trim,sel){
-            const lista=document.getElementById('grupoSdASaberesLista');
-            if(!lista)return;
-            if(!sel||!sel.length){lista.innerHTML='<div style="font-size:.8rem;color:var(--text-light);padding:8px">Selecciona criterios en pestaña 3, o añade saberes manualmente.</div>';return;}
-            const sabs={};
-            ag.forEach(id=>{
-                const a=alumnos[id];
-                if(!a.programas)return;
-                Object.values(a.programas).forEach(p=>{
-                    (p.objetivos||[]).filter(o=>o.trimestre===trim&&sel.includes(o.criterio||('obj_'+o.numero))).forEach(obj=>{
-                        (obj.indicadores||[]).forEach((ind,ii)=>{
-                            const k=(obj.criterio||'obj')+'_'+ii;
-                            if(!sabs[k])sabs[k]={texto:ind,crit:obj.criterio||''};
-                        });
-                    });
-                });
-            });
-            const keys=Object.keys(sabs);
-            if(!keys.length){lista.innerHTML='<div style="font-size:.8rem;color:var(--text-light);padding:8px">No hay indicadores vinculados. Añade saberes manualmente.</div>';return;}
-            lista.innerHTML=keys.map(k=>{
-                const sb=sabs[k],uid='sab_'+k.replace(/\W/g,'_');
-                return '<label style="display:flex;align-items:flex-start;gap:8px;padding:7px;background:var(--bg);border-radius:7px;cursor:pointer;font-size:.78rem"><input type="checkbox" id="'+uid+'" value="'+k+'" data-texto="'+sb.texto.replace(/"/g,'&quot;')+'" checked style="margin-top:2px;flex-shrink:0"><div>'+sb.texto+'<br><span style="font-size:.68rem;color:var(--text-light)">'+sb.crit+'</span></div></label>';
-            }).join('');
-        }
         function _sdaCargarAlumnos(ag,trim){
-            const tabla=document.getElementById('grupoSdAAlumnosTabla');
-            if(!tabla)return;
+            const tabla=document.getElementById('grupoSdAAlumnosTabla');if(!tabla)return;
             tabla.innerHTML=ag.map(id=>{
                 const a=alumnos[id],nee=a.diagnostico||a.deficit||a.neae||'';
-                let p1='';
-                if(a.programas){for(const p of Object.values(a.programas)){const ob=(p.objetivos||[]).find(o=>o.trimestre===trim);if(ob){p1='O'+ob.numero+': '+ob.descripcion;break;}}}
+                let p1='';if(a.programas){for(const p of Object.values(a.programas)){const ob=(p.objetivos||[]).find(o=>o.trimestre===trim);if(ob){p1='O'+ob.numero+': '+ob.descripcion;break;}}}
                 return '<div style="background:var(--bg);border-radius:8px;padding:12px;border-left:3px solid var(--primary)"><div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><span style="font-family:monospace;font-weight:700;color:var(--primary);font-size:1rem">'+a.siglas+'</span><span style="font-size:.78rem;color:var(--text-light)">'+a.curso+(nee?' · <strong>'+nee+'</strong>':'')+'</span></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><label style="font-size:.72rem;font-weight:600;display:block;margin-bottom:3px">NCC individual</label><input type="text" class="form-input" id="sda_ncc_'+id+'" style="font-size:.8rem;padding:7px" placeholder="Nivel específico"></div><div><label style="font-size:.72rem;font-weight:600;display:block;margin-bottom:3px">Objetivo principal T'+trim+'</label><input type="text" class="form-input" id="sda_obj_'+id+'" style="font-size:.8rem;padding:7px" value="'+p1.replace(/"/g,'&quot;')+'"></div></div></div>';
             }).join('');
         }
@@ -7174,8 +7348,7 @@ Genera ahora un resumen por cada alumno en el formato indicado. No añadas nada 
             const ses=parseInt(document.getElementById('grupoSdASesiones').value)||6;
             const dur=parseInt(document.getElementById('grupoSdADuracion').value)||45;
             const sem=document.getElementById('grupoSdASemanas').value||'4';
-            const fi=document.getElementById('grupoSdAFechaIni').value;
-            const ff=document.getElementById('grupoSdAFechaFin').value;
+            const fi=document.getElementById('grupoSdAFechaIni').value,ff=document.getElementById('grupoSdAFechaFin').value;
             const tit=document.getElementById('grupoSdATitulo').value.trim()||'SdA Grupo PT';
             const tem=document.getElementById('grupoSdATematica').value.trim();
             const preg=document.getElementById('grupoSdAPregunta').value.trim();
@@ -7193,19 +7366,15 @@ Genera ahora un resumen por cada alumno en el formato indicado. No añadas nada 
             const ag=Object.values(g.alumnos||{}).filter(id=>alumnos[id]);
             if(!ag.length){toast('El grupo no tiene alumnos','error');return;}
             const dias=(g.diasSesion||[1,3]).map(d=>({0:'Lunes',1:'Martes',2:'Miércoles',3:'Jueves',4:'Viernes'})[d]||d).join(', ');
-            const crSel=[...document.querySelectorAll('#grupoSdACriteriosLista input:checked')];
-            let crT=crSel.map(cb=>'  - ['+cb.value+'] '+cb.getAttribute('data-texto')).join('\n');
-            if(crM)crT+='\n  '+crM;if(!crT)crT='  (añade criterios en pestaña 3)';
-            const sabSel=[...document.querySelectorAll('#grupoSdASaberesLista input:checked')];
-            let sabT=sabSel.map(cb=>'  - '+cb.getAttribute('data-texto')).join('\n');
-            if(sabM)sabT+='\n  '+sabM;if(!sabT)sabT='  (añade saberes en pestaña 4)';
+            let crT=_sdaCritsSelec.map(s=>'  - ['+s.c+'] '+s.t).join('\n');
+            if(crM)crT+='\n  '+crM;if(!crT)crT='  (selecciona criterios en pestaña 3)';
+            let sabT=sabM||'  (añade saberes en pestaña 4 o escribe "según Orden 30/05/2023 para '+areas+'")';
             let perfiles='';
             ag.forEach(id=>{
                 const a=alumnos[id],nee=a.diagnostico||a.deficit||a.neae||'No especificado';
                 const ni=(document.getElementById('sda_ncc_'+id)||{value:''}).value.trim();
                 const oi=(document.getElementById('sda_obj_'+id)||{value:''}).value.trim();
-                let objP=[];
-                if(a.programas)Object.values(a.programas).forEach(p=>(p.objetivos||[]).filter(o=>o.trimestre===trim).forEach(o=>objP.push('O'+o.numero+': '+o.descripcion+(o.indicadores&&o.indicadores.length?' ['+o.indicadores.slice(0,3).join('; ')+']':''))));
+                let objP=[];if(a.programas)Object.values(a.programas).forEach(p=>(p.objetivos||[]).filter(o=>o.trimestre===trim).forEach(o=>objP.push('O'+o.numero+': '+o.descripcion+(o.indicadores&&o.indicadores.length?' ['+o.indicadores.slice(0,3).join('; ')+']':''))));
                 perfiles+='\n  '+a.siglas+' ('+a.curso+') — NEE: '+nee+'\n';
                 if(ni)perfiles+='    NCC: '+ni+'\n';
                 if(oi)perfiles+='    Objetivo SdA: '+oi+'\n';
@@ -7215,66 +7384,79 @@ Genera ahora un resumen por cada alumno en el formato indicado. No añadas nada 
             for(let i=1;i<=ses;i++){
                 const nv=i===1?'Accesible (máximo andamiaje)':i===ses?'Avanzado / Transferencia':i<=Math.ceil(ses/2)?'Intermedio-bajo':'Intermedio-alto';
                 const i1=Math.round(dur*.15),d1=Math.round(dur*.65),c1=Math.round(dur*.20);
-                acts+='\n▸ ACTIVIDAD '+i+' — SESIÓN '+i+': [TÍTULO CREATIVO]\n  Nivel: '+nv+' | Áreas: '+areas+'\n\n  a) Descripción: "[nombre]: [descripción en una línea]"\n     Criterios: [códigos]\n\n  b) Desarrollo ('+dur+' min):\n     • Inicio ('+i1+' min): activación, motivación, presentación del reto\n     • Desarrollo ('+d1+' min): tarea — CADA ALUMNO en su nivel\n     • Cierre ('+c1+' min): síntesis, puesta en común'+(i===ses?'\n     • Producto final del grupo':'')+'\n\n  c) ADAPTACIÓN INDIVIDUAL (OBLIGATORIO):\n'+ag.map(id=>'     · '+alumnos[id].siglas+' ('+alumnos[id].curso+'): [qué hace, con qué apoyo, con qué material]').join('\n')+'\n\n  d) Criterios de evaluación:\n     Criterio común: [código Orden 30/05/2023] — [descripción]\n     Cómo se evidencia: [explicación]\n\n  e) Evaluación PT:\n     | Alumno | Indicadores | C | P | NC | Observación |\n     |--------|-------------|---|---|----|-------------|\n'+ag.map(id=>'     | '+alumnos[id].siglas+' | [indicadores] | | | | |').join('\n')+'\n\n  f) DUA:\n     Pauta: [número y nombre — rota cada sesión, no repitas]\n     Estrategia: [qué hace el PT en ESTA sesión]\n     Herramienta: [recurso que materializa la estrategia]\n\n  g) Materiales: comunes: [lista] | '+ag.map(id=>alumnos[id].siglas+': [específico]').join(' | ')+'\n\n  h) Observaciones PT: [incidencias, ritmo, ajustes]\n';
+                acts+='\n▸ ACTIVIDAD '+i+' — SESIÓN '+i+': [TÍTULO CREATIVO]\n  Nivel: '+nv+' | Áreas: '+areas
+                    +'\n\n  a) Descripción: "[nombre]: [en una línea]"\n     Criterios: [códigos]\n\n  b) Desarrollo ('+dur+' min):'
+                    +'\n     • Inicio ('+i1+' min): activación, presentación del reto'
+                    +'\n     • Desarrollo ('+d1+' min): tarea — CADA ALUMNO en su nivel'
+                    +'\n     • Cierre ('+c1+' min): síntesis y puesta en común'+(i===ses?'\n     • Presentación del producto final':'')
+                    +'\n\n  c) ADAPTACIÓN INDIVIDUAL (OBLIGATORIO):\n'+ag.map(id=>'     · '+alumnos[id].siglas+' ('+alumnos[id].curso+'): [qué hace, con qué apoyo, con qué material]').join('\n')
+                    +'\n\n  d) Criterios de evaluación:\n     Criterio común: [código Orden 30/05/2023] — [descripción]\n     Cómo se evidencia: [explicación]'
+                    +'\n\n  e) Evaluación PT:\n     | Alumno | Indicadores | C | P | NC | Observación |\n     |--------|-------------|---|---|----|-------------|\n'+ag.map(id=>'     | '+alumnos[id].siglas+' | [indicadores] | | | | |').join('\n')
+                    +'\n\n  f) DUA:\n     Pauta: [número y nombre — rota cada sesión]\n     Estrategia: [qué hace el PT en ESTA sesión]\n     Herramienta: [recurso que materializa la estrategia]'
+                    +'\n\n  g) Materiales: comunes: [lista] | '+ag.map(id=>alumnos[id].siglas+': [específico]').join(' | ')
+                    +'\n\n  h) Observaciones PT: [incidencias, ritmo, ajustes]\n';
             }
             let fechaS=sem+' semanas';
             if(fi&&ff){try{const a=new Date(fi+'T12:00:00').toLocaleDateString('es-ES',{day:'numeric',month:'long',year:'numeric'}),b=new Date(ff+'T12:00:00').toLocaleDateString('es-ES',{day:'numeric',month:'long',year:'numeric'});fechaS='Del '+a+' al '+b+' ('+sem+' semanas)';}catch(e){}}
-            const prompt='# SdA GRUPAL — AULA PT\n# Orden 30/05/2023 · LOMLOE · Decreto 101/2023\n\n'+
-'═══════════════════════════════════════════════════════════\nROL Y MARCO NORMATIVO\n═══════════════════════════════════════════════════════════\n\n'+
-'Actúas como especialista en PT, experto en SdA para grupos pequeños en aula de apoyo, con dominio del currículo LOMLOE andaluz.\n'+
-'Normativa: LOMLOE (3/2022) · Orden 30/05/2023 · Decreto 101/2023 · RD 157/2022\n\n'+
-'⚠️ 7 apartados oficiales. Formato "1 — IDENTIFICACIÓN" (nunca "BLOQUE N").\n'+
-'⚠️ Apartado c) con adaptación individual OBLIGATORIA de CADA alumno en CADA sesión.\n\n'+
-'═══════════════════════════════════════════════════════════\nDATOS\n═══════════════════════════════════════════════════════════\n\n'+
-'  Tipo: '+tipoL+' | Grupo: '+g.nombre+' | SdA Nº: '+document.getElementById('grupoSdANum').value+' | T'+trim+'\n'+
-'  Alumnos: '+ag.map(id=>alumnos[id].siglas+' ('+alumnos[id].curso+')').join(', ')+'\n'+
-'  Días: '+dias+' | '+fechaS+'\n'+
-'  Sesiones: '+ses+' × '+dur+' min = '+(ses*dur)+' min totales\n'+
-'  Áreas: '+areas+'  |  Título: "'+tit+'"\n'+
-(tem?'  Temática: '+tem+'\n':'')+(ncc?'  NCC del grupo: '+ncc+'\n':'')+
-'  Metodologías: '+met+'  |  Herramientas: '+her+'\n\n'+
-'═══════════════════════════════════════════════════════════\nSABERES BÁSICOS\n═══════════════════════════════════════════════════════════\n'+sabT+'\n\n'+
-'═══════════════════════════════════════════════════════════\nCRITERIOS DE EVALUACIÓN (Orden 30/05/2023)\n═══════════════════════════════════════════════════════════\n'+crT+'\n\n'+
-'═══════════════════════════════════════════════════════════\nPERFILES INDIVIDUALES\n═══════════════════════════════════════════════════════════\n'+perfiles+'\n'+
-'═══════════════════════════════════════════════════════════\nATENCIÓN A LA DIVERSIDAD\n═══════════════════════════════════════════════════════════\n'+
-'  DUA: '+dua+'\n  Medidas PT: '+med+'\n  ⚠️ Integrar en cada bloque y actividad\n\n'+
-'━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n1 — IDENTIFICACIÓN Y LOCALIZACIÓN DE UN CENTRO DE INTERÉS\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'+
-'• Grupo PT: '+g.nombre+' | Alumnos: '+ag.map(id=>alumnos[id].siglas).join(', ')+'\n'+
-'• Temporalización: '+fechaS+' | '+ses+' sesiones × '+dur+' min | Días: '+dias+'\n'+
-'• Título: "'+tit+'"'+(tem?'\n• Temática: '+tem:'')+'\n'+(plan?'• Planes: '+plan+'\n':'')+
-'\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n2 — JUSTIFICACIÓN Y CONTEXTO DE APLICACIÓN\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'+
-'2.1 Agrupación: NCC similar ('+( ncc||'a concretar')+'), objetivos afines T'+trim+'.\n'+
-'2.2 Conexión con programas individuales:\n'+ag.map(id=>'    · '+alumnos[id].siglas+': [cómo conecta su programa con esta SdA]').join('\n')+'\n'+
-'2.3 Principios pedagógicos PT: aprendizaje multisensorial, andamiaje graduado, motivación intrínseca.\n'+
-'2.4 Pregunta motriz: "'+( preg||'(propón una adecuada al nivel y centro de interés)')+'"'+(transv?'\n2.5 Transversalidad: '+transv:'')+(efem?'\n2.6 Efemérides: '+efem:'')+'\n'+
-'\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n3 — DESCRIPCIÓN DEL PRODUCTO FINAL ('+tipoL+')\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'+
-'Producto grupal accesible para todos los niveles, con aportación visible de cada alumno.\n'+
-'• Fase inicial (S1-'+Math.ceil(ses/3)+'): [producto parcial]\n• Fase desarrollo (S'+(Math.ceil(ses/3)+1)+'-'+Math.ceil(ses*2/3)+'): [producto parcial]\n• Producto final (S'+ses+'): [presentación o entrega grupal]\n'+
-'\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n4 — CONCRECIÓN CURRICULAR\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'+
-'4.1 Objetivos comunes ('+ses+' objetivos, uno por sesión, verbos observables)\n'+
-'4.2 Objetivos individuales:\n'+ag.map(id=>'    · '+alumnos[id].siglas+': [adaptado a su NCC y programa]').join('\n')+'\n'+
-'4.3 Criterios:\n'+crT+'\n4.4 Saberes:\n'+sabT+'\n4.5 Transversalidad: '+(transv||'inclusión, autonomía, cooperación, igualdad')+'\n'+
-'\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n5 — SECUENCIA DIDÁCTICA ('+ses+' SESIONES)\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n'+
-'Fases: MOTIVACIÓN (S1) → ACTIVACIÓN (S2) → DESARROLLO (S3-'+Math.max(3,ses-1)+') → CONSOLIDACIÓN (S'+ses+')\n\nGENERA EXACTAMENTE '+ses+' ACTIVIDADES:\n'+acts+'\n'+
-'━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n6 — MEDIDAS DE ATENCIÓN A LA DIVERSIDAD\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'+
-'6.1 El propio grupo PT es la medida (ratio reducida, especialista, objetivos individualizados).\n'+
-'6.2 DUA: '+dua+'\n    → Apartado f) de cada sesión: PAUTA + ESTRATEGIA CONCRETA + HERRAMIENTA (rota)\n'+
-'6.3 Medidas generales: '+med+'\n'+
-'6.4 NEE/NEAE individual:\n'+ag.map(id=>{const a=alumnos[id],nee=a.diagnostico||a.deficit||a.neae||'a esp.';return '    · '+a.siglas+' ['+nee+']: [medida concreta, sin modificar criterios]';}).join('\n')+'\n'+
-'\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n7 — VALORACIÓN DE LO APRENDIDO\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'+
-'7.1 Instrumentos: observación sistemática, lista de cotejo individual, registro anecdótico, producto final.\n'+
-'7.2 Tabla por criterio:\n    | Alumno | Criterio | C | P | NC | Observación |\n    |--------|----------|---|---|----|-------------|\n'+ag.map(id=>'    | '+alumnos[id].siglas+' ('+alumnos[id].curso+') | [criterio] | | | | |').join('\n')+'\n    C=Conseguido / P=En proceso / NC=No conseguido\n'+
-'7.3 Desempeño esperado:\n'+ag.map(id=>'    · '+alumnos[id].siglas+': [qué sabrá hacer al finalizar]').join('\n')+'\n'+
-'7.4 Evaluación docente PT: autoevaluación + registro coordinación tutores.\n\n'+
-'═══════════════════════════════════════════════════════════\nFORMATO DE ENTREGA\n═══════════════════════════════════════════════════════════\n'+
-'✅ 7 apartados "N — TÍTULO" (sin "BLOQUE") | ✅ '+ses+' actividades con a-h completos\n'+
-'✅ Adaptación individual CADA alumno CADA sesión (apartado c)\n'+
-'✅ DUA 3 capas en apartado f) | ✅ Tabla evaluación en apartado e)\n'+
-'✅ Lenguaje PT profesional, directo, aplicable en aula de apoyo';
+            const prompt='# SdA GRUPAL — AULA PT\n# Orden 30/05/2023 · LOMLOE · Decreto 101/2023\n\n'
++'═══════════════════════════════════════════════════════════\nROL Y MARCO NORMATIVO\n═══════════════════════════════════════════════════════════\n\n'
++'Actúas como especialista en PT, experto en SdA para grupos pequeños en aula de apoyo, con dominio del currículo LOMLOE andaluz.\n'
++'Normativa: LOMLOE (3/2022) · Orden 30/05/2023 · Decreto 101/2023 · RD 157/2022\n\n'
++'⚠️ 7 apartados oficiales. Formato "1 — IDENTIFICACIÓN" (nunca "BLOQUE N").\n'
++'⚠️ Apartado c) con adaptación individual OBLIGATORIA de CADA alumno en CADA sesión.\n\n'
++'═══════════════════════════════════════════════════════════\nDATOS\n═══════════════════════════════════════════════════════════\n\n'
++'  Tipo: '+tipoL+' | Grupo: '+g.nombre+' | SdA Nº: '+document.getElementById('grupoSdANum').value+' | T'+trim+'\n'
++'  Alumnos: '+ag.map(id=>alumnos[id].siglas+' ('+alumnos[id].curso+')').join(', ')+'\n'
++'  Días: '+dias+' | '+fechaS+'\n'
++'  Sesiones: '+ses+' × '+dur+' min = '+(ses*dur)+' min totales\n'
++'  Áreas: '+areas+'  |  Título: "'+tit+'"\n'
++(tem?'  Temática: '+tem+'\n':'')+(ncc?'  NCC del grupo: '+ncc+'\n':'')
++'  Metodologías: '+met+'  |  Herramientas: '+her+'\n\n'
++'═══════════════════════════════════════════════════════════\nSABERES BÁSICOS\n═══════════════════════════════════════════════════════════\n'+sabT+'\n\n'
++'═══════════════════════════════════════════════════════════\nCRITERIOS DE EVALUACIÓN (Orden 30/05/2023)\n═══════════════════════════════════════════════════════════\n'+crT+'\n\n'
++'═══════════════════════════════════════════════════════════\nPERFILES INDIVIDUALES\n═══════════════════════════════════════════════════════════\n'+perfiles+'\n'
++'═══════════════════════════════════════════════════════════\nATENCIÓN A LA DIVERSIDAD\n═══════════════════════════════════════════════════════════\n'
++'  DUA: '+dua+'\n  Medidas PT: '+med+'\n  ⚠️ Integrar en cada bloque y actividad\n\n'
++'━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n1 — IDENTIFICACIÓN Y LOCALIZACIÓN DE UN CENTRO DE INTERÉS\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
++'• Grupo PT: '+g.nombre+' | SdA Nº: '+document.getElementById('grupoSdANum').value+' | T'+trim+'\n'
++'• Alumnos: '+ag.map(id=>alumnos[id].siglas).join(', ')+'\n'
++'• Temporalización: '+fechaS+' | '+ses+' sesiones × '+dur+' min | Días: '+dias+'\n'
++'• Título: "'+tit+'"'+(tem?'\n• Temática: '+tem:'')+(plan?'\n• Planes: '+plan:'')+'\n\n'
++'━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n2 — JUSTIFICACIÓN Y CONTEXTO DE APLICACIÓN\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
++'2.1 Agrupación: NCC similar ('+(ncc||'a concretar')+'), objetivos afines T'+trim+'.\n'
++'2.2 Conexión con programas individuales:\n'+ag.map(id=>'    · '+alumnos[id].siglas+': [cómo conecta su programa con esta SdA]').join('\n')+'\n'
++'2.3 Principios pedagógicos PT: aprendizaje multisensorial, andamiaje graduado, motivación intrínseca.\n'
++'2.4 Pregunta motriz: "'+(preg||'(propón una adecuada al nivel y centro de interés)') +'"'+(transv?'\n2.5 Transversalidad: '+transv:'')+(efem?'\n2.6 Efemérides: '+efem:'')+'\n\n'
++'━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n3 — DESCRIPCIÓN DEL PRODUCTO FINAL ('+tipoL+')\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
++'Producto grupal accesible para todos los niveles.\n'
++'• Fase inicial (S1-'+Math.ceil(ses/3)+'): [producto parcial]\n• Fase desarrollo (S'+(Math.ceil(ses/3)+1)+'-'+Math.ceil(ses*2/3)+'): [producto parcial]\n• Producto final (S'+ses+'): [presentación o entrega grupal]\n\n'
++'━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n4 — CONCRECIÓN CURRICULAR\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
++'4.1 Objetivos comunes ('+ses+' objetivos, uno por sesión, verbos observables)\n'
++'4.2 Objetivos individuales:\n'+ag.map(id=>'    · '+alumnos[id].siglas+': [adaptado a su NCC y programa]').join('\n')+'\n'
++'4.3 Criterios:\n'+crT+'\n4.4 Saberes:\n'+sabT+'\n4.5 Transversalidad: '+(transv||'inclusión, autonomía, cooperación, igualdad')+'\n\n'
++'━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n5 — SECUENCIA DIDÁCTICA ('+ses+' SESIONES)\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n'
++'Fases: MOTIVACIÓN (S1) → ACTIVACIÓN (S2) → DESARROLLO (S3-'+Math.max(3,ses-1)+') → CONSOLIDACIÓN (S'+ses+')\n\nGENERA EXACTAMENTE '+ses+' ACTIVIDADES:\n'+acts+'\n'
++'━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n6 — MEDIDAS DE ATENCIÓN A LA DIVERSIDAD\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
++'6.1 El propio grupo PT es la medida (ratio reducida, especialista, objetivos individualizados).\n'
++'6.2 DUA: '+dua+'\n    → Apartado f) cada sesión: PAUTA + ESTRATEGIA + HERRAMIENTA (rota)\n'
++'6.3 Medidas: '+med+'\n'
++'6.4 NEE/NEAE:\n'+ag.map(id=>{const a=alumnos[id],nee=a.diagnostico||a.deficit||a.neae||'a esp.';return '    · '+a.siglas+' ['+nee+']: [medida concreta sin modificar criterios]';}).join('\n')+'\n\n'
++'━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n7 — VALORACIÓN DE LO APRENDIDO\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
++'7.1 Instrumentos: observación sistemática, lista de cotejo individual, registro anecdótico, producto final.\n'
++'7.2 Tabla:\n    | Alumno | Criterio | C | P | NC | Observación |\n    |--------|----------|---|---|----|-------------|\n'+ag.map(id=>'    | '+alumnos[id].siglas+' ('+alumnos[id].curso+') | [criterio] | | | | |').join('\n')+'\n    C=Conseguido / P=En proceso / NC=No conseguido\n'
++'7.3 Desempeño esperado:\n'+ag.map(id=>'    · '+alumnos[id].siglas+': [qué sabrá hacer al finalizar]').join('\n')+'\n'
++'7.4 Evaluación docente PT: autoevaluación + registro coordinación tutores.\n\n'
++'═══════════════════════════════════════════════════════════\nFORMATO DE ENTREGA\n═══════════════════════════════════════════════════════════\n'
++'✅ 7 apartados "N — TÍTULO" | ✅ '+ses+' actividades con a-h completos\n'
++'✅ Adaptación individual CADA alumno CADA sesión (c)\n'
++'✅ DUA 3 capas en f) | ✅ Tabla evaluación en e)\n'
++'✅ Lenguaje PT profesional aplicable en aula de apoyo';
             document.getElementById('grupoSdAPrompt').textContent=prompt;
             const tp=document.querySelector('.sda-tab[data-tab="sdaPrev"]');if(tp)sdaGrupoTab(tp);
             toast('Prompt SdA generado ✓','success');
         }
+        
+
         function grupoSdACopiarPrompt(){
             grupoSdAGenerarPrompt();
             const txt=document.getElementById('grupoSdAPrompt').textContent;
@@ -7428,7 +7610,7 @@ Genera ahora un resumen por cada alumno en el formato indicado. No añadas nada 
                         </div>
                     </div>
                     <div class="form-group"><label class="form-label">NCC del grupo</label>
-                        <input type="text" class="form-input" id="grupoSdANCC" placeholder="Ej: 1º-2º Primaria · lector inicial · sin automatización">
+                        <input type="text" class="form-input" id="grupoSdANCC" placeholder="Ej: 1º-2º Primaria · lector inicial">
                         <small style="font-size:.73rem;color:var(--text-light)">Nivel que justifica trabajar juntos en PT.</small></div>
                 </div>
                 <div class="sda-tab-content" id="sdaTit">
@@ -7442,13 +7624,37 @@ Genera ahora un resumen por cada alumno en el formato indicado. No añadas nada 
                     <div class="form-group"><label class="form-label">Transversalidad</label><input type="text" class="form-input" id="grupoSdATransv" placeholder="Igualdad de género, sostenibilidad…"></div>
                 </div>
                 <div class="sda-tab-content" id="sdaCrit">
-                    <div style="background:#fffbeb;border:1px solid #f59e0b;border-radius:8px;padding:10px;margin-bottom:12px;font-size:.78rem;color:#78350f">💡 Criterios de los programas PT del grupo para el trimestre. Selecciona los que trabajará esta SdA.</div>
-                    <div id="grupoSdACriteriosLista" style="display:flex;flex-direction:column;gap:6px;max-height:300px;overflow-y:auto"></div>
-                    <div class="form-group" style="margin-top:10px"><label class="form-label">Criterios adicionales (manual)</label><textarea class="form-textarea" id="grupoSdACritsManual" rows="2" placeholder="Añade criterios de la Orden 30/05/2023…"></textarea></div>
+                    <div style="background:#fffbeb;border:1px solid #f59e0b;border-radius:8px;padding:10px;margin-bottom:10px;font-size:.78rem;color:#78350f">💡 Criterios reales Orden 30/05/2023. Filtra por área y selecciona los que trabajará esta SdA.</div>
+                    <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px" id="sdaCritAreaFiltros">
+                        <button class="btn btn-sm btn-secondary" onclick="sdaFiltrarCriterios('LCL',this)" style="font-size:.72rem">📖 Lengua</button>
+                        <button class="btn btn-sm btn-secondary" onclick="sdaFiltrarCriterios('MAT',this)" style="font-size:.72rem">🔢 Mates</button>
+                        <button class="btn btn-sm btn-secondary" onclick="sdaFiltrarCriterios('CMN',this)" style="font-size:.72rem">🌍 C.Medio</button>
+                        <button class="btn btn-sm btn-secondary" onclick="sdaFiltrarCriterios('EF',this)" style="font-size:.72rem">🏃 Ed.Física</button>
+                        <button class="btn btn-sm btn-secondary" onclick="sdaFiltrarCriterios('PT_Cognitivo',this)" style="font-size:.72rem">🧠 Cognitivo</button>
+                        <button class="btn btn-sm btn-secondary" onclick="sdaFiltrarCriterios('PT_Comunicativo',this)" style="font-size:.72rem">🗣️ Comunicativo</button>
+                        <button class="btn btn-sm btn-secondary" onclick="sdaFiltrarCriterios('PT_Social',this)" style="font-size:.72rem">🤝 Social</button>
+                        <button class="btn btn-sm btn-secondary" onclick="sdaFiltrarCriterios('PT_Autonomia',this)" style="font-size:.72rem">🎒 Autonomía</button>
+                        <button class="btn btn-sm btn-secondary" onclick="sdaFiltrarCriterios('PT_Motor',this)" style="font-size:.72rem">✋ Motor</button>
+                        <span style="font-size:.7rem;color:var(--text-light);padding:2px 6px;font-weight:600;align-self:center">· Infantil:</span>
+                        <button class="btn btn-sm btn-secondary" onclick="sdaFiltrarCriterios('INF_CA',this)" style="font-size:.72rem;background:#d1fae5;color:#065f46">🌱 Crec. Armonía</button>
+                        <button class="btn btn-sm btn-secondary" onclick="sdaFiltrarCriterios('INF_DEE',this)" style="font-size:.72rem;background:#d1fae5;color:#065f46">🔍 Descub. Entorno</button>
+                        <button class="btn btn-sm btn-secondary" onclick="sdaFiltrarCriterios('INF_CRR',this)" style="font-size:.72rem;background:#d1fae5;color:#065f46">🗣️ Comuni. Realidad</button>
+                    </div>
+                    <div id="grupoSdACriteriosLista" style="display:flex;flex-direction:column;gap:5px;max-height:260px;overflow-y:auto;background:var(--bg);padding:8px;border-radius:8px;border:1px solid var(--border)">
+                        <div style="font-size:.8rem;color:var(--text-light);padding:4px">Pulsa un área para ver sus criterios.</div>
+                    </div>
+                    <div style="margin-top:8px">
+                        <div style="font-size:.75rem;font-weight:600;margin-bottom:4px;color:var(--primary)">✅ Seleccionados:</div>
+                        <div id="grupoSdACritsSelec" style="display:flex;flex-wrap:wrap;gap:4px;min-height:26px;background:var(--bg);padding:6px;border-radius:6px;border:1px solid var(--border)">
+                            <span style="font-size:.75rem;color:var(--text-light);font-style:italic">Ninguno</span>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-top:8px"><label class="form-label">Criterios adicionales (texto libre)</label>
+                        <textarea class="form-textarea" id="grupoSdACritsManual" rows="2" placeholder="Añade cualquier otro criterio de la Orden 30/05/2023…"></textarea></div>
                 </div>
                 <div class="sda-tab-content" id="sdaSab">
-                    <div style="background:#f0fdf4;border:1px solid #22c55e;border-radius:8px;padding:10px;margin-bottom:12px;font-size:.78rem;color:#166534">💡 Indicadores vinculados a los criterios seleccionados.</div>
-                    <div id="grupoSdASaberesLista" style="display:flex;flex-direction:column;gap:6px;max-height:260px;overflow-y:auto"></div>
+                    <div style="background:#f0fdf4;border:1px solid #22c55e;border-radius:8px;padding:10px;margin-bottom:12px;font-size:.78rem;color:#166634">💡 Indicadores de los programas PT vinculados a los criterios seleccionados.</div>
+                    <div id="grupoSdASaberesLista" style="display:flex;flex-direction:column;gap:5px;max-height:260px;overflow-y:auto"></div>
                     <div class="form-group" style="margin-top:10px"><label class="form-label">Saberes adicionales (manual)</label><textarea class="form-textarea" id="grupoSdASabManual" rows="2" placeholder="Añade saberes básicos de la Orden 30/05/2023…"></textarea></div>
                 </div>
                 <div class="sda-tab-content" id="sdaDiv">
@@ -7477,10 +7683,10 @@ Genera ahora un resumen por cada alumno en el formato indicado. No añadas nada 
                     <div class="form-group" style="margin-bottom:12px"><label class="form-label">Principios DUA</label>
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:4px;font-size:.78rem" id="grupoSdADUA">
                             <label style="display:flex;align-items:flex-start;gap:5px;padding:5px 7px;background:var(--bg);border-radius:6px;cursor:pointer"><input type="checkbox" value="2.1 Uso del lenguaje y símbolos" checked> 2.1 Uso del lenguaje y símbolos</label>
-                            <label style="display:flex;align-items:flex-start;gap:5px;padding:5px 7px;background:var(--bg);border-radius:6px;cursor:pointer"><input type="checkbox" value="3.1 Activar conocimientos previos"> 3.1 Activar conocimientos previos</label>
                             <label style="display:flex;align-items:flex-start;gap:5px;padding:5px 7px;background:var(--bg);border-radius:6px;cursor:pointer"><input type="checkbox" value="4.1 Variedad en métodos de respuesta" checked> 4.1 Variedad en métodos de respuesta</label>
                             <label style="display:flex;align-items:flex-start;gap:5px;padding:5px 7px;background:var(--bg);border-radius:6px;cursor:pointer"><input type="checkbox" value="7.2 Relevancia y autenticidad" checked> 7.2 Relevancia y autenticidad</label>
                             <label style="display:flex;align-items:flex-start;gap:5px;padding:5px 7px;background:var(--bg);border-radius:6px;cursor:pointer"><input type="checkbox" value="8.3 Fomentar la colaboración" checked> 8.3 Fomentar la colaboración</label>
+                            <label style="display:flex;align-items:flex-start;gap:5px;padding:5px 7px;background:var(--bg);border-radius:6px;cursor:pointer"><input type="checkbox" value="3.1 Activar conocimientos previos"> 3.1 Activar conocimientos previos</label>
                             <label style="display:flex;align-items:flex-start;gap:5px;padding:5px 7px;background:var(--bg);border-radius:6px;cursor:pointer"><input type="checkbox" value="9.3 Desarrollar la autoevaluación"> 9.3 Desarrollar la autoevaluación</label>
                         </div>
                     </div>
