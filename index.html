@@ -280,6 +280,7 @@
                 <button class="nav-tab" onclick="cambiarSeccion('seguimiento',this)">📊 Seguimiento</button>
                 <button class="nav-tab" onclick="cambiarSeccion('aci',this)">📋 ACI</button>
                 <button class="nav-tab" onclick="cambiarSeccion('memoria',this)">📝 Memoria Final</button>
+                <button class="nav-tab" onclick="cambiarSeccion('informes',this)" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;font-weight:700">📄 Informes</button>
             </div>
             <div id="seccionAlumnos">
                 <div class="card">
@@ -591,7 +592,126 @@
                     <div id="memoriaContenido"></div>
                 </div>
             </div>
+
+    <!-- ══ SECCIÓN INFORMES HUB ══════════════════════════════════════ -->
+    <div id="seccionInformes" style="display:none;padding-bottom:16px" class="container">
+
+        <div class="card" style="border-left:5px solid #f59e0b;background:linear-gradient(to right,#fffbeb,#fff)">
+            <div class="card-header" style="margin-bottom:6px">
+                <h2 class="card-title" style="color:#d97706">📄 Centro de Informes</h2>
+            </div>
+            <p style="font-size:.82rem;color:var(--text-light)">Acceso centralizado a todos los informes y documentos de la aplicación. Las opciones siguen disponibles también en su sección original.</p>
+        </div>
+
+        <!-- ─── A. INFORME INDIVIDUAL ─────────────────────────── -->
+        <div class="card" style="border-left:5px solid var(--primary)">
+            <div class="card-header"><h2 class="card-title">👤 Informe Individual de Alumno</h2></div>
+            <p style="font-size:.82rem;color:var(--text-light);margin-bottom:12px">Genera el informe PT trimestral de un alumno concreto, o crea un prompt para que la IA lo redacte en distintos formatos.</p>
+            <div class="form-row" style="margin-bottom:12px">
+                <div class="form-group">
+                    <label class="form-label">Alumno</label>
+                    <select class="form-select" id="informesAlumnoSel">
+                        <option value="">-- Seleccionar alumno --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Trimestre</label>
+                    <select class="form-select" id="informesHubTrim">
+                        <option value="1">📗 Trimestre 1</option>
+                        <option value="2">📘 Trimestre 2</option>
+                        <option value="3">📙 Trimestre 3</option>
+                    </select>
+                </div>
+            </div>
+            <div class="btn-group" style="flex-wrap:wrap;gap:8px">
+                <button class="btn btn-primary" onclick="informesAbrirInforme()">📄 Generar Informe PT</button>
+                <button class="btn btn-ai" onclick="informesChatGPT('pt')">🤖 ChatGPT — Valoración PT</button>
+                <button class="btn btn-ai" onclick="informesChatGPT('familia')" style="background:#8b5cf6">👨‍👩‍👧 ChatGPT — Informe Familias</button>
+                <button class="btn btn-ai" onclick="informesChatGPT('tutor')" style="background:#06b6d4">👩‍🏫 ChatGPT — Informe Tutor</button>
+            </div>
+        </div>
+
+        <!-- ─── B. EVALUACIÓN GLOBAL ──────────────────────────── -->
+        <div class="card" style="border-left:5px solid #3b82f6">
+            <div class="card-header"><h2 class="card-title" style="color:#1d4ed8">📊 Evaluación Global</h2></div>
+            <p style="font-size:.82rem;color:var(--text-light);margin-bottom:12px">Informes que abarcan a todos los alumnos a la vez.</p>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px">
+                <div class="print-option" style="border-color:#3b82f6" onclick="informesIrYEjecutar('estadisticas',imprimirInformeEvaluacion)">
+                    <h4 style="color:#1d4ed8">📊 Informe de Evaluación con Gráficas</h4>
+                    <p>Comparativa trimestral de todos los alumnos con gráficos. Se abre en nueva ventana para imprimir.</p>
+                </div>
+                <div class="print-option" style="border-color:#3b82f6">
+                    <h4 style="color:#1d4ed8">📝 Informe Mensual — Todos los alumnos</h4>
+                    <p>Un documento con el seguimiento de todos los alumnos, uno debajo de otro.</p>
+                    <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+                        <select id="informesHubTrimMensual" class="form-select" style="flex:1;font-size:.78rem">
+                            <option value="1">T1</option><option value="2">T2</option><option value="3">T3</option>
+                        </select>
+                        <select id="informesHubMes" class="form-select" style="flex:2;font-size:.78rem">
+                            <option value="">— Sin mes —</option>
+                            <option>Septiembre</option><option>Octubre</option><option>Noviembre</option>
+                            <option>Diciembre</option><option>Enero</option><option>Febrero</option>
+                            <option>Marzo</option><option>Abril</option><option>Mayo</option><option>Junio</option>
+                        </select>
+                    </div>
+                    <div class="btn-group" style="margin-top:8px;flex-wrap:wrap;gap:6px">
+                        <button class="btn btn-primary btn-sm" onclick="informesInformeMensualTodos()">📄 Generar</button>
+                        <button class="btn btn-ai btn-sm" onclick="informesChatGPTTodos()">🤖 ChatGPT</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ─── C. PROGRAMACIONES ─────────────────────────────── -->
+        <div class="card" style="border-left:5px solid #22c55e">
+            <div class="card-header"><h2 class="card-title" style="color:#15803d">🖨️ Programaciones para Imprimir</h2></div>
+            <p style="font-size:.82rem;color:var(--text-light);margin-bottom:12px">Documentos con las programaciones de todos los alumnos, listos para imprimir o archivar.</p>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px">
+                <div class="print-option" style="border-color:#22c55e" onclick="abrirModalImprimir()">
+                    <h4 style="color:#15803d">📄 Imprimir (compacto o separado)</h4>
+                    <p>Elige mes y formato: programaciones juntas con hoja de valoración, o cada alumno en su página.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ─── D. SEGUIMIENTO SÉNECA ─────────────────────────── -->
+        <div class="card" style="border-left:5px solid #8b5cf6">
+            <div class="card-header"><h2 class="card-title" style="color:#6d28d9">🏛️ Seguimiento Trimestral Séneca</h2></div>
+            <p style="font-size:.82rem;color:var(--text-light);margin-bottom:12px">Genera el prompt para la IA y distribuye las valoraciones narrativas por alumno, listas para copiar en Séneca.</p>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px">
+                <div class="print-option" style="border-color:#8b5cf6" onclick="informesIrA('seguimiento')">
+                    <h4 style="color:#6d28d9">📋 Ir a Seguimiento Séneca</h4>
+                    <p>Genera el prompt con los datos de todos los alumnos, pégalo en la IA y distribuye las respuestas automáticamente.</p>
+                </div>
+                <div class="print-option" style="border-color:#8b5cf6" onclick="seguimientoGenerarPrompt()">
+                    <h4 style="color:#6d28d9">📋 Copiar prompt para IA</h4>
+                    <p>Copia directamente el prompt del trimestre activo para pegarlo en Gemini, ChatGPT o Claude.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ─── E. ACI ─────────────────────────────────────────── -->
+        <div class="card" style="border-left:5px solid #f59e0b">
+            <div class="card-header"><h2 class="card-title" style="color:#b45309">📋 ACI — Adaptaciones Curriculares</h2></div>
+            <p style="font-size:.82rem;color:var(--text-light);margin-bottom:12px">Informe general de todas las ACIs registradas en la aplicación.</p>
+            <div class="btn-group" style="flex-wrap:wrap;gap:8px">
+                <button class="btn btn-warning" onclick="informesIrYEjecutar('aci',aciInformeGeneral)">📄 Generar Informe ACI General</button>
+                <button class="btn btn-secondary" onclick="informesIrA('aci')">📋 Ir a la sección ACI</button>
+            </div>
+        </div>
+
+        <!-- ─── F. MEMORIA FINAL ───────────────────────────────── -->
+        <div class="card" style="border-left:5px solid #06b6d4">
+            <div class="card-header"><h2 class="card-title" style="color:#0e7490">📝 Memoria Final PT</h2></div>
+            <p style="font-size:.82rem;color:var(--text-light);margin-bottom:12px">Genera el prompt de evaluación final para cada alumno o para todos a la vez, para enviarlo a ChatGPT.</p>
+            <div class="btn-group" style="flex-wrap:wrap;gap:8px">
+                <button class="btn btn-primary" style="background:#06b6d4" onclick="informesIrA('memoria')">📝 Ir a Memoria Final</button>
+                <button class="btn btn-secondary" onclick="informesMemoriaTodos()">📋 Generar todos los prompts</button>
+            </div>
+        </div>
+
     </div>
+    </div><!-- /screenInicio -->
 
     <div id="screenAlumno" class="screen">
         <div class="container">
@@ -1816,7 +1936,7 @@
         // Renderizar biblioteca aunque Firebase no conecte
         renderBiblioteca();
 
-        function cambiarSeccion(s,btn){document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');document.getElementById('seccionAlumnos').style.display=s==='alumnos'?'block':'none';document.getElementById('seccionEstadisticas').style.display=s==='estadisticas'?'block':'none';document.getElementById('seccionSDA').style.display=s==='sda'?'block':'none';document.getElementById('seccionBiblioteca').style.display=s==='biblioteca'?'block':'none';document.getElementById('seccionRecursos').style.display=s==='recursos'?'block':'none';document.getElementById('seccionSeguimiento').style.display=s==='seguimiento'?'block':'none';document.getElementById('seccionGrupos').style.display=s==='grupos'?'block':'none';document.getElementById('seccionACI').style.display=s==='aci'?'block':'none';document.getElementById('seccionMemoria').style.display=s==='memoria'?'block':'none';if(s==='estadisticas')renderEstadisticasGlobal();if(s==='recursos')inicializarRecursos();if(s==='seguimiento')renderSeguimiento();if(s==='grupos')renderGrupos();if(s==='aci')renderAciSeccion();if(s==='memoria')memoriaIniciar();}
+        function cambiarSeccion(s,btn){document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');document.getElementById('seccionAlumnos').style.display=s==='alumnos'?'block':'none';document.getElementById('seccionEstadisticas').style.display=s==='estadisticas'?'block':'none';document.getElementById('seccionSDA').style.display=s==='sda'?'block':'none';document.getElementById('seccionBiblioteca').style.display=s==='biblioteca'?'block':'none';document.getElementById('seccionRecursos').style.display=s==='recursos'?'block':'none';document.getElementById('seccionSeguimiento').style.display=s==='seguimiento'?'block':'none';document.getElementById('seccionGrupos').style.display=s==='grupos'?'block':'none';document.getElementById('seccionACI').style.display=s==='aci'?'block':'none';document.getElementById('seccionMemoria').style.display=s==='memoria'?'block':'none';document.getElementById('seccionInformes').style.display=s==='informes'?'block':'none';if(s==='estadisticas')renderEstadisticasGlobal();if(s==='recursos')inicializarRecursos();if(s==='seguimiento')renderSeguimiento();if(s==='grupos')renderGrupos();if(s==='aci')renderAciSeccion();if(s==='memoria')memoriaIniciar();if(s==='informes')informesIniciar();}
         function renderInicio(){const g=document.getElementById('alumnosGrid'),ids=Object.keys(alumnos);if(!ids.length){g.innerHTML='<div class="alumno-card alumno-card-add" onclick="abrirModalNuevo()"><span style="font-size:1.3rem">➕</span><span style="font-size:.8rem">Añadir</span></div>';return;}let h=ids.map(id=>{const a=alumnos[id],n=a.programas?Object.keys(a.programas).length:0;return'<div class="alumno-card" onclick="abrirAlumno(\''+id+'\')"><div class="alumno-siglas">'+a.siglas+'</div><div class="alumno-curso">'+a.curso+'</div><div class="alumno-progs">'+n+' prog.</div></div>';}).join('');h+='<div class="alumno-card alumno-card-add" onclick="abrirModalNuevo()"><span style="font-size:1.3rem">➕</span></div>';g.innerHTML=h;}
         
         // BIBLIOTECA
@@ -4560,6 +4680,61 @@ ${instruccionesFormato}`;
             return texto.replace(/`/g,"'").replace(/\\/g,'\\\\').replace(/\n/g,'\\n');
         }
         
+        // ══ HUB INFORMES ══════════════════════════════════════════════
+        function informesIniciar(){
+            const sel=document.getElementById('informesAlumnoSel');
+            const ids=Object.keys(alumnos);
+            sel.innerHTML='<option value="">-- Seleccionar alumno --</option>'+
+                ids.map(id=>'<option value="'+id+'">'+alumnos[id].siglas+' — '+(alumnos[id].curso||'')+' </option>').join('');
+            // Sincronizar trim con el activo si hay alumno seleccionado
+            if(alumnoActual&&ids.includes(alumnoActual)){
+                sel.value=alumnoActual;
+                document.getElementById('informesHubTrim').value=evalTrim||1;
+            }
+        }
+        function informesAbrirInforme(){
+            const sel=document.getElementById('informesAlumnoSel');
+            if(!sel.value){toast('Selecciona un alumno primero','error');return;}
+            alumnoActual=sel.value;
+            evalTrim=parseInt(document.getElementById('informesHubTrim').value);
+            abrirModalInforme();
+        }
+        function informesChatGPT(tipo){
+            const sel=document.getElementById('informesAlumnoSel');
+            if(!sel.value){toast('Selecciona un alumno primero','error');return;}
+            alumnoActual=sel.value;
+            evalTrim=parseInt(document.getElementById('informesHubTrim').value);
+            document.getElementById('informeTrim').value=evalTrim;
+            document.getElementById('informePeriodo').value='trimestral';
+            abrirChatGPTInforme(tipo);
+        }
+        function informesInformeMensualTodos(){
+            // Sincronizar los selectores de la sección Estadísticas y ejecutar
+            document.getElementById('trimestreInformeMensual').value=document.getElementById('informesHubTrimMensual').value;
+            const mesVal=document.getElementById('informesHubMes').value;
+            document.getElementById('mesInformeMensual').value=mesVal;
+            imprimirInformeMensualTodos();
+        }
+        function informesChatGPTTodos(){
+            document.getElementById('trimestreInformeMensual').value=document.getElementById('informesHubTrimMensual').value;
+            const mesVal=document.getElementById('informesHubMes').value;
+            document.getElementById('mesInformeMensual').value=mesVal;
+            chatGPTInformeTodos();
+        }
+        function informesMemoriaTodos(){
+            memoriaIniciar();
+            memoriaGenerarTodos();
+        }
+        function informesIrA(seccion){
+            const btn=Array.from(document.querySelectorAll('.nav-tab')).find(t=>t.getAttribute('onclick')&&t.getAttribute('onclick').includes("'"+seccion+"'"));
+            if(btn)cambiarSeccion(seccion,btn);
+        }
+        function informesIrYEjecutar(seccion,fn){
+            informesIrA(seccion);
+            setTimeout(fn,400);
+        }
+        // ══ FIN HUB INFORMES ══════════════════════════════════════════
+
         function copiarSeneca(btn,texto){
             const textoReal=texto.replace(/\\n/g,'\n');
             navigator.clipboard.writeText(textoReal).then(()=>{
