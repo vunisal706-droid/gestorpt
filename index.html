@@ -31,9 +31,13 @@
         .btn-ai{background:#10a37f;color:#fff}
         .btn-sm{padding:7px 10px;font-size:.75rem}
         .btn-group{display:flex;gap:6px;flex-wrap:wrap}
-        .nav-tabs{display:flex;gap:8px;margin-bottom:16px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none}
+        .nav-tabs-wrap{position:relative;display:flex;align-items:center;margin-bottom:16px;gap:4px}
+        .nav-scroll-btn{flex:0 0 auto;width:32px;height:38px;border:2px solid var(--border);background:var(--bg-card);border-radius:var(--radius-sm);cursor:pointer;font-size:1rem;display:none;align-items:center;justify-content:center;box-shadow:var(--shadow);color:var(--text);transition:background .15s}
+        .nav-scroll-btn:hover{background:var(--primary);color:#fff;border-color:var(--primary)}
+        .nav-scroll-btn.visible{display:flex}
+        .nav-tabs{display:flex;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none;flex:1;scroll-behavior:smooth}
         .nav-tabs::-webkit-scrollbar{display:none}
-        .nav-tab{flex:0 0 auto;padding:12px 16px;border:none;background:var(--bg-card);color:var(--text-light);font-family:inherit;font-size:.9rem;font-weight:600;cursor:pointer;border-radius:var(--radius);box-shadow:var(--shadow);white-space:nowrap}
+        .nav-tab{flex:0 0 auto;padding:8px 10px;border:none;background:var(--bg-card);color:var(--text-light);font-family:inherit;font-size:.78rem;font-weight:600;cursor:pointer;border-radius:var(--radius-sm);box-shadow:var(--shadow);white-space:nowrap}
         .nav-tab.active{background:var(--primary);color:#fff}
         .alumnos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-top:12px}
         .alumno-card{background:var(--bg-card);border-radius:var(--radius);padding:16px 10px;text-align:center;cursor:pointer;border:2px solid transparent;box-shadow:var(--shadow)}
@@ -270,7 +274,9 @@
 
     <div id="screenInicio" class="screen active">
         <div class="container">
-            <div class="nav-tabs no-print">
+            <div class="nav-tabs-wrap no-print">
+                <button class="nav-scroll-btn" id="navScrollLeft" onclick="navScroll(-1)" title="Anterior">◀</button>
+                <div class="nav-tabs" id="navTabsBar">
                 <button class="nav-tab active" onclick="cambiarSeccion('alumnos',this)">👥 Alumnos</button>
                 <button class="nav-tab" onclick="cambiarSeccion('grupos',this)">👨‍👧‍👦 Grupos</button>
                 <button class="nav-tab" onclick="cambiarSeccion('estadisticas',this)">📊 Estadísticas</button>
@@ -281,6 +287,8 @@
                 <button class="nav-tab" onclick="cambiarSeccion('aci',this)">📋 ACI</button>
                 <button class="nav-tab" onclick="cambiarSeccion('memoria',this)">📝 Memoria Final</button>
                 <button class="nav-tab" onclick="cambiarSeccion('informes',this)" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;font-weight:700">📄 Informes</button>
+                </div>
+                <button class="nav-scroll-btn" id="navScrollRight" onclick="navScroll(1)" title="Siguiente">▶</button>
             </div>
             <div id="seccionAlumnos">
                 <div class="card">
@@ -7639,6 +7647,30 @@ Genera ahora un resumen por cada alumno en el formato indicado. No añadas nada 
             navigator.clipboard.writeText(txt).then(()=>toast('Prompt copiado 📋','success')).catch(()=>{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);toast('Prompt copiado 📋','success');});
         }
         function grupoSdAAbrirIA(){grupoSdACopiarPrompt();setTimeout(()=>window.open('https://claude.ai','_blank'),400);}
+
+        // ── NAV SCROLL ARROWS ────────────────────────────────────────────
+        function navScroll(dir){
+            const bar=document.getElementById('navTabsBar');
+            if(bar)bar.scrollLeft+=dir*200;
+        }
+        function navScrollCheck(){
+            const bar=document.getElementById('navTabsBar');
+            const btnL=document.getElementById('navScrollLeft');
+            const btnR=document.getElementById('navScrollRight');
+            if(!bar||!btnL||!btnR)return;
+            const hasOverflow=bar.scrollWidth>bar.clientWidth+4;
+            btnL.classList.toggle('visible',hasOverflow&&bar.scrollLeft>4);
+            btnR.classList.toggle('visible',hasOverflow&&bar.scrollLeft<bar.scrollWidth-bar.clientWidth-4);
+        }
+        document.addEventListener('DOMContentLoaded',()=>{
+            const bar=document.getElementById('navTabsBar');
+            if(bar){
+                bar.addEventListener('scroll',navScrollCheck,{passive:true});
+                window.addEventListener('resize',navScrollCheck);
+                setTimeout(navScrollCheck,300);
+            }
+        });
+        // ── FIN NAV SCROLL ARROWS ────────────────────────────────────────
 
     </script>
     <!-- MODAL GEU -->
