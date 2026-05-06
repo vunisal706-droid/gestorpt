@@ -719,6 +719,54 @@
             </div>
         </div>
 
+        <!-- ─── G. EVALUACIÓN INICIAL ─────────────────────────── -->
+        <div class="card" style="border-left:5px solid #10b981">
+            <div class="card-header"><h2 class="card-title" style="color:#065f46">📝 Evaluación Inicial — Informe por Alumno</h2></div>
+            <p style="font-size:.82rem;color:var(--text-light);margin-bottom:12px">Genera un prompt para <strong>Claude o Gemini</strong> que redacte el informe de evaluación inicial de cada alumno a partir de sus programas específicos, objetivos e indicadores de trabajo.</p>
+
+            <div class="form-group" style="margin-bottom:10px">
+                <label class="form-label">Selecciona alumno</label>
+                <select class="form-select" id="evalInicialAlumnoSel">
+                    <option value="">-- Seleccionar alumno --</option>
+                </select>
+            </div>
+
+            <div class="form-group" style="margin-bottom:10px">
+                <label class="form-label">Observaciones previas <span style="font-weight:400;color:var(--text-light)">(opcional — diagnóstico, contexto, fuentes de información…)</span></label>
+                <textarea class="form-textarea" id="evalInicialObs" rows="2" placeholder="Ej: Diagnóstico TEA nivel 1 confirmado en sep. 2024. Información del tutor anterior y familia…"></textarea>
+            </div>
+
+            <div class="form-group" style="margin-bottom:12px">
+                <label class="form-label">Formato del informe</label>
+                <select class="form-select" id="evalInicialFormato">
+                    <option value="completo">📄 Completo (datos escolares + análisis por áreas + propuesta de objetivos)</option>
+                    <option value="breve">📋 Breve (resumen ejecutivo para familias o tutor/a)</option>
+                    <option value="seneca">🏛️ Para Séneca (redacción formal, máx. 900 caracteres)</option>
+                </select>
+            </div>
+
+            <div class="btn-group" style="flex-wrap:wrap;gap:8px;margin-bottom:12px">
+                <button class="btn btn-primary" style="background:#10b981" onclick="evalInicialGenerarPrompt()">📋 Generar prompt individual</button>
+                <button class="btn btn-ai" onclick="evalInicialAbrirClaude()">🤖 Abrir Claude</button>
+                <button class="btn btn-secondary" onclick="evalInicialAbrirGemini()">✨ Abrir Gemini</button>
+                <button class="btn btn-secondary btn-sm" style="background:#1a5f4a;color:#fff" onclick="evalInicialTodos()">👥 Ver todos por separado</button>
+                <button class="btn btn-primary btn-sm" style="background:#065f46;color:#fff" onclick="evalInicialTodosUnico()">📋 Prompt único (todos)</button>
+            </div>
+
+            <div id="evalInicialPromptBox" style="display:none">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                    <span style="font-size:.78rem;font-weight:700;color:#065f46">Prompt generado:</span>
+                    <button class="btn btn-primary btn-sm" style="background:#10b981" onclick="evalInicialCopiar()">📋 Copiar</button>
+                </div>
+                <div id="evalInicialPromptTexto" style="background:#1e293b;color:#e2e8f0;border-radius:8px;padding:12px;max-height:320px;overflow-y:auto;font-size:.72rem;font-family:monospace;white-space:pre-wrap;line-height:1.5"></div>
+            </div>
+
+            <div id="evalInicialTodosBox" style="display:none;margin-top:12px">
+                <div style="font-size:.82rem;font-weight:700;color:#065f46;margin-bottom:8px">📋 Prompts — Todos los alumnos:</div>
+                <div id="evalInicialTodosLista"></div>
+            </div>
+        </div>
+
     </div>
     </div><!-- /screenInicio -->
 
@@ -4707,7 +4755,183 @@ ${instruccionesFormato}`;
                 sel.value=alumnoActual;
                 document.getElementById('informesHubTrim').value=evalTrim||1;
             }
+            // Sincronizar selector de Evaluación Inicial
+            evalInicialSync();
+            if(alumnoActual&&ids.includes(alumnoActual)){
+                const selEI=document.getElementById('evalInicialAlumnoSel');
+                if(selEI)selEI.value=alumnoActual;
+            }
         }
+
+        // ══ EVALUACIÓN INICIAL ════════════════════════════════════════
+        function evalInicialSync(){
+            const ids=Object.keys(alumnos);
+            const sel=document.getElementById('evalInicialAlumnoSel');
+            if(!sel)return;
+            sel.innerHTML='<option value="">-- Seleccionar alumno --</option>'+
+                ids.map(id=>'<option value="'+id+'">'+alumnos[id].siglas+' — '+(alumnos[id].curso||'')+'</option>').join('');
+        }
+
+        function evalInicialBuildPrompt(id, obs, formato){
+            const a=alumnos[id];
+            if(!a)return null;
+            const nombreCodigo=a.siglas;
+            const curso=a.curso||'no especificado';
+            const ciclo=a.ciclo||'';
+            const dias=(a.diasSesion||[1,3,4]).map(d=>['Lunes','Martes','Miércoles','Jueves','Viernes'][d]||d).join(', ');
+
+            let programasTexto='';
+            if(a.programas&&Object.keys(a.programas).length){
+                Object.keys(a.programas).forEach(pId=>{
+                    const p=a.programas[pId];
+                    const info=AREAS[p.tipo]||{nombre:p.tipo,icon:'📄'};
+                    programasTexto+='\n🔷 ÁREA: '+info.nombre+'\n';
+                    (p.objetivos||[]).forEach(obj=>{
+                        programasTexto+='  • O'+obj.numero+' [T'+obj.trimestre+']: '+obj.descripcion+'\n';
+                        (obj.indicadores||[]).forEach(ind=>{
+                            programasTexto+='      – '+ind+'\n';
+                        });
+                    });
+                });
+            }else{
+                programasTexto='\n(Sin programas específicos registrados aún)\n';
+            }
+
+            const obsTexto=obs&&obs.trim()?'\n📋 OBSERVACIONES PREVIAS / FUENTES DE INFORMACIÓN:\n'+obs.trim()+'\n':'';
+
+            let instrucciones='';
+            if(formato==='breve'){
+                instrucciones=`Redacta un INFORME DE EVALUACIÓN INICIAL breve (máx. 250 palabras), en tono claro y accesible para familias o tutor/a. Incluye: nivel de competencia actual por áreas, fortalezas detectadas, y 2-3 objetivos prioritarios para el curso.`;
+            }else if(formato==='seneca'){
+                instrucciones=`Redacta una VALORACIÓN DE EVALUACIÓN INICIAL para el sistema Séneca. Máximo 900 caracteres. Redacción formal, en tercera persona. Incluye: áreas de intervención, nivel competencial de partida y objetivos prioritarios del primer trimestre.`;
+            }else{
+                instrucciones=`Redacta un INFORME DE EVALUACIÓN INICIAL completo para la especialidad de PT. Estructura el informe en estos apartados:\n\n1. DATOS ESCOLARES Y CONTEXTO DE INTERVENCIÓN\n2. FUENTES DE INFORMACIÓN UTILIZADAS\n3. NIVEL DE COMPETENCIA CURRICULAR (NCC) Y ÁREAS DE INTERVENCIÓN\n4. FORTALEZAS Y ASPECTOS A DESARROLLAR\n5. PROPUESTA DE OBJETIVOS PRIORITARIOS PARA EL CURSO\n6. MEDIDAS METODOLÓGICAS Y ORGANIZATIVAS\n\nRedacta en tono profesional y formal, en tercera persona, con lenguaje inclusivo.`;
+            }
+
+            return`Eres un especialista en Pedagogía Terapéutica (PT) experto en elaborar informes de evaluación inicial de alumnado con necesidades específicas de apoyo educativo (NEAE), en el marco de la LOMLOE y la normativa andaluza.
+
+════════════════════════════════════
+DATOS DEL ALUMNO/A
+════════════════════════════════════
+Código / Iniciales: ${nombreCodigo}
+Curso: ${curso} ${ciclo?'('+ciclo+')':''}
+Sesiones PT: ${dias}
+${obsTexto}
+════════════════════════════════════
+PROGRAMAS ESPECÍFICOS PT
+════════════════════════════════════
+${programasTexto}
+════════════════════════════════════
+TAREA
+════════════════════════════════════
+${instrucciones}
+
+⚠️ IMPORTANTE: Usa el código "${nombreCodigo}" como referencia al alumno/a. Adapta el nivel de redacción a los datos concretos proporcionados.`;
+        }
+
+        function evalInicialGenerarPrompt(){
+            const id=document.getElementById('evalInicialAlumnoSel').value;
+            if(!id){toast('Selecciona un alumno primero','error');return;}
+            const obs=document.getElementById('evalInicialObs').value;
+            const formato=document.getElementById('evalInicialFormato').value;
+            const prompt=evalInicialBuildPrompt(id,obs,formato);
+            if(!prompt){toast('Error al generar prompt','error');return;}
+            document.getElementById('evalInicialPromptTexto').textContent=prompt;
+            document.getElementById('evalInicialPromptBox').style.display='block';
+            document.getElementById('evalInicialTodosBox').style.display='none';
+            toast('Prompt generado ✓','success');
+        }
+
+        function evalInicialCopiar(){
+            const txt=document.getElementById('evalInicialPromptTexto').textContent;
+            navigator.clipboard.writeText(txt).then(()=>toast('Copiado ✓','success')).catch(()=>toast('Error al copiar','error'));
+        }
+
+        function evalInicialAbrirClaude(){
+            const id=document.getElementById('evalInicialAlumnoSel').value;
+            if(!id){toast('Selecciona un alumno primero','error');return;}
+            const obs=document.getElementById('evalInicialObs').value;
+            const formato=document.getElementById('evalInicialFormato').value;
+            const prompt=evalInicialBuildPrompt(id,obs,formato);
+            if(!prompt)return;
+            navigator.clipboard.writeText(prompt).then(()=>{
+                toast('Prompt copiado — abriendo Claude…','success');
+                setTimeout(()=>window.open('https://claude.ai/','_blank'),400);
+            });
+        }
+
+        function evalInicialAbrirGemini(){
+            const id=document.getElementById('evalInicialAlumnoSel').value;
+            if(!id){toast('Selecciona un alumno primero','error');return;}
+            const obs=document.getElementById('evalInicialObs').value;
+            const formato=document.getElementById('evalInicialFormato').value;
+            const prompt=evalInicialBuildPrompt(id,obs,formato);
+            if(!prompt)return;
+            navigator.clipboard.writeText(prompt).then(()=>{
+                toast('Prompt copiado — abriendo Gemini…','success');
+                setTimeout(()=>window.open('https://gemini.google.com/','_blank'),400);
+            });
+        }
+
+        function evalInicialTodos(){
+            const ids=Object.keys(alumnos);
+            if(!ids.length){toast('No hay alumnos registrados','error');return;}
+            const formato=document.getElementById('evalInicialFormato').value;
+            const obs=document.getElementById('evalInicialObs').value;
+            let html='';
+            ids.forEach(id=>{
+                const a=alumnos[id];
+                const prompt=evalInicialBuildPrompt(id,obs,formato);
+                if(!prompt)return;
+                const promptEscapado=prompt.replace(/`/g,"'").replace(/\\/g,'\\\\').replace(/\n/g,'\\n');
+                html+=`<div style="background:var(--bg);border-radius:8px;padding:10px 12px;margin-bottom:10px;border-left:4px solid #10b981">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;flex-wrap:wrap;gap:6px">
+                        <span style="font-family:monospace;font-weight:700;font-size:.9rem;color:#065f46">${a.siglas}</span>
+                        <span style="font-size:.75rem;color:var(--text-light)">${a.curso||''}</span>
+                        <div style="display:flex;gap:5px;flex-wrap:wrap">
+                            <button class="btn btn-sm" style="background:#10b981;color:#fff;padding:5px 9px" onclick="navigator.clipboard.writeText('${promptEscapado}'.replace(/\\\\n/g,'\\n')).then(()=>toast('Copiado ✓','success'))">📋 Copiar</button>
+                            <button class="btn btn-sm btn-ai" onclick="navigator.clipboard.writeText('${promptEscapado}'.replace(/\\\\n/g,'\\n')).then(()=>{toast('Copiado — abriendo Claude…','success');setTimeout(()=>window.open('https://claude.ai/','_blank'),400)})">🤖 Claude</button>
+                            <button class="btn btn-sm btn-secondary" onclick="navigator.clipboard.writeText('${promptEscapado}'.replace(/\\\\n/g,'\\n')).then(()=>{toast('Copiado — abriendo Gemini…','success');setTimeout(()=>window.open('https://gemini.google.com/','_blank'),400)})">✨ Gemini</button>
+                        </div>
+                    </div>
+                    <div style="font-size:.68rem;color:var(--text-light)">${Object.keys(a.programas||{}).length} programa(s): ${Object.keys(a.programas||{}).map(pId=>{const info=AREAS[(a.programas[pId]||{}).tipo];return info?info.short||info.nombre:'?';}).join(', ')||'—'}</div>
+                </div>`;
+            });
+            document.getElementById('evalInicialTodosLista').innerHTML=html;
+            document.getElementById('evalInicialTodosBox').style.display='block';
+            document.getElementById('evalInicialPromptBox').style.display='none';
+            toast(ids.length+' prompts generados ✓','success');
+        }
+
+        function evalInicialTodosUnico(){
+            const ids=Object.keys(alumnos);
+            if(!ids.length){toast('No hay alumnos registrados','error');return;}
+            const formato=document.getElementById('evalInicialFormato').value;
+            const obs=document.getElementById('evalInicialObs').value;
+            let prompt='Eres un especialista en Pedagogía Terapéutica (PT). A continuación te proporciono los datos de varios alumnos/as. Para cada uno, elabora un informe de evaluación inicial en el formato indicado, identificando a cada alumno/a únicamente por sus iniciales.\n\n';
+            prompt+='FORMATO SOLICITADO: ';
+            if(formato==='breve')prompt+='Breve (máx. 250 palabras, lenguaje accesible para familias o tutor/a).\n\n';
+            else if(formato==='seneca')prompt+='Para Séneca (máximo 900 caracteres, formal, tercera persona).\n\n';
+            else prompt+='Completo (apartados: datos escolares, fuentes de información, NCC por áreas, fortalezas y aspectos a desarrollar, propuesta de objetivos, medidas metodológicas).\n\n';
+            prompt+='SEPARA cada informe con una línea como: === ALUMNO: [iniciales] ===\n\n';
+            prompt+='═══════════════════════════════════\nDATOS DE LOS ALUMNOS\n═══════════════════════════════════\n\n';
+            ids.forEach(id=>{
+                const p=evalInicialBuildPrompt(id,obs,formato);
+                if(!p)return;
+                const inicio=p.indexOf('DATOS DEL ALUMNO/A');
+                const fin=p.indexOf('TAREA');
+                const datos=inicio>-1&&fin>-1?p.substring(inicio,fin).trim():p;
+                prompt+=datos+'\n\n────────────────────────────────────\n\n';
+            });
+            prompt+='\nGenera ahora el informe de evaluación inicial para cada alumno/a en el formato indicado, en el mismo orden.';
+            navigator.clipboard.writeText(prompt).then(()=>{
+                document.getElementById('evalInicialPromptBox').style.display='block';
+                document.getElementById('evalInicialPromptTexto').textContent=prompt;
+                document.getElementById('evalInicialTodosBox').style.display='none';
+                toast('Prompt único copiado ('+ids.length+' alumnos) ✓','success');
+            }).catch(()=>toast('Error al copiar','error'));
+        }
+        // ══ FIN EVALUACIÓN INICIAL ════════════════════════════════════
         function informesAbrirInforme(){
             const sel=document.getElementById('informesAlumnoSel');
             if(!sel.value){toast('Selecciona un alumno primero','error');return;}
