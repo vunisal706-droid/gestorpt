@@ -519,6 +519,7 @@
                     </div>
                     <div class="btn-group" style="margin-bottom:14px">
                         <button class="btn btn-primary btn-sm" onclick="seguimientoGenerarPrompt()">📋 Copiar prompt para IA</button>
+                        <button class="btn btn-secondary btn-sm" onclick="seguimientoDescargarPrompt()">📄 Descargar prompt (.txt)</button>
                         <button class="btn btn-secondary btn-sm" onclick="seguimientoVerPrompt()">👁️ Ver prompt</button>
                         <button class="btn btn-danger btn-sm" onclick="limpiarSeguimiento()">🗑️ Limpiar todo</button>
                     </div>
@@ -585,7 +586,8 @@
                     <div class="card-header">
                         <h2 class="card-title">📝 Memoria Final PT</h2>
                         <div class="btn-group">
-                            <button class="btn btn-secondary btn-sm" onclick="memoriaGenerarTodos()">📋 Generar todos</button>
+                            <button class="btn btn-secondary btn-sm" onclick="memoriaGenerarTodos()">📋 Copiar todos</button>
+                            <button class="btn btn-secondary btn-sm" onclick="memoriaDescargarTodos()">📄 Descargar todos (.txt)</button>
                         </div>
                     </div>
                     <p style="font-size:.82rem;color:var(--text-light);margin-bottom:14px">
@@ -696,6 +698,10 @@
                     <h4 style="color:#6d28d9">📋 Copiar prompt para IA</h4>
                     <p>Copia directamente el prompt del trimestre activo para pegarlo en Gemini, ChatGPT o Claude.</p>
                 </div>
+                <div class="print-option" style="border-color:#8b5cf6" onclick="seguimientoDescargarPrompt()">
+                    <h4 style="color:#6d28d9">📄 Descargar prompt (.txt)</h4>
+                    <p>Descarga el prompt como archivo para subirlo a la IA sin que se corte por longitud.</p>
+                </div>
             </div>
         </div>
 
@@ -715,7 +721,8 @@
             <p style="font-size:.82rem;color:var(--text-light);margin-bottom:12px">Genera el prompt de evaluación final para cada alumno o para todos a la vez, para enviarlo a ChatGPT.</p>
             <div class="btn-group" style="flex-wrap:wrap;gap:8px">
                 <button class="btn btn-primary" style="background:#06b6d4" onclick="informesIrA('memoria')">📝 Ir a Memoria Final</button>
-                <button class="btn btn-secondary" onclick="informesMemoriaTodos()">📋 Generar todos los prompts</button>
+                <button class="btn btn-secondary" onclick="informesMemoriaTodos()">📋 Copiar todos los prompts</button>
+                <button class="btn btn-secondary" onclick="memoriaIniciar();memoriaDescargarTodos()">📄 Descargar todos (.txt)</button>
             </div>
         </div>
 
@@ -4487,6 +4494,7 @@ ${instruccionesFormato}`;
                     <div class="btn-group">
                         <button class="btn btn-ai btn-sm" onclick="memoriaGenerarPrompt('${id}')">👁️ Vista previa</button>
                         <button class="btn btn-primary btn-sm" onclick="memoriaCopiar('${id}')">📋 Copiar prompt</button>
+                        <button class="btn btn-secondary btn-sm" onclick="memoriaDescargar('${id}')">📄 Descargar (.txt)</button>
                         <button class="btn btn-secondary btn-sm" onclick="memoriaAbrirChatGPT('${id}')">🚀 ChatGPT</button>
                     </div>
                 </div>`;
@@ -4700,18 +4708,78 @@ ${instruccionesFormato}`;
             setTimeout(()=>window.open('https://chatgpt.com','_blank'),400);
         }
 
+        // Bloque de datos COMPACTO de un alumno (sin repetir las instrucciones de la tarea)
+        function memoriaConstructDatosAlumno(id){
+            const a=alumnos[id]; if(!a) return '';
+            const res=memoriaCalcularResumen(a);
+            const pct=t=>t.total?Math.round(t.C/t.total*100):0;
+            let txt=`### ALUMNO/A: ${a.siglas}\n`;
+            txt+=`- Curso: ${a.curso||''}\n`;
+            txt+=`- Sesiones semanales de PT: ${(a.diasSesion||[]).length}\n\n`;
+            res.programas.forEach(p=>{
+                txt+=`**Programa: ${p.nombre}** (evolución trimestral, % de indicadores conseguidos)\n\n`;
+                txt+=`| Trimestre | C | P | NC | % |\n|---|---|---|---|---|\n`;
+                [1,2,3].forEach(t=>{const d=p.trimData[t];txt+=`| T${t} | ${d.C} | ${d.P} | ${d.NC} | ${pct(d)}% |\n`;});
+                txt+='\n';
+                if(p.pendientes.length){
+                    txt+=`Indicadores pendientes al final del curso (${p.pendientes.length}): `;
+                    txt+=p.pendientes.map(x=>`[${x.estado}] ${x.ind}${x.criterio?' ('+x.criterio+')':''}`).join('; ')+'\n\n';
+                } else { txt+=`Todos los indicadores de T3 conseguidos.\n\n`; }
+            });
+            if(res.criteriosTrabajados.length) txt+=`Criterios LOMLOE trabajados: ${res.criteriosTrabajados.join(', ')}\n`;
+            if(res.criteriosPendientes.length) txt+=`Criterios a priorizar el próximo curso: ${res.criteriosPendientes.join(', ')}\n`;
+            txt+='\n';
+            return txt;
+        }
+
+        // Prompt único para TODOS los alumnos: instrucciones una sola vez + datos por alumno
+        function memoriaConstructPromptTodos(){
+            const ids=Object.keys(alumnos);
+            if(!ids.length) return '';
+            const cursoEscolar=memoriaGetCursoEscolar();
+            const listaSiglas=ids.map(id=>alumnos[id].siglas).join(', ');
+            let txt=`# PROMPT — MEMORIAS FINALES DE PEDAGOGÍA TERAPÉUTICA (ANDALUCÍA)\n\n`;
+            txt+=`Actúa como **especialista en Pedagogía Terapéutica experto en normativa educativa andaluza (LOMLOE, Orden de 30 de mayo de 2023, atención a la diversidad en Andalucía)**.\n\n`;
+            txt+=`⚠️ MUY IMPORTANTE: a continuación tienes los datos de **${ids.length} alumnos/as**. Debes elaborar una MEMORIA FINAL INDIVIDUAL para CADA UNO de ellos, SIN OMITIR NINGUNO. No te detengas hasta haber completado las ${ids.length} memorias. Si el espacio se agota, continúa igualmente hasta terminar a todos.\n`;
+            txt+=`Alumnos/as a redactar (${ids.length}): ${listaSiglas}.\n\n`;
+            txt+=`Cada memoria debe tener un estilo **formal, técnico e institucional**, en **primera persona del plural**, apta para documentación oficial de un centro público de Educación Primaria en Andalucía. Separa claramente cada memoria con un encabezado «# MEMORIA FINAL PT — [siglas]».\n\n`;
+            txt+=`---\n\n# DATOS DEL CENTRO\n\nCentro: CEIP Capitulaciones de Santa Fe\nLocalidad: Santa Fe\nProvincia: Granada\nCurso escolar: ${cursoEscolar}\nEspecialista PT: Víctor\nEtapas atendidas: Educación Infantil y Educación Primaria\n\n`;
+            txt+=`---\n\n# APARTADOS QUE DEBE TENER CADA MEMORIA\n\n`;
+            txt+=`1. Introducción · 2. Datos del alumnado atendido · 3. Organización de la intervención · 4. Programas específicos desarrollados (con la progresión trimestral aportada) · 5. Metodología de intervención · 6. Coordinación docente · 7. Coordinación con las familias · 8. Valoración global del curso · 9. Dificultades encontradas · 10. Propuestas de mejora · 11. Recomendaciones para el curso siguiente (objetivos prioritarios, metodología, materiales, tipo y frecuencia de apoyo, coordinación con el tutor/a, orientaciones a la familia) · 12. Conclusión.\n\n`;
+            txt+=`# FORMATO DE CADA MEMORIA\n\n- Entre 1000 y 1500 palabras por alumno/a\n- Lenguaje técnico educativo\n- Estructurada con títulos y subtítulos claros\n- Incluir la tabla de evolución trimestral\n- No inventes datos que no estén en la información proporcionada\n\n`;
+            txt+=`---\n\n# DATOS DE CADA ALUMNO/A\n\n`;
+            ids.forEach(id=>{ txt+=memoriaConstructDatosAlumno(id)+'\n---\n\n'; });
+            txt+=`Redacta ahora las ${ids.length} memorias finales, una por alumno/a, en el orden de la lista. Recuerda: no omitas a ninguno.`;
+            return txt;
+        }
+
         function memoriaGenerarTodos(){
             const ids = Object.keys(alumnos);
             if(!ids.length){ toast('Sin alumnos','error'); return; }
-            let all = '';
-            ids.forEach(id=>{
-                all += memoriaConstructPrompt(id);
-                all += '\n\n' + '-'.repeat(60) + '\n\n';
-            });
+            const all=memoriaConstructPromptTodos();
             navigator.clipboard.writeText(all).then(()=>{
-                toast('Prompts de todos los alumnos copiados \uD83D\uDCCB','success');
+                toast('Prompt de los '+ids.length+' alumnos copiado 📋','success');
                 setTimeout(()=>window.open('https://chatgpt.com','_blank'),400);
+            }).catch(()=>{
+                const ta=document.createElement('textarea');ta.value=all;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
+                toast('Prompt copiado 📋','success');
             });
+        }
+
+        function memoriaDescargarTodos(){
+            const ids=Object.keys(alumnos);
+            if(!ids.length){ toast('Sin alumnos','error'); return; }
+            const all=memoriaConstructPromptTodos();
+            if(descargarTexto('memoria_final_todos.txt',all))
+                toast('Archivo con los '+ids.length+' alumnos descargado 📄','success');
+        }
+
+        function memoriaDescargar(id){
+            const txt=memoriaConstructPrompt(id);
+            if(!txt){toast('Selecciona un alumno','error');return;}
+            const a=alumnos[id];
+            const nombre='memoria_final_'+((a&&a.siglas)||id).replace(/[^\w\-]/g,'_')+'.txt';
+            if(descargarTexto(nombre,txt)) toast('Archivo descargado 📄','success');
         }
 
 
@@ -6421,6 +6489,18 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
         function abrirModal(id){document.getElementById(id).classList.add('active');}
         function cerrarModal(id){document.getElementById(id).classList.remove('active');}
         function toast(msg,tipo){const t=document.getElementById('toast');t.textContent=msg;t.className='toast '+(tipo||'');setTimeout(()=>{t.classList.add('show');},10);setTimeout(()=>{t.classList.remove('show');},2500);}
+        // Descarga un texto como fichero (evita que el portapapeles trunque prompts largos)
+        function descargarTexto(nombre, contenido, mime){
+            try{
+                const blob=new Blob([contenido],{type:(mime||'text/plain')+';charset=utf-8'});
+                const url=URL.createObjectURL(blob);
+                const link=document.createElement('a');
+                link.href=url; link.download=nombre;
+                document.body.appendChild(link); link.click(); document.body.removeChild(link);
+                setTimeout(()=>URL.revokeObjectURL(url),2000);
+                return true;
+            }catch(err){toast('No se pudo descargar el archivo','error');return false;}
+        }
         
         // BANCO DE ACTIVIDADES CON RECURSOS ONLINE
         const RECURSOS_ONLINE = [
@@ -7374,16 +7454,35 @@ Genera las 3 actividades completas.`;
             const a=alumnos[id];
             let nC=0,nP=0,nNC=0;
             const areas=new Set(), conseguidosList=[], bloqueList=[];
+            // Acumulador común para no duplicar lógica entre objetivos del trimestre y pasados
+            const _acum=(e,info,ind)=>{
+                if(e==='C'){nC++;areas.add(info.nombre);if(conseguidosList.length<4)conseguidosList.push(ind);}
+                else if(e==='P'){nP++;areas.add(info.nombre);}
+                else if(e==='NC'){nNC++;areas.add(info.nombre);if(bloqueList.length<3)bloqueList.push(ind);}
+            };
             if(a.programas){
                 Object.keys(a.programas).forEach(pId=>{
                     const p=a.programas[pId], info=AREAS[p.tipo]||{nombre:p.tipo};
-                    (p.objetivos||[]).filter(o=>o.trimestre===trim).forEach((obj,oi)=>{
+                    // IMPORTANTE: usar el índice REAL del objetivo en p.objetivos (igual que al guardar la evaluación con setEval),
+                    // no el índice del array filtrado. Si no, en T2/T3 las claves no coinciden y todo sale a 0.
+                    (p.objetivos||[]).forEach((obj,oi)=>{
+                        if(parseInt(obj.trimestre)!==trim) return;
                         (obj.indicadores||[]).forEach((ind,ii)=>{
                             const k=pId+'_'+oi+'_'+ii+'_T'+trim, e=a.evaluaciones?a.evaluaciones[k]:null;
-                            if(e==='C'){nC++;areas.add(info.nombre);if(conseguidosList.length<4)conseguidosList.push(ind);}
-                            else if(e==='P'){nP++;areas.add(info.nombre);}
-                            else if(e==='NC'){nNC++;areas.add(info.nombre);if(bloqueList.length<3)bloqueList.push(ind);}
+                            _acum(e,info,ind);
                         });
+                    });
+                    // Indicadores PASADOS de trimestres anteriores re-evaluados en este trimestre
+                    const pasadosAqui=a.pasados||{};
+                    Object.keys(pasadosAqui).forEach(k=>{
+                        if(pasadosAqui[k]!==trim) return;
+                        const parts=k.split('_');
+                        if(parts[0]!==pId) return;
+                        const oi=parseInt(parts[1]), ii=parseInt(parts[2]);
+                        const obj=(p.objetivos||[])[oi]; if(!obj) return;
+                        const ind=(obj.indicadores||[])[ii]||'';
+                        const evalK=pId+'_'+oi+'_'+ii+'_T'+trim, e=a.evaluaciones?a.evaluaciones[evalK]:null;
+                        _acum(e,info,ind);
                     });
                 });
             }
@@ -7397,6 +7496,8 @@ Genera las 3 actividades completas.`;
         function seguimientoBuildPrompt(trim){
             const ids=Object.keys(alumnos).sort((a,b)=>(alumnos[a].curso||'').localeCompare(alumnos[b].curso||'','es'));
             if(!ids.length)return null;
+            const total=ids.length;
+            const listaSiglas=ids.map(id=>alumnos[id].siglas).join(', ');
             let bloque='';
             ids.forEach(id=>{
                 const a=alumnos[id], d=_segDatosAlumno(id,trim);
@@ -7409,6 +7510,9 @@ Genera las 3 actividades completas.`;
             });
 
             return `Eres especialista en Pedagogía Terapéutica (PT) en Andalucía (LOMLOE). Redacta el seguimiento trimestral de PT para el Sistema de Información Séneca de cada alumno/a.
+
+⚠️ MUY IMPORTANTE: hay ${total} alumnos/as y debes generar un resumen para CADA UNO de ellos, SIN OMITIR NINGUNO. No te detengas hasta haber redactado los ${total} bloques. Si el espacio se agota, continúa igualmente hasta completar a todos.
+Alumnos/as que debes redactar (${total}): ${listaSiglas}.
 
 REQUISITOS ESTRICTOS PARA CADA RESUMEN:
 - MÁXIMO 900 CARACTERES por alumno (es un límite absoluto del sistema Séneca)
@@ -7423,7 +7527,7 @@ FORMATO DE RESPUESTA (respeta este formato EXACTO para cada alumno):
 
 DATOS DE LOS ALUMNOS — Trimestre ${trim}:
 ${bloque}
-Genera ahora un resumen por cada alumno en el formato indicado. No añadas nada más.`;
+Genera ahora un resumen por cada uno de los ${total} alumnos en el formato indicado, en el mismo orden de la lista. No añadas nada más.`;
         }
 
         function seguimientoGenerarPrompt(){
@@ -7448,6 +7552,14 @@ Genera ahora un resumen por cada alumno en el formato indicado. No añadas nada 
             const prev=document.getElementById('seguimientoPromptPreview');
             if(prev.style.display==='none'){prev.style.display='block';prev.textContent=prompt;}
             else prev.style.display='none';
+        }
+
+        function seguimientoDescargarPrompt(){
+            const trim=parseInt(document.getElementById('seguimientoTrim').value);
+            const prompt=seguimientoBuildPrompt(trim);
+            if(!prompt){toast('No hay alumnos','error');return;}
+            if(descargarTexto('seguimiento_T'+trim+'.txt',prompt))
+                toast('Archivo descargado 📄 — súbelo a la IA','success');
         }
 
         function limpiarSeguimiento(){
