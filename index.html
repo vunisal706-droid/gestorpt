@@ -1186,8 +1186,33 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
+        // ─── Carga robusta de Chart.js (con CDNs de reserva) ────────────
+        // Si el <script> del <head> no cargó (versión/red/caché), se reintenta
+        // desde varios CDN y, al estar listo, se redibujan los gráficos.
+        function _chartStub(){window.Chart=function(){return{destroy(){},update(){},resize(){}};};window.Chart.register=function(){};window.Chart._stub=true;}
+        let _chartPromise=null;
+        function ensureChart(){
+            if(window.Chart&&!window.Chart._stub)return Promise.resolve(true);
+            if(_chartPromise)return _chartPromise;
+            const urls=[
+                'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js',
+                'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js',
+                'https://unpkg.com/chart.js@4.4.0/dist/chart.umd.min.js'
+            ];
+            _chartPromise=new Promise(resolve=>{
+                let i=0;
+                (function next(){
+                    if(window.Chart&&!window.Chart._stub){resolve(true);return;}
+                    if(i>=urls.length){console.warn('No se pudo cargar Chart.js desde ningún CDN');_chartStub();resolve(false);return;}
+                    const s=document.createElement('script');s.src=urls[i++];
+                    s.onload=function(){(window.Chart&&!window.Chart._stub)?resolve(true):next();};
+                    s.onerror=next;
+                    document.head.appendChild(s);
+                })();
+            });
+            return _chartPromise;
+        }
         firebase.initializeApp({databaseURL:"https://gestorpt-7946b-default-rtdb.europe-west1.firebasedatabase.app"});
         const db=firebase.database();
         // ─── SISTEMA DE CURSOS ACADÉMICOS ───────────────────────────────
@@ -2806,7 +2831,7 @@
         // EVALUACIÓN
         function renderEval(){const a=alumnos[alumnoActual];let h='<div class="card"><div class="card-header"><h3 class="card-title">📊 Evaluación — Indicadores</h3></div><div class="btn-group no-print" style="margin-bottom:12px"><button class="btn '+(evalTrim===1?'btn-primary':'btn-secondary')+' btn-sm" onclick="setTrim(1)">T1</button><button class="btn '+(evalTrim===2?'btn-primary':'btn-secondary')+' btn-sm" onclick="setTrim(2)">T2</button><button class="btn '+(evalTrim===3?'btn-primary':'btn-secondary')+' btn-sm" onclick="setTrim(3)">T3</button><button class="btn btn-warning btn-sm" onclick="abrirModalInforme()">📄 Informe</button>';if(evalTrim<3){h+='<button class="btn btn-ai btn-sm" onclick="pasarNoConseguidos()">📤 P/N→T'+(evalTrim+1)+'</button>';}h+='</div><div class="chart-container no-print"><canvas id="chartProgreso"></canvas></div><div id="pctArea" class="no-print"></div><div id="evalList"></div></div><div class="card" style="margin-top:12px"><div class="card-header"><h3 class="card-title">🔢 Calificación mensual por criterio</h3></div><p style="font-size:.78rem;color:var(--text-light);margin-bottom:12px">Introduce la nota (0-10) por criterio LOMLOE para cada mes del trimestre. Se guarda automáticamente.</p><div id="califList"></div></div>';document.getElementById('tabEvaluacion').innerHTML=h;renderEvalList();renderCalificaciones();setTimeout(renderEvalCharts,100);}
         function setTrim(t){evalTrim=t;renderEval();}
-        function renderEvalCharts(){const a=alumnos[alumnoActual];if(!a.programas)return;const ctx=document.getElementById('chartProgreso');if(!ctx)return;if(charts.progreso)charts.progreso.destroy();const labels=[],conseguidos=[],proceso=[],noConseguidos=[],noIniciados=[];const pasadosAqui=getIndicadoresPasados(a,evalTrim);Object.keys(a.programas).forEach(pId=>{const p=a.programas[pId],info=AREAS[p.tipo]||{nombre:p.tipo};const objsT=(p.objetivos||[]).filter(o=>o.trimestre===evalTrim);const pasadosProg=pasadosAqui.filter(x=>x.pId===pId);if(!objsT.length&&!pasadosProg.length)return;labels.push(info.short||info.nombre.substring(0,12));let c=0,pr=0,nc=0;objsT.forEach(obj=>{const oi=p.objetivos.indexOf(obj);(obj.indicadores||[]).forEach((_,ii)=>{const k=pId+'_'+oi+'_'+ii+'_T'+evalTrim,e=a.evaluaciones?a.evaluaciones[k]:null;if(e==='C')c++;else if(e==='P')pr++;else if(e==='NC')nc++;});});pasadosProg.forEach(item=>{const k=item.pId+'_'+item.oIdx+'_'+item.iIdx+'_T'+evalTrim,e=a.evaluaciones?a.evaluaciones[k]:null;if(e==='C')c++;else if(e==='P')pr++;else if(e==='NC')nc++;});conseguidos.push(c);proceso.push(pr);noConseguidos.push(nc);});charts.progreso=new Chart(ctx,{type:'bar',data:{labels:labels,datasets:[{label:'Conseguido',data:conseguidos,backgroundColor:'#22c55e'},{label:'En proceso',data:proceso,backgroundColor:'#3b82f6'},{label:'No conseguido',data:noConseguidos,backgroundColor:'#ef4444'},]},options:{responsive:true,plugins:{legend:{position:'bottom'},title:{display:true,text:'Indicadores T'+evalTrim}},scales:{x:{stacked:true},y:{stacked:true}}}});
+        function renderEvalCharts(){if(typeof Chart==='undefined'){ensureChart().then(renderEvalCharts);return;}const a=alumnos[alumnoActual];if(!a.programas)return;const ctx=document.getElementById('chartProgreso');if(!ctx)return;if(charts.progreso)charts.progreso.destroy();const labels=[],conseguidos=[],proceso=[],noConseguidos=[],noIniciados=[];const pasadosAqui=getIndicadoresPasados(a,evalTrim);Object.keys(a.programas).forEach(pId=>{const p=a.programas[pId],info=AREAS[p.tipo]||{nombre:p.tipo};const objsT=(p.objetivos||[]).filter(o=>o.trimestre===evalTrim);const pasadosProg=pasadosAqui.filter(x=>x.pId===pId);if(!objsT.length&&!pasadosProg.length)return;labels.push(info.short||info.nombre.substring(0,12));let c=0,pr=0,nc=0;objsT.forEach(obj=>{const oi=p.objetivos.indexOf(obj);(obj.indicadores||[]).forEach((_,ii)=>{const k=pId+'_'+oi+'_'+ii+'_T'+evalTrim,e=a.evaluaciones?a.evaluaciones[k]:null;if(e==='C')c++;else if(e==='P')pr++;else if(e==='NC')nc++;});});pasadosProg.forEach(item=>{const k=item.pId+'_'+item.oIdx+'_'+item.iIdx+'_T'+evalTrim,e=a.evaluaciones?a.evaluaciones[k]:null;if(e==='C')c++;else if(e==='P')pr++;else if(e==='NC')nc++;});conseguidos.push(c);proceso.push(pr);noConseguidos.push(nc);});charts.progreso=new Chart(ctx,{type:'bar',data:{labels:labels,datasets:[{label:'Conseguido',data:conseguidos,backgroundColor:'#22c55e'},{label:'En proceso',data:proceso,backgroundColor:'#3b82f6'},{label:'No conseguido',data:noConseguidos,backgroundColor:'#ef4444'},]},options:{responsive:true,plugins:{legend:{position:'bottom'},title:{display:true,text:'Indicadores T'+evalTrim}},scales:{x:{stacked:true},y:{stacked:true}}}});
             // % consecución por área
             let pctHtml='<div style="margin-top:10px">';
             labels.forEach((lbl,i)=>{const totEv=conseguidos[i]+proceso[i]+noConseguidos[i];const pct=totEv?Math.round(conseguidos[i]/totEv*100):0;const pctP=totEv?Math.round(proceso[i]/totEv*100):0;const pctNC=totEv?Math.round(noConseguidos[i]/totEv*100):0;pctHtml+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:.75rem"><span style="min-width:90px;font-weight:600;color:var(--primary)">'+lbl+'</span><div style="flex:1;background:#e5e7eb;border-radius:6px;height:18px;overflow:hidden;display:flex"><div style="width:'+pct+'%;background:#22c55e;height:100%"></div><div style="width:'+pctP+'%;background:#3b82f6;height:100%"></div><div style="width:'+pctNC+'%;background:#ef4444;height:100%"></div></div><span style="min-width:36px;text-align:right;font-weight:700;color:'+(pct>=60?'#22c55e':pct>=30?'#f59e0b':'#ef4444')+'">'+pct+'%</span></div>';});
@@ -3306,6 +3331,7 @@
         function renderAsis(){const a=alumnos[alumnoActual],st=calcStats(a);let totalC=0,totalP=0,totalNC=0,totalNI=0;if(a.evaluaciones){Object.keys(a.evaluaciones).forEach(k=>{const e=a.evaluaciones[k];if(e==='C')totalC++;else if(e==='P')totalP++;else if(e==='NC')totalNC++;});}// NI = sin clave en evaluaciones, contar total indicadores - evaluados
                 document.getElementById('tabAsistencia').innerHTML='<div class="card"><div class="card-header"><h3 class="card-title">📈 Resumen</h3></div><div class="stats-box"><div class="stat-item"><div class="stat-num" style="color:var(--danger)">'+st.ausencias+'</div><div class="stat-label">Ausencias</div></div><div class="stat-item"><div class="stat-num" style="color:var(--success)">'+st.conseguidos+'</div><div class="stat-label">Sesiones OK</div></div><div class="stat-item"><div class="stat-num" style="color:var(--warning)">'+st.repetir+'</div><div class="stat-label">Repetir</div></div></div><div class="stats-box"><div class="stat-item"><div class="stat-num" style="color:var(--success)">'+totalC+'</div><div class="stat-label">Conseguidos</div></div><div class="stat-item"><div class="stat-num" style="color:var(--proceso)">'+totalP+'</div><div class="stat-label">En proceso</div></div><div class="stat-item"><div class="stat-num" style="color:var(--danger)">'+totalNC+'</div><div class="stat-label">No conseg.</div></div></div><div class="chart-container"><canvas id="chartAusTrim"></canvas></div><div class="chart-container" style="margin-top:12px"><canvas id="chartCompTrim"></canvas></div><div class="chart-container" style="margin-top:12px"><canvas id="chartRadar"></canvas></div></div>';setTimeout(renderAsisCharts,100);}
         function renderAsisCharts(){
+            if(typeof Chart==='undefined'){ensureChart().then(renderAsisCharts);return;}
             const a=alumnos[alumnoActual],st=calcStats(a);
             // Ausencias por trimestre
             const ctx1=document.getElementById('chartAusTrim');
@@ -3360,6 +3386,7 @@
 
         // ESTADÍSTICAS GLOBALES
         function renderEstadisticasGlobal(){
+            if(typeof Chart==='undefined'){ensureChart().then(renderEstadisticasGlobal);return;}
             const ids=Object.keys(alumnos);
             if(!ids.length) return;
 
@@ -4688,6 +4715,7 @@ ${instruccionesFormato}`;
         }
 
         function memoriaRenderCharts(id, res){
+            if(typeof Chart==='undefined'){ensureChart().then(()=>memoriaRenderCharts(id,res));return;}
             res.programas.forEach((p,pi)=>{
                 const ctx = document.getElementById('memChart_'+id+'_'+pi);
                 if(!ctx) return;
