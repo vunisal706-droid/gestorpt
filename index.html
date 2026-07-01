@@ -269,7 +269,10 @@
     <header class="header no-print">
         <div class="header-content">
             <h1 onclick="volverInicio()">📋 Gestor PE v3</h1>
-            <div class="status"><div class="status-dot" id="statusDot"></div><span id="statusText">Conectando...</span></div>
+            <div style="display:flex;align-items:center;gap:8px">
+                <select id="cursoSelector" onchange="onCursoSelectorChange()" title="Curso académico" style="background:rgba(255,255,255,.95);color:var(--primary-dark);border:none;border-radius:20px;padding:5px 10px;font-family:inherit;font-weight:700;font-size:.78rem;cursor:pointer"></select>
+                <div class="status"><div class="status-dot" id="statusDot"></div><span id="statusText">Conectando...</span></div>
+            </div>
         </div>
     </header>
 
@@ -1187,6 +1190,12 @@
     <script>
         firebase.initializeApp({databaseURL:"https://gestorpt-7946b-default-rtdb.europe-west1.firebasedatabase.app"});
         const db=firebase.database();
+        // ─── SISTEMA DE CURSOS ACADÉMICOS ───────────────────────────────
+        // Los datos de cada curso viven en gestorpe/cursos/{id}/(alumnos|grupos|aci)
+        // Las plantillas (biblioteca) se comparten entre todos los cursos.
+        let CURSO='2025-26', PA, PG, PACI, cursosMeta={};
+        function setCursoPaths(){const b='gestorpe/cursos/'+CURSO;PA=b+'/alumnos';PG=b+'/grupos';PACI=b+'/aci';}
+        setCursoPaths();
         let alumnos={},plantillas={},alumnoActual=null,mesActual=0,diasSel=[1,3,4],celdaEditando=null,docExtraido=null,docExtraidoPlantilla=null,estadoCelda='asiste',resultadoCelda=null,evalTrim=1,charts={},informeData=null,recursos={},recursosFavoritos=[],tabRecursosActual='todos';
         
         const CICLOS={infantil:{nombre:'Infantil',icon:'💒'},ciclo1:{nombre:'1º Ciclo',icon:'🔵'},ciclo2:{nombre:'2º Ciclo',icon:'🟢'},ciclo3:{nombre:'3º Ciclo',icon:'🟠'}};
@@ -1986,8 +1995,15 @@
         });
         
         // Firebase listeners
-        db.ref('gestorpe/alumnos').on('value',snap=>{alumnos=snap.val()||{};// Extract ACI sub-data
-        aciData={};Object.keys(alumnos).forEach(id=>{if(alumnos[id].aci)aciData[id]=alumnos[id].aci;});renderInicio();if(alumnoActual&&alumnos[alumnoActual]){renderProgs();renderProg();renderEval();renderAsis();}document.getElementById('statusDot').classList.add('ok');document.getElementById('statusText').textContent='Conectado';if(document.getElementById('seccionACI').style.display!=='none')renderAciSeccion();});
+        let _refAlumnos=null,_refGrupos=null;
+        function _handlerAlumnos(snap){alumnos=snap.val()||{};// Extract ACI sub-data
+        aciData={};Object.keys(alumnos).forEach(id=>{if(alumnos[id].aci)aciData[id]=alumnos[id].aci;});renderInicio();if(alumnoActual&&alumnos[alumnoActual]){renderProgs();renderProg();renderEval();renderAsis();}document.getElementById('statusDot').classList.add('ok');document.getElementById('statusText').textContent='Conectado';if(document.getElementById('seccionACI').style.display!=='none')renderAciSeccion();}
+        function attachCursoListeners(){
+            if(_refAlumnos)_refAlumnos.off();
+            if(_refGrupos)_refGrupos.off();
+            _refAlumnos=db.ref(PA);_refAlumnos.on('value',_handlerAlumnos);
+            _refGrupos=db.ref(PG);_refGrupos.on('value',_handlerGrupos);
+        }
         db.ref('gestorpe/plantillas').on('value',snap=>{
             const customPlantillas=snap.val()||{};
             // Añadir plantillas personalizadas de Firebase
@@ -1999,6 +2015,108 @@
         
         // Renderizar biblioteca aunque Firebase no conecte
         renderBiblioteca();
+
+        // ─── GESTIÓN DE CURSOS ACADÉMICOS ───────────────────────────────
+        async function cursoInit(){
+            try{
+                const [cfgSnap,metaSnap]=await Promise.all([
+                    db.ref('gestorpe/config/cursoActivo').once('value'),
+                    db.ref('gestorpe/cursos/_meta').once('value')
+                ]);
+                cursosMeta=metaSnap.val()||{};
+                // Si aún no existe ningún curso, migrar los datos actuales al curso 2025/26
+                if(!Object.keys(cursosMeta).length){
+                    await migrarCursoLegacy();
+                    const m2=await db.ref('gestorpe/cursos/_meta').once('value');
+                    cursosMeta=m2.val()||{};
+                }
+                let activo=cfgSnap.val();
+                if(!activo||!cursosMeta[activo]) activo=Object.keys(cursosMeta).sort().pop();
+                CURSO=activo; setCursoPaths();
+            }catch(e){
+                console.error('cursoInit',e);
+                CURSO='2025-26'; setCursoPaths();
+                cursosMeta={'2025-26':{nombre:'2025/26'}};
+            }
+            renderCursoSelector();
+            attachCursoListeners();
+        }
+
+        // Copia (NO borra) los datos del esquema antiguo al curso 2025/26
+        async function migrarCursoLegacy(){
+            const id='2025-26';
+            const [al,gr,ac]=await Promise.all([
+                db.ref('gestorpe/alumnos').once('value'),
+                db.ref('gestorpe/grupos').once('value'),
+                db.ref('gestorpe/aci').once('value')
+            ]);
+            const updates={};
+            const alV=al.val(),grV=gr.val(),acV=ac.val();
+            if(alV) updates['gestorpe/cursos/'+id+'/alumnos']=alV;
+            if(grV) updates['gestorpe/cursos/'+id+'/grupos']=grV;
+            if(acV) updates['gestorpe/cursos/'+id+'/aci']=acV;
+            updates['gestorpe/cursos/_meta/'+id]={nombre:'2025/26',creado:Date.now()};
+            updates['gestorpe/config/cursoActivo']=id;
+            await db.ref().update(updates);
+            // Los nodos antiguos gestorpe/alumnos y gestorpe/grupos se conservan como copia de seguridad.
+        }
+
+        function renderCursoSelector(){
+            const sel=document.getElementById('cursoSelector'); if(!sel)return;
+            const ids=Object.keys(cursosMeta).sort();
+            let h='';
+            ids.forEach(id=>{h+='<option value="'+id+'"'+(id===CURSO?' selected':'')+'>📅 '+(cursosMeta[id].nombre||id)+'</option>';});
+            h+='<option value="__nuevo__">➕ Nuevo curso…</option>';
+            sel.innerHTML=h;
+        }
+
+        function onCursoSelectorChange(){
+            const sel=document.getElementById('cursoSelector'),v=sel.value;
+            if(v==='__nuevo__'){sel.value=CURSO;crearNuevoCurso();return;}
+            if(v===CURSO)return;
+            cambiarCurso(v);
+        }
+
+        function cambiarCurso(id){
+            if(!cursosMeta[id])return;
+            CURSO=id; setCursoPaths();
+            db.ref('gestorpe/config/cursoActivo').set(id);
+            alumnoActual=null;
+            const sa=document.getElementById('screenAlumno'),si=document.getElementById('screenInicio');
+            if(sa)sa.classList.remove('active'); if(si)si.classList.add('active');
+            attachCursoListeners();
+            renderCursoSelector();
+            toast('Curso '+(cursosMeta[id].nombre||id)+' cargado','success');
+        }
+
+        function sugerirSiguienteCurso(){
+            let maxY=0;
+            Object.keys(cursosMeta).forEach(id=>{const m=(cursosMeta[id].nombre||id).match(/(\d{4})/);if(m){const y=parseInt(m[1]);if(y>maxY)maxY=y;}});
+            if(!maxY){const n=new Date();maxY=n.getMonth()>=8?n.getFullYear():n.getFullYear()-1;}
+            const a=maxY+1,b=(a+1)%100;
+            return {id:a+'-'+String(b).padStart(2,'0'),nombre:a+'/'+String(b).padStart(2,'0')};
+        }
+
+        function crearNuevoCurso(){
+            const sug=sugerirSiguienteCurso();
+            const nombre=prompt('Nombre del nuevo curso académico\n(los alumnos, grupos y ACIs empezarán vacíos; tu biblioteca de plantillas se mantiene):',sug.nombre);
+            if(nombre===null)return;
+            const nom=nombre.trim(); if(!nom){toast('Nombre vacío','error');return;}
+            const id=nom.replace(/\//g,'-').replace(/[.#$\[\]]/g,'').trim();
+            if(cursosMeta[id]){toast('Ese curso ya existe','error');return;}
+            const meta={nombre:nom,creado:Date.now()};
+            const updates={};
+            updates['gestorpe/cursos/_meta/'+id]=meta;
+            updates['gestorpe/config/cursoActivo']=id;
+            db.ref().update(updates).then(()=>{
+                cursosMeta[id]=meta;
+                toast('Curso '+nom+' creado ✓','success');
+                cambiarCurso(id);
+            }).catch(()=>toast('Error al crear curso','error'));
+        }
+
+        // Arranque del sistema de cursos
+        cursoInit();
 
         function cambiarSeccion(s,btn){document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');document.getElementById('seccionAlumnos').style.display=s==='alumnos'?'block':'none';document.getElementById('seccionEstadisticas').style.display=s==='estadisticas'?'block':'none';document.getElementById('seccionSDA').style.display=s==='sda'?'block':'none';document.getElementById('seccionBiblioteca').style.display=s==='biblioteca'?'block':'none';document.getElementById('seccionRecursos').style.display=s==='recursos'?'block':'none';document.getElementById('seccionSeguimiento').style.display=s==='seguimiento'?'block':'none';document.getElementById('seccionGrupos').style.display=s==='grupos'?'block':'none';document.getElementById('seccionACI').style.display=s==='aci'?'block':'none';document.getElementById('seccionMemoria').style.display=s==='memoria'?'block':'none';document.getElementById('seccionInformes').style.display=s==='informes'?'block':'none';if(s==='estadisticas')renderEstadisticasGlobal();if(s==='recursos')inicializarRecursos();if(s==='seguimiento')renderSeguimiento();if(s==='grupos')renderGrupos();if(s==='aci')renderAciSeccion();if(s==='memoria')memoriaIniciar();if(s==='informes')informesIniciar();}
         function renderInicio(){const g=document.getElementById('alumnosGrid'),ids=Object.keys(alumnos);if(!ids.length){g.innerHTML='<div class="alumno-card alumno-card-add" onclick="abrirModalNuevo()"><span style="font-size:1.3rem">➕</span><span style="font-size:.8rem">Añadir</span></div>';return;}let h=ids.map(id=>{const a=alumnos[id],n=a.programas?Object.keys(a.programas).length:0;return'<div class="alumno-card" onclick="abrirAlumno(\''+id+'\')"><div class="alumno-siglas">'+a.siglas+'</div><div class="alumno-curso">'+a.curso+'</div><div class="alumno-progs">'+n+' prog.</div></div>';}).join('');h+='<div class="alumno-card alumno-card-add" onclick="abrirModalNuevo()"><span style="font-size:1.3rem">➕</span></div>';g.innerHTML=h;}
@@ -2012,7 +2130,7 @@
         
         function asignarPlantillaAlumno(pid){const aid=document.getElementById('selAlumnoPlantilla').value;cerrarModal('modalPlantilla');asignarPlantilla(pid,aid);}
         
-        function asignarPlantilla(pid,aid){const p=plantillas[pid],a=alumnos[aid];if(!p||!a)return;const newPid='p_'+Date.now();const programa={tipo:p.tipo,objetivos:JSON.parse(JSON.stringify(p.objetivos))};db.ref('gestorpe/alumnos/'+aid+'/programas/'+newPid).set(programa).then(()=>{a.programas=a.programas||{};a.programas[newPid]=programa;const nueva=generarProgramacion(a);return db.ref('gestorpe/alumnos/'+aid+'/programacion').set(nueva);}).then(()=>{toast('Plantilla asignada a '+a.siglas,'success');if(alumnoActual===aid){renderProgs();renderProg();}});}
+        function asignarPlantilla(pid,aid){const p=plantillas[pid],a=alumnos[aid];if(!p||!a)return;const newPid='p_'+Date.now();const programa={tipo:p.tipo,objetivos:JSON.parse(JSON.stringify(p.objetivos))};db.ref(PA+'/'+aid+'/programas/'+newPid).set(programa).then(()=>{a.programas=a.programas||{};a.programas[newPid]=programa;const nueva=generarProgramacion(a);return db.ref(PA+'/'+aid+'/programacion').set(nueva);}).then(()=>{toast('Plantilla asignada a '+a.siglas,'success');if(alumnoActual===aid){renderProgs();renderProg();}});}
         
         function eliminarPlantilla(id){if(plantillas[id]&&plantillas[id].esBase){toast('No se pueden eliminar plantillas base','error');return;}if(!confirm('¿Eliminar plantilla?'))return;db.ref('gestorpe/plantillas/'+id).remove().then(()=>{cerrarModal('modalPlantilla');toast('Eliminada','success');});}
         
@@ -2025,7 +2143,7 @@
         function abrirModalNuevo(){document.getElementById('nuevoSiglas').value='';diasSel=[1,3,4];actualizarDiasBtns();abrirModal('modalNuevo');}
         function toggleDia(d){const idx=diasSel.indexOf(d);if(idx>-1){if(diasSel.length>1)diasSel.splice(idx,1);}else{diasSel.push(d);diasSel.sort((a,b)=>a-b);}actualizarDiasBtns();}
         function actualizarDiasBtns(){document.querySelectorAll('#diasBtns .dia-btn').forEach(btn=>{btn.classList.toggle('active',diasSel.includes(parseInt(btn.dataset.dia)));});}
-        function crearAlumno(){const siglas=document.getElementById('nuevoSiglas').value.trim().toUpperCase();if(!siglas){toast('Introduce siglas','error');return;}const cursoSel=document.getElementById('nuevoCurso'),cursoTexto=cursoSel.options[cursoSel.selectedIndex].text,ciclo=cursoSel.value;db.ref('gestorpe/alumnos').push().set({siglas:siglas,curso:cursoTexto,ciclo:ciclo,diasSesion:diasSel.slice(),programas:{},programacion:{},evaluaciones:{},ausencias:{},sincole:{},resultados:{},pasados:{}}).then(()=>{cerrarModal('modalNuevo');toast(siglas+' creado ✓','success');});}
+        function crearAlumno(){const siglas=document.getElementById('nuevoSiglas').value.trim().toUpperCase();if(!siglas){toast('Introduce siglas','error');return;}const cursoSel=document.getElementById('nuevoCurso'),cursoTexto=cursoSel.options[cursoSel.selectedIndex].text,ciclo=cursoSel.value;db.ref(PA).push().set({siglas:siglas,curso:cursoTexto,ciclo:ciclo,diasSesion:diasSel.slice(),programas:{},programacion:{},evaluaciones:{},ausencias:{},sincole:{},resultados:{},pasados:{}}).then(()=>{cerrarModal('modalNuevo');toast(siglas+' creado ✓','success');});}
         // ── ENCABEZAMIENTO INSTITUCIONAL PROA+ / UE ─────────────────────
         const _LOGO_B64 = 'data:image/jpeg;base64,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';
         const _LOGO_CSS = '.logo-inst{text-align:center;padding:8px 0 12px;border-bottom:2px solid #d4ddd9;margin-bottom:16px;page-break-inside:avoid}.logo-inst img{height:38px;width:auto;max-width:100%}.logo-inst-portada{text-align:center;margin-bottom:18px}.logo-inst-portada img{height:42px;width:auto;max-width:90%}';
@@ -2068,7 +2186,7 @@
             const sel=document.getElementById('editCurso');
             const cursoTexto=sel.options[sel.selectedIndex].text;
             const ciclo=sel.options[sel.selectedIndex].value;
-            db.ref('gestorpe/alumnos/'+id).update({siglas,curso:cursoTexto,ciclo,diasSesion:_diasEdit.slice()})
+            db.ref(PA+'/'+id).update({siglas,curso:cursoTexto,ciclo,diasSesion:_diasEdit.slice()})
                 .then(()=>{
                     cerrarModal('modalEditarAlumno');
                     toast(siglas+' actualizado ✓','success');
@@ -2077,7 +2195,7 @@
                 .catch(e=>toast('Error: '+e.message,'error'));
         }
 
-        function eliminarAlumno(id){if(confirm('¿Eliminar alumno?')){db.ref('gestorpe/alumnos/'+id).remove();volverInicio();toast('Eliminado','success');}}
+        function eliminarAlumno(id){if(confirm('¿Eliminar alumno?')){db.ref(PA+'/'+id).remove();volverInicio();toast('Eliminado','success');}}
 
         // PROGRAMAS
         function renderProgs(){const a=alumnos[alumnoActual];let h='<div class="card"><div class="card-header"><h3 class="card-title">📄 Programas</h3><button class="btn btn-primary btn-sm no-print" onclick="abrirModalAddProg()">➕</button></div>';if(!a.programas||!Object.keys(a.programas).length){h+='<div class="empty-state">Sin programas</div>';}else{Object.keys(a.programas).forEach(pId=>{const p=a.programas[pId],info=AREAS[p.tipo]||{icon:'📄',nombre:p.tipo,color:'#666'};h+='<div class="programa-card" style="border-left-color:'+info.color+'"><div class="programa-header"><span class="programa-titulo">'+info.icon+' '+info.nombre+'</span><button class="btn btn-danger btn-sm no-print" onclick="elimProg(\''+pId+'\')">🗑️</button></div>';(p.objetivos||[]).forEach(obj=>{h+='<div class="objetivo-card"><div class="objetivo-header"><span class="objetivo-num">O'+obj.numero+'</span><span class="trimestre-badge t'+obj.trimestre+'">T'+obj.trimestre+'</span></div><div class="objetivo-desc">'+obj.descripcion+'</div>';if(obj.indicadores&&obj.indicadores.length){h+='<ul class="indicadores-list">'+obj.indicadores.map(x=>'<li>• '+x+'</li>').join('')+'</ul>';}h+='</div>';});h+='</div>';});}h+='<div class="btn-group no-print" style="margin-top:12px"><button class="btn btn-secondary btn-sm" onclick="regenerarProg()">🔄 Regenerar</button><button class="btn btn-ai btn-sm" onclick="generarPromptIA()">🤖 IA</button><button class="btn btn-warning btn-sm" onclick="abrirModal(\'modalImportJSON\')">📥 JSON</button><button class="btn btn-secondary btn-sm" onclick="actualizarCriteriosLOMLOE()" title="Añade los criterios LOMLOE sin borrar nada">🏷️ Criterios</button></div></div>';
@@ -2141,8 +2259,8 @@
         function analizarTexto(){const t=document.getElementById('addProgTexto').value;if(t.length<20){toast('Pega más contenido','error');return;}procesarTexto(t);}
         function procesarTexto(txt){const objs=extraerObjetivos(txt);if(!objs.length){toast('No se encontraron objetivos','error');return;}docExtraido=objs;document.getElementById('previewProg').innerHTML='✓ '+objs.length+' objetivos';document.getElementById('previewProg').style.display='block';}
         function extraerObjetivos(txt){const objs=[],lineas=txt.split('\n');let actual=null,seccion=null;for(let i=0;i<lineas.length;i++){const lt=lineas[i].trim();if(!lt)continue;const m=lt.match(/^OBJETIVO\s*(\d+)[.:]\s*(.+)?/i)||lt.match(/^(\d+)[.\-)\s]+(.{15,})/);if(m){if(actual)objs.push(actual);actual={numero:parseInt(m[1]),descripcion:(m[2]||'').trim(),indicadores:[],trimestre:1};seccion=null;continue;}if(lt.toUpperCase().indexOf('INDICADOR')>-1){seccion='indicadores';continue;}if(actual&&seccion==='indicadores'&&lt.length>5){const ind=lt.replace(/^[-•·▪►●○◦‣⁃*]\s*/,'').trim();if(ind.length>5)actual.indicadores.push(ind);}}if(actual)objs.push(actual);const n=objs.length,p=Math.ceil(n/3);objs.forEach((o,i)=>{o.trimestre=i<p?1:(i<p*2?2:3);if(!o.indicadores.length)o.indicadores=['Indicador de '+o.descripcion.substring(0,20)];});return objs;}
-        function addPrograma(){const plantillaId=document.getElementById('selPlantilla').value;if(plantillaId){asignarPlantilla(plantillaId,alumnoActual);cerrarModal('modalAddProg');return;}const tipo=document.getElementById('addProgTipo').value;if(!tipo){toast('Selecciona tipo o plantilla','error');return;}const objetivos=tipo==='lectoescritura'?LECTO:docExtraido;if(!objetivos||!objetivos.length){toast('Sin objetivos','error');return;}const a=alumnos[alumnoActual],pId='p_'+Date.now();db.ref('gestorpe/alumnos/'+alumnoActual+'/programas/'+pId).set({tipo:tipo,objetivos:objetivos}).then(()=>{a.programas=a.programas||{};a.programas[pId]={tipo:tipo,objetivos:objetivos};const nueva=generarProgramacion(a);return db.ref('gestorpe/alumnos/'+alumnoActual+'/programacion').set(nueva);}).then(()=>{cerrarModal('modalAddProg');renderProgs();renderProg();toast('Añadido ✓','success');});}
-        function elimProg(pId){if(!confirm('¿Eliminar?'))return;db.ref('gestorpe/alumnos/'+alumnoActual+'/programas/'+pId).remove().then(()=>{delete alumnos[alumnoActual].programas[pId];return db.ref('gestorpe/alumnos/'+alumnoActual+'/programacion').set(generarProgramacion(alumnos[alumnoActual]));}).then(()=>{renderProgs();renderProg();toast('Eliminado','success');});}
+        function addPrograma(){const plantillaId=document.getElementById('selPlantilla').value;if(plantillaId){asignarPlantilla(plantillaId,alumnoActual);cerrarModal('modalAddProg');return;}const tipo=document.getElementById('addProgTipo').value;if(!tipo){toast('Selecciona tipo o plantilla','error');return;}const objetivos=tipo==='lectoescritura'?LECTO:docExtraido;if(!objetivos||!objetivos.length){toast('Sin objetivos','error');return;}const a=alumnos[alumnoActual],pId='p_'+Date.now();db.ref(PA+'/'+alumnoActual+'/programas/'+pId).set({tipo:tipo,objetivos:objetivos}).then(()=>{a.programas=a.programas||{};a.programas[pId]={tipo:tipo,objetivos:objetivos};const nueva=generarProgramacion(a);return db.ref(PA+'/'+alumnoActual+'/programacion').set(nueva);}).then(()=>{cerrarModal('modalAddProg');renderProgs();renderProg();toast('Añadido ✓','success');});}
+        function elimProg(pId){if(!confirm('¿Eliminar?'))return;db.ref(PA+'/'+alumnoActual+'/programas/'+pId).remove().then(()=>{delete alumnos[alumnoActual].programas[pId];return db.ref(PA+'/'+alumnoActual+'/programacion').set(generarProgramacion(alumnos[alumnoActual]));}).then(()=>{renderProgs();renderProg();toast('Eliminado','success');});}
 
         // Construye índice correcto: tipo -> ciclo -> numero -> criterio
         function construirIndiceCriterios(){
@@ -2195,7 +2313,7 @@
                     return obj;
                 });
                 if (cambio) {
-                    updates['gestorpe/alumnos/' + alumnoActual + '/programas/' + pId + '/objetivos'] = objetivosActualizados;
+                    updates[PA+'/' + alumnoActual + '/programas/' + pId + '/objetivos'] = objetivosActualizados;
                     a.programas[pId].objetivos = objetivosActualizados;
                 }
             });
@@ -2242,7 +2360,7 @@
                         return { ...obj, criterio: criterioCorrect };
                     });
                     if(cambio) {
-                        updates['gestorpe/alumnos/' + id + '/programas/' + pId + '/objetivos'] = objetivosCorregidos;
+                        updates[PA+'/' + id + '/programas/' + pId + '/objetivos'] = objetivosCorregidos;
                         a.programas[pId].objetivos = objetivosCorregidos;
                         alumnoFixed = true;
                     }
@@ -2348,11 +2466,11 @@
             });
             return prog;
         }
-        function regenerarProg(){const a=alumnos[alumnoActual];if(!a.programas||!Object.keys(a.programas).length){toast('Añade programa','error');return;}const nueva=generarProgramacion(a);db.ref('gestorpe/alumnos/'+alumnoActual+'/programacion').set(nueva).then(()=>{a.programacion=nueva;renderProg();toast('Regenerado ✓','success');});}
+        function regenerarProg(){const a=alumnos[alumnoActual];if(!a.programas||!Object.keys(a.programas).length){toast('Añade programa','error');return;}const nueva=generarProgramacion(a);db.ref(PA+'/'+alumnoActual+'/programacion').set(nueva).then(()=>{a.programacion=nueva;renderProg();toast('Regenerado ✓','success');});}
         function reajustarDesde(a,desdeClave){const todasSesiones=getTodasLasSesiones(a);const idx=todasSesiones.indexOf(desdeClave);if(idx<0)return a.programacion;const nueva={...a.programacion};for(let i=todasSesiones.length-1;i>idx;i--){const keyActual=todasSesiones[i];const keyAnterior=todasSesiones[i-1];if(nueva[keyAnterior]){nueva[keyActual]=nueva[keyAnterior];}}delete nueva[desdeClave];return nueva;}
         function insertarRepeticion(a,clave,contenido){const todasSesiones=getTodasLasSesiones(a);const idx=todasSesiones.indexOf(clave);if(idx<0)return a.programacion;const dias=a.diasSesion||[1,3,4];let idxRepetir=idx+dias.length;if(idxRepetir>=todasSesiones.length)idxRepetir=todasSesiones.length-1;const claveRepetir=todasSesiones[idxRepetir];const nueva={...a.programacion};for(let i=todasSesiones.length-1;i>idxRepetir;i--){const keyActual=todasSesiones[i];const keyAnterior=todasSesiones[i-1];if(nueva[keyAnterior]){nueva[keyActual]=nueva[keyAnterior];}}nueva[claveRepetir]=contenido;return nueva;}
         function generarPromptIA(){const a=alumnos[alumnoActual];if(!a.programas||!Object.keys(a.programas).length){toast('Añade programas','error');return;}const dias=a.diasSesion||[1,3,4];const todasSesiones=getTodasLasSesiones(a);let prompt='Genera programación COMPLETA curso 2025/2026.\n\n👤 '+a.siglas+' ('+a.curso+')\n📆 '+dias.map(d=>DIAS_C[d]).join(', ')+'\n📊 '+todasSesiones.length+' sesiones\n\n📚 PROGRAMAS:\n';Object.keys(a.programas).forEach(pId=>{const p=a.programas[pId],info=AREAS[p.tipo]||{nombre:p.tipo};prompt+='\n🔷 '+info.nombre+' (ID: "'+pId+'")\n';(p.objetivos||[]).forEach((obj,oi)=>{prompt+='  O'+obj.numero+' (oIdx:'+oi+', T'+obj.trimestre+'): '+obj.descripcion+'\n';(obj.indicadores||[]).forEach((ind,ii)=>{prompt+='    - iIdx:'+ii+': '+ind+'\n';});});});prompt+='\n📤 RESPONDE SOLO JSON:\n{"mes_semana_dia": {"pId": "...", "oIdx": N, "iIdx": N}, ...}\n\n⚠️ '+todasSesiones.length+' entradas. Alterna 50-50. Respeta trimestres.';navigator.clipboard.writeText(prompt).then(()=>{toast('Copiado','success');window.open('https://chat.openai.com/','_blank');});}
-        function importarJSON(){const txt=document.getElementById('jsonInput').value.trim();if(!txt){toast('Pega JSON','error');return;}try{let cleanJSON=txt.replace(/```json?\n?/g,'').replace(/```/g,'').trim();const prog=JSON.parse(cleanJSON);db.ref('gestorpe/alumnos/'+alumnoActual+'/programacion').set(prog).then(()=>{alumnos[alumnoActual].programacion=prog;cerrarModal('modalImportJSON');document.getElementById('jsonInput').value='';renderProg();toast('Importado ✓','success');});}catch(e){toast('Error JSON','error');}}
+        function importarJSON(){const txt=document.getElementById('jsonInput').value.trim();if(!txt){toast('Pega JSON','error');return;}try{let cleanJSON=txt.replace(/```json?\n?/g,'').replace(/```/g,'').trim();const prog=JSON.parse(cleanJSON);db.ref(PA+'/'+alumnoActual+'/programacion').set(prog).then(()=>{alumnos[alumnoActual].programacion=prog;cerrarModal('modalImportJSON');document.getElementById('jsonInput').value='';renderProg();toast('Importado ✓','success');});}catch(e){toast('Error JSON','error');}}
 
         // Repara trimestre en objetivos de Firebase (cuando están a null/undefined)
         // y regenera la programación de todos los alumnos
@@ -2496,7 +2614,7 @@
                         return {...o, trimestre:trimNuevo};
                     });
                     if(cambio){
-                        updates['gestorpe/alumnos/'+id+'/programas/'+pId+'/objetivos']=objsReparados;
+                        updates[PA+'/'+id+'/programas/'+pId+'/objetivos']=objsReparados;
                         a.programas[pId].objetivos=objsReparados;
                     }
                 });
@@ -2518,7 +2636,7 @@
                     const pId=k.split('_')[0];
                     if(!pIdsValidos.has(pId)){
                         hayPasadosHuerfanos=true;
-                        updates['gestorpe/alumnos/'+id+'/pasados/'+k]=null;
+                        updates[PA+'/'+id+'/pasados/'+k]=null;
                     }
                 });
                 if(hayPasadosHuerfanos){
@@ -2532,7 +2650,7 @@
 
                 // Regenerar programación completa
                 const nueva=generarProgramacion(a);
-                updates['gestorpe/alumnos/'+id+'/programacion']=nueva;
+                updates[PA+'/'+id+'/programacion']=nueva;
                 a.programacion=nueva;
                 alumnosReparados++;
             });
@@ -2573,7 +2691,7 @@
             // If more than 20% of remaining sessions are empty → auto-regenerate silently
             if(esperadas>0&&vacias/esperadas>0.2){
                 const nueva=generarProgramacion(a);
-                db.ref('gestorpe/alumnos/'+alumnoActual+'/programacion').set(nueva).then(()=>{
+                db.ref(PA+'/'+alumnoActual+'/programacion').set(nueva).then(()=>{
                     a.programacion=nueva;
                     renderProg();
                     toast('Programación regenerada automáticamente ✓','success');
@@ -2657,32 +2775,32 @@
         function cargarRecursosSugeridos(){const pId=document.getElementById('selPrograma').value;const sel=document.getElementById('selRecurso');sel.innerHTML='<option value="">Sin recurso</option>';sel.onchange=function(){mostrarInfoRecurso(this.value);};if(!pId)return;const a=alumnos[alumnoActual];if(!a.programas||!a.programas[pId])return;const area=a.programas[pId].tipo;const ciclo=a.curso.includes('Infantil')?'infantil':a.curso.includes('1º')||a.curso.includes('2º')?'ciclo1':a.curso.includes('3º')||a.curso.includes('4º')?'ciclo2':'ciclo3';const recursosFiltrados=RECURSOS_ONLINE.filter(r=>r.area===area&&r.nivel.includes(ciclo));recursosFiltrados.slice(0,10).forEach(r=>{sel.innerHTML+='<option value="'+r.id+'">'+r.titulo+'</option>';});if(recursosFiltrados.length===0){sel.innerHTML+='<option disabled>-- No hay recursos para esta área --</option>';}}
         
         function mostrarInfoRecurso(id){const info=document.getElementById('infoRecurso');if(!id){info.style.display='none';return;}const recurso=RECURSOS_ONLINE.find(r=>r.id===id);if(!recurso){info.style.display='none';return;}const fuente=recurso.fuente==='orientacion-andujar'?'🌍 Orientación Andújar':recurso.fuente==='arasaac'?'🎨 ARASAAC':recurso.fuente==='superpt'?'✨ SuperPT':recurso.fuente==='ptyal'?'📚 PTYAL':recurso.fuente==='aulapt'?'📋 AulaPT':recurso.fuente==='liveworksheets'?'💻 LiveWorksheets':'🔗 '+recurso.fuente;info.innerHTML='<strong>'+fuente+'</strong><br>'+recurso.descripcion+'<br><a href="'+recurso.url+'" target="_blank" style="color:#3b82f6;font-size:.75rem">Abrir recurso →</a>';info.style.display='block';}
-        function guardarCelda(){const a=alumnos[alumnoActual];const updates={};const contenidoActual=a.programacion?a.programacion[celdaEditando]:null;updates['gestorpe/alumnos/'+alumnoActual+'/ausencias/'+celdaEditando]=null;updates['gestorpe/alumnos/'+alumnoActual+'/sincole/'+celdaEditando]=null;updates['gestorpe/alumnos/'+alumnoActual+'/resultados/'+celdaEditando]=null;if(estadoCelda==='ausencia'||estadoCelda==='sincole'){const tipo=estadoCelda==='ausencia'?'ausencias':'sincole';updates['gestorpe/alumnos/'+alumnoActual+'/'+tipo+'/'+celdaEditando]=true;if(contenidoActual){const nuevaProg=reajustarDesde(a,celdaEditando);updates['gestorpe/alumnos/'+alumnoActual+'/programacion']=nuevaProg;}}else{const pId=document.getElementById('selPrograma').value;const oIdx=document.getElementById('selObjetivo').value;const iIdx=document.getElementById('selIndicador').value;const recursoId=document.getElementById('selRecurso').value;if(pId&&oIdx!==''){const nuevoContenido={pId:pId,oIdx:parseInt(oIdx),iIdx:iIdx!==''?parseInt(iIdx):0};if(recursoId)nuevoContenido.recursoId=recursoId;if(resultadoCelda==='repetir'){a.programacion=a.programacion||{};a.programacion[celdaEditando]=nuevoContenido;const nuevaProg=insertarRepeticion(a,celdaEditando,nuevoContenido);updates['gestorpe/alumnos/'+alumnoActual+'/programacion']=nuevaProg;}else{updates['gestorpe/alumnos/'+alumnoActual+'/programacion/'+celdaEditando]=nuevoContenido;}}if(resultadoCelda){updates['gestorpe/alumnos/'+alumnoActual+'/resultados/'+celdaEditando]=resultadoCelda;}}// Guardar dato GEU manual en la celda si está marcado
+        function guardarCelda(){const a=alumnos[alumnoActual];const updates={};const contenidoActual=a.programacion?a.programacion[celdaEditando]:null;updates[PA+'/'+alumnoActual+'/ausencias/'+celdaEditando]=null;updates[PA+'/'+alumnoActual+'/sincole/'+celdaEditando]=null;updates[PA+'/'+alumnoActual+'/resultados/'+celdaEditando]=null;if(estadoCelda==='ausencia'||estadoCelda==='sincole'){const tipo=estadoCelda==='ausencia'?'ausencias':'sincole';updates[PA+'/'+alumnoActual+'/'+tipo+'/'+celdaEditando]=true;if(contenidoActual){const nuevaProg=reajustarDesde(a,celdaEditando);updates[PA+'/'+alumnoActual+'/programacion']=nuevaProg;}}else{const pId=document.getElementById('selPrograma').value;const oIdx=document.getElementById('selObjetivo').value;const iIdx=document.getElementById('selIndicador').value;const recursoId=document.getElementById('selRecurso').value;if(pId&&oIdx!==''){const nuevoContenido={pId:pId,oIdx:parseInt(oIdx),iIdx:iIdx!==''?parseInt(iIdx):0};if(recursoId)nuevoContenido.recursoId=recursoId;if(resultadoCelda==='repetir'){a.programacion=a.programacion||{};a.programacion[celdaEditando]=nuevoContenido;const nuevaProg=insertarRepeticion(a,celdaEditando,nuevoContenido);updates[PA+'/'+alumnoActual+'/programacion']=nuevaProg;}else{updates[PA+'/'+alumnoActual+'/programacion/'+celdaEditando]=nuevoContenido;}}if(resultadoCelda){updates[PA+'/'+alumnoActual+'/resultados/'+celdaEditando]=resultadoCelda;}}// Guardar dato GEU manual en la celda si está marcado
             const geuCb = document.getElementById('geuHecho');
             if(geuCb && geuCb.checked && estadoCelda === 'asiste'){
                 const colId = document.getElementById('geuColSel').value;
                 const nvId  = document.getElementById('geuNvSel').value;
                 const ficha = parseInt(document.getElementById('geuFichaInput').value) || 1;
                 if(colId && nvId){
-                    updates['gestorpe/alumnos/'+alumnoActual+'/programacion/'+celdaEditando+'/geu'] = {colId:colId, nvId:nvId, ficha:ficha};
+                    updates[PA+'/'+alumnoActual+'/programacion/'+celdaEditando+'/geu'] = {colId:colId, nvId:nvId, ficha:ficha};
                     // Actualizar también la ficha actual del cuaderno si es mayor que la guardada
                     const fichaActual = (alumnos[alumnoActual].geu && alumnos[alumnoActual].geu[nvId]) || 1;
                     if(ficha >= fichaActual){
-                        updates['gestorpe/alumnos/'+alumnoActual+'/geu/'+nvId] = ficha + 1;
+                        updates[PA+'/'+alumnoActual+'/geu/'+nvId] = ficha + 1;
                         alumnos[alumnoActual].geu = alumnos[alumnoActual].geu || {};
                         alumnos[alumnoActual].geu[nvId] = ficha + 1;
                     }
                 }
             } else if(geuCb && !geuCb.checked && estadoCelda === 'asiste'){
                 // Si desmarca, borrar el dato GEU de la celda
-                updates['gestorpe/alumnos/'+alumnoActual+'/programacion/'+celdaEditando+'/geu'] = null;
+                updates[PA+'/'+alumnoActual+'/programacion/'+celdaEditando+'/geu'] = null;
             }
             db.ref().update(updates).then(()=>{
                 cerrarModal('modalCelda');
                 toast(resultadoCelda==='repetir'?'Repetición insertada ✓':'Guardado ✓','success');
                 if(document.getElementById('tabGeu') && document.getElementById('tabGeu').classList.contains('active')) renderGEUTab();
             });}
-        function borrarCelda(){const updates={};['programacion','ausencias','sincole','resultados'].forEach(t=>{updates['gestorpe/alumnos/'+alumnoActual+'/'+t+'/'+celdaEditando]=null;});db.ref().update(updates).then(()=>{cerrarModal('modalCelda');toast('Eliminado','success');});}
+        function borrarCelda(){const updates={};['programacion','ausencias','sincole','resultados'].forEach(t=>{updates[PA+'/'+alumnoActual+'/'+t+'/'+celdaEditando]=null;});db.ref().update(updates).then(()=>{cerrarModal('modalCelda');toast('Eliminado','success');});}
         function calcStats(a){const aus=a.ausencias||{},res=a.resultados||{};let ausencias=0,conseguidos=0,repetir=0;const dias=a.diasSesion||[1,3,4],porMes={},porTrim={1:{aus:0},2:{aus:0},3:{aus:0}};for(let mi=0;mi<MESES.length;mi++){const m=MESES[mi];porMes[mi]={aus:0};for(let s=1;s<=m.semanas;s++){for(let di=0;di<dias.length;di++){const k=mi+'_'+s+'_'+dias[di];if(aus[k]){ausencias++;porMes[mi].aus++;porTrim[m.trim].aus++;}if(res[k]==='conseguido')conseguidos++;if(res[k]==='repetir')repetir++;}}}return{ausencias:ausencias,conseguidos:conseguidos,repetir:repetir,porMes:porMes,porTrim:porTrim};}
 
         // EVALUACIÓN
@@ -3061,7 +3179,7 @@
             meses.forEach(m=>{
                 const actual = a.calificaciones && a.calificaciones[fbDataKey] && a.calificaciones[fbDataKey][m.nombre];
                 if(actual===undefined || actual===''){
-                    updates['gestorpe/alumnos/'+alumnoActual+'/calificaciones/'+fbDataKey+'/'+m.nombre] = sugerida;
+                    updates[PA+'/'+alumnoActual+'/calificaciones/'+fbDataKey+'/'+m.nombre] = sugerida;
                     a.calificaciones = a.calificaciones||{};
                     a.calificaciones[fbDataKey] = a.calificaciones[fbDataKey]||{};
                     a.calificaciones[fbDataKey][m.nombre] = sugerida;
@@ -3090,7 +3208,7 @@
             const mes = inp.getAttribute('data-mes');
             let val = inp.value.trim();
             if(val===''){
-                db.ref('gestorpe/alumnos/'+alumnoActual+'/calificaciones/'+key+'/'+mes).remove();
+                db.ref(PA+'/'+alumnoActual+'/calificaciones/'+key+'/'+mes).remove();
                 if(alumnos[alumnoActual].calificaciones && alumnos[alumnoActual].calificaciones[key])
                     delete alumnos[alumnoActual].calificaciones[key][mes];
                 return;
@@ -3098,7 +3216,7 @@
             val = Math.min(10, Math.max(0, parseFloat(val)));
             inp.value = val;
             colorCalifInput(inp);
-            db.ref('gestorpe/alumnos/'+alumnoActual+'/calificaciones/'+key+'/'+mes).set(val);
+            db.ref(PA+'/'+alumnoActual+'/calificaciones/'+key+'/'+mes).set(val);
             alumnos[alumnoActual].calificaciones = alumnos[alumnoActual].calificaciones||{};
             alumnos[alumnoActual].calificaciones[key] = alumnos[alumnoActual].calificaciones[key]||{};
             alumnos[alumnoActual].calificaciones[key][mes] = val;
@@ -3173,16 +3291,16 @@
             a.evaluaciones=a.evaluaciones||{};
             // NI = no iniciado = borrar el valor (null)
             if(e==='NI' || (a.evaluaciones[k]===e && e!=='NI')){
-                db.ref('gestorpe/alumnos/'+alumnoActual+'/evaluaciones/'+k).remove();
+                db.ref(PA+'/'+alumnoActual+'/evaluaciones/'+k).remove();
                 delete a.evaluaciones[k];
             } else {
-                db.ref('gestorpe/alumnos/'+alumnoActual+'/evaluaciones/'+k).set(e);
+                db.ref(PA+'/'+alumnoActual+'/evaluaciones/'+k).set(e);
                 a.evaluaciones[k]=e;
             }
             renderEvalList();setTimeout(renderEvalCharts,100);
         }
         function pasarNoConseguidos(){if(evalTrim>=3)return;const a=alumnos[alumnoActual];if(!a.programas)return;const siguienteTrim=evalTrim+1,updates={};let count=0;Object.keys(a.programas).forEach(pId=>{const p=a.programas[pId];(p.objetivos||[]).forEach((obj,oi)=>{if(obj.trimestre!==evalTrim)return;(obj.indicadores||[]).forEach((_,ii)=>{const k=pId+'_'+oi+'_'+ii+'_T'+evalTrim,e=a.evaluaciones?a.evaluaciones[k]:null;// Solo pasar P y NC (trabajados pero no conseguidos); NI (null) se queda
-            if(e==='P'||e==='NC'){const pasadoKey=pId+'_'+oi+'_'+ii;updates['gestorpe/alumnos/'+alumnoActual+'/pasados/'+pasadoKey]=siguienteTrim;count++;}});});});const pasadosActuales=getIndicadoresPasados(a,evalTrim);pasadosActuales.forEach(item=>{const k=item.pId+'_'+item.oIdx+'_'+item.iIdx+'_T'+evalTrim,e=a.evaluaciones?a.evaluaciones[k]:null;if(e==='P'||e==='NC'){updates['gestorpe/alumnos/'+alumnoActual+'/pasados/'+item.key]=siguienteTrim;count++;}});if(count===0){toast('¡Todo conseguido o sin evaluar!','success');return;}db.ref().update(updates).then(()=>{const nueva=generarProgramacion(alumnos[alumnoActual]);return db.ref('gestorpe/alumnos/'+alumnoActual+'/programacion').set(nueva);}).then(()=>{toast(count+' (P/NC) → T'+siguienteTrim,'success');evalTrim=siguienteTrim;renderEval();renderProg();});}
+            if(e==='P'||e==='NC'){const pasadoKey=pId+'_'+oi+'_'+ii;updates[PA+'/'+alumnoActual+'/pasados/'+pasadoKey]=siguienteTrim;count++;}});});});const pasadosActuales=getIndicadoresPasados(a,evalTrim);pasadosActuales.forEach(item=>{const k=item.pId+'_'+item.oIdx+'_'+item.iIdx+'_T'+evalTrim,e=a.evaluaciones?a.evaluaciones[k]:null;if(e==='P'||e==='NC'){updates[PA+'/'+alumnoActual+'/pasados/'+item.key]=siguienteTrim;count++;}});if(count===0){toast('¡Todo conseguido o sin evaluar!','success');return;}db.ref().update(updates).then(()=>{const nueva=generarProgramacion(alumnos[alumnoActual]);return db.ref(PA+'/'+alumnoActual+'/programacion').set(nueva);}).then(()=>{toast(count+' (P/NC) → T'+siguienteTrim,'success');evalTrim=siguienteTrim;renderEval();renderProg();});}
 
         // RESUMEN
         function renderAsis(){const a=alumnos[alumnoActual],st=calcStats(a);let totalC=0,totalP=0,totalNC=0,totalNI=0;if(a.evaluaciones){Object.keys(a.evaluaciones).forEach(k=>{const e=a.evaluaciones[k];if(e==='C')totalC++;else if(e==='P')totalP++;else if(e==='NC')totalNC++;});}// NI = sin clave en evaluaciones, contar total indicadores - evaluados
@@ -3578,7 +3696,7 @@
             const updates={};
 
             // Step 1: Read old path gestorpe/aci/
-            db.ref('gestorpe/aci').once('value').then(snap=>{
+            db.ref(PACI).once('value').then(snap=>{
                 const oldData=snap.val()||{};
                 const oldIds=Object.keys(oldData);
 
@@ -3598,11 +3716,11 @@
                         }
                         const corrected={...aci,tipo:'ACS',criterios_seleccionados:filtrados,cursoRef:aci.cursoRef||cursoNum};
                         // Write to new path
-                        updates[`gestorpe/alumnos/${id}/aci/${key}`]=corrected;
+                        updates[`${PA}/${id}/aci/${key}`]=corrected;
                         migraded++;
                     });
                     // Mark old path for deletion
-                    updates[`gestorpe/aci/${id}`]=null;
+                    updates[`${PACI}/${id}`]=null;
                 });
 
                 // Step 2: Also fix any existing data in the new path
@@ -3616,12 +3734,12 @@
                         const filtrados=original.filter(code=>esCriterioValidoParaCurso(code,cursoNum));
                         if(filtrados.length<original.length){
                             fixed+=(original.length-filtrados.length);
-                            updates[`gestorpe/alumnos/${id}/aci/${key}/criterios_seleccionados`]=filtrados;
+                            updates[`${PA}/${id}/aci/${key}/criterios_seleccionados`]=filtrados;
                             // Also fix evaluacion: remove keys not in filtrados
                             const eval_=aci.evaluacion||{};
                             const newEval={};
                             filtrados.forEach(c=>{if(eval_[c])newEval[c]=eval_[c];});
-                            updates[`gestorpe/alumnos/${id}/aci/${key}/evaluacion`]=newEval;
+                            updates[`${PA}/${id}/aci/${key}/evaluacion`]=newEval;
                         }
                     });
                 });
@@ -3830,7 +3948,7 @@
             const safeCode = aciSanitizeCode(code);
             const current=((aciData[aciAlumnoSel]||{})[key]||{}).evaluacion||{};
             const newE=current[safeCode]===estado?'NI':estado;
-            const path='gestorpe/alumnos/'+aciAlumnoSel+'/aci/'+key+'/evaluacion/'+safeCode;
+            const path=PA+'/'+aciAlumnoSel+'/aci/'+key+'/evaluacion/'+safeCode;
             db.ref(path).set(newE).then(function(){
                 if(!alumnos[aciAlumnoSel])alumnos[aciAlumnoSel]={};
                 if(!alumnos[aciAlumnoSel].aci)alumnos[aciAlumnoSel].aci={};
@@ -3901,7 +4019,7 @@
 
         function aciEliminar(key){
             if(!confirm('¿Eliminar esta ACI?'))return;
-            db.ref(`gestorpe/alumnos/${aciAlumnoSel}/aci/${key}`).remove().then(()=>{toast('ACI eliminada','success');renderAciAlumnoPanel();});
+            db.ref(`${PA}/${aciAlumnoSel}/aci/${key}`).remove().then(()=>{toast('ACI eliminada','success');renderAciAlumnoPanel();});
         }
 
         function aciSelTipo(tipo){aciTipoSel='ACS';}
@@ -3942,7 +4060,7 @@
             if(document.getElementById('aciAdapEval').value.trim())adapt.evaluacion=document.getElementById('aciAdapEval').value.trim();
             const existingEval=aciEditandoKey?((aciData[aciAlumnoSel]||{})[key]||{}).evaluacion||{}:{};
             const record={tipo:'ACS',cursoRef,criterios_seleccionados:checks,evaluacion:existingEval,adaptaciones:adapt,observaciones:document.getElementById('aciObsModal').value.trim(),fechaMod:new Date().toISOString().split('T')[0]};
-            db.ref(`gestorpe/alumnos/${aciAlumnoSel}/aci/${key}`).set(record).then(()=>{
+            db.ref(`${PA}/${aciAlumnoSel}/aci/${key}`).set(record).then(()=>{
                 if(!alumnos[aciAlumnoSel])alumnos[aciAlumnoSel]={};
                 if(!alumnos[aciAlumnoSel].aci)alumnos[aciAlumnoSel].aci={};
                 alumnos[aciAlumnoSel].aci[key]=record;
@@ -4287,7 +4405,7 @@ ${instruccionesFormato}`;
             try{
                 let clean=txt.replace(/```json?\n?/g,'').replace(/```/g,'').trim();
                 const actividades=JSON.parse(clean);
-                db.ref('gestorpe/alumnos/'+alumnoActual+'/actividadesGeneradas/'+mesActual).set(actividades)
+                db.ref(PA+'/'+alumnoActual+'/actividadesGeneradas/'+mesActual).set(actividades)
                     .then(()=>{
                         a.actividadesGeneradas=a.actividadesGeneradas||{};
                         a.actividadesGeneradas[mesActual]=actividades;
@@ -4361,7 +4479,7 @@ ${instruccionesFormato}`;
         function borrarActividadesIA(){
             if(!confirm('¿Borrar la tabla de actividades IA de este mes?'))return;
             const a=alumnos[alumnoActual];
-            db.ref('gestorpe/alumnos/'+alumnoActual+'/actividadesGeneradas/'+mesActual).remove()
+            db.ref(PA+'/'+alumnoActual+'/actividadesGeneradas/'+mesActual).remove()
                 .then(()=>{
                     if(a.actividadesGeneradas)delete a.actividadesGeneradas[mesActual];
                     const cont=document.getElementById('tablaActividadesIA');
@@ -6959,7 +7077,7 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
                 div.remove();
                 const updates = {};
                 items.forEach(function(f){
-                    updates['gestorpe/alumnos/'+alumId+'/geu/'+f.nv.id] = f.fichaEsperada;
+                    updates[PA+'/'+alumId+'/geu/'+f.nv.id] = f.fichaEsperada;
                     alumnos[alumId].geu = alumnos[alumId].geu || {};
                     alumnos[alumId].geu[f.nv.id] = f.fichaEsperada;
                 });
@@ -7027,7 +7145,7 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
             const nv=GEU_COLECCIONES.flatMap(c=>c.niveles).find(n=>n.id===nivelId);
             if(!nv)return;
             const f=Math.max(1,Math.min(nv.fichas+1,nuevaFicha));
-            db.ref('gestorpe/alumnos/'+alumId+'/geu/'+nivelId).set(f).then(()=>{
+            db.ref(PA+'/'+alumId+'/geu/'+nivelId).set(f).then(()=>{
                 alumnos[alumId].geu=alumnos[alumId].geu||{};
                 alumnos[alumId].geu[nivelId]=f;
                 if(document.getElementById('tabGeu').classList.contains('active')) renderGEUTab();
@@ -7094,10 +7212,10 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
                 const nvId   = el.dataset.nv;
                 const activo = el.textContent.includes('✓');
                 if(activo && geuActual[nvId] === undefined){
-                    updates['gestorpe/alumnos/'+alumId+'/geu/'+nvId] = 1;
+                    updates[PA+'/'+alumId+'/geu/'+nvId] = 1;
                     geuActual[nvId] = 1;
                 } else if(!activo && geuActual[nvId] !== undefined){
-                    updates['gestorpe/alumnos/'+alumId+'/geu/'+nvId] = null;
+                    updates[PA+'/'+alumId+'/geu/'+nvId] = null;
                     delete geuActual[nvId];
                 }
             });
@@ -7118,10 +7236,10 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
         let diasGrupoSel = [1,3];
         let grupoIAActual = null;
 
-        db.ref('gestorpe/grupos').on('value', snap => {
+        function _handlerGrupos(snap){
             grupos = snap.val() || {};
             if(document.getElementById('seccionGrupos').style.display !== 'none') renderGrupos();
-        });
+        }
 
         // ─── Mes actual al abrir ──────────────────────────────────────────
         function gruposSetMesActual(){
@@ -7325,7 +7443,7 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
                 diasSesion:diasGrupoSel.length?[...diasGrupoSel]:[1,3],
                 alumnos:ids2.length?ids2:[]
             };
-            db.ref('gestorpe/grupos/'+key).set(data)
+            db.ref(PG+'/'+key).set(data)
                 .then(()=>{
                     cerrarModal('modalNuevoGrupo');
                     grupoEditandoId=null;
@@ -7336,7 +7454,7 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
 
         function eliminarGrupo(id){
             if(!confirm('¿Eliminar el grupo "'+grupos[id].nombre+'"?'))return;
-            db.ref('gestorpe/grupos/'+id).remove().then(()=>toast('Grupo eliminado','success'));
+            db.ref(PG+'/'+id).remove().then(()=>toast('Grupo eliminado','success'));
         }
 
         // ─── Modal actividades IA de grupo ────────────────────────────────
@@ -7568,7 +7686,7 @@ Genera ahora un resumen por cada uno de los ${total} alumnos en el formato indic
             const ids=Object.keys(alumnos);
             const updates={};
             ids.forEach(id=>{
-                updates['gestorpe/alumnos/'+id+'/seguimientoTrimestral/T'+trim]=null;
+                updates[PA+'/'+id+'/seguimientoTrimestral/T'+trim]=null;
                 if(alumnos[id].seguimientoTrimestral)delete alumnos[id].seguimientoTrimestral['T'+trim];
             });
             db.ref().update(updates).then(()=>{
@@ -7592,7 +7710,7 @@ Genera ahora un resumen por cada uno de los ${total} alumnos en el formato indic
                 // Find alumno by siglas
                 const id=Object.keys(alumnos).find(k=>alumnos[k].siglas.toUpperCase()===siglas);
                 if(id&&texto){
-                    db.ref('gestorpe/alumnos/'+id+'/seguimientoTrimestral/T'+trim).set(texto);
+                    db.ref(PA+'/'+id+'/seguimientoTrimestral/T'+trim).set(texto);
                     alumnos[id].seguimientoTrimestral=alumnos[id].seguimientoTrimestral||{};
                     alumnos[id].seguimientoTrimestral['T'+trim]=texto;
                     // Update textarea if visible
@@ -7664,7 +7782,7 @@ Genera ahora un resumen por cada uno de los ${total} alumnos en el formato indic
             _segTimers[id]=setTimeout(()=>{
                 const val=document.getElementById('seg_'+id)?.value||'';
                 const trim=parseInt(document.getElementById('seguimientoTrim').value);
-                db.ref('gestorpe/alumnos/'+id+'/seguimientoTrimestral/T'+trim).set(val);
+                db.ref(PA+'/'+id+'/seguimientoTrimestral/T'+trim).set(val);
                 alumnos[id].seguimientoTrimestral=alumnos[id].seguimientoTrimestral||{};
                 alumnos[id].seguimientoTrimestral['T'+trim]=val;
             },900);
