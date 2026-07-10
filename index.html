@@ -38,6 +38,17 @@
         .status-dot.ok{background:var(--success)}
         .container{max-width:1200px;margin:0 auto;padding:14px}
         .screen{display:none}.screen.active{display:block}
+        .perfil-overlay{position:fixed;inset:0;z-index:5000;background:linear-gradient(135deg,var(--primary),var(--primary-dark));display:none;align-items:center;justify-content:center;padding:20px}
+        .perfil-box{background:var(--bg-card);border-radius:var(--radius);padding:28px 24px;max-width:380px;width:100%;text-align:center;box-shadow:var(--shadow)}
+        .perfil-box h2{color:var(--primary-dark);font-size:1.15rem;margin-bottom:4px}
+        .perfil-box p{color:var(--text-light);font-size:.8rem;margin-bottom:20px}
+        .perfil-btn{display:flex;align-items:center;gap:12px;width:100%;padding:16px;margin-bottom:10px;border:2px solid var(--border);border-radius:var(--radius-sm);background:#fff;cursor:pointer;font-family:inherit;text-align:left;transition:border-color .15s,background .15s}
+        .perfil-btn:hover{border-color:var(--primary);background:rgba(26,95,74,.06)}
+        .perfil-btn .perfil-emoji{font-size:1.6rem}
+        .perfil-btn .perfil-nombre{font-weight:700;color:var(--text);font-size:.95rem}
+        .perfil-btn .perfil-sub{font-size:.7rem;color:var(--text-light)}
+        .perfil-pill{display:flex;align-items:center;gap:5px;font-size:.7rem;background:rgba(255,255,255,.2);padding:4px 10px;border-radius:20px;cursor:pointer;border:none;color:#fff;font-family:inherit}
+        .perfil-pill:hover{background:rgba(255,255,255,.32)}
         .card{background:var(--bg-card);border-radius:var(--radius);padding:16px;margin-bottom:12px;box-shadow:var(--shadow)}
         .card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px}
         .card-title{font-size:1rem;font-weight:700;color:var(--primary)}
@@ -283,12 +294,37 @@
 
 </head>
 <body>
+    <!-- SELECTOR DE PERFIL (PT) -->
+    <div class="perfil-overlay" id="screenPerfil">
+        <div class="perfil-box">
+            <h2>👋 ¿Quién eres?</h2>
+            <p>Selecciona tu perfil para acceder a tus alumnos, grupos y programaciones.</p>
+            <button class="perfil-btn" onclick="elegirPerfil('victor')">
+                <span class="perfil-emoji">👨‍🏫</span>
+                <span><span class="perfil-nombre">Víctor</span><br><span class="perfil-sub">Pedagogía Terapéutica</span></span>
+            </button>
+            <button class="perfil-btn" onclick="elegirPerfil('encarna')">
+                <span class="perfil-emoji">👩‍🏫</span>
+                <span><span class="perfil-nombre">Encarna</span><br><span class="perfil-sub">Pedagogía Terapéutica</span></span>
+            </button>
+        </div>
+    </div>
+    <script>
+        // Evita parpadeos: si no hay perfil guardado en este dispositivo, mostramos
+        // el selector inmediatamente, antes de que se pinte el resto de la app.
+        (function(){
+            if(!localStorage.getItem('gestorpe_perfil')){
+                document.getElementById('screenPerfil').style.display='flex';
+            }
+        })();
+    </script>
     <div class="print-logo-global"><img src="" id="printLogoGlobal" style="height:40px;width:auto;max-width:100%" alt="Encabezamiento institucional"></div>
     <header class="header no-print">
         <div class="header-content">
             <h1 onclick="volverInicio()">📋 Gestor PE v3</h1>
             <div style="display:flex;align-items:center;gap:8px">
                 <select id="cursoSelector" onchange="onCursoSelectorChange()" title="Curso académico" style="background:rgba(255,255,255,.95);color:var(--primary-dark);border:none;border-radius:20px;padding:5px 10px;font-family:inherit;font-weight:700;font-size:.78rem;cursor:pointer"></select>
+                <button class="perfil-pill" id="perfilBadge" onclick="cambiarPerfil()" title="Cambiar de perfil"></button>
                 <div class="status"><div class="status-dot" id="statusDot"></div><span id="statusText">Conectando...</span></div>
             </div>
         </div>
@@ -1246,11 +1282,39 @@
         }
         firebase.initializeApp({databaseURL:"https://gestorpt-7946b-default-rtdb.europe-west1.firebasedatabase.app"});
         const db=firebase.database();
+        // ─── PERFILES (PT) ───────────────────────────────────────────────
+        // Cada perfil (maestro/a de PT) tiene su propio árbol de datos en Firebase,
+        // totalmente independiente de los demás. El perfil "Víctor" usa la raíz
+        // histórica 'gestorpe' (todo lo que ya existía sigue estando ahí);
+        // los perfiles nuevos usan una raíz propia que empieza vacía.
+        const PERFILES={
+            victor:{nombre:'Víctor',emoji:'👨‍🏫',root:'gestorpe'},
+            encarna:{nombre:'Encarna',emoji:'👩‍🏫',root:'gestorpe_encarna'}
+        };
+        let PERFIL=null, ROOT='gestorpe';
+        function aplicarPerfil(p){
+            PERFIL=p;
+            ROOT=(PERFILES[p]&&PERFILES[p].root)||'gestorpe';
+            const badge=document.getElementById('perfilBadge');
+            if(badge){const info=PERFILES[p]||{nombre:p,emoji:'👤'};badge.textContent=info.emoji+' '+info.nombre;}
+        }
+        function elegirPerfil(p){
+            localStorage.setItem('gestorpe_perfil',p);
+            aplicarPerfil(p);
+            const sp=document.getElementById('screenPerfil');
+            if(sp)sp.style.display='none';
+            iniciarDatosPerfil();
+        }
+        function cambiarPerfil(){
+            if(!confirm('¿Cambiar de perfil? Se recargará la aplicación y volverás a elegir quién eres.'))return;
+            localStorage.removeItem('gestorpe_perfil');
+            location.reload();
+        }
         // ─── SISTEMA DE CURSOS ACADÉMICOS ───────────────────────────────
-        // Los datos de cada curso viven en gestorpe/cursos/{id}/(alumnos|grupos|aci)
-        // Las plantillas (biblioteca) se comparten entre todos los cursos.
+        // Los datos de cada curso viven en {ROOT}/cursos/{id}/(alumnos|grupos|aci)
+        // Las plantillas (biblioteca) se comparten entre todos los cursos de un mismo perfil.
         let CURSO='2025-26', PA, PG, PACI, cursosMeta={};
-        function setCursoPaths(){const b='gestorpe/cursos/'+CURSO;PA=b+'/alumnos';PG=b+'/grupos';PACI=b+'/aci';}
+        function setCursoPaths(){const b=ROOT+'/cursos/'+CURSO;PA=b+'/alumnos';PG=b+'/grupos';PACI=b+'/aci';}
         setCursoPaths();
         let alumnos={},plantillas={},alumnoActual=null,mesActual=0,diasSel=[1,3,4],celdaEditando=null,docExtraido=null,docExtraidoPlantilla=null,estadoCelda='asiste',resultadoCelda=null,evalTrim=1,charts={},informeData=null,recursos={},recursosFavoritos=[],tabRecursosActual='todos';
         
@@ -2060,30 +2124,37 @@
             _refAlumnos=db.ref(PA);_refAlumnos.on('value',_handlerAlumnos);
             _refGrupos=db.ref(PG);_refGrupos.on('value',_handlerGrupos);
         }
-        db.ref('gestorpe/plantillas').on('value',snap=>{
-            const customPlantillas=snap.val()||{};
-            // Añadir plantillas personalizadas de Firebase
-            Object.keys(customPlantillas).forEach(id=>{
-                plantillas[id]=customPlantillas[id];
+        let _refPlantillas=null;
+        function iniciarDatosPerfil(){
+            // Se llama una vez sabemos qué perfil (ROOT) está activo.
+            if(_refPlantillas)_refPlantillas.off();
+            _refPlantillas=db.ref(ROOT+'/plantillas');
+            _refPlantillas.on('value',snap=>{
+                const customPlantillas=snap.val()||{};
+                // Añadir plantillas personalizadas de Firebase
+                Object.keys(customPlantillas).forEach(id=>{
+                    plantillas[id]=customPlantillas[id];
+                });
+                renderBiblioteca();
             });
-            renderBiblioteca();
-        });
-        
-        // Renderizar biblioteca aunque Firebase no conecte
+            cursoInit();
+        }
+
+        // Renderizar biblioteca (plantillas base) aunque Firebase no conecte todavía
         renderBiblioteca();
 
         // ─── GESTIÓN DE CURSOS ACADÉMICOS ───────────────────────────────
         async function cursoInit(){
             try{
                 const [cfgSnap,metaSnap]=await Promise.all([
-                    db.ref('gestorpe/config/cursoActivo').once('value'),
-                    db.ref('gestorpe/cursos/_meta').once('value')
+                    db.ref(ROOT+'/config/cursoActivo').once('value'),
+                    db.ref(ROOT+'/cursos/_meta').once('value')
                 ]);
                 cursosMeta=metaSnap.val()||{};
                 // Si aún no existe ningún curso, migrar los datos actuales al curso 2025/26
                 if(!Object.keys(cursosMeta).length){
                     await migrarCursoLegacy();
-                    const m2=await db.ref('gestorpe/cursos/_meta').once('value');
+                    const m2=await db.ref(ROOT+'/cursos/_meta').once('value');
                     cursosMeta=m2.val()||{};
                 }
                 let activo=cfgSnap.val();
@@ -2098,21 +2169,22 @@
             attachCursoListeners();
         }
 
-        // Copia (NO borra) los datos del esquema antiguo al curso 2025/26
+        // Copia (NO borra) los datos del esquema antiguo al curso 2025/26 (solo aplica
+        // al perfil "Víctor", que es el único con datos heredados en la raíz antigua)
         async function migrarCursoLegacy(){
             const id='2025-26';
             const [al,gr,ac]=await Promise.all([
-                db.ref('gestorpe/alumnos').once('value'),
-                db.ref('gestorpe/grupos').once('value'),
-                db.ref('gestorpe/aci').once('value')
+                db.ref(ROOT+'/alumnos').once('value'),
+                db.ref(ROOT+'/grupos').once('value'),
+                db.ref(ROOT+'/aci').once('value')
             ]);
             const updates={};
             const alV=al.val(),grV=gr.val(),acV=ac.val();
-            if(alV) updates['gestorpe/cursos/'+id+'/alumnos']=alV;
-            if(grV) updates['gestorpe/cursos/'+id+'/grupos']=grV;
-            if(acV) updates['gestorpe/cursos/'+id+'/aci']=acV;
-            updates['gestorpe/cursos/_meta/'+id]={nombre:'2025/26',creado:Date.now()};
-            updates['gestorpe/config/cursoActivo']=id;
+            if(alV) updates[ROOT+'/cursos/'+id+'/alumnos']=alV;
+            if(grV) updates[ROOT+'/cursos/'+id+'/grupos']=grV;
+            if(acV) updates[ROOT+'/cursos/'+id+'/aci']=acV;
+            updates[ROOT+'/cursos/_meta/'+id]={nombre:'2025/26',creado:Date.now()};
+            updates[ROOT+'/config/cursoActivo']=id;
             await db.ref().update(updates);
             // Los nodos antiguos gestorpe/alumnos y gestorpe/grupos se conservan como copia de seguridad.
         }
@@ -2136,7 +2208,7 @@
         function cambiarCurso(id){
             if(!cursosMeta[id])return;
             CURSO=id; setCursoPaths();
-            db.ref('gestorpe/config/cursoActivo').set(id);
+            db.ref(ROOT+'/config/cursoActivo').set(id);
             alumnoActual=null;
             const sa=document.getElementById('screenAlumno'),si=document.getElementById('screenInicio');
             if(sa)sa.classList.remove('active'); if(si)si.classList.add('active');
@@ -2162,8 +2234,8 @@
             if(cursosMeta[id]){toast('Ese curso ya existe','error');return;}
             const meta={nombre:nom,creado:Date.now()};
             const updates={};
-            updates['gestorpe/cursos/_meta/'+id]=meta;
-            updates['gestorpe/config/cursoActivo']=id;
+            updates[ROOT+'/cursos/_meta/'+id]=meta;
+            updates[ROOT+'/config/cursoActivo']=id;
             db.ref().update(updates).then(()=>{
                 cursosMeta[id]=meta;
                 toast('Curso '+nom+' creado ✓','success');
@@ -2171,8 +2243,16 @@
             }).catch(()=>toast('Error al crear curso','error'));
         }
 
-        // Arranque del sistema de cursos
-        cursoInit();
+        // Arranque: si ya hay un perfil guardado en este dispositivo, entramos
+        // directamente; si no, el selector de perfil (#screenPerfil) ya está
+        // visible y esperamos a que el usuario pulse Víctor o Encarna.
+        (function(){
+            const guardado=localStorage.getItem('gestorpe_perfil');
+            if(guardado&&PERFILES[guardado]){
+                aplicarPerfil(guardado);
+                iniciarDatosPerfil();
+            }
+        })();
 
         function cambiarSeccion(s,btn){document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');document.getElementById('seccionAlumnos').style.display=s==='alumnos'?'block':'none';document.getElementById('seccionEstadisticas').style.display=s==='estadisticas'?'block':'none';document.getElementById('seccionSDA').style.display=s==='sda'?'block':'none';document.getElementById('seccionBiblioteca').style.display=s==='biblioteca'?'block':'none';document.getElementById('seccionRecursos').style.display=s==='recursos'?'block':'none';document.getElementById('seccionSeguimiento').style.display=s==='seguimiento'?'block':'none';document.getElementById('seccionGrupos').style.display=s==='grupos'?'block':'none';document.getElementById('seccionACI').style.display=s==='aci'?'block':'none';document.getElementById('seccionMemoria').style.display=s==='memoria'?'block':'none';document.getElementById('seccionInformes').style.display=s==='informes'?'block':'none';if(s==='estadisticas')renderEstadisticasGlobal();if(s==='recursos')inicializarRecursos();if(s==='seguimiento')renderSeguimiento();if(s==='grupos')renderGrupos();if(s==='aci')renderAciSeccion();if(s==='memoria')memoriaIniciar();if(s==='informes')informesIniciar();}
         function renderInicio(){const g=document.getElementById('alumnosGrid'),ids=Object.keys(alumnos);if(!ids.length){g.innerHTML='<div class="alumno-card alumno-card-add" onclick="abrirModalNuevo()"><span style="font-size:1.3rem">➕</span><span style="font-size:.8rem">Añadir</span></div>';return;}let h=ids.map(id=>{const a=alumnos[id],n=a.programas?Object.keys(a.programas).length:0;return'<div class="alumno-card" onclick="abrirAlumno(\''+id+'\')"><div class="alumno-siglas">'+a.siglas+'</div><div class="alumno-curso">'+a.curso+'</div><div class="alumno-progs">'+n+' prog.</div></div>';}).join('');h+='<div class="alumno-card alumno-card-add" onclick="abrirModalNuevo()"><span style="font-size:1.3rem">➕</span></div>';g.innerHTML=h;}
@@ -2188,12 +2268,12 @@
         
         function asignarPlantilla(pid,aid){const p=plantillas[pid],a=alumnos[aid];if(!p||!a)return;const newPid='p_'+Date.now();const programa={tipo:p.tipo,objetivos:JSON.parse(JSON.stringify(p.objetivos))};db.ref(PA+'/'+aid+'/programas/'+newPid).set(programa).then(()=>{a.programas=a.programas||{};a.programas[newPid]=programa;const nueva=generarProgramacion(a);return db.ref(PA+'/'+aid+'/programacion').set(nueva);}).then(()=>{toast('Plantilla asignada a '+a.siglas,'success');if(alumnoActual===aid){renderProgs();renderProg();}});}
         
-        function eliminarPlantilla(id){if(plantillas[id]&&plantillas[id].esBase){toast('No se pueden eliminar plantillas base','error');return;}if(!confirm('¿Eliminar plantilla?'))return;db.ref('gestorpe/plantillas/'+id).remove().then(()=>{cerrarModal('modalPlantilla');toast('Eliminada','success');});}
+        function eliminarPlantilla(id){if(plantillas[id]&&plantillas[id].esBase){toast('No se pueden eliminar plantillas base','error');return;}if(!confirm('¿Eliminar plantilla?'))return;db.ref(ROOT+'/plantillas/'+id).remove().then(()=>{cerrarModal('modalPlantilla');toast('Eliminada','success');});}
         
         function abrirModalNuevaPlantilla(){document.getElementById('plantillaNombre').value='';document.getElementById('plantillaTexto').value='';document.getElementById('uploadZonePlantilla').innerHTML='📄 Toca para seleccionar';document.getElementById('uploadZonePlantilla').classList.remove('has-file');document.getElementById('previewPlantillaNueva').style.display='none';document.getElementById('btnGuardarPlantilla').disabled=true;docExtraidoPlantilla=null;abrirModal('modalNuevaPlantilla');}
         async function cargarDocxPlantilla(inp){const f=inp.files[0];if(!f)return;document.getElementById('uploadZonePlantilla').innerHTML='📄 '+f.name;document.getElementById('uploadZonePlantilla').classList.add('has-file');try{await ensureMammoth();const r=await mammoth.extractRawText({arrayBuffer:await f.arrayBuffer()});document.getElementById('plantillaTexto').value=r.value;}catch(e){toast('Error','error');}}
         function analizarTextoPlantilla(){const t=document.getElementById('plantillaTexto').value;if(t.length<20){toast('Pega más contenido','error');return;}const objs=extraerObjetivos(t);if(!objs.length){toast('No se encontraron objetivos','error');return;}docExtraidoPlantilla=objs;document.getElementById('previewPlantillaNueva').innerHTML='✓ '+objs.length+' objetivos';document.getElementById('previewPlantillaNueva').style.display='block';document.getElementById('btnGuardarPlantilla').disabled=false;}
-        function guardarNuevaPlantilla(){const nombre=document.getElementById('plantillaNombre').value.trim();if(!nombre){toast('Introduce nombre','error');return;}if(!docExtraidoPlantilla||!docExtraidoPlantilla.length){toast('Analiza texto','error');return;}const id='pl_'+Date.now();db.ref('gestorpe/plantillas/'+id).set({nombre:nombre,ciclo:document.getElementById('plantillaCiclo').value,tipo:document.getElementById('plantillaArea').value,objetivos:docExtraidoPlantilla}).then(()=>{cerrarModal('modalNuevaPlantilla');toast('Guardada','success');});}
+        function guardarNuevaPlantilla(){const nombre=document.getElementById('plantillaNombre').value.trim();if(!nombre){toast('Introduce nombre','error');return;}if(!docExtraidoPlantilla||!docExtraidoPlantilla.length){toast('Analiza texto','error');return;}const id='pl_'+Date.now();db.ref(ROOT+'/plantillas/'+id).set({nombre:nombre,ciclo:document.getElementById('plantillaCiclo').value,tipo:document.getElementById('plantillaArea').value,objetivos:docExtraidoPlantilla}).then(()=>{cerrarModal('modalNuevaPlantilla');toast('Guardada','success');});}
 
         // ALUMNOS
         function abrirModalNuevo(){document.getElementById('nuevoSiglas').value='';diasSel=[1,3,4];actualizarDiasBtns();abrirModal('modalNuevo');}
