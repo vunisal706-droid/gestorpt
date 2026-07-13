@@ -1349,7 +1349,7 @@
         let alumnos={},plantillas={},alumnoActual=null,mesActual=0,diasSel=[1,3,4],celdaEditando=null,docExtraido=null,docExtraidoPlantilla=null,estadoCelda='asiste',resultadoCelda=null,evalTrim=1,charts={},informeData=null,recursos={},recursosFavoritos=[],tabRecursosActual='todos';
         // Nº real de fichas por cuaderno GEU. Se declara AQUÍ, antes del arranque
         // automático (que llama a iniciarDatosPerfil), o daría ReferenceError por TDZ.
-        let geuFichasCustom={}, _refGeuFichas=null, _geuMigrado=false;
+        let geuFichasCustom={}, _refGeuFichas=null, _geuMigrado=false, _geuPendienteSiguiente=null;
 
         // ═══════════════════════════════════════════════════════════════════
         // MODO SIN CONEXIÓN
@@ -3351,6 +3351,27 @@
             });
             return out.length ? out : null;
         }
+        // Texto GEU para una sesión: lo registrado si existe, si no lo previsto
+        // por el motor. Se usa en pantalla Y en la impresión, para que lo que ves
+        // sea lo que sale en el papel.
+        function geuTextoSesion(a, k){
+            const c = a.programacion ? a.programacion[k] : null;
+            const aus = (a.ausencias && a.ausencias[k]) || (a.sincole && a.sincole[k]);
+            if(aus) return '';
+            if(c && c.geu){
+                const col = GEU_COLECCIONES.find(function(x){return x.id===c.geu.colId;});
+                const nv  = col && col.niveles.find(function(x){return x.id===c.geu.nvId;});
+                if(col && nv) return col.icon+' '+nv.label+' F'+c.geu.ficha;
+                return '';
+            }
+            const prev = geuFichaEnSesion(a, k);
+            if(!prev || !prev.length) return '';
+            return prev.map(function(p){
+                return p.completado ? (p.col.icon+' '+p.nv.label+' ✓')
+                                    : (p.col.icon+' '+p.nv.label+' F'+p.fichaProyectada);
+            }).join(' · ');
+        }
+
         function renderCelda(a,k,d){
             const c=a.programacion?a.programacion[k]:null,
                   aus=a.ausencias?a.ausencias[k]:false,
@@ -3361,7 +3382,13 @@
             else if(aus){cls+=' celda-ausencia';icon='❌';}
             else if(res==='conseguido'){icon='✅';}
             else if(res==='repetir'){icon='🔄';}
-            // Badge GEU manual (solo si el usuario lo registró en esta celda)
+            // ── GEU en la celda ────────────────────────────────────────────
+            // Dos estados:
+            //   · REGISTRADO (c.geu): lo marcaste tú → chip sólido.
+            //   · PREVISTO: lo calcula el motor a partir del ancla y las sesiones
+            //     asistidas → chip en gris punteado. Es la programación del cuaderno.
+            // Antes solo se pintaba el registrado, así que el motor no servía de nada
+            // y no había programación de cuadernos: solo un registro a posteriori.
             let geuHtml='';
             const geuCelda = c && c.geu;
             if(geuCelda && !aus && !sc){
@@ -3369,6 +3396,17 @@
                 const nvObj  = colObj && colObj.niveles.find(function(nv){return nv.id===geuCelda.nvId;});
                 if(colObj && nvObj){
                     geuHtml='<div style="margin-top:3px"><span style="font-size:.55rem;background:'+colObj.color+'18;color:'+colObj.color+';border-radius:4px;padding:1px 5px;font-weight:700">'+colObj.icon+' '+nvObj.label+' · F'+geuCelda.ficha+'</span></div>';
+                }
+            } else if(!aus && !sc){
+                const prev = geuFichaEnSesion(a, k);
+                if(prev && prev.length){
+                    geuHtml = '<div style="margin-top:3px;display:flex;flex-direction:column;gap:2px">'
+                        + prev.map(function(p){
+                            if(p.completado) return '<span style="font-size:.55rem;color:#16a34a;font-weight:700">'+p.col.icon+' '+p.nv.label+' ✓</span>';
+                            return '<span style="font-size:.55rem;color:'+p.col.color+';opacity:.75;border:1px dashed '+p.col.color+'66;border-radius:4px;padding:1px 5px;font-weight:600" title="Previsto — pincha para confirmar">'
+                                 + p.col.icon+' '+p.nv.label+' · F'+p.fichaProyectada+'</span>';
+                        }).join('')
+                        + '</div>';
                 }
             }
             if(!c||!a.programas||!a.programas[c.pId]){
@@ -3414,13 +3452,24 @@
                         updates[PA+'/'+alumnoActual+'/geu/'+nvId] = _estN;
                         alumnos[alumnoActual].geu = alumnos[alumnoActual].geu || {};
                         alumnos[alumnoActual].geu[nvId] = _estN;
+                        // ¿Se ha terminado el cuaderno? Ofrecer el siguiente.
+                        const _colX = GEU_COLECCIONES.find(function(c){return c.id===colId;});
+                        const _nvX  = _colX && _colX.niveles.find(function(n){return n.id===nvId;});
+                        if(_nvX && ficha + 1 > geuNumFichas(_nvX)){
+                            _geuPendienteSiguiente = {col:_colX, nv:_nvX, k:celdaEditando};
+                        }
                     }
                 }
             } else if(geuCb && !geuCb.checked && estadoCelda === 'asiste'){
                 // Si desmarca, borrar el dato GEU de la celda
                 updates[PA+'/'+alumnoActual+'/programacion/'+celdaEditando+'/geu'] = null;
             }
+            const _aId = alumnoActual;
             db.ref().update(updates).then(()=>{
+                if(_geuPendienteSiguiente){
+                    const p=_geuPendienteSiguiente; _geuPendienteSiguiente=null;
+                    geuProponerSiguiente(_aId, p.col, p.nv, p.k);
+                }
                 cerrarModal('modalCelda');
                 toast(resultadoCelda==='repetir'?'Repetición insertada ✓':'Guardado ✓','success');
                 if(document.getElementById('tabGeu') && document.getElementById('tabGeu').classList.contains('active')) renderGEUTab();
@@ -6954,7 +7003,7 @@ body{font-family:Arial,sans-serif;font-size:10px;color:#333}
             setTimeout(() => {win.print();}, 500);
         }
         
-        function imprimirTodos(){const mesSeleccionado=parseInt(document.getElementById('printMes').value);const ids=Object.keys(alumnos);let html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Programaciones</title><style>body{font-family:Arial;padding:20px;font-size:11px}h1{color:#1a5f4a;font-size:16px}h2{font-size:14px;border-bottom:2px solid #1a5f4a}table{width:100%;border-collapse:collapse;margin-bottom:15px}th,td{border:1px solid #ccc;padding:6px}th{background:#1a5f4a;color:#fff}td:first-child{background:#2d8a6e;color:#fff;text-align:center;width:50px}.page-break{page-break-after:always}'+_LOGO_CSS+'</style></head><body>'+_LOGO_HTML+'';ids.forEach((id,idx)=>{const a=alumnos[id],dias=a.diasSesion||[1,3,4];html+='<div'+(idx<ids.length-1?' class="page-break"':'')+'><h1>'+a.siglas+' - '+a.curso+'</h1>';const mesesAImprimir=mesSeleccionado===-1?MESES.map((_,i)=>i):[mesSeleccionado];mesesAImprimir.forEach(mi=>{const mes=MESES[mi];html+='<h2>'+mes.nombre+' (T'+mes.trim+')</h2><table><tr><th>S</th>';dias.forEach(d=>{html+='<th>'+DIAS_C[d]+'</th>';});html+='</tr>';for(let s=1;s<=mes.semanas;s++){html+='<tr><td>'+s+'</td>';dias.forEach(d=>{const k=mi+'_'+s+'_'+d,c=a.programacion?a.programacion[k]:null;if(c&&a.programas&&a.programas[c.pId]){const p=a.programas[c.pId],obj=p.objetivos?p.objetivos[c.oIdx]:null;if(obj){const ind=obj.indicadores?(obj.indicadores[c.iIdx]||''):'';html+='<td><b>O'+obj.numero+'</b><br>'+ind.substring(0,20)+'</td>';}else{html+='<td>-</td>';}}else{html+='<td>-</td>';}});html+='</tr>';}html+='</table>';});html+='</div>';});html+='</body></html>';const win=window.open('','_blank');win.document.write(html);win.document.close();setTimeout(()=>{win.print();},500);cerrarModal('modalImprimir');}
+        function imprimirTodos(){const mesSeleccionado=parseInt(document.getElementById('printMes').value);const ids=Object.keys(alumnos);let html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Programaciones</title><style>body{font-family:Arial;padding:20px;font-size:11px}h1{color:#1a5f4a;font-size:16px}h2{font-size:14px;border-bottom:2px solid #1a5f4a}table{width:100%;border-collapse:collapse;margin-bottom:15px}th,td{border:1px solid #ccc;padding:6px}th{background:#1a5f4a;color:#fff}td:first-child{background:#2d8a6e;color:#fff;text-align:center;width:50px}.page-break{page-break-after:always}'+_LOGO_CSS+'</style></head><body>'+_LOGO_HTML+'';ids.forEach((id,idx)=>{const a=alumnos[id],dias=a.diasSesion||[1,3,4];html+='<div'+(idx<ids.length-1?' class="page-break"':'')+'><h1>'+a.siglas+' - '+a.curso+'</h1>';const mesesAImprimir=mesSeleccionado===-1?MESES.map((_,i)=>i):[mesSeleccionado];mesesAImprimir.forEach(mi=>{const mes=MESES[mi];html+='<h2>'+mes.nombre+' (T'+mes.trim+')</h2><table><tr><th>S</th>';dias.forEach(d=>{html+='<th>'+DIAS_C[d]+'</th>';});html+='</tr>';for(let s=1;s<=mes.semanas;s++){html+='<tr><td>'+s+'</td>';dias.forEach(d=>{const k=mi+'_'+s+'_'+d,c=a.programacion?a.programacion[k]:null;if(c&&a.programas&&a.programas[c.pId]){const p=a.programas[c.pId],obj=p.objetivos?p.objetivos[c.oIdx]:null;if(obj){const ind=obj.indicadores?(obj.indicadores[c.iIdx]||''):'';const gTxt=geuTextoSesion(a,k);html+='<td><b>O'+obj.numero+'</b><br>'+ind.substring(0,20)+(gTxt?'<br><span style="font-size:.7em;color:#555">'+gTxt+'</span>':'')+'</td>';}else{html+='<td>-</td>';}}else{const gTxt=geuTextoSesion(a,k);html+='<td>'+(gTxt?'<span style="font-size:.7em;color:#555">'+gTxt+'</span>':'-')+'</td>';}});html+='</tr>';}html+='</table>';});html+='</div>';});html+='</body></html>';const win=window.open('','_blank');win.document.write(html);win.document.close();setTimeout(()=>{win.print();},500);cerrarModal('modalImprimir');}
 
         async function imprimirCompacto(){
             const mesSeleccionado=parseInt(document.getElementById('printMes').value);
@@ -7628,8 +7677,19 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
         function geuPrellenarFicha(){
             const nvId = document.getElementById('geuNvSel').value;
             const a = alumnos[alumnoActual];
-            const geu = a ? (a.geu || {}) : {};
-            const ficha = (geuNorm(geu[nvId], null) || {ficha:1}).ficha;
+            if(!a || !nvId) return;
+            // Prellenar con la ficha PREVISTA para la sesión que se está editando,
+            // no con el contador global. Si el motor dice que hoy toca la 14, sale 14.
+            let ficha = null;
+            if(celdaEditando){
+                const prev = geuFichaEnSesion(a, celdaEditando);
+                const m = prev && prev.find(function(p){ return p.nv.id === nvId; });
+                if(m) ficha = m.fichaProyectada;
+            }
+            if(ficha === null){
+                const geu = a.geu || {};
+                ficha = (geuNorm(geu[nvId], null) || {ficha:1}).ficha;
+            }
             document.getElementById('geuFichaInput').value = ficha;
         }
 
@@ -7651,76 +7711,12 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
             }
         }
 
-                function geuProponerAvance(alumId, k){
-            const a = alumnos[alumId];
-            const activos = geuActivos(a);
-            if(!activos.length) return;
-            const queAvanzar = [];
-            activos.forEach(item => {
-                const p = geuProyectar(a, item, k);
-                if(!p) return;
-                // Solo proponemos si la proyección adelanta respecto a lo guardado
-                // y el cuaderno no está ya terminado.
-                if(p.bruta > item.est.ficha && item.est.ficha <= p.total){
-                    queAvanzar.push({
-                        col: item.col, nv: item.nv,
-                        fichaActual: item.est.ficha,
-                        fichaEsperada: Math.min(p.bruta, p.total + 1),  // total+1 = completado
-                        total: p.total,
-                        ritmo: item.est.ritmo || 1
-                    });
-                }
-            });
-            if(!queAvanzar.length) return;
-            geuMostrarToastAvance(alumId, queAvanzar, k);
-        }
+                // (geuProponerAvance / geuMostrarToastAvance eliminadas: eran código muerto.
+        //  El toast de "¿avanzar ficha?" nunca se llegó a invocar. Ahora la ficha
+        //  prevista se pinta directamente en la programación y solo la tocas si el
+        //  día real no coincidió con lo previsto.)
 
-        function geuMostrarToastAvance(alumId, items, k){
-            // Eliminar toast anterior si existe
-            const old = document.getElementById('geuToastAvance');
-            if(old) old.remove();
-            const div = document.createElement('div');
-            div.id = 'geuToastAvance';
-            div.style.cssText = 'position:fixed;bottom:70px;left:50%;transform:translateX(-50%);background:#1e293b;color:#f1f5f9;padding:14px 18px;border-radius:14px;z-index:3000;box-shadow:0 8px 32px rgba(0,0,0,.35);max-width:340px;width:90%;font-size:.82rem;line-height:1.5';
-            let html = '<div style="font-weight:700;margin-bottom:8px;color:#fbbf24">📚 ¿Avanzar fichas GEU?</div>';
-            items.forEach(function(f){
-                html += '<div style="margin-bottom:3px">'+f.col.icon+' <span style="color:'+f.col.color+';font-weight:700">'+f.col.nombre+' '+f.nv.label+'</span>: F'+f.fichaActual+' → <span style="color:#4ade80;font-weight:700">F'+f.fichaEsperada+'</span></div>';
-            });
-            html += '<div style="display:flex;gap:8px;margin-top:10px">';
-            html += '<button id="geuBtnSi" style="flex:1;padding:8px;background:#22c55e;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:.82rem">✅ Sí, avanzar</button>';
-            html += '<button id="geuBtnNo" style="flex:1;padding:8px;background:#475569;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:.82rem">❌ No</button>';
-            html += '</div>';
-            div.innerHTML = html;
-            document.body.appendChild(div);
-            document.getElementById('geuBtnSi').onclick = function(){
-                div.remove();
-                const updates = {};
-                const completados = [];
-                items.forEach(function(f){
-                    // CLAVE: guardamos la ficha Y la sesión en la que estamos (ancla).
-                    // Así el próximo cálculo parte de aquí y no vuelve a sumar el histórico.
-                    const est = { ficha: f.fichaEsperada, ancla: k, ritmo: f.ritmo || 1 };
-                    updates[PA+'/'+alumId+'/geu/'+f.nv.id] = est;
-                    alumnos[alumId].geu = alumnos[alumId].geu || {};
-                    alumnos[alumId].geu[f.nv.id] = est;
-                    if(f.fichaEsperada > f.total) completados.push(f);
-                });
-                db.ref().update(updates).then(function(){
-                    toast('Fichas GEU avanzadas ✓','success');
-                    if(document.getElementById('tabGeu') && document.getElementById('tabGeu').classList.contains('active')) renderGEUTab();
-                    // Si algún cuaderno se ha terminado, ofrecer el siguiente.
-                    completados.forEach(f => geuProponerSiguiente(alumId, f.col, f.nv, k));
-                }).catch(function(e){
-                    console.error(e);
-                    toast('No se pudo guardar el avance: '+(e.message||'error'),'error');
-                });
-            };
-            document.getElementById('geuBtnNo').onclick = function(){ div.remove(); };
-            // Auto-cerrar tras 10 segundos
-            setTimeout(function(){ if(document.getElementById('geuToastAvance')) div.remove(); }, 10000);
-        }
-
-                function renderGEUCard(a){
+        function renderGEUCard(a){
             const geu = a.geu || {};
             let h = '<div class="geu-card no-print">';
             h += '<div class="card-header" style="margin-bottom:10px">';
