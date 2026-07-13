@@ -2,7 +2,7 @@
 // Solo se encarga de habilitar la instalación como PWA y un cacheo básico
 // de la app shell. No modifica ni interfiere con la lógica de la app.
 
-const CACHE_NAME = 'gestor-pe-v1';
+const CACHE_NAME = 'gestor-pe-v2';
 const APP_SHELL = [
   './index.html',
   './manifest.json',
