@@ -487,6 +487,7 @@
                             <button class="btn btn-primary btn-sm" onclick="abrirModalNuevaPlantilla()">➕ Nueva</button>
                         </div>
                     </div>
+                    <div id="avisoDuplicados" style="display:none;background:#fef3c7;color:#78350f;border:1px solid #fcd34d;border-radius:var(--radius-sm);padding:12px 14px;font-size:.82rem;line-height:1.5;margin-bottom:12px"></div>
                     <div class="filtros">
                         <select id="filtroCiclo" onchange="renderBiblioteca()">
                             <option value="">Todos los ciclos</option>
@@ -2292,9 +2293,11 @@
             if(alumnoActual&&alumnos[alumnoActual]){renderProgs();renderProg();renderEval();renderAsis();}
             if(document.getElementById('seccionACI').style.display!=='none')renderAciSeccion();
         }
+        let _geuMigrado=false;
         function _handlerAlumnos(snap){
             aplicarAlumnos(snap.val()||{});
             cacheGuardar('alumnos',alumnos,true);   // espejo local
+            if(!_geuMigrado){ _geuMigrado=true; geuMigrarLegacy(); }
         }
         function attachCursoListeners(){
             if(_refAlumnos)_refAlumnos.off();
@@ -2329,7 +2332,38 @@
                 aplicarPlantillas(custom);
                 cacheGuardar('plantillas',custom,false);   // espejo local
             });
+            // Nº de fichas reales por cuaderno GEU (los del catálogo son estimados).
+            geuFichasCustom=cacheLeer('geuFichas',false)||{};
+            if(_refGeuFichas)_refGeuFichas.off();
+            _refGeuFichas=db.ref(ROOT+'/geuFichas');
+            _refGeuFichas.on('value',snap=>{
+                geuFichasCustom=snap.val()||{};
+                cacheGuardar('geuFichas',geuFichasCustom,false);
+                if(document.getElementById('tabGeu')&&document.getElementById('tabGeu').classList.contains('active'))renderGEUTab();
+            });
             cursoInit();
+        }
+        let _refGeuFichas=null;
+
+        // Guarda el nº real de fichas de un cuaderno (lo introduce el usuario).
+        async function geuEditarFichas(nivelId){
+            const nv=GEU_COLECCIONES.flatMap(c=>c.niveles).find(n=>n.id===nivelId);
+            if(!nv)return;
+            const actual=geuNumFichas(nv);
+            const v=await pedirTexto('¿Cuántas fichas tiene realmente el cuaderno '+nv.label+'?\n\nEl valor actual ('+actual+') es una estimación. Cuéntalas en el cuaderno y corrígelo aquí: se usará para todos los alumnos.',
+                String(actual),{titulo:'📕 Fichas de '+nv.label,ok:'Guardar'});
+            if(v===null)return;
+            const num=parseInt(v,10);
+            if(!num||num<1||num>500){toast('Introduce un número entre 1 y 500','error');return;}
+            try{
+                await db.ref(ROOT+'/geuFichas/'+nivelId).set(num);
+                geuFichasCustom[nivelId]=num;
+                renderGEUTab();
+                toast(nv.label+': '+num+' fichas ✓','success');
+            }catch(e){
+                console.error(e);
+                toast('No se pudo guardar: '+(e.message||'error'),'error');
+            }
         }
 
         // Renderizar biblioteca (plantillas base) aunque Firebase no conecte todavía
@@ -2462,7 +2496,35 @@
         function renderInicio(){const g=document.getElementById('alumnosGrid'),ids=Object.keys(alumnos);if(!ids.length){g.innerHTML='<div class="alumno-card alumno-card-add" onclick="abrirModalNuevo()"><span style="font-size:1.3rem">➕</span><span style="font-size:.8rem">Añadir</span></div>';return;}let h=ids.map(id=>{const a=alumnos[id],n=a.programas?Object.keys(a.programas).length:0;return'<div class="alumno-card" onclick="abrirAlumno(\''+id+'\')"><div class="alumno-siglas">'+a.siglas+'</div><div class="alumno-curso">'+a.curso+'</div><div class="alumno-progs">'+n+' prog.</div></div>';}).join('');h+='<div class="alumno-card alumno-card-add" onclick="abrirModalNuevo()"><span style="font-size:1.3rem">➕</span></div>';g.innerHTML=h;}
         
         // BIBLIOTECA
-        function renderBiblioteca(){const c=document.getElementById('bibliotecaGrid');const cicloF=document.getElementById('filtroCiclo').value;const areaF=document.getElementById('filtroArea').value;const lista=Object.keys(plantillas).map(id=>({id,...plantillas[id]}));const filtrada=lista.filter(p=>{if(cicloF&&p.ciclo!==cicloF)return false;if(areaF&&p.tipo!==areaF)return false;return true;});if(!filtrada.length){c.innerHTML='<div class="empty-state"><p>No hay plantillas con estos filtros</p></div>';return;}c.innerHTML=filtrada.map(p=>{const ciclo=CICLOS[p.ciclo]||{nombre:p.ciclo};const area=AREAS[p.tipo]||{nombre:p.tipo,icon:'📄'};const nObj=p.objetivos?p.objetivos.length:0;const nInd=p.objetivos?p.objetivos.reduce((s,o)=>s+(o.indicadores?o.indicadores.length:0),0):0;const baseBadge=p.esBase?'<span style="font-size:.6rem;background:#e0e7ff;color:#4338ca;padding:2px 6px;border-radius:8px;margin-left:4px">BASE</span>':'';return'<div class="plantilla-card" onclick="verPlantilla(\''+p.id+'\')"><div class="plantilla-header"><span class="plantilla-titulo">'+area.icon+' '+p.nombre+' <span style="opacity:.6;font-weight:600">· '+ciclo.nombre+'</span>'+baseBadge+'</span></div><div class="plantilla-meta"><span class="plantilla-badge ciclo-'+p.ciclo+'">'+ciclo.nombre+'</span><span class="plantilla-badge badge-area">'+area.nombre+'</span></div><div class="plantilla-stats">'+nObj+' objetivos · '+nInd+' indicadores</div></div>';}).join('');}
+        function renderBiblioteca(){const c=document.getElementById('bibliotecaGrid');const cicloF=document.getElementById('filtroCiclo').value;const areaF=document.getElementById('filtroArea').value;
+        // Aviso de duplicados heredados de Firebase
+        const dups=plantillasDuplicadas();
+        const barra=document.getElementById('avisoDuplicados');
+        if(barra){
+            if(dups.length){
+                barra.style.display='block';
+                barra.innerHTML='🧹 Hay <strong>'+dups.length+'</strong> plantilla(s) personalizada(s) que son copias exactas de las plantillas base. Están ocultas aquí y en el desplegable, pero siguen ocupando sitio en la base de datos. <button class="btn btn-warning btn-sm" style="margin-left:8px" onclick="limpiarPlantillasDuplicadas()">Eliminar las '+dups.length+' copias</button>';
+            }else barra.style.display='none';
+        }
+        const lista=plantillasUnicas().map(({id,p})=>({id,...p}));const filtrada=lista.filter(p=>{if(cicloF&&p.ciclo!==cicloF)return false;if(areaF&&p.tipo!==areaF)return false;return true;});if(!filtrada.length){c.innerHTML='<div class="empty-state"><p>No hay plantillas con estos filtros</p></div>';return;}c.innerHTML=filtrada.map(p=>{const ciclo=CICLOS[p.ciclo]||{nombre:p.ciclo||'sin ciclo'};const area=AREAS[p.tipo]||{nombre:p.tipo,icon:'📄'};const nObj=p.objetivos?p.objetivos.length:0;const nInd=p.objetivos?p.objetivos.reduce((s,o)=>s+(o.indicadores?o.indicadores.length:0),0):0;const baseBadge=p.esBase?'<span style="font-size:.6rem;background:#e0e7ff;color:#4338ca;padding:2px 6px;border-radius:8px;margin-left:4px">BASE</span>':'<span style="font-size:.6rem;background:#fce7f3;color:#9d174d;padding:2px 6px;border-radius:8px;margin-left:4px">✏️ PROPIA</span>';return'<div class="plantilla-card" onclick="verPlantilla(\''+p.id+'\')"><div class="plantilla-header"><span class="plantilla-titulo">'+area.icon+' '+p.nombre+' <span style="opacity:.6;font-weight:600">· '+ciclo.nombre+'</span>'+baseBadge+'</span></div><div class="plantilla-meta"><span class="plantilla-badge ciclo-'+p.ciclo+'">'+ciclo.nombre+'</span><span class="plantilla-badge badge-area">'+area.nombre+'</span></div><div class="plantilla-stats">'+nObj+' objetivos · '+nInd+' indicadores</div></div>';}).join('');}
+
+        // Borra del nodo {ROOT}/plantillas las copias exactas de plantillas base.
+        // Solo toca plantillas PERSONALIZADAS idénticas a una base: nunca las base
+        // (que viven en el código) ni las plantillas propias con contenido distinto.
+        async function limpiarPlantillasDuplicadas(){
+            const dups=plantillasDuplicadas();
+            if(!dups.length){toast('No hay duplicados','success');return;}
+            if(!await confirmarBorrado('Se eliminarán '+dups.length+' plantilla(s) personalizada(s) que son copia exacta de las plantillas base del programa.\n\nNo se pierde nada: las base siguen ahí y los programas ya asignados a alumnos no se tocan.',{titulo:'🧹 Limpiar duplicados'}))return;
+            const updates={};
+            dups.forEach(id=>{updates[ROOT+'/plantillas/'+id]=null;});
+            try{
+                await db.ref().update(updates);
+                toast(dups.length+' duplicados eliminados ✓','success');
+            }catch(e){
+                console.error(e);
+                toast('No se pudo limpiar: '+(e.message||'error'),'error');
+            }
+        }
         
         function verPlantilla(id){const p=plantillas[id];if(!p)return;const area=AREAS[p.tipo]||{nombre:p.tipo,icon:'📄'};const ciclo=CICLOS[p.ciclo]||{nombre:p.ciclo};document.getElementById('modalPlantillaTitulo').textContent=area.icon+' '+p.nombre+' · '+ciclo.nombre;let h='<div class="plantilla-meta" style="margin-bottom:12px"><span class="plantilla-badge ciclo-'+p.ciclo+'">'+ciclo.nombre+'</span><span class="plantilla-badge badge-area">'+area.nombre+'</span>'+(p.esBase?'<span style="font-size:.7rem;background:#e0e7ff;color:#4338ca;padding:3px 8px;border-radius:8px">Plantilla base</span>':'')+'</div>';(p.objetivos||[]).forEach(o=>{h+='<div class="objetivo-card"><div class="objetivo-header"><span class="objetivo-num">O'+o.numero+'</span><span class="trimestre-badge t'+o.trimestre+'">T'+o.trimestre+'</span></div><div class="objetivo-desc">'+o.descripcion+'</div>';if(o.indicadores&&o.indicadores.length){h+='<ul class="indicadores-list">'+o.indicadores.map(x=>'<li>• '+x+'</li>').join('')+'</ul>';}h+='</div>';});document.getElementById('modalPlantillaBody').innerHTML=h;const deleteBtn=p.esBase?'':'<button class="btn btn-danger btn-sm" onclick="eliminarPlantilla(\''+id+'\')">🗑️</button>';document.getElementById('modalPlantillaFooter').innerHTML=deleteBtn+'<button class="btn btn-secondary" onclick="cerrarModal(\'modalPlantilla\')">Cerrar</button><button class="btn btn-primary" onclick="usarPlantilla(\''+id+'\')">📥 Usar</button>';abrirModal('modalPlantilla');}
         
@@ -2575,7 +2637,7 @@
             h+='<p style="font-size:.8rem;color:var(--text-light);margin-bottom:14px">Registra en qué ficha va el alumno en cada cuaderno GEU. Pulsa <strong>+</strong> tras cada sesión para avanzar.</p>';
 
             const activos=GEU_COLECCIONES.flatMap(col=>
-                col.niveles.filter(nv=>geu[nv.id]!==undefined).map(nv=>({col,nv,ficha:geu[nv.id]||1}))
+                col.niveles.filter(nv=>geu[nv.id]!==undefined&&geu[nv.id]!==null).map(nv=>({col,nv,ficha:(geuNorm(geu[nv.id],null)||{ficha:1}).ficha,total:geuNumFichas(nv),estim:geuFichasEsEstimado(nv)}))
             );
 
             if(!activos.length){
@@ -2586,20 +2648,20 @@
                     if(!activosCol.length)return;
                     h+=`<div style="margin-bottom:16px">
                         <div style="font-weight:700;color:${col.color};margin-bottom:10px;font-size:.9rem;display:flex;align-items:center;gap:6px">${col.icon} ${col.nombre}</div>`;
-                    activosCol.forEach(({nv,ficha})=>{
-                        const pct=Math.min(Math.round((ficha-1)/nv.fichas*100),100);
-                        const completo=ficha>nv.fichas;
+                    activosCol.forEach(({nv,ficha,total,estim})=>{
+                        const pct=Math.min(Math.round((ficha-1)/total*100),100);
+                        const completo=ficha>total;
                         h+=`<div style="background:${completo?'#f0fdf4':'var(--bg)'};border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:8px;border:1px solid ${completo?'#86efac':'var(--border)'}">
                             <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
                                 <div style="flex:1">
                                     <div style="font-weight:700;font-size:.88rem;color:${col.color}">${nv.label}</div>
-                                    <div style="font-size:.72rem;color:var(--text-light)">${nv.fichas} fichas en total</div>
+                                    <div style="font-size:.72rem;color:var(--text-light)">${total} fichas en total ${estim?'<span style="color:#b45309">≈ estimado</span>':''} <span style="cursor:pointer;text-decoration:underline;opacity:.7" onclick="event.stopPropagation();geuEditarFichas('${nv.id}')">editar</span></div>
                                 </div>
                                 <div style="display:flex;align-items:center;gap:8px">
                                     <button class="geu-btn" onclick="geuCambiarFicha('${alumnoActual}','${nv.id}',${ficha-1})">−</button>
                                     <div style="text-align:center;min-width:50px">
                                         <div style="font-size:1.4rem;font-weight:800;color:${col.color};line-height:1">${completo?'✅':ficha}</div>
-                                        <div style="font-size:.65rem;color:var(--text-light)">${completo?'Completado':'de '+nv.fichas}</div>
+                                        <div style="font-size:.65rem;color:var(--text-light)">${completo?'Completado':'de '+total}</div>
                                     </div>
                                     <button class="geu-btn" style="background:${col.color};border-color:${col.color};color:#fff" onclick="geuCambiarFicha('${alumnoActual}','${nv.id}',${ficha+1})">+</button>
                                 </div>
@@ -2609,7 +2671,7 @@
                             </div>
                             <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:.68rem;color:var(--text-light)">
                                 <span>${pct}% completado</span>
-                                <span>${completo?'Listo para el siguiente nivel':'Faltan '+(nv.fichas-ficha+1)+' fichas'}</span>
+                                <span>${completo?'Listo para el siguiente nivel':'Faltan '+(total-ficha+1)+' fichas'}</span>
                             </div>
                         </div>`;
                     });
@@ -2619,35 +2681,82 @@
             h+='</div>';
             document.getElementById('tabGeu').innerHTML=h;
         }
+        // ── Deduplicación de plantillas ──────────────────────────────────
+        // El nodo {ROOT}/plantillas de Firebase puede contener copias de las
+        // plantillas base (versiones antiguas de la app las volcaban ahí).
+        // Firma = tipo|ciclo|nombre|objetivos → dos plantillas con la misma
+        // firma son la misma cosa y solo se muestra una (con prioridad a la BASE).
+        function _firmaPlantilla(p){
+            return [p.tipo,p.ciclo,(p.nombre||'').trim().toLowerCase(),
+                    JSON.stringify((p.objetivos||[]).map(o=>[o.numero,o.descripcion,o.criterio]))].join('|');
+        }
+        function plantillasUnicas(){
+            const porFirma={};
+            Object.keys(plantillas).forEach(id=>{
+                const p=plantillas[id], f=_firmaPlantilla(p);
+                // La base gana siempre; si no, se queda la primera que llegó.
+                if(!porFirma[f] || (p.esBase && !porFirma[f].p.esBase)) porFirma[f]={id,p};
+            });
+            return Object.values(porFirma);
+        }
+        // Ids duplicados (personalizados) que se pueden borrar sin perder nada.
+        function plantillasDuplicadas(){
+            const vistas={}, sobran=[];
+            // primero las base, para que nunca se marquen ellas
+            Object.keys(plantillas).filter(id=>plantillas[id].esBase)
+                .forEach(id=>{vistas[_firmaPlantilla(plantillas[id])]=true;});
+            Object.keys(plantillas).filter(id=>!plantillas[id].esBase).forEach(id=>{
+                const f=_firmaPlantilla(plantillas[id]);
+                if(vistas[f]) sobran.push(id); else vistas[f]=true;
+            });
+            return sobran;
+        }
+
         function abrirModalAddProg(){
             const a=alumnos[alumnoActual];
             const cicloAlumno=getCicloDeAlumno(a);
             const sel=document.getElementById('selPlantilla');
             const cn=(CICLOS[cicloAlumno]||{}).nombre||cicloAlumno;
             const orden=['infantil','ciclo1','ciclo2','ciclo3'];
-            const opt=(id,p)=>{const area=AREAS[p.tipo]||{icon:'📄'};
-                return '<option value="'+id+'">'+area.icon+' '+p.nombre+'</option>';};
+            const unicas=plantillasUnicas();
+
+            // Cada opción dice ÁREA · CICLO · nº de objetivos, y marca las
+            // personalizadas. Así dos entradas nunca se ven iguales.
+            const opt=(id,p,dupNombre)=>{
+                const area=AREAS[p.tipo]||{icon:'📄',nombre:p.tipo};
+                const cic=(CICLOS[p.ciclo]||{}).nombre||p.ciclo;
+                const nObj=(p.objetivos||[]).length;
+                let txt=area.icon+' '+p.nombre+' · '+cic;
+                if(!p.esBase) txt+=' · ✏️ personalizada';
+                // Si aún así hay dos con el mismo nombre en el mismo grupo,
+                // los distinguimos por número de objetivos.
+                if(dupNombre) txt+=' ('+nObj+' obj.)';
+                return '<option value="'+id+'">'+txt+'</option>';
+            };
+            const pintaGrupo=(label,lista)=>{
+                if(!lista.length)return '';
+                const cuenta={};
+                lista.forEach(({p})=>{const k=(p.nombre||'')+'|'+p.tipo;cuenta[k]=(cuenta[k]||0)+1;});
+                let s='<optgroup label="'+label+'">';
+                lista.forEach(({id,p})=>{
+                    const dup=cuenta[(p.nombre||'')+'|'+p.tipo]>1;
+                    s+=opt(id,p,dup);
+                });
+                return s+'</optgroup>';
+            };
 
             let h='<option value="">-- Elegir plantilla --</option>';
-
             // 1) Su ciclo, arriba y marcado como el recomendado.
-            const suyas=Object.keys(plantillas).filter(id=>plantillas[id].ciclo===cicloAlumno);
-            if(suyas.length){
-                h+='<optgroup label="✅ Su ciclo · '+cn+'">';
-                suyas.forEach(id=>h+=opt(id,plantillas[id]));
-                h+='</optgroup>';
-            }
+            h+=pintaGrupo('✅ Su ciclo · '+cn, unicas.filter(x=>x.p.ciclo===cicloAlumno));
             // 2) Los demás ciclos, disponibles y claramente etiquetados.
             //    Un alumno con ACI significativa puede necesitar objetivos de un
             //    ciclo inferior (o superior, si va adelantado en algún ámbito).
             orden.filter(c=>c!==cicloAlumno).forEach(c=>{
-                const otras=Object.keys(plantillas).filter(id=>plantillas[id].ciclo===c);
-                if(!otras.length)return;
                 const pos=orden.indexOf(c)<orden.indexOf(cicloAlumno)?'⬇️ Ciclo inferior':'⬆️ Ciclo superior';
-                h+='<optgroup label="'+pos+' · '+((CICLOS[c]||{}).nombre||c)+'">';
-                otras.forEach(id=>h+=opt(id,plantillas[id]));
-                h+='</optgroup>';
+                h+=pintaGrupo(pos+' · '+((CICLOS[c]||{}).nombre||c), unicas.filter(x=>x.p.ciclo===c));
             });
+            // 3) Plantillas sin ciclo asignado (importadas mal en el pasado).
+            h+=pintaGrupo('❓ Sin ciclo asignado', unicas.filter(x=>!CICLOS[x.p.ciclo]));
             sel.innerHTML=h;
 
             document.getElementById('previewPlantilla').style.display='none';document.getElementById('addProgTipo').value='';document.getElementById('addProgTexto').value='';document.getElementById('uploadZone').innerHTML='📄 Toca para seleccionar';document.getElementById('uploadZone').classList.remove('has-file');document.getElementById('previewProg').style.display='none';document.getElementById('zonaDocx').style.display='block';document.getElementById('zonaLecto').style.display='none';docExtraido=null;abrirModal('modalAddProg');}
@@ -3128,36 +3237,116 @@
             }
         }
 
-        function geuFichaEnSesion(a, k){
-            // Calcula qué ficha GEU corresponde a la sesión k,
-            // contando cuántas sesiones válidas (asistidas) hubo antes.
+        // ═══════════════════════════════════════════════════════════════════
+        // NÚCLEO GEU  —  modelo de ANCLA
+        //
+        // Antes se guardaba un número suelto (geu.lc4 = 12) que se usaba a la
+        // vez como "ficha actual" y como "ficha del principio de curso". La
+        // proyección le sumaba TODAS las sesiones asistidas desde el inicio, así
+        // que cada avance aceptado realimentaba el cálculo y se disparaba
+        // (sesión 8 → proponía la ficha 29 de 30).
+        //
+        // Modelo nuevo:  geu.lc4 = { ficha: 12, ancla: '3_2_1', ritmo: 1 }
+        //   ficha = en qué ficha estaba el alumno…
+        //   ancla = …en ESA sesión concreta
+        //   ritmo = fichas por sesión (normalmente 1)
+        // La proyección cuenta solo las sesiones asistidas ENTRE el ancla y la
+        // sesión consultada. Es idempotente: aceptar un avance no descuadra
+        // nada, y consultar una sesión pasada devuelve el valor correcto.
+        // ═══════════════════════════════════════════════════════════════════
+
+        // Nº de fichas de un nivel. Editable por el usuario (geuFichas en Firebase);
+        // si no lo ha tocado, se usa la estimación del catálogo.
+        let geuFichasCustom = {};
+        function geuNumFichas(nv){
+            const c = geuFichasCustom[nv.id];
+            return (typeof c === 'number' && c > 0) ? c : nv.fichas;
+        }
+        function geuFichasEsEstimado(nv){ return typeof geuFichasCustom[nv.id] !== 'number'; }
+
+        // Normaliza el dato antiguo (número) al nuevo (objeto con ancla).
+        function geuNorm(valor, primeraSesion){
+            if(valor === undefined || valor === null) return null;
+            if(typeof valor === 'number') return { ficha: valor, ancla: primeraSesion || null, ritmo: 1 };
+            return { ficha: valor.ficha || 1, ancla: valor.ancla || primeraSesion || null, ritmo: valor.ritmo || 1 };
+        }
+        // Niveles activos de un alumno, ya normalizados.
+        // OJO con el dato antiguo (número suelto): significaba "la ficha en la que
+        // está AHORA", así que hay que anclarlo a la sesión actual. Anclarlo a la
+        // primera del curso reproduciría el bug original (sumaría todo el histórico).
+        function geuActivos(a){
             const geu = a.geu || {};
-            const activos = GEU_COLECCIONES.flatMap(col =>
-                col.niveles.filter(nv => geu[nv.id] !== undefined)
-                .map(nv => ({col, nv, ficha: geu[nv.id] || 1}))
+            const hoy = geuSesionHoy(a);
+            return GEU_COLECCIONES.flatMap(col =>
+                col.niveles.filter(nv => geu[nv.id] !== undefined && geu[nv.id] !== null)
+                    .map(nv => ({ col, nv, est: geuNorm(geu[nv.id], hoy) }))
             );
-            if(!activos.length) return null;
-            // Sesiones anteriores a k que no sean ausencia
-            const todasSesiones = getTodasLasSesiones(a);
-            const idxK = todasSesiones.indexOf(k);
-            if(idxK < 0) return null;
-            let sesionesAntes = 0;
-            for(let i = 0; i < idxK; i++){
-                const ki = todasSesiones[i];
-                const ausente = (a.ausencias && a.ausencias[ki]) || (a.sincole && a.sincole[ki]);
-                if(!ausente) sesionesAntes++;
-            }
-            // Para cada colección activa, calcular la ficha proyectada
-            return activos.map(function(item){
-                const fichaProyectada = item.ficha + sesionesAntes;
-                const fichaReal = Math.min(fichaProyectada, item.nv.fichas);
-                return {
-                    col: item.col,
-                    nv: item.nv,
-                    fichaProyectada: fichaReal,
-                    completado: fichaProyectada > item.nv.fichas
-                };
+        }
+        // Convierte de una vez los datos antiguos (número) al modelo con ancla.
+        // Silencioso: se ejecuta al cargar los alumnos.
+        function geuMigrarLegacy(){
+            const updates = {};
+            Object.keys(alumnos).forEach(id => {
+                const a = alumnos[id];
+                if(!a.geu) return;
+                const hoy = geuSesionHoy(a);
+                Object.keys(a.geu).forEach(nvId => {
+                    if(typeof a.geu[nvId] === 'number'){
+                        const est = { ficha: a.geu[nvId], ancla: hoy, ritmo: 1 };
+                        updates[PA+'/'+id+'/geu/'+nvId] = est;
+                        a.geu[nvId] = est;
+                    }
+                });
             });
+            const n = Object.keys(updates).length;
+            if(!n) return;
+            db.ref().update(updates)
+                .then(() => console.log('GEU: '+n+' registros migrados al modelo con ancla'))
+                .catch(e => console.warn('GEU: no se pudo migrar', e));
+        }
+        // Sesiones asistidas desde el ancla (INCLUSIVE) hasta k (EXCLUSIVE).
+        // `ficha` significa "la próxima ficha que le toca hacer". Si en la sesión
+        // del ancla le tocaba la ficha N y esa sesión la trabaja, en la siguiente
+        // le toca la N+1. De ahí que el ancla cuente y k no.
+        function geuSesionesEntre(a, kDesde, kHasta){
+            const todas = getTodasLasSesiones(a);
+            let i = todas.indexOf(kDesde), j = todas.indexOf(kHasta);
+            if(j < 0) return null;
+            if(i < 0) i = 0;                   // ancla desconocida → desde el principio
+            if(j <= i) return 0;
+            let n = 0;
+            for(let x = i; x < j; x++){
+                const kx = todas[x];
+                const ausente = (a.ausencias && a.ausencias[kx]) || (a.sincole && a.sincole[kx]);
+                if(!ausente) n++;
+            }
+            return n;
+        }
+        // Ficha que corresponde a la sesión k para un nivel dado.
+        function geuProyectar(a, item, k){
+            const n = geuSesionesEntre(a, item.est.ancla, k);
+            if(n === null) return null;
+            const total = geuNumFichas(item.nv);
+            const bruta = item.est.ficha + n * (item.est.ritmo || 1);
+            return { ficha: Math.min(bruta, total), bruta: bruta, total: total, completado: bruta > total };
+        }
+        // Siguiente nivel de la misma colección (para encadenar cuadernos).
+        function geuSiguienteNivel(col, nv){
+            const i = col.niveles.findIndex(n => n.id === nv.id);
+            return (i >= 0 && i < col.niveles.length - 1) ? col.niveles[i + 1] : null;
+        }
+
+        function geuFichaEnSesion(a, k){
+            const activos = geuActivos(a);
+            if(!activos.length) return null;
+            const out = [];
+            activos.forEach(item => {
+                const p = geuProyectar(a, item, k);
+                if(!p) return;
+                out.push({ col: item.col, nv: item.nv, fichaProyectada: p.ficha,
+                           completado: p.completado, total: p.total });
+            });
+            return out.length ? out : null;
         }
         function renderCelda(a,k,d){
             const c=a.programacion?a.programacion[k]:null,
@@ -3213,11 +3402,12 @@
                 if(colId && nvId){
                     updates[PA+'/'+alumnoActual+'/programacion/'+celdaEditando+'/geu'] = {colId:colId, nvId:nvId, ficha:ficha};
                     // Actualizar también la ficha actual del cuaderno si es mayor que la guardada
-                    const fichaActual = (alumnos[alumnoActual].geu && alumnos[alumnoActual].geu[nvId]) || 1;
+                    const _est0 = geuNorm((alumnos[alumnoActual].geu||{})[nvId], null) || {ficha:1,ritmo:1};
+                    const fichaActual = _est0.ficha;
                     if(ficha >= fichaActual){
                         updates[PA+'/'+alumnoActual+'/geu/'+nvId] = ficha + 1;
                         alumnos[alumnoActual].geu = alumnos[alumnoActual].geu || {};
-                        alumnos[alumnoActual].geu[nvId] = ficha + 1;
+                        alumnos[alumnoActual].geu[nvId] = {ficha: ficha + 1, ancla: geuSesionHoy(alumnos[alumnoActual]), ritmo: _est0.ritmo || 1};
                     }
                 }
             } else if(geuCb && !geuCb.checked && estadoCelda === 'asiste'){
@@ -7419,7 +7609,7 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
             const sel = document.getElementById('geuNvSel');
             sel.innerHTML = '';
             // Mostrar solo los cuadernos que el alumno tiene asignados, o todos si no tiene ninguno
-            const asignados = col.niveles.filter(function(nv){return geu[nv.id] !== undefined;});
+            const asignados = col.niveles.filter(function(nv){return geu[nv.id] !== undefined && geu[nv.id] !== null;});
             const lista = asignados.length ? asignados : col.niveles;
             lista.forEach(function(nv){
                 sel.innerHTML += '<option value="'+nv.id+'">'+nv.label+' — '+nv.curso+'</option>';
@@ -7433,7 +7623,7 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
             const nvId = document.getElementById('geuNvSel').value;
             const a = alumnos[alumnoActual];
             const geu = a ? (a.geu || {}) : {};
-            const ficha = geu[nvId] || 1;
+            const ficha = (geuNorm(geu[nvId], null) || {ficha:1}).ficha;
             document.getElementById('geuFichaInput').value = ficha;
         }
 
@@ -7457,38 +7647,29 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
 
                 function geuProponerAvance(alumId, k){
             const a = alumnos[alumId];
-            const geu = a.geu || {};
-            const activos = GEU_COLECCIONES.flatMap(col =>
-                col.niveles.filter(nv => geu[nv.id] !== undefined)
-                .map(nv => ({col, nv, ficha: geu[nv.id] || 1}))
-            );
+            const activos = geuActivos(a);
             if(!activos.length) return;
-            // Calcular cuántas sesiones asistidas hay hasta k (inclusive)
-            const todasSesiones = getTodasLasSesiones(a);
-            const idxK = todasSesiones.indexOf(k);
-            if(idxK < 0) return;
-            let sesionesHasta = 0;
-            for(let i = 0; i <= idxK; i++){
-                const ki = todasSesiones[i];
-                const ausente = (a.ausencias && a.ausencias[ki]) || (a.sincole && a.sincole[ki]);
-                if(!ausente) sesionesHasta++;
-            }
-            // La ficha esperada es la actual + sesiones antes (0-indexed)
-            const fichasEsperadas = activos.map(function(item){
-                return {
-                    col: item.col, nv: item.nv,
-                    fichaActual: item.ficha,
-                    fichaEsperada: Math.min(item.ficha + (sesionesHasta - 1), item.nv.fichas + 1)
-                };
+            const queAvanzar = [];
+            activos.forEach(item => {
+                const p = geuProyectar(a, item, k);
+                if(!p) return;
+                // Solo proponemos si la proyección adelanta respecto a lo guardado
+                // y el cuaderno no está ya terminado.
+                if(p.bruta > item.est.ficha && item.est.ficha <= p.total){
+                    queAvanzar.push({
+                        col: item.col, nv: item.nv,
+                        fichaActual: item.est.ficha,
+                        fichaEsperada: Math.min(p.bruta, p.total + 1),  // total+1 = completado
+                        total: p.total,
+                        ritmo: item.est.ritmo || 1
+                    });
+                }
             });
-            // Solo proponer si hay alguna ficha que avanzar
-            const queAvanzar = fichasEsperadas.filter(f => f.fichaEsperada > f.fichaActual && f.fichaActual <= f.nv.fichas);
             if(!queAvanzar.length) return;
-            // Mostrar toast interactivo de confirmación
-            geuMostrarToastAvance(alumId, queAvanzar);
+            geuMostrarToastAvance(alumId, queAvanzar, k);
         }
 
-        function geuMostrarToastAvance(alumId, items){
+        function geuMostrarToastAvance(alumId, items, k){
             // Eliminar toast anterior si existe
             const old = document.getElementById('geuToastAvance');
             if(old) old.remove();
@@ -7508,14 +7689,24 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
             document.getElementById('geuBtnSi').onclick = function(){
                 div.remove();
                 const updates = {};
+                const completados = [];
                 items.forEach(function(f){
-                    updates[PA+'/'+alumId+'/geu/'+f.nv.id] = f.fichaEsperada;
+                    // CLAVE: guardamos la ficha Y la sesión en la que estamos (ancla).
+                    // Así el próximo cálculo parte de aquí y no vuelve a sumar el histórico.
+                    const est = { ficha: f.fichaEsperada, ancla: k, ritmo: f.ritmo || 1 };
+                    updates[PA+'/'+alumId+'/geu/'+f.nv.id] = est;
                     alumnos[alumId].geu = alumnos[alumId].geu || {};
-                    alumnos[alumId].geu[f.nv.id] = f.fichaEsperada;
+                    alumnos[alumId].geu[f.nv.id] = est;
+                    if(f.fichaEsperada > f.total) completados.push(f);
                 });
                 db.ref().update(updates).then(function(){
                     toast('Fichas GEU avanzadas ✓','success');
                     if(document.getElementById('tabGeu') && document.getElementById('tabGeu').classList.contains('active')) renderGEUTab();
+                    // Si algún cuaderno se ha terminado, ofrecer el siguiente.
+                    completados.forEach(f => geuProponerSiguiente(alumId, f.col, f.nv, k));
+                }).catch(function(e){
+                    console.error(e);
+                    toast('No se pudo guardar el avance: '+(e.message||'error'),'error');
                 });
             };
             document.getElementById('geuBtnNo').onclick = function(){ div.remove(); };
@@ -7531,17 +7722,17 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
             h += '<button class="btn btn-sm" style="background:#fef3c7;color:#92400e;font-size:.72rem" onclick="geuAbrirModal(\''+alumnoActual+'\')">⚙️ Configurar</button>';
             h += '</div>';
             const activos = GEU_COLECCIONES.flatMap(col =>
-                col.niveles.filter(nv => geu[nv.id] !== undefined)
-                .map(nv => ({col, nv, ficha: geu[nv.id] || 1}))
+                col.niveles.filter(nv => geu[nv.id] !== undefined && geu[nv.id] !== null)
+                .map(nv => ({col, nv, ficha: (geuNorm(geu[nv.id],null)||{ficha:1}).ficha, total: geuNumFichas(nv)}))
             );
             if(!activos.length){
                 h += '<div style="font-size:.8rem;color:var(--text-light);padding:6px 0">Sin cuadernos asignados. Pulsa ⚙️ Configurar.</div>';
             } else {
                 activos.forEach(function(item){
                     const col = item.col, nv = item.nv, ficha = item.ficha;
-                    const pct = Math.min(Math.round((ficha-1)/nv.fichas*100), 100);
-                    const completado = ficha > nv.fichas;
-                    const fichaReal = completado ? nv.fichas : ficha;
+                    const pct = Math.min(Math.round((ficha-1)/total*100), 100);
+                    const completado = ficha > total;
+                    const fichaReal = completado ? total : ficha;
                     h += '<div class="geu-row" style="flex-direction:column;align-items:stretch;gap:6px">';
                     h += '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">';
                     h += '<span style="font-size:1rem">'+col.icon+'</span>';
@@ -7553,7 +7744,7 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
                     if(completado) h += '<span style="font-size:.65rem;background:#dcfce7;color:#166534;padding:1px 6px;border-radius:8px;font-weight:700">✅ Completado</span>';
                     h += '</div>';
                     h += '<div class="geu-progress" style="margin-top:4px"><div class="geu-progress-bar" style="width:'+pct+'%;background:'+col.color+'"></div></div>';
-                    h += '<div style="font-size:.62rem;color:var(--text-light);margin-top:2px">'+pct+'% completado · Ficha '+fichaReal+'/'+nv.fichas+'</div>';
+                    h += '<div style="font-size:.62rem;color:var(--text-light);margin-top:2px">'+pct+'% completado · Ficha '+fichaReal+'/'+total+'</div>';
                     h += '</div>';
                     h += '<div class="geu-ficha-wrap">';
                     h += '<button class="geu-btn" onclick="geuCambiarFicha(\''+alumnoActual+'\',\''+nv.id+'\','+(ficha-1)+')" title="Retroceder">−</button>';
@@ -7573,16 +7764,66 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
             return h;
         }
 
+        // Cambio manual de ficha (flechas del panel GEU).
+        // Reancla en la sesión de HOY: a partir de aquí la proyección parte de este valor.
         function geuCambiarFicha(alumId, nivelId, nuevaFicha){
-            const nv=GEU_COLECCIONES.flatMap(c=>c.niveles).find(n=>n.id===nivelId);
+            const a=alumnos[alumId];
+            const col=GEU_COLECCIONES.find(c=>c.niveles.some(n=>n.id===nivelId));
+            const nv=col?col.niveles.find(n=>n.id===nivelId):null;
             if(!nv)return;
-            const f=Math.max(1,Math.min(nv.fichas+1,nuevaFicha));
-            db.ref(PA+'/'+alumId+'/geu/'+nivelId).set(f).then(()=>{
-                alumnos[alumId].geu=alumnos[alumId].geu||{};
-                alumnos[alumId].geu[nivelId]=f;
+            const total=geuNumFichas(nv);
+            const f=Math.max(1,Math.min(total+1,nuevaFicha));
+            const prev=geuNorm((a.geu||{})[nivelId],null)||{ritmo:1};
+            const est={ficha:f, ancla:geuSesionHoy(a), ritmo:prev.ritmo||1};
+            db.ref(PA+'/'+alumId+'/geu/'+nivelId).set(est).then(()=>{
+                a.geu=a.geu||{};
+                a.geu[nivelId]=est;
                 if(document.getElementById('tabGeu').classList.contains('active')) renderGEUTab();
-                if(f>nv.fichas) toast('✅ '+nv.label+' completado!','success');
+                if(f>total){
+                    toast('✅ '+nv.label+' completado!','success');
+                    geuProponerSiguiente(alumId, col, nv, est.ancla);
+                }
+            }).catch(e=>{
+                console.error(e);
+                toast('No se pudo guardar la ficha: '+(e.message||'error'),'error');
             });
+        }
+
+        // Sesión "de hoy" (o la más cercana pasada) para usarla como ancla.
+        function geuSesionHoy(a){
+            const todas=getTodasLasSesiones(a);
+            if(!todas.length) return null;
+            const k=(typeof getSesionActualKey==='function')?getSesionActualKey(a):null;
+            if(k && todas.indexOf(k)>=0) return k;
+            // Fallback: la última sesión con algo registrado, o la primera del curso.
+            for(let i=todas.length-1;i>=0;i--){
+                if(a.programacion && a.programacion[todas[i]]) return todas[i];
+            }
+            return todas[0];
+        }
+
+        // Al terminar un cuaderno, ofrecer activar el siguiente de la colección.
+        async function geuProponerSiguiente(alumId, col, nv, ancla){
+            const sig=geuSiguienteNivel(col, nv);
+            const a=alumnos[alumId];
+            if(!sig){
+                await avisar('¡'+a.siglas+' ha terminado '+nv.label+', el último cuaderno de '+col.nombre+'!','🎉 Colección completada');
+                return;
+            }
+            if((a.geu||{})[sig.id]!==undefined) return;   // ya lo tiene activo
+            if(!await confirmar(a.siglas+' ha terminado '+nv.label+'.\n\n¿Activar el siguiente cuaderno, '+sig.label+' ('+sig.curso+', '+geuNumFichas(sig)+' fichas)?',
+                {titulo:'📚 Siguiente cuaderno', ok:'Activar '+sig.label, cancelar:'Ahora no'})) return;
+            const prev=geuNorm((a.geu||{})[nv.id],null)||{ritmo:1};
+            const est={ficha:1, ancla:ancla||geuSesionHoy(a), ritmo:prev.ritmo||1};
+            try{
+                await db.ref(PA+'/'+alumId+'/geu/'+sig.id).set(est);
+                a.geu=a.geu||{}; a.geu[sig.id]=est;
+                if(document.getElementById('tabGeu').classList.contains('active')) renderGEUTab();
+                toast(sig.label+' activado ✓','success');
+            }catch(e){
+                console.error(e);
+                toast('No se pudo activar '+sig.label,'error');
+            }
         }
 
         function geuAbrirModal(alumId){
@@ -7597,7 +7838,7 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
                 h += '<div style="font-weight:700;color:'+col.color+';margin-bottom:8px;font-size:.88rem">'+col.icon+' '+col.nombre+'</div>';
                 h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px">';
                 col.niveles.forEach(function(nv){
-                    const activo = geu[nv.id] !== undefined;
+                    const activo = geu[nv.id] !== undefined && geu[nv.id] !== null;
                     h += '<div data-nv="'+nv.id+'" onclick="geuToggleNivel(this,\''+col.id+'\''+')"'
                         +' style="padding:7px 10px;border-radius:10px;border:2px solid '+(activo?col.color:'var(--border)')
                         +';background:'+(activo?col.color+'18':'var(--bg)')+';color:'+(activo?col.color:'var(--text-light)')
@@ -7640,12 +7881,16 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
             const a      = alumnos[alumId];
             const geuActual = a.geu || {};
             const updates = {};
+            const ancla = geuSesionHoy(a);
             document.querySelectorAll('#geuModalContenido [data-nv]').forEach(el => {
                 const nvId   = el.dataset.nv;
                 const activo = el.textContent.includes('✓');
                 if(activo && geuActual[nvId] === undefined){
-                    updates[PA+'/'+alumId+'/geu/'+nvId] = 1;
-                    geuActual[nvId] = 1;
+                    // Ficha de inicio: por si el alumno llega con el cuaderno empezado.
+                    const ini = parseInt(el.dataset.ini || '1', 10) || 1;
+                    const est = { ficha: ini, ancla: ancla, ritmo: 1 };
+                    updates[PA+'/'+alumId+'/geu/'+nvId] = est;
+                    geuActual[nvId] = est;
                 } else if(!activo && geuActual[nvId] !== undefined){
                     updates[PA+'/'+alumId+'/geu/'+nvId] = null;
                     delete geuActual[nvId];
@@ -7657,6 +7902,9 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
                 cerrarModal('modalGEU');
                 renderGEUTab();
                 toast('Cuadernos GEU actualizados ✓','success');
+            }).catch(e=>{
+                console.error(e);
+                toast('No se pudo guardar: '+(e.message||'error'),'error');
             });
         }
 
@@ -7934,8 +8182,9 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
                 const geuInfo=[];
                 if(a.geu){
                     GEU_COLECCIONES.forEach(col=>{
-                        col.niveles.filter(nv=>a.geu[nv.id]!==undefined).forEach(nv=>{
-                            geuInfo.push(`${col.nombre} ${nv.label} (ficha ${a.geu[nv.id]}/${nv.fichas})`);
+                        col.niveles.filter(nv=>a.geu[nv.id]!==undefined&&a.geu[nv.id]!==null).forEach(nv=>{
+                            const _e=geuNorm(a.geu[nv.id],null)||{ficha:1};
+                            geuInfo.push(`${col.nombre} ${nv.label} (ficha ${_e.ficha}/${geuNumFichas(nv)})`);
                         });
                     });
                 }

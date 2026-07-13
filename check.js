@@ -348,9 +348,10 @@ if (P && CICLOS) {
 // ═══════════ 12. PROGRAMAS DE OTRO CICLO (adaptación curricular) ═══════════
 sec('12. Programas de otro ciclo');
 t('Desplegable agrupado por ciclos (optgroup)', /<optgroup label=/.test(h));
-t('Grupo "Su ciclo" primero y marcado', /✅ Su ciclo · '\+cn\+'/.test(h));
+t('Grupo "Su ciclo" primero y marcado', /pintaGrupo\('✅ Su ciclo · '\+cn/.test(h));
 t('Grupos etiquetados como inferior/superior', /⬇️ Ciclo inferior/.test(h) && /⬆️ Ciclo superior/.test(h));
 t('Se ofrecen TODOS los ciclos, no solo el suyo', /orden\.filter\(c=>c!==cicloAlumno\)/.test(h));
+t('Sin filtro estricto por ciclo en el desplegable', !/if\(p\.ciclo===cicloAlumno\)\{const area/.test(h));
 t('El programa guarda de qué ciclo salió (cicloOrigen)', /programa\.cicloOrigen=p\.ciclo/.test(h));
 t('Se marca como adaptación de ciclo', /programa\.adaptacionCiclo=true/.test(h));
 t('renderProgs pinta el chip del ciclo', /p\.cicloOrigen\?/.test(h));
@@ -375,6 +376,116 @@ if (P && CICLOS) {
   });
   const total = Object.keys(pl).length;
   t('Todas las plantillas alcanzables desde cualquier curso', total === 45, total + ' plantillas ofrecidas siempre');
+}
+
+
+// ═══════════ 13. DUPLICADOS DE FIREBASE ═══════════
+sec('13. Deduplicación de plantillas');
+t('Existe _firmaPlantilla()', /function _firmaPlantilla\(p\)/.test(h));
+t('Existe plantillasUnicas()', /function plantillasUnicas\(\)/.test(h));
+t('Existe plantillasDuplicadas()', /function plantillasDuplicadas\(\)/.test(h));
+t('La firma incluye tipo+ciclo+nombre+objetivos', /\[p\.tipo,p\.ciclo,\(p\.nombre\|\|''\)\.trim\(\)\.toLowerCase\(\)/.test(h));
+t('La plantilla BASE gana ante una copia', /p\.esBase && !porFirma\[f\]\.p\.esBase/.test(h));
+t('Las base nunca se marcan para borrar', /filter\(id=>plantillas\[id\]\.esBase\)/.test(h));
+t('El desplegable usa plantillasUnicas()', /const unicas=plantillasUnicas\(\)/.test(h));
+t('La Biblioteca usa plantillasUnicas()', /const lista=plantillasUnicas\(\)/.test(h));
+t('Cada opción indica el ciclo', /txt=area\.icon\+' '\+p\.nombre\+' · '\+cic/.test(h));
+t('Las propias se marcan como ✏️ personalizada', /✏️ personalizada/.test(h));
+t('Desempate por nº de objetivos si coincide el nombre', /txt\+=' \('\+nObj\+' obj\.\)'/.test(h));
+t('Grupo para plantillas sin ciclo válido', /❓ Sin ciclo asignado/.test(h));
+t('Badge ✏️ PROPIA en la Biblioteca', /✏️ PROPIA/.test(h));
+t('Barra de aviso de duplicados en el DOM', /id="avisoDuplicados"/.test(h));
+t('Botón de limpieza', /function limpiarPlantillasDuplicadas\(\)/.test(h) && /onclick="limpiarPlantillasDuplicadas\(\)"/.test(h));
+t('El borrado va por update() con nulls (atómico)', /updates\[ROOT\+'\/plantillas\/'\+id\]=null/.test(h));
+t('El borrado tiene manejo de errores', /catch\(e\)\{[\s\S]{0,120}No se pudo limpiar/.test(h));
+
+// simulación con Firebase sucio
+if (P) {
+  const firma = p => [p.tipo, p.ciclo, (p.nombre || '').trim().toLowerCase(),
+    JSON.stringify((p.objetivos || []).map(o => [o.numero, o.descripcion, o.criterio]))].join('|');
+  const pl = {};
+  P.forEach(p => { pl['base_' + p.ciclo + '_' + p.tipo] = { ...p, esBase: true }; });
+  let n = 0;
+  for (let s = 0; s < 3; s++) P.forEach(p => { pl['pl_' + (n++)] = JSON.parse(JSON.stringify(p)); });
+  pl['pl_propia'] = { nombre: 'Autonomía Personal', ciclo: 'infantil', tipo: 'autonomia', objetivos: P[0].objetivos.slice(0, 8) };
+  const m = {};
+  Object.keys(pl).forEach(id => { const p = pl[id], f = firma(p); if (!m[f] || (p.esBase && !m[f].p.esBase)) m[f] = { id, p }; });
+  const unicas = Object.values(m);
+  const v = {}, sobran = [];
+  Object.keys(pl).filter(i => pl[i].esBase).forEach(i => v[firma(pl[i])] = true);
+  Object.keys(pl).filter(i => !pl[i].esBase).forEach(i => { const f = firma(pl[i]); if (v[f]) sobran.push(i); else v[f] = true; });
+  console.log('     Firebase sucio simulado: ' + Object.keys(pl).length + ' plantillas (45 base + 135 copias + 1 propia)');
+  t('Se muestran 46 (45 base + 1 propia real)', unicas.length === 46, unicas.length + ' únicas');
+  t('Se detectan las 135 copias', sobran.length === 135, sobran.length + ' a borrar');
+  t('Ninguna base marcada para borrar', !sobran.some(i => pl[i].esBase));
+  t('La plantilla propia real se conserva', unicas.some(x => x.id === 'pl_propia'));
+}
+
+
+// ═══════════ 14. CUADERNOS GEU ═══════════
+sec('14. Cuadernos GEU');
+t('Núcleo con modelo de ancla', /function geuNorm\(valor, primeraSesion\)/.test(h) && /ancla:/.test(h));
+t('geuActivos() normaliza', /function geuActivos\(a\)/.test(h));
+t('geuSesionesEntre cuenta [ancla, k)', /for\(let x = i; x < j; x\+\+\)/.test(h));
+t('geuProyectar aplica el ritmo', /item\.est\.ficha \+ n \* \(item\.est\.ritmo \|\| 1\)/.test(h));
+t('El avance reancla en la sesión actual', /const est = \{ ficha: f\.fichaEsperada, ancla: k, ritmo: f\.ritmo \|\| 1 \}/.test(h));
+t('geuCambiarFicha reancla', /const est=\{ficha:f, ancla:geuSesionHoy\(a\), ritmo:prev\.ritmo\|\|1\}/.test(h));
+t('Ya NO se guarda un número suelto', !/db\.ref\(PA\+'\/'\+alumId\+'\/geu\/'\+nivelId\)\.set\(f\)/.test(h));
+t('Encadena al siguiente cuaderno', /function geuProponerSiguiente/.test(h) && /function geuSiguienteNivel/.test(h));
+t('Avisa al completar la colección', /Colección completada/.test(h));
+t('Migración automática de datos antiguos', /function geuMigrarLegacy/.test(h) && /_geuMigrado/.test(h));
+t('Legacy se ancla a HOY, no al inicio de curso', /const hoy = geuSesionHoy\(a\);[\s\S]{0,200}geuNorm\(geu\[nv\.id\], hoy\)/.test(h));
+t('Nº de fichas editable por el usuario', /function geuEditarFichas/.test(h) && /ROOT\+'\/geuFichas\/'\+nivelId/.test(h));
+t('geuNumFichas() usa el valor real si existe', /function geuNumFichas\(nv\)/.test(h));
+t('Se marca cuáles son estimados', /function geuFichasEsEstimado/.test(h) && /≈ estimado/.test(h));
+t('geuFichas se sincroniza y cachea', /_refGeuFichas=db\.ref\(ROOT\+'\/geuFichas'\)/.test(h) && /cacheGuardar\('geuFichas'/.test(h));
+t('geuCambiarFicha tiene .catch()', /No se pudo guardar la ficha/.test(h));
+t('geuGuardarConfig tiene .catch()', /No se pudo guardar: '\+\(e\.message/.test(h));
+t('Ficha de inicio configurable al activar', /parseInt\(el\.dataset\.ini \|\| '1', 10\)/.test(h));
+const restos = (h.match(/nv\.fichas/g) || []).length;
+t('Sin lecturas directas de nv.fichas fuera del núcleo', restos <= 1, restos + ' ocurrencia(s) (1 = dentro de geuNumFichas)');
+
+// motor de avance: simulación
+(function(){
+  const NV = { fichas: 30 };
+  const ses = []; for (let i = 1; i <= 40; i++) ses.push('s' + i);
+  let aus = {};
+  const entre = (kD, kH) => { let i = ses.indexOf(kD), j = ses.indexOf(kH); if (j < 0) return null; if (i < 0) i = 0; if (j <= i) return 0; let n = 0; for (let x = i; x < j; x++) if (!aus[ses[x]]) n++; return n; };
+  const proy = (e, k) => { const n = entre(e.ancla, k); const b = e.ficha + n * (e.ritmo || 1); return { ficha: Math.min(b, NV.fichas), bruta: b, completado: b > NV.fichas }; };
+  let e = { ficha: 1, ancla: 's1', ritmo: 1 }, sinDeriva = true;
+  for (let i = 1; i <= 12; i++) { const k = 's' + i; const prop = Math.min(proy(e, k).bruta, 31); if (prop !== i) sinDeriva = false; e = { ficha: prop, ancla: k, ritmo: 1 }; }
+  t('Motor: sesión N → ficha N, sin deriva', sinDeriva, 's12 → ficha ' + e.ficha + ' (el motor viejo daba 29 en s8)');
+  aus = { s3: 1, s4: 1, s7: 1 }; e = { ficha: 1, ancla: 's1', ritmo: 1 };
+  let okAus = true;
+  for (let i = 1; i <= 10; i++) { let c = 0; for (let x = 1; x < i; x++) if (!aus['s' + x]) c++; if (proy(e, 's' + i).ficha !== 1 + c) okAus = false; }
+  t('Motor: las ausencias no consumen fichas', okAus);
+  aus = {}; e = { ficha: 20, ancla: 's20', ritmo: 1 };
+  t('Motor: sesión pasada correcta', proy(e, 's20').ficha === 20 && proy(e, 's25').ficha === 25);
+  e = { ficha: 1, ancla: 's1', ritmo: 2 };
+  t('Motor: ritmo 2 fichas/sesión', proy(e, 's5').ficha === 9, 's5 → ficha ' + proy(e, 's5').ficha);
+  e = { ficha: 29, ancla: 's1', ritmo: 1 };
+  t('Motor: detecta cuaderno completado', proy(e, 's3').completado);
+  const a1 = proy({ ficha: 7, ancla: 's10', ritmo: 1 }, 's15').bruta;
+  const a2 = proy({ ficha: a1, ancla: 's15', ritmo: 1 }, 's15').bruta;
+  t('Motor: idempotente al reanclar', a1 === a2, a1 + ' = ' + a2);
+})();
+
+// catálogo GEU
+const Gm = h.match(/const GEU_COLECCIONES = (\[[\s\S]*?\n        \];)/);
+if (Gm) {
+  const G = eval(Gm[1].replace(/;$/, ''));
+  t('2 colecciones', G.length === 2, G.map(c => c.nombre + ' (' + c.niveles.length + ')').join(', '));
+  const ids = G.flatMap(c => c.niveles.map(n => n.id));
+  t('IDs de nivel únicos', new Set(ids).size === ids.length, ids.length + ' niveles');
+  t('Todos los niveles tienen contenidos', G.every(c => c.niveles.every(n => n.contenidos && n.contenidos.length > 20)));
+  G.forEach(c => {
+    const v = [...new Set(c.niveles.map(n => n.fichas))];
+    if (v.length === 1) wa('Fichas uniformes en ' + c.nombre, 'todos los niveles con ' + v[0] + ' → estimación, editable en la app');
+    else ok('Fichas variadas en ' + c.nombre, v.join(', '));
+  });
+  const sinInf = G.filter(c => !c.niveles.some(n => n.curso === 'Infantil'));
+  if (sinInf.length) wa('Colecciones sin nivel de Infantil', sinInf.map(c => c.nombre).join(', '));
+  else ok('Todas las colecciones cubren Infantil');
 }
 
 // ═══════════ RESUMEN ═══════════
