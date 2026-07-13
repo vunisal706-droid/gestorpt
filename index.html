@@ -1347,6 +1347,9 @@
         function setCursoPaths(){const b=ROOT+'/cursos/'+CURSO;PA=b+'/alumnos';PG=b+'/grupos';PACI=b+'/aci';}
         setCursoPaths();
         let alumnos={},plantillas={},alumnoActual=null,mesActual=0,diasSel=[1,3,4],celdaEditando=null,docExtraido=null,docExtraidoPlantilla=null,estadoCelda='asiste',resultadoCelda=null,evalTrim=1,charts={},informeData=null,recursos={},recursosFavoritos=[],tabRecursosActual='todos';
+        // Nº real de fichas por cuaderno GEU. Se declara AQUÍ, antes del arranque
+        // automático (que llama a iniciarDatosPerfil), o daría ReferenceError por TDZ.
+        let geuFichasCustom={}, _refGeuFichas=null, _geuMigrado=false;
 
         // ═══════════════════════════════════════════════════════════════════
         // MODO SIN CONEXIÓN
@@ -2293,7 +2296,6 @@
             if(alumnoActual&&alumnos[alumnoActual]){renderProgs();renderProg();renderEval();renderAsis();}
             if(document.getElementById('seccionACI').style.display!=='none')renderAciSeccion();
         }
-        let _geuMigrado=false;
         function _handlerAlumnos(snap){
             aplicarAlumnos(snap.val()||{});
             cacheGuardar('alumnos',alumnos,true);   // espejo local
@@ -2343,7 +2345,6 @@
             });
             cursoInit();
         }
-        let _refGeuFichas=null;
 
         // Guarda el nº real de fichas de un cuaderno (lo introduce el usuario).
         async function geuEditarFichas(nivelId){
@@ -3257,7 +3258,9 @@
 
         // Nº de fichas de un nivel. Editable por el usuario (geuFichas en Firebase);
         // si no lo ha tocado, se usa la estimación del catálogo.
-        let geuFichasCustom = {};
+        // (geuFichasCustom se declara arriba, junto al resto de globales: si se
+        //  declarara aquí con `let`, el arranque automático la tocaría dentro de
+        //  su Temporal Dead Zone y reventaría toda la carga inicial.)
         function geuNumFichas(nv){
             const c = geuFichasCustom[nv.id];
             return (typeof c === 'number' && c > 0) ? c : nv.fichas;

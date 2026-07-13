@@ -536,6 +536,27 @@ t('geuToggleNivel muestra/oculta la config', /_cfg\.style\.display = 'none'/.tes
   t('Ancla NO cae en la última sesión del curso', oct !== todas[todas.length-1]);
 })();
 
+
+// ═══════════ 16. ARRANQUE (Temporal Dead Zone) ═══════════
+sec('16. Arranque en frío');
+try {
+  const out = require('child_process').execSync('node boot.js ' + FILE, { stdio: 'pipe', encoding: 'utf8' });
+  const lineas = out.split('\n').filter(l => l.includes('✅') || l.includes('❌') || l.includes('⚠️'));
+  lineas.forEach(l => { const txt = l.replace(/^\s*[✅❌⚠️]+\s*/, '').trim(); l.includes('❌') ? ko(txt) : (l.includes('⚠️') ? wa(txt) : ok(txt)); });
+} catch (e) {
+  const s = String(e.stdout || '') + String(e.stderr || '');
+  const m = /TEMPORAL DEAD ZONE: se usa `(\w+)`/.exec(s);
+  ko('El arranque en frío no revienta', m ? 'TDZ con `' + m[1] + '`' : s.slice(0, 200));
+}
+t('geuFichasCustom declarada antes del arranque',
+  h.indexOf('let geuFichasCustom') > -1 &&
+  h.indexOf('let geuFichasCustom') < h.indexOf("const guardado=localStorage.getItem('gestorpe_perfil')"),
+  'en las globales, antes de la IIFE de arranque');
+['geuFichasCustom', '_refGeuFichas', '_geuMigrado'].forEach(v => {
+  const decls = (h.match(new RegExp('(?:let|const|var)[^;\\n]*\\b' + v + '\\b\\s*=', 'g')) || []).length;
+  t('Una sola declaración de ' + v, decls === 1, decls + ' declaración(es)');
+});
+
 // ═══════════ RESUMEN ═══════════
 console.log('\n' + '═'.repeat(66));
 console.log('  ' + PASS + ' OK   ·   ' + FAIL + ' FALLOS   ·   ' + WARN + ' AVISOS');
