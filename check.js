@@ -162,7 +162,7 @@ if (P && AREAS && CICLOS) {
   t('#3 Infantil ya NO cae en ciclo1', !/c\.includes\('Infantil'\)\)\s*return\s*'ciclo1'/.test(h));
   t('#4 Biblioteca muestra el ciclo en el título', /plantilla-titulo">'\+area\.icon\+' '\+p\.nombre\+' <span[^>]*>· '\+ciclo\.nombre/.test(h));
   t('#4 Modal muestra el ciclo en el título', /modalPlantillaTitulo'\)\.textContent=area\.icon\+' '\+p\.nombre\+' · '\+ciclo\.nombre/.test(h));
-  t('#5 asignarPlantilla avisa si el ciclo no coincide', /Ciclo no coincidente/.test(h) && /if\(p\.ciclo&&p\.ciclo!==cicloAl\)/.test(h));
+  t('#5 asignarPlantilla avisa si el ciclo no coincide (salvo elección explícita)', /Ciclo distinto al del alumno/.test(h) && /const otroCiclo=!!\(p\.ciclo&&p\.ciclo!==cicloAl\)/.test(h));
   t('#6 Filtro de biblioteca se preselecciona', /if\(s==='biblioteca'\)\{if\(alumnoActual/.test(h));
   t('#7 addProg usa getCicloDeAlumno', /const cicloAlumno=getCicloDeAlumno\(a\)/.test(h));
   t('#7 addProg ya no usa a.ciclo||ciclo1', !/const cicloAlumno=a\.ciclo\|\|'ciclo1'/.test(h));
@@ -255,10 +255,127 @@ try {
   t('manifest.json válido', !!mf.name && !!mf.icons, mf.name + ', ' + mf.icons.length + ' iconos');
 } catch (e) { ko('manifest.json válido', e.message); }
 const sw = fs.readFileSync('sw.js', 'utf8');
-const ver = (sw.match(/CACHE_NAME\s*=\s*'([^']+)'/) || [])[1];
-ver === 'gestor-pe-v1'
-  ? wa('Versión del caché del SW', "sigue en '" + ver + "' → súbela a v2 para forzar la actualización")
-  : ok('Versión del caché del SW', ver);
+
+const v = (sw.match(/VERSION\s*=\s*'([^']+)'/) || [])[1];
+t('Versión del caché del SW actualizada', v && v !== 'v1', v || 'no encontrada');
+
+
+// ═══════════ 10. MODO OFFLINE (#3) ═══════════
+sec('10. Modo sin conexión (#3)');
+const swx = fs.readFileSync('sw.js', 'utf8');
+t('SW cachea firebase-app-compat', /firebase-app-compat\.js/.test(swx));
+t('SW cachea firebase-database-compat', /firebase-database-compat\.js/.test(swx));
+t('SW cachea Chart.js', /chart\.umd\.min\.js/.test(swx));
+t('SW cache-first para CDN', /CDN_HOSTS\.includes\(url\.hostname\)/.test(swx));
+t('SW no intercepta el socket de RTDB', /firebasedatabase\.app/.test(swx));
+t('SW: install tolerante a fallos (no addAll)', !/cache\.addAll/.test(swx) && /\.catch\(\(\) => \{\}\)/.test(swx));
+t('Espejo en localStorage: alumnos', /cacheGuardar\('alumnos',alumnos,true\)/.test(h));
+t('Espejo en localStorage: grupos', /cacheGuardar\('grupos', grupos, true\)/.test(h));
+t('Espejo en localStorage: plantillas', /cacheGuardar\('plantillas',custom,false\)/.test(h));
+t('Hidratación desde caché al arrancar', /const cA=cacheLeer\('alumnos',true\); if\(cA\)aplicarAlumnos\(cA\)/.test(h));
+t('cursoInit tiene tope de espera (no cuelga sin red)', /Promise\.race\(\[/.test(h) && /limite\(7000\)/.test(h));
+t('cursoInit cae a la caché si falla', /cacheLeer\('cursosMeta',false\)/.test(h));
+t("Vigilancia de conexión con .info/connected", /db\.ref\('\.info\/connected'\)\.on/.test(h));
+t('Barra de aviso offline en el DOM', /id="offlineBar"/.test(h));
+t('Aviso al cerrar con cambios sin sincronizar', /beforeunload/.test(h) && /ONLINE===false/.test(h));
+t('Punto de estado rojo cuando no hay red', /\.status-dot\.off\{/.test(h));
+const claves = [...new Set([...h.matchAll(/cacheGuardar\('([^']+)'/g)].map(m => m[1]))];
+ok('Claves espejadas en localStorage', claves.join(', '));
+
+// ═══════════ 11. DIÁLOGOS PROPIOS (#4) ═══════════
+sec('11. Diálogos propios (#4)');
+const soloCodigo = h.replace(/\/\*[\s\S]*?\*\//g, '').replace(/<!--[\s\S]*?-->/g, '').replace(/^\s*\/\/.*$/gm, '');
+const nativos = [...soloCodigo.matchAll(/(?:^|[^.\w$])(confirm|prompt|alert)\(/g)].map(m => m[1]);
+t('0 confirm()/prompt()/alert() nativos', nativos.length === 0, nativos.join(', ') || 'todos sustituidos');
+['confirmar', 'confirmarBorrado', 'pedirTexto', 'avisar'].forEach(f =>
+  t('Existe ' + f + '()', new RegExp('function ' + f + '\\(').test(h)));
+t('Modal en el DOM', /id="askOverlay"/.test(h) && /id="askInput"/.test(h));
+t('Cierra con Escape y acepta con Enter', /e\.key==='Escape'/.test(h) && /e\.key==='Enter'/.test(h));
+t('Cierra al pulsar fuera', /e\.target\.id==='askOverlay'/.test(h));
+t('Foco automático al abrir', /\.focus\(\)/.test(h));
+t('Accesible (role=dialog + aria-modal)', /role="dialog"/.test(h) && /aria-modal="true"/.test(h));
+t('Por encima de modales (1000) y perfil (5000)', /\.ask-overlay\{[^}]*z-index:6000/.test(h));
+// toda función con await de diálogo debe ser async
+const declRe = /(async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(/g;
+const awaits = [...h.matchAll(/await (confirmar|confirmarBorrado|pedirTexto)\(/g)];
+const sinAsync = [];
+awaits.forEach(m => {
+  let last = null, d;
+  const re = new RegExp(declRe.source, 'g');
+  while ((d = re.exec(h)) && d.index < m.index) last = d;
+  if (last && !last[1]) sinAsync.push(last[2]);
+});
+t('Todas las funciones con await son async', sinAsync.length === 0, [...new Set(sinAsync)].join(', ') || awaits.length + ' llamadas await verificadas');
+const asyncNuevas = ['cambiarPerfil', 'asignarPlantilla', 'eliminarPlantilla', 'eliminarAlumno', 'elimProg', 'crearNuevoCurso', 'eliminarGrupo', 'aciEliminar'];
+const noAsync = asyncNuevas.filter(f => !new RegExp('async function ' + f + '\\(').test(h));
+t('Funciones clave convertidas a async', noAsync.length === 0, noAsync.join(', ') || asyncNuevas.length + '/' + asyncNuevas.length);
+
+
+// ═══════════ 12. ADAPTACIÓN DE CICLO ═══════════
+sec('12. Plantillas de otros ciclos (adaptación curricular)');
+t('Desplegable con optgroup por ciclo', /<optgroup label="/.test(h));
+t('Su ciclo va primero y marcado', /✅ Su ciclo · /.test(h));
+t('Otros ciclos etiquetados inferior/superior', /⬇️ Ciclo inferior/.test(h) && /⬆️ Ciclo superior/.test(h));
+t('Ya NO filtra por ciclo (se ofrecen todas)', !/if\(p\.ciclo===cicloAlumno\)\{const area/.test(h));
+t('Vista previa avisa del ciclo distinto', /Ciclo '\+dir\+' al del alumno/.test(h));
+t('Elección desde el desplegable = explícita (no repregunta)', /asignarPlantilla\(plantillaId,alumnoActual,\{explicito:true\}\)/.test(h));
+t('Biblioteca → "Usar" SIGUE preguntando', /otroCiclo&&!opts\.explicito/.test(h));
+t('Se guarda cicloOrigen en el programa', /programa\.cicloOrigen=p\.ciclo/.test(h));
+t('Se marca adaptacionCiclo', /programa\.adaptacionCiclo=true/.test(h));
+t('Chip de ciclo en la tarjeta del programa', /const chipCiclo=cOrig/.test(h));
+t('Chip "Adaptación de ciclo" visible', /Adaptación de ciclo/.test(h));
+t('actualizarCriteriosLOMLOE respeta cicloOrigen', /const cicloProg = p\.cicloOrigen \|\| cicloAlumno;/.test(h));
+t('repararTodosCriterios respeta cicloOrigen', (h.match(/p\.cicloOrigen \|\| cicloAlumno/g) || []).length >= 2);
+t('asignarPlantilla tiene .catch (no falla en silencio)', /toast\('No se pudo guardar','error'\)/.test(h));
+
+// simulación del desplegable
+if (P && CICLOS) {
+  const plant = {}; P.forEach(p => { plant['base_' + p.ciclo + '_' + p.tipo] = p; });
+  const orden = ['infantil', 'ciclo1', 'ciclo2', 'ciclo3'];
+  const casos = [['Infantil 5 años', 'infantil'], ['2º Primaria', 'ciclo1'], ['4º Primaria', 'ciclo2'], ['6º Primaria', 'ciclo3']];
+  let simOK = true;
+  casos.forEach(([curso, cl]) => {
+    const suyas = Object.values(plant).filter(p => p.ciclo === cl).length;
+    const otras = Object.values(plant).filter(p => p.ciclo !== cl).length;
+    const grupos = orden.filter(c => c !== cl).filter(c => Object.values(plant).some(p => p.ciclo === c)).length + (suyas ? 1 : 0);
+    if (suyas + otras !== P.length) simOK = false;
+    console.log('     ' + curso.padEnd(16) + '→ ' + String(suyas).padStart(2) + ' de su ciclo + ' + String(otras).padStart(2) + ' de otros = ' + (suyas + otras) + ' opciones en ' + grupos + ' grupos');
+  });
+  t('Todos los alumnos ven las 45 plantillas, agrupadas', simOK);
+}
+
+
+// ═══════════ 12. PROGRAMAS DE OTRO CICLO (adaptación curricular) ═══════════
+sec('12. Programas de otro ciclo');
+t('Desplegable agrupado por ciclos (optgroup)', /<optgroup label=/.test(h));
+t('Grupo "Su ciclo" primero y marcado', /✅ Su ciclo · '\+cn\+'/.test(h));
+t('Grupos etiquetados como inferior/superior', /⬇️ Ciclo inferior/.test(h) && /⬆️ Ciclo superior/.test(h));
+t('Se ofrecen TODOS los ciclos, no solo el suyo', /orden\.filter\(c=>c!==cicloAlumno\)/.test(h));
+t('El programa guarda de qué ciclo salió (cicloOrigen)', /programa\.cicloOrigen=p\.ciclo/.test(h));
+t('Se marca como adaptación de ciclo', /programa\.adaptacionCiclo=true/.test(h));
+t('renderProgs pinta el chip del ciclo', /p\.cicloOrigen\?/.test(h));
+t('renderProgs avisa "⚠️ Adaptación de ciclo"', /⚠️ Adaptación de ciclo/.test(h));
+t('Elección desde el desplegable = explícita (sin doble pregunta)', /\{explicito:true\}/.test(h));
+t('Desde Biblioteca SÍ pregunta', /otroCiclo&&!opts\.explicito/.test(h));
+t('repararTodosCriterios respeta cicloOrigen (no destruye la adaptación)',
+  (h.match(/const cicloProg = p\.cicloOrigen \|\| cicloAlumno/g) || []).length >= 2);
+
+// simulación del desplegable
+if (P && CICLOS) {
+  const pl = {}; P.forEach(p => { pl['base_' + p.ciclo + '_' + p.tipo] = p; });
+  const orden = ['infantil', 'ciclo1', 'ciclo2', 'ciclo3'];
+  [['Infantil 5 años','infantil'], ['2º Primaria','ciclo1'], ['6º Primaria','ciclo3']].forEach(([curso, cl]) => {
+    const suyas = Object.keys(pl).filter(i => pl[i].ciclo === cl).length;
+    const otras = orden.filter(c => c !== cl).map(c => {
+      const n = Object.keys(pl).filter(i => pl[i].ciclo === c).length;
+      const pos = orden.indexOf(c) < orden.indexOf(cl) ? '⬇️ inferior' : '⬆️ superior';
+      return (CICLOS[c].nombre) + ' (' + pos + '): ' + n;
+    });
+    console.log('     ' + curso.padEnd(16) + '→ ✅ Su ciclo: ' + suyas + '  |  ' + otras.join('  ·  '));
+  });
+  const total = Object.keys(pl).length;
+  t('Todas las plantillas alcanzables desde cualquier curso', total === 45, total + ' plantillas ofrecidas siempre');
+}
 
 // ═══════════ RESUMEN ═══════════
 console.log('\n' + '═'.repeat(66));

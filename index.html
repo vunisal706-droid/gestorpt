@@ -36,6 +36,21 @@
         .status{display:flex;align-items:center;gap:5px;font-size:.7rem;background:rgba(255,255,255,.2);padding:4px 10px;border-radius:20px}
         .status-dot{width:8px;height:8px;border-radius:50%;background:var(--warning)}
         .status-dot.ok{background:var(--success)}
+        .status-dot.off{background:var(--danger);animation:pulseOff 1.6s ease-in-out infinite}
+        @keyframes pulseOff{0%,100%{opacity:1}50%{opacity:.35}}
+        /* Aviso persistente de trabajo sin conexión */
+        #offlineBar{display:none;position:sticky;top:0;z-index:900;background:#fef3c7;color:#78350f;border-bottom:1px solid #fcd34d;padding:10px 16px;font-size:.82rem;line-height:1.35;text-align:center}
+        #offlineBar strong{font-weight:700}
+        /* Modal de confirmación propio (sustituye a confirm()/prompt()/alert()) */
+        .ask-overlay{display:none;position:fixed;inset:0;z-index:6000;background:rgba(26,42,36,.45);align-items:center;justify-content:center;padding:20px}
+        .ask-overlay.show{display:flex}
+        .ask-box{background:var(--bg-card);border-radius:var(--radius);box-shadow:0 20px 60px rgba(0,0,0,.25);max-width:440px;width:100%;padding:22px;animation:askIn .18s ease-out}
+        @keyframes askIn{from{opacity:0;transform:translateY(12px) scale(.97)}to{opacity:1;transform:none}}
+        .ask-title{font-weight:700;font-size:1rem;color:var(--text);margin-bottom:8px;display:flex;gap:8px;align-items:center}
+        .ask-msg{font-size:.88rem;color:var(--text-light);line-height:1.5;white-space:pre-line;margin-bottom:16px}
+        .ask-input{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:.9rem;font-family:inherit;margin-bottom:16px;background:#fff;color:var(--text)}
+        .ask-input:focus{outline:none;border-color:var(--primary-light)}
+        .ask-actions{display:flex;gap:8px;justify-content:flex-end}
         .container{max-width:1200px;margin:0 auto;padding:14px}
         .screen{display:none}.screen.active{display:block}
         .perfil-overlay{position:fixed;inset:0;z-index:5000;background:linear-gradient(135deg,var(--primary),var(--primary-dark));display:none;align-items:center;justify-content:center;padding:20px}
@@ -329,6 +344,10 @@
             </div>
         </div>
     </header>
+    <div id="offlineBar">
+        📴 <strong>Sin conexión.</strong> Estás viendo los últimos datos guardados en este dispositivo.
+        Los cambios que hagas se enviarán al recuperar la red — <strong>no cierres la app hasta entonces</strong>.
+    </div>
 
     <div id="screenInicio" class="screen active">
         <div class="container">
@@ -1237,6 +1256,16 @@
 
     <div class="toast" id="toast"></div>
 
+    <!-- Modal de confirmación / entrada de texto (sustituye a confirm(), prompt() y alert()) -->
+    <div class="ask-overlay" id="askOverlay">
+        <div class="ask-box" role="dialog" aria-modal="true" aria-labelledby="askTitle">
+            <div class="ask-title" id="askTitle"></div>
+            <div class="ask-msg" id="askMsg"></div>
+            <input type="text" class="ask-input" id="askInput" style="display:none" autocomplete="off">
+            <div class="ask-actions" id="askActions"></div>
+        </div>
+    </div>
+
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     <script>
@@ -1305,8 +1334,8 @@
             if(sp)sp.style.display='none';
             iniciarDatosPerfil();
         }
-        function cambiarPerfil(){
-            if(!confirm('¿Cambiar de perfil? Se recargará la aplicación y volverás a elegir quién eres.'))return;
+        async function cambiarPerfil(){
+            if(!await confirmar('Se recargará la aplicación y volverás a elegir quién eres.',{titulo:'¿Cambiar de perfil?',ok:'Cambiar'}))return;
             localStorage.removeItem('gestorpe_perfil');
             location.reload();
         }
@@ -1317,6 +1346,126 @@
         function setCursoPaths(){const b=ROOT+'/cursos/'+CURSO;PA=b+'/alumnos';PG=b+'/grupos';PACI=b+'/aci';}
         setCursoPaths();
         let alumnos={},plantillas={},alumnoActual=null,mesActual=0,diasSel=[1,3,4],celdaEditando=null,docExtraido=null,docExtraidoPlantilla=null,estadoCelda='asiste',resultadoCelda=null,evalTrim=1,charts={},informeData=null,recursos={},recursosFavoritos=[],tabRecursosActual='todos';
+
+        // ═══════════════════════════════════════════════════════════════════
+        // MODO SIN CONEXIÓN
+        // Realtime Database no tiene persistencia offline en web: si abres la
+        // app sin red, te quedas sin datos. Espejamos cada snapshot en
+        // localStorage para poder hidratar la interfaz al arrancar.
+        // ═══════════════════════════════════════════════════════════════════
+        let ONLINE=null;                       // null = aún no sabemos
+        const LS='gestorpe_cache_';
+        function _k(n,porCurso){return LS+ROOT+(porCurso?'_'+CURSO:'')+'_'+n;}
+        function cacheGuardar(n,data,porCurso){
+            try{localStorage.setItem(_k(n,porCurso),JSON.stringify(data));}
+            catch(e){/* cuota llena: no es crítico, seguimos */}
+        }
+        function cacheLeer(n,porCurso){
+            try{const r=localStorage.getItem(_k(n,porCurso));return r?JSON.parse(r):null;}
+            catch(e){return null;}
+        }
+        function pintarEstadoConexion(){
+            const dot=document.getElementById('statusDot');
+            const txt=document.getElementById('statusText');
+            const bar=document.getElementById('offlineBar');
+            if(!dot||!txt||!bar)return;
+            if(ONLINE===true){
+                dot.classList.add('ok');dot.classList.remove('off');
+                txt.textContent='Conectado';
+                bar.style.display='none';
+            }else if(ONLINE===false){
+                dot.classList.remove('ok');dot.classList.add('off');
+                txt.textContent='Sin conexión';
+                bar.style.display='block';
+            }else{
+                dot.classList.remove('ok','off');
+                txt.textContent='Conectando...';
+                bar.style.display='none';
+            }
+        }
+        function vigilarConexion(){
+            db.ref('.info/connected').on('value',s=>{
+                const antes=ONLINE;
+                ONLINE=(s.val()===true);
+                pintarEstadoConexion();
+                if(antes===false&&ONLINE===true)toast('Conexión recuperada, sincronizando…','success');
+                if(antes===true&&ONLINE===false)toast('Sin conexión: trabajando en local','error');
+            });
+        }
+        // Si el usuario cierra la app estando offline, los cambios pendientes
+        // que Realtime Database tiene en memoria se pierden. Avisamos.
+        window.addEventListener('beforeunload',e=>{
+            if(ONLINE===false){e.preventDefault();e.returnValue='';}
+        });
+
+        // ═══════════════════════════════════════════════════════════════════
+        // DIÁLOGOS PROPIOS  (sustituyen a confirm(), prompt() y alert())
+        // Los nativos bloquean el hilo, se ven fatal en la PWA instalada y en
+        // iOS standalone a veces ni aparecen.
+        // ═══════════════════════════════════════════════════════════════════
+        let _askResolve=null;
+        function _askCerrar(valor){
+            const ov=document.getElementById('askOverlay');
+            ov.classList.remove('show');
+            document.removeEventListener('keydown',_askTecla);
+            const r=_askResolve;_askResolve=null;
+            if(r)r(valor);
+        }
+        function _askTecla(e){
+            if(e.key==='Escape'){e.preventDefault();_askCerrar(_askEsInput?null:false);}
+            if(e.key==='Enter'&&_askEsInput){e.preventDefault();_askAceptar();}
+        }
+        let _askEsInput=false;
+        function _askAceptar(){
+            if(_askEsInput){
+                const v=document.getElementById('askInput').value.trim();
+                _askCerrar(v||null);
+            }else _askCerrar(true);
+        }
+        function _askAbrir({titulo,mensaje,ok,cancelar,peligro,input,valor,soloOk}){
+            return new Promise(res=>{
+                _askResolve=res;
+                _askEsInput=!!input;
+                document.getElementById('askTitle').textContent=titulo||'Confirmar';
+                document.getElementById('askMsg').textContent=mensaje||'';
+                document.getElementById('askMsg').style.display=mensaje?'block':'none';
+                const inp=document.getElementById('askInput');
+                inp.style.display=input?'block':'none';
+                inp.value=valor||'';
+                const acts=document.getElementById('askActions');
+                acts.innerHTML=(soloOk?'':'<button class="btn btn-secondary" id="askBtnNo"></button>')+
+                               '<button class="btn '+(peligro?'btn-danger':'btn-primary')+'" id="askBtnSi"></button>';
+                if(!soloOk)document.getElementById('askBtnNo').textContent=cancelar||'Cancelar';
+                document.getElementById('askBtnSi').textContent=ok||'Aceptar';
+                document.getElementById('askBtnSi').onclick=_askAceptar;
+                if(!soloOk)document.getElementById('askBtnNo').onclick=()=>_askCerrar(input?null:false);
+                document.getElementById('askOverlay').classList.add('show');
+                document.addEventListener('keydown',_askTecla);
+                setTimeout(()=>{ (input?inp:document.getElementById('askBtnSi')).focus(); },60);
+            });
+        }
+        // API pública — todas devuelven Promesa, se usan con await
+        function confirmar(mensaje,opts){
+            opts=opts||{};
+            return _askAbrir({titulo:opts.titulo||'¿Confirmas?',mensaje:mensaje,
+                ok:opts.ok||'Sí, continuar',cancelar:opts.cancelar||'Cancelar',peligro:opts.peligro});
+        }
+        function confirmarBorrado(mensaje,opts){
+            opts=opts||{};
+            return _askAbrir({titulo:opts.titulo||'⚠️ Eliminar',mensaje:mensaje,
+                ok:opts.ok||'Eliminar',cancelar:'Cancelar',peligro:true});
+        }
+        function pedirTexto(mensaje,valor,opts){
+            opts=opts||{};
+            return _askAbrir({titulo:opts.titulo||'Escribe un valor',mensaje:mensaje,
+                ok:opts.ok||'Guardar',cancelar:'Cancelar',input:true,valor:valor});
+        }
+        function avisar(mensaje,titulo){
+            return _askAbrir({titulo:titulo||'Aviso',mensaje:mensaje,ok:'Entendido',soloOk:true});
+        }
+        document.addEventListener('click',e=>{
+            if(e.target&&e.target.id==='askOverlay')_askCerrar(_askEsInput?null:false);
+        });
         
         const CICLOS={infantil:{nombre:'Infantil',icon:'💒'},ciclo1:{nombre:'1º Ciclo',icon:'🔵'},ciclo2:{nombre:'2º Ciclo',icon:'🟢'},ciclo3:{nombre:'3º Ciclo',icon:'🟠'}};
         const AREAS={psicomotor:{nombre:'Desarrollo Psicomotor',short:'Psicomotor',icon:'🏃',color:'#8b5cf6'},motor:{nombre:'Desarrollo Motor',short:'D. Motor',icon:'✋',color:'#06b6d4'},comunicativo:{nombre:'Desarrollo Comunicativo',short:'D. Comunicat.',icon:'💬',color:'#10b981'},cognitivo:{nombre:'Desarrollo Cognitivo',short:'D. Cognitivo',icon:'🧠',color:'#3b82f6'},social:{nombre:'Desarrollo Social-Emocional',short:'D. Social-Em.',icon:'❤️',color:'#ec4899'},autonomia:{nombre:'Autonomía Personal',short:'Autonomía',icon:'🎯',color:'#f59e0b'},lectoescritura:{nombre:'Lectoescritura',short:'Lectoescrit.',icon:'📖',color:'#6366f1'},tdah:{nombre:'TDAH',short:'TDAH',icon:'⚡',color:'#f97316'},dislexia:{nombre:'Dislexia (PT)',short:'Dislexia',icon:'📘',color:'#0d9488'},discalculia:{nombre:'Discalculia (PT)',short:'Discalculia',icon:'🔢',color:'#7c3aed'},tea:{nombre:'TEA (PT)',short:'TEA',icon:'🧩',color:'#0891b2'},tel:{nombre:'TEL / Disfasia (PT)',short:'TEL/Disfasia',icon:'💭',color:'#059669'},di:{nombre:'Discapacidad Intelectual (PT)',short:'Dis. Intelectual',icon:'🌱',color:'#b45309'}};
@@ -2134,30 +2283,51 @@
         
         // Firebase listeners
         let _refAlumnos=null,_refGrupos=null;
-        function _handlerAlumnos(snap){alumnos=snap.val()||{};// Extract ACI sub-data
-        aciData={};Object.keys(alumnos).forEach(id=>{if(alumnos[id].aci)aciData[id]=alumnos[id].aci;});renderInicio();if(alumnoActual&&alumnos[alumnoActual]){renderProgs();renderProg();renderEval();renderAsis();}document.getElementById('statusDot').classList.add('ok');document.getElementById('statusText').textContent='Conectado';if(document.getElementById('seccionACI').style.display!=='none')renderAciSeccion();}
+        // Aplica un conjunto de alumnos a la interfaz. Se usa tanto con datos
+        // frescos de Firebase como con la copia en caché al arrancar sin red.
+        function aplicarAlumnos(data){
+            alumnos=data||{};
+            aciData={};Object.keys(alumnos).forEach(id=>{if(alumnos[id].aci)aciData[id]=alumnos[id].aci;});
+            renderInicio();
+            if(alumnoActual&&alumnos[alumnoActual]){renderProgs();renderProg();renderEval();renderAsis();}
+            if(document.getElementById('seccionACI').style.display!=='none')renderAciSeccion();
+        }
+        function _handlerAlumnos(snap){
+            aplicarAlumnos(snap.val()||{});
+            cacheGuardar('alumnos',alumnos,true);   // espejo local
+        }
         function attachCursoListeners(){
             if(_refAlumnos)_refAlumnos.off();
             if(_refGrupos)_refGrupos.off();
+            // 1) Pintar YA lo que haya en caché (la app es usable al instante,
+            //    incluso sin red). Firebase lo sobrescribirá al conectar.
+            const cA=cacheLeer('alumnos',true); if(cA)aplicarAlumnos(cA);
+            const cG=cacheLeer('grupos',true);  if(cG&&typeof _handlerGruposLocal==='function')_handlerGruposLocal(cG);
+            // 2) Escuchar Firebase.
             _refAlumnos=db.ref(PA);_refAlumnos.on('value',_handlerAlumnos);
             _refGrupos=db.ref(PG);_refGrupos.on('value',_handlerGrupos);
         }
         let _refPlantillas=null;
+        // Reconstruye el catálogo: primero las base, luego las personalizadas.
+        function aplicarPlantillas(custom){
+            plantillas={};
+            PLANTILLAS_BASE.forEach(p=>{plantillas['base_'+p.ciclo+'_'+p.tipo]={...p,esBase:true};});
+            Object.keys(custom||{}).forEach(id=>{
+                if(id.indexOf('base_')===0)return; // no permitir pisar las base
+                plantillas[id]=custom[id];
+            });
+            renderBiblioteca();
+        }
         function iniciarDatosPerfil(){
             // Se llama una vez sabemos qué perfil (ROOT) está activo.
+            vigilarConexion();
+            aplicarPlantillas(cacheLeer('plantillas',false)||{}); // pintar ya, con o sin red
             if(_refPlantillas)_refPlantillas.off();
             _refPlantillas=db.ref(ROOT+'/plantillas');
             _refPlantillas.on('value',snap=>{
-                const customPlantillas=snap.val()||{};
-                // Reconstruir el catálogo: primero las base, luego las personalizadas.
-                // (Antes se hacía merge y una plantilla borrada seguía en memoria.)
-                plantillas={};
-                PLANTILLAS_BASE.forEach(p=>{plantillas['base_'+p.ciclo+'_'+p.tipo]={...p,esBase:true};});
-                Object.keys(customPlantillas).forEach(id=>{
-                    if(id.indexOf('base_')===0)return; // no permitir pisar las base
-                    plantillas[id]=customPlantillas[id];
-                });
-                renderBiblioteca();
+                const custom=snap.val()||{};
+                aplicarPlantillas(custom);
+                cacheGuardar('plantillas',custom,false);   // espejo local
             });
             cursoInit();
         }
@@ -2167,10 +2337,17 @@
 
         // ─── GESTIÓN DE CURSOS ACADÉMICOS ───────────────────────────────
         async function cursoInit(){
+            // once('value') sin red se queda esperando PARA SIEMPRE: la app no
+            // llegaba nunca a attachCursoListeners() y se quedaba en blanco.
+            // Le ponemos un tope de espera y caemos a la última config conocida.
+            const limite=ms=>new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),ms));
             try{
-                const [cfgSnap,metaSnap]=await Promise.all([
-                    db.ref(ROOT+'/config/cursoActivo').once('value'),
-                    db.ref(ROOT+'/cursos/_meta').once('value')
+                const [cfgSnap,metaSnap]=await Promise.race([
+                    Promise.all([
+                        db.ref(ROOT+'/config/cursoActivo').once('value'),
+                        db.ref(ROOT+'/cursos/_meta').once('value')
+                    ]),
+                    limite(7000)
                 ]);
                 cursosMeta=metaSnap.val()||{};
                 // Si aún no existe ningún curso, migrar los datos actuales al curso 2025/26
@@ -2182,10 +2359,15 @@
                 let activo=cfgSnap.val();
                 if(!activo||!cursosMeta[activo]) activo=Object.keys(cursosMeta).sort().pop();
                 CURSO=activo; setCursoPaths();
+                cacheGuardar('cursosMeta',cursosMeta,false);
+                cacheGuardar('cursoActivo',CURSO,false);
             }catch(e){
-                console.error('cursoInit',e);
-                CURSO='2025-26'; setCursoPaths();
-                cursosMeta={'2025-26':{nombre:'2025/26'}};
+                // Sin conexión: reconstruimos desde la caché local en vez de rendirnos.
+                console.warn('cursoInit sin conexión → usando caché',e);
+                const cm=cacheLeer('cursosMeta',false), cc=cacheLeer('cursoActivo',false);
+                cursosMeta=(cm&&Object.keys(cm).length)?cm:{'2025-26':{nombre:'2025/26'}};
+                CURSO=(cc&&cursosMeta[cc])?cc:Object.keys(cursosMeta).sort().pop();
+                setCursoPaths();
             }
             renderCursoSelector();
             attachCursoListeners();
@@ -2247,9 +2429,9 @@
             return {id:a+'-'+String(b).padStart(2,'0'),nombre:a+'/'+String(b).padStart(2,'0')};
         }
 
-        function crearNuevoCurso(){
+        async function crearNuevoCurso(){
             const sug=sugerirSiguienteCurso();
-            const nombre=prompt('Nombre del nuevo curso académico\n(los alumnos, grupos y ACIs empezarán vacíos; tu biblioteca de plantillas se mantiene):',sug.nombre);
+            const nombre=await pedirTexto('Los alumnos, grupos y ACIs empezarán vacíos. Tu biblioteca de plantillas se mantiene.',sug.nombre,{titulo:'Nuevo curso académico',ok:'Crear curso'});
             if(nombre===null)return;
             const nom=nombre.trim(); if(!nom){toast('Nombre vacío','error');return;}
             const id=nom.replace(/\//g,'-').replace(/[.#$\[\]]/g,'').trim();
@@ -2288,16 +2470,35 @@
         
         function asignarPlantillaAlumno(pid){const aid=document.getElementById('selAlumnoPlantilla').value;cerrarModal('modalPlantilla');asignarPlantilla(pid,aid);}
         
-        function asignarPlantilla(pid,aid){const p=plantillas[pid],a=alumnos[aid];if(!p||!a)return;
+        // opts.explicito = el usuario ha elegido conscientemente la plantilla desde
+        // el desplegable agrupado por ciclos → no le preguntamos otra vez.
+        async function asignarPlantilla(pid,aid,opts){
+            opts=opts||{};
+            const p=plantillas[pid],a=alumnos[aid];if(!p||!a)return;
             const cicloAl=getCicloDeAlumno(a);
-            if(p.ciclo&&p.ciclo!==cicloAl){
+            const otroCiclo=!!(p.ciclo&&p.ciclo!==cicloAl);
+            if(otroCiclo&&!opts.explicito){
                 const cn=(CICLOS[p.ciclo]||{}).nombre||p.ciclo;
                 const ca=(CICLOS[cicloAl]||{}).nombre||cicloAl;
-                if(!confirm('⚠️ Ciclo no coincidente\n\nLa plantilla "'+p.nombre+'" es de '+cn+', pero '+a.siglas+' cursa '+(a.curso||ca)+' ('+ca+').\n\nLos objetivos y los criterios LOMLOE no corresponden a su ciclo.\n\n¿Asignarla igualmente?'))return;
+                if(!await confirmar('La plantilla "'+p.nombre+'" es de '+cn+', pero '+a.siglas+' cursa '+(a.curso||ca)+' ('+ca+').\n\nEs una opción válida en una ACI significativa, pero quedará registrada como adaptación de ciclo.',{titulo:'⚠️ Ciclo distinto al del alumno',ok:'Asignar igualmente',peligro:true}))return;
             }
-            const newPid='p_'+Date.now();const programa={tipo:p.tipo,objetivos:JSON.parse(JSON.stringify(p.objetivos))};db.ref(PA+'/'+aid+'/programas/'+newPid).set(programa).then(()=>{a.programas=a.programas||{};a.programas[newPid]=programa;const nueva=generarProgramacion(a);return db.ref(PA+'/'+aid+'/programacion').set(nueva);}).then(()=>{toast('Plantilla asignada a '+a.siglas,'success');if(alumnoActual===aid){renderProgs();renderProg();}});}
+            const newPid='p_'+Date.now();
+            const programa={tipo:p.tipo,objetivos:JSON.parse(JSON.stringify(p.objetivos))};
+            // Dejamos constancia del ciclo del que proceden los objetivos. Es lo que
+            // luego permite justificar la adaptación en la ACI y en los informes.
+            if(p.ciclo)programa.cicloOrigen=p.ciclo;
+            if(otroCiclo)programa.adaptacionCiclo=true;
+            db.ref(PA+'/'+aid+'/programas/'+newPid).set(programa).then(()=>{
+                a.programas=a.programas||{};a.programas[newPid]=programa;
+                const nueva=generarProgramacion(a);
+                return db.ref(PA+'/'+aid+'/programacion').set(nueva);
+            }).then(()=>{
+                toast(otroCiclo?('Asignada ('+((CICLOS[p.ciclo]||{}).nombre||p.ciclo)+') a '+a.siglas):('Plantilla asignada a '+a.siglas),'success');
+                if(alumnoActual===aid){renderProgs();renderProg();}
+            }).catch(e=>{console.error(e);toast('No se pudo guardar','error');});
+        }
         
-        function eliminarPlantilla(id){if(plantillas[id]&&plantillas[id].esBase){toast('No se pueden eliminar plantillas base','error');return;}if(!confirm('¿Eliminar plantilla?'))return;db.ref(ROOT+'/plantillas/'+id).remove().then(()=>{cerrarModal('modalPlantilla');toast('Eliminada','success');});}
+        async function eliminarPlantilla(id){if(plantillas[id]&&plantillas[id].esBase){toast('No se pueden eliminar plantillas base','error');return;}if(!await confirmarBorrado('Se eliminará la plantilla "'+(plantillas[id]||{}).nombre+'". Los programas ya asignados a alumnos NO se ven afectados.'))return;db.ref(ROOT+'/plantillas/'+id).remove().then(()=>{cerrarModal('modalPlantilla');toast('Eliminada','success');});}
         
         function abrirModalNuevaPlantilla(){document.getElementById('plantillaNombre').value='';document.getElementById('plantillaTexto').value='';document.getElementById('uploadZonePlantilla').innerHTML='📄 Toca para seleccionar';document.getElementById('uploadZonePlantilla').classList.remove('has-file');document.getElementById('previewPlantillaNueva').style.display='none';document.getElementById('btnGuardarPlantilla').disabled=true;docExtraidoPlantilla=null;abrirModal('modalNuevaPlantilla');}
         async function cargarDocxPlantilla(inp){const f=inp.files[0];if(!f)return;document.getElementById('uploadZonePlantilla').innerHTML='📄 '+f.name;document.getElementById('uploadZonePlantilla').classList.add('has-file');try{await ensureMammoth();const r=await mammoth.extractRawText({arrayBuffer:await f.arrayBuffer()});document.getElementById('plantillaTexto').value=r.value;}catch(e){toast('Error','error');}}
@@ -2361,10 +2562,10 @@
                 .catch(e=>toast('Error: '+e.message,'error'));
         }
 
-        function eliminarAlumno(id){if(confirm('¿Eliminar alumno?')){db.ref(PA+'/'+id).remove();volverInicio();toast('Eliminado','success');}}
+        async function eliminarAlumno(id){const al=alumnos[id]||{};if(!await confirmarBorrado('Se borrarán TODOS los datos de '+(al.siglas||'este alumno')+': programas, evaluaciones, asistencia y ACI.\n\nEsta acción no se puede deshacer.',{titulo:'⚠️ Eliminar alumno'}))return;db.ref(PA+'/'+id).remove();volverInicio();toast('Eliminado','success');}
 
         // PROGRAMAS
-        function renderProgs(){const a=alumnos[alumnoActual];let h='<div class="card"><div class="card-header"><h3 class="card-title">📄 Programas</h3><button class="btn btn-primary btn-sm no-print" onclick="abrirModalAddProg()">➕</button></div>';if(!a.programas||!Object.keys(a.programas).length){h+='<div class="empty-state">Sin programas</div>';}else{Object.keys(a.programas).forEach(pId=>{const p=a.programas[pId],info=AREAS[p.tipo]||{icon:'📄',nombre:p.tipo,color:'#666'};h+='<div class="programa-card" style="border-left-color:'+info.color+'"><div class="programa-header"><span class="programa-titulo">'+info.icon+' '+info.nombre+'</span><button class="btn btn-danger btn-sm no-print" onclick="elimProg(\''+pId+'\')">🗑️</button></div>';(p.objetivos||[]).forEach(obj=>{h+='<div class="objetivo-card"><div class="objetivo-header"><span class="objetivo-num">O'+obj.numero+'</span><span class="trimestre-badge t'+obj.trimestre+'">T'+obj.trimestre+'</span></div><div class="objetivo-desc">'+obj.descripcion+'</div>';if(obj.indicadores&&obj.indicadores.length){h+='<ul class="indicadores-list">'+obj.indicadores.map(x=>'<li>• '+x+'</li>').join('')+'</ul>';}h+='</div>';});h+='</div>';});}h+='<div class="btn-group no-print" style="margin-top:12px"><button class="btn btn-secondary btn-sm" onclick="regenerarProg()">🔄 Regenerar</button><button class="btn btn-ai btn-sm" onclick="generarPromptIA()">🤖 IA</button><button class="btn btn-warning btn-sm" onclick="abrirModal(\'modalImportJSON\')">📥 JSON</button><button class="btn btn-secondary btn-sm" onclick="actualizarCriteriosLOMLOE()" title="Añade los criterios LOMLOE sin borrar nada">🏷️ Criterios</button></div></div>';
+        function renderProgs(){const a=alumnos[alumnoActual];let h='<div class="card"><div class="card-header"><h3 class="card-title">📄 Programas</h3><button class="btn btn-primary btn-sm no-print" onclick="abrirModalAddProg()">➕</button></div>';if(!a.programas||!Object.keys(a.programas).length){h+='<div class="empty-state">Sin programas</div>';}else{Object.keys(a.programas).forEach(pId=>{const p=a.programas[pId],info=AREAS[p.tipo]||{icon:'📄',nombre:p.tipo,color:'#666'};const cOrig=p.cicloOrigen?((CICLOS[p.cicloOrigen]||{}).nombre||p.cicloOrigen):'';const chipCiclo=cOrig?'<span style="font-size:.62rem;font-weight:600;background:#eef2ff;color:#4338ca;padding:2px 7px;border-radius:8px;margin-left:6px">'+cOrig+'</span>':'';const chipAdap=p.adaptacionCiclo?'<span style="font-size:.62rem;font-weight:700;background:#fef3c7;color:#78350f;padding:2px 7px;border-radius:8px;margin-left:4px" title="Objetivos de un ciclo distinto al del alumno (adaptación curricular)">⚠️ Adaptación de ciclo</span>':'';h+='<div class="programa-card" style="border-left-color:'+info.color+'"><div class="programa-header"><span class="programa-titulo">'+info.icon+' '+info.nombre+chipCiclo+chipAdap+'</span><button class="btn btn-danger btn-sm no-print" onclick="elimProg(\''+pId+'\')">🗑️</button></div>';(p.objetivos||[]).forEach(obj=>{h+='<div class="objetivo-card"><div class="objetivo-header"><span class="objetivo-num">O'+obj.numero+'</span><span class="trimestre-badge t'+obj.trimestre+'">T'+obj.trimestre+'</span></div><div class="objetivo-desc">'+obj.descripcion+'</div>';if(obj.indicadores&&obj.indicadores.length){h+='<ul class="indicadores-list">'+obj.indicadores.map(x=>'<li>• '+x+'</li>').join('')+'</ul>';}h+='</div>';});h+='</div>';});}h+='<div class="btn-group no-print" style="margin-top:12px"><button class="btn btn-secondary btn-sm" onclick="regenerarProg()">🔄 Regenerar</button><button class="btn btn-ai btn-sm" onclick="generarPromptIA()">🤖 IA</button><button class="btn btn-warning btn-sm" onclick="abrirModal(\'modalImportJSON\')">📥 JSON</button><button class="btn btn-secondary btn-sm" onclick="actualizarCriteriosLOMLOE()" title="Añade los criterios LOMLOE sin borrar nada">🏷️ Criterios</button></div></div>';
         document.getElementById('tabProgramas').innerHTML=h;}
 
         function renderGEUTab(){
@@ -2418,15 +2619,68 @@
             h+='</div>';
             document.getElementById('tabGeu').innerHTML=h;
         }
-        function abrirModalAddProg(){const a=alumnos[alumnoActual];const cicloAlumno=getCicloDeAlumno(a);const sel=document.getElementById('selPlantilla');const cn=(CICLOS[cicloAlumno]||{}).nombre||cicloAlumno;sel.innerHTML='<option value="">-- Elegir plantilla ('+cn+') --</option>';Object.keys(plantillas).forEach(id=>{const p=plantillas[id];if(p.ciclo===cicloAlumno){const area=AREAS[p.tipo]||{icon:'📄'};sel.innerHTML+='<option value="'+id+'">'+area.icon+' '+p.nombre+'</option>';}});document.getElementById('previewPlantilla').style.display='none';document.getElementById('addProgTipo').value='';document.getElementById('addProgTexto').value='';document.getElementById('uploadZone').innerHTML='📄 Toca para seleccionar';document.getElementById('uploadZone').classList.remove('has-file');document.getElementById('previewProg').style.display='none';document.getElementById('zonaDocx').style.display='block';document.getElementById('zonaLecto').style.display='none';docExtraido=null;abrirModal('modalAddProg');}
-        function previsualizarPlantilla(){const id=document.getElementById('selPlantilla').value;if(!id){document.getElementById('previewPlantilla').style.display='none';return;}const p=plantillas[id];if(!p)return;const nObj=p.objetivos?p.objetivos.length:0;const nInd=p.objetivos?p.objetivos.reduce((s,o)=>s+(o.indicadores?o.indicadores.length:0),0):0;document.getElementById('previewPlantilla').innerHTML='<strong>'+p.nombre+'</strong><br>'+nObj+' objetivos · '+nInd+' indicadores';document.getElementById('previewPlantilla').style.display='block';}
+        function abrirModalAddProg(){
+            const a=alumnos[alumnoActual];
+            const cicloAlumno=getCicloDeAlumno(a);
+            const sel=document.getElementById('selPlantilla');
+            const cn=(CICLOS[cicloAlumno]||{}).nombre||cicloAlumno;
+            const orden=['infantil','ciclo1','ciclo2','ciclo3'];
+            const opt=(id,p)=>{const area=AREAS[p.tipo]||{icon:'📄'};
+                return '<option value="'+id+'">'+area.icon+' '+p.nombre+'</option>';};
+
+            let h='<option value="">-- Elegir plantilla --</option>';
+
+            // 1) Su ciclo, arriba y marcado como el recomendado.
+            const suyas=Object.keys(plantillas).filter(id=>plantillas[id].ciclo===cicloAlumno);
+            if(suyas.length){
+                h+='<optgroup label="✅ Su ciclo · '+cn+'">';
+                suyas.forEach(id=>h+=opt(id,plantillas[id]));
+                h+='</optgroup>';
+            }
+            // 2) Los demás ciclos, disponibles y claramente etiquetados.
+            //    Un alumno con ACI significativa puede necesitar objetivos de un
+            //    ciclo inferior (o superior, si va adelantado en algún ámbito).
+            orden.filter(c=>c!==cicloAlumno).forEach(c=>{
+                const otras=Object.keys(plantillas).filter(id=>plantillas[id].ciclo===c);
+                if(!otras.length)return;
+                const pos=orden.indexOf(c)<orden.indexOf(cicloAlumno)?'⬇️ Ciclo inferior':'⬆️ Ciclo superior';
+                h+='<optgroup label="'+pos+' · '+((CICLOS[c]||{}).nombre||c)+'">';
+                otras.forEach(id=>h+=opt(id,plantillas[id]));
+                h+='</optgroup>';
+            });
+            sel.innerHTML=h;
+
+            document.getElementById('previewPlantilla').style.display='none';document.getElementById('addProgTipo').value='';document.getElementById('addProgTexto').value='';document.getElementById('uploadZone').innerHTML='📄 Toca para seleccionar';document.getElementById('uploadZone').classList.remove('has-file');document.getElementById('previewProg').style.display='none';document.getElementById('zonaDocx').style.display='block';document.getElementById('zonaLecto').style.display='none';docExtraido=null;abrirModal('modalAddProg');}
+        function previsualizarPlantilla(){
+            const id=document.getElementById('selPlantilla').value;
+            const box=document.getElementById('previewPlantilla');
+            if(!id){box.style.display='none';return;}
+            const p=plantillas[id];if(!p)return;
+            const a=alumnos[alumnoActual];
+            const cicloAlumno=getCicloDeAlumno(a);
+            const nObj=p.objetivos?p.objetivos.length:0;
+            const nInd=p.objetivos?p.objetivos.reduce((s,o)=>s+(o.indicadores?o.indicadores.length:0),0):0;
+            const cn=(CICLOS[p.ciclo]||{}).nombre||p.ciclo;
+            const ca=(CICLOS[cicloAlumno]||{}).nombre||cicloAlumno;
+            let h='<strong>'+p.nombre+'</strong> · '+cn+'<br>'+nObj+' objetivos · '+nInd+' indicadores';
+            if(p.ciclo!==cicloAlumno){
+                const orden=['infantil','ciclo1','ciclo2','ciclo3'];
+                const dir=orden.indexOf(p.ciclo)<orden.indexOf(cicloAlumno)?'inferior':'superior';
+                h+='<div style="margin-top:8px;padding:8px 10px;background:#fef3c7;border-left:3px solid #f59e0b;'+
+                   'border-radius:6px;color:#78350f;font-size:.75rem;line-height:1.4">'+
+                   '⚠️ Ciclo '+dir+' al del alumno ('+ca+'). Es una opción válida en una ACI significativa, '+
+                   'pero quedará registrada como <strong>adaptación de ciclo</strong> en el programa y en los informes.</div>';
+            }
+            box.innerHTML=h;
+            box.style.display='block';
+        }
         function cambioTipoProg(){const t=document.getElementById('addProgTipo').value;document.getElementById('zonaDocx').style.display=t==='lectoescritura'?'none':'block';document.getElementById('zonaLecto').style.display=t==='lectoescritura'?'block':'none';}
         async function cargarDocx(inp){const f=inp.files[0];if(!f)return;document.getElementById('uploadZone').innerHTML='📄 '+f.name;document.getElementById('uploadZone').classList.add('has-file');try{await ensureMammoth();const r=await mammoth.extractRawText({arrayBuffer:await f.arrayBuffer()});procesarTexto(r.value);}catch(e){toast('Error','error');}}
         function analizarTexto(){const t=document.getElementById('addProgTexto').value;if(t.length<20){toast('Pega más contenido','error');return;}procesarTexto(t);}
         function procesarTexto(txt){const objs=extraerObjetivos(txt);if(!objs.length){toast('No se encontraron objetivos','error');return;}docExtraido=objs;document.getElementById('previewProg').innerHTML='✓ '+objs.length+' objetivos';document.getElementById('previewProg').style.display='block';}
         function extraerObjetivos(txt){const objs=[],lineas=txt.split('\n');let actual=null,seccion=null;for(let i=0;i<lineas.length;i++){const lt=lineas[i].trim();if(!lt)continue;const m=lt.match(/^OBJETIVO\s*(\d+)[.:]\s*(.+)?/i)||lt.match(/^(\d+)[.\-)\s]+(.{15,})/);if(m){if(actual)objs.push(actual);actual={numero:parseInt(m[1]),descripcion:(m[2]||'').trim(),indicadores:[],trimestre:1};seccion=null;continue;}if(lt.toUpperCase().indexOf('INDICADOR')>-1){seccion='indicadores';continue;}if(actual&&seccion==='indicadores'&&lt.length>5){const ind=lt.replace(/^[-•·▪►●○◦‣⁃*]\s*/,'').trim();if(ind.length>5)actual.indicadores.push(ind);}}if(actual)objs.push(actual);const n=objs.length,p=Math.ceil(n/3);objs.forEach((o,i)=>{o.trimestre=i<p?1:(i<p*2?2:3);if(!o.indicadores.length)o.indicadores=['Indicador de '+o.descripcion.substring(0,20)];});return objs;}
-        function addPrograma(){const plantillaId=document.getElementById('selPlantilla').value;if(plantillaId){asignarPlantilla(plantillaId,alumnoActual);cerrarModal('modalAddProg');return;}const tipo=document.getElementById('addProgTipo').value;if(!tipo){toast('Selecciona tipo o plantilla','error');return;}const objetivos=tipo==='lectoescritura'?LECTO:docExtraido;if(!objetivos||!objetivos.length){toast('Sin objetivos','error');return;}const a=alumnos[alumnoActual],pId='p_'+Date.now();db.ref(PA+'/'+alumnoActual+'/programas/'+pId).set({tipo:tipo,objetivos:objetivos}).then(()=>{a.programas=a.programas||{};a.programas[pId]={tipo:tipo,objetivos:objetivos};const nueva=generarProgramacion(a);return db.ref(PA+'/'+alumnoActual+'/programacion').set(nueva);}).then(()=>{cerrarModal('modalAddProg');renderProgs();renderProg();toast('Añadido ✓','success');});}
-        function elimProg(pId){if(!confirm('¿Eliminar?'))return;db.ref(PA+'/'+alumnoActual+'/programas/'+pId).remove().then(()=>{delete alumnos[alumnoActual].programas[pId];return db.ref(PA+'/'+alumnoActual+'/programacion').set(generarProgramacion(alumnos[alumnoActual]));}).then(()=>{renderProgs();renderProg();toast('Eliminado','success');});}
+        function addPrograma(){const plantillaId=document.getElementById('selPlantilla').value;if(plantillaId){asignarPlantilla(plantillaId,alumnoActual,{explicito:true});cerrarModal('modalAddProg');return;}const tipo=document.getElementById('addProgTipo').value;if(!tipo){toast('Selecciona tipo o plantilla','error');return;}const objetivos=tipo==='lectoescritura'?LECTO:docExtraido;if(!objetivos||!objetivos.length){toast('Sin objetivos','error');return;}const a=alumnos[alumnoActual],pId='p_'+Date.now();db.ref(PA+'/'+alumnoActual+'/programas/'+pId).set({tipo:tipo,objetivos:objetivos}).then(()=>{a.programas=a.programas||{};a.programas[pId]={tipo:tipo,objetivos:objetivos};const nueva=generarProgramacion(a);return db.ref(PA+'/'+alumnoActual+'/programacion').set(nueva);}).then(()=>{cerrarModal('modalAddProg');renderProgs();renderProg();toast('Añadido ✓','success');});}
+        async function elimProg(pId){if(!await confirmarBorrado('Se eliminará este programa y se regenerará la programación del alumno.'))return;db.ref(PA+'/'+alumnoActual+'/programas/'+pId).remove().then(()=>{delete alumnos[alumnoActual].programas[pId];return db.ref(PA+'/'+alumnoActual+'/programacion').set(generarProgramacion(alumnos[alumnoActual]));}).then(()=>{renderProgs();renderProg();toast('Eliminado','success');});}
 
         // Construye índice correcto: tipo -> ciclo -> numero -> criterio
         function construirIndiceCriterios(){
@@ -2472,8 +2726,12 @@
                     let criterio = null;
                     if (p.tipo === 'lectoescritura') {
                         criterio = indiceLecto[obj.numero] || null;
-                    } else if (indice[p.tipo] && indice[p.tipo][cicloAlumno]) {
-                        criterio = indice[p.tipo][cicloAlumno][obj.numero] || null;
+                    } else if (indice[p.tipo]) {
+                        // Si el programa viene de otro ciclo (adaptación curricular),
+                        // los criterios correctos son los de ESE ciclo, no los del alumno.
+                        const cicloProg = p.cicloOrigen || cicloAlumno;
+                        const tabla = indice[p.tipo][cicloProg] || indice[p.tipo][cicloAlumno];
+                        criterio = (tabla && tabla[obj.numero]) || null;
                     }
                     if (criterio) { actualizados++; cambio = true; return { ...obj, criterio }; }
                     noEncontrados++;
@@ -2493,8 +2751,8 @@
         }
 
         // Repara criterios mal asignados en TODOS los alumnos (ciclo3 donde no toca)
-        function repararTodosCriterios(){
-            if(!confirm('Esto revisará los programas de TODOS los alumnos y corregirá criterios asignados al ciclo equivocado.\n\nLos criterios que no correspondan al ciclo del alumno serán actualizados al correcto.\n\n¿Continuar?')) return;
+        async function repararTodosCriterios(){
+            if(!await confirmar('Se revisarán los programas de TODOS los alumnos y se corregirán los criterios asignados al ciclo equivocado.\n\nLos criterios que no correspondan al ciclo del alumno se actualizarán al correcto.',{titulo:'Corregir criterios LOMLOE',ok:'Corregir'})) return;
             const indice = construirIndiceCriterios();
             const indiceLecto = {};
             LECTO.forEach(obj => { if(obj.criterio) indiceLecto[obj.numero] = obj.criterio; });
@@ -2516,8 +2774,12 @@
                         let criterioCorrect = null;
                         if(p.tipo === 'lectoescritura') {
                             criterioCorrect = indiceLecto[obj.numero] || null;
-                        } else if(indice[p.tipo] && indice[p.tipo][cicloAlumno]) {
-                            criterioCorrect = indice[p.tipo][cicloAlumno][obj.numero] || null;
+                        } else if(indice[p.tipo]) {
+                            // Respetar la adaptación de ciclo: si el programa procede de
+                            // otro ciclo, NO se le imponen los criterios del curso del alumno.
+                            const cicloProg = p.cicloOrigen || cicloAlumno;
+                            const tabla = indice[p.tipo][cicloProg] || indice[p.tipo][cicloAlumno];
+                            criterioCorrect = (tabla && tabla[obj.numero]) || null;
                         }
                         if(!criterioCorrect) return obj; // no hay referencia, dejar como está
                         if(obj.criterio === criterioCorrect) return obj; // ya correcto
@@ -2644,7 +2906,7 @@
 
         function diagnosticarProgramacion(){
             const a = alumnos[alumnoActual];
-            if(!a || !a.programas){ alert('Sin programas'); return; }
+            if(!a || !a.programas){ avisar('Este alumno todavía no tiene ningún programa asignado.','Sin programas'); return; }
 
             const lines = [];
             lines.push('=== DIAGNÓSTICO: ' + a.siglas + ' (' + a.curso + ') ===\n');
@@ -2757,8 +3019,8 @@
             div.prepend(closeBtn);
             document.body.appendChild(div);
         }
-        function repararTrimestresYProgramacion(){
-            if(!confirm('Esto asignará trimestre correcto a todos los objetivos sin trimestre y regenerará la programación de TODOS los alumnos.\n\n¿Continuar?'))return;
+        async function repararTrimestresYProgramacion(){
+            if(!await confirmar('Se asignará el trimestre correcto a todos los objetivos que no lo tengan y se regenerará la programación de TODOS los alumnos.',{titulo:'Asignar trimestres',ok:'Continuar'}))return;
             const updates={};
             let alumnosReparados=0, objetivosReparados=0;
 
@@ -3840,8 +4102,8 @@
         // Mueve datos de gestorpe/aci/ → gestorpe/alumnos/{id}/aci/
         // y corrige criterios mal asignados según el curso real del alumno
         // ══════════════════════════════════════════════════════════════════
-        function aciMigrarYReparar(){
-            if(!confirm('Esto buscará ACIs en la ruta antigua (aci.html), las moverá a la ruta correcta y corregirá criterios según el curso de cada alumno.\n\n¿Continuar?'))return;
+        async function aciMigrarYReparar(){
+            if(!await confirmar('Se buscarán ACIs en la ruta antigua (aci.html), se moverán a la ruta correcta y se corregirán los criterios según el curso de cada alumno.',{titulo:'Migrar ACIs',ok:'Migrar'}))return;
             toast('Leyendo datos...','success');
 
             // All valid codes per ciclo (to validate/filter)
@@ -4186,8 +4448,8 @@
             abrirModal('modalACI');
         }
 
-        function aciEliminar(key){
-            if(!confirm('¿Eliminar esta ACI?'))return;
+        async function aciEliminar(key){
+            if(!await confirmarBorrado('Se eliminará esta ACI de forma permanente.'))return;
             db.ref(`${PA}/${aciAlumnoSel}/aci/${key}`).remove().then(()=>{toast('ACI eliminada','success');renderAciAlumnoPanel();});
         }
 
@@ -4645,8 +4907,8 @@ ${instruccionesFormato}`;
             abrirModal('modalActDetalle');
         }
 
-        function borrarActividadesIA(){
-            if(!confirm('¿Borrar la tabla de actividades IA de este mes?'))return;
+        async function borrarActividadesIA(){
+            if(!await confirmarBorrado('Se borrará la tabla de actividades IA de este mes.'))return;
             const a=alumnos[alumnoActual];
             db.ref(PA+'/'+alumnoActual+'/actividadesGeneradas/'+mesActual).remove()
                 .then(()=>{
@@ -7406,9 +7668,13 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
         let diasGrupoSel = [1,3];
         let grupoIAActual = null;
 
-        function _handlerGrupos(snap){
-            grupos = snap.val() || {};
+        function _handlerGruposLocal(data){
+            grupos = data || {};
             if(document.getElementById('seccionGrupos').style.display !== 'none') renderGrupos();
+        }
+        function _handlerGrupos(snap){
+            _handlerGruposLocal(snap.val() || {});
+            cacheGuardar('grupos', grupos, true);   // espejo local
         }
 
         // ─── Mes actual al abrir ──────────────────────────────────────────
@@ -7622,8 +7888,8 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
                 .catch(e=>toast('Error: '+e.message+' — revisa las reglas de Firebase','error'));
         }
 
-        function eliminarGrupo(id){
-            if(!confirm('¿Eliminar el grupo "'+grupos[id].nombre+'"?'))return;
+        async function eliminarGrupo(id){
+            if(!await confirmarBorrado('Se eliminará el grupo "'+grupos[id].nombre+'". Los alumnos que lo componen no se borran.'))return;
             db.ref(PG+'/'+id).remove().then(()=>toast('Grupo eliminado','success'));
         }
 
@@ -7850,9 +8116,9 @@ Genera ahora un resumen por cada uno de los ${total} alumnos en el formato indic
                 toast('Archivo descargado 📄 — súbelo a la IA','success');
         }
 
-        function limpiarSeguimiento(){
+        async function limpiarSeguimiento(){
             const trim=parseInt(document.getElementById('seguimientoTrim').value);
-            if(!confirm('¿Borrar todos los resúmenes del Trimestre '+trim+'? Esta acción no se puede deshacer.'))return;
+            if(!await confirmarBorrado('Se borrarán todos los resúmenes del Trimestre '+trim+'.\n\nEsta acción no se puede deshacer.'))return;
             const ids=Object.keys(alumnos);
             const updates={};
             ids.forEach(id=>{
