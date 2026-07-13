@@ -3401,13 +3401,16 @@
                 const ficha = parseInt(document.getElementById('geuFichaInput').value) || 1;
                 if(colId && nvId){
                     updates[PA+'/'+alumnoActual+'/programacion/'+celdaEditando+'/geu'] = {colId:colId, nvId:nvId, ficha:ficha};
-                    // Actualizar también la ficha actual del cuaderno si es mayor que la guardada
+                    // Actualizar también la ficha actual del cuaderno si es mayor que la guardada.
+                    // El ancla es la SESIÓN QUE SE ESTÁ EDITANDO (celdaEditando), no "hoy":
+                    // si registras una sesión de hace dos semanas, el avance parte de allí.
                     const _est0 = geuNorm((alumnos[alumnoActual].geu||{})[nvId], null) || {ficha:1,ritmo:1};
                     const fichaActual = _est0.ficha;
                     if(ficha >= fichaActual){
-                        updates[PA+'/'+alumnoActual+'/geu/'+nvId] = ficha + 1;
+                        const _estN = {ficha: ficha + 1, ancla: celdaEditando, ritmo: _est0.ritmo || 1};
+                        updates[PA+'/'+alumnoActual+'/geu/'+nvId] = _estN;
                         alumnos[alumnoActual].geu = alumnos[alumnoActual].geu || {};
-                        alumnos[alumnoActual].geu[nvId] = {ficha: ficha + 1, ancla: geuSesionHoy(alumnos[alumnoActual]), ritmo: _est0.ritmo || 1};
+                        alumnos[alumnoActual].geu[nvId] = _estN;
                     }
                 }
             } else if(geuCb && !geuCb.checked && estadoCelda === 'asiste'){
@@ -7789,17 +7792,41 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
             });
         }
 
-        // Sesión "de hoy" (o la más cercana pasada) para usarla como ancla.
+        // Sesión de HOY (o la más cercana anterior). Se usa como ancla.
+        // Calcula mes escolar + semana del mes + día lectivo a partir de la fecha real.
+        // Si hoy no es día de sesión de este alumno, coge la última sesión pasada.
         function geuSesionHoy(a){
-            const todas=getTodasLasSesiones(a);
+            const todas = getTodasLasSesiones(a);
             if(!todas.length) return null;
-            const k=(typeof getSesionActualKey==='function')?getSesionActualKey(a):null;
-            if(k && todas.indexOf(k)>=0) return k;
-            // Fallback: la última sesión con algo registrado, o la primera del curso.
-            for(let i=todas.length-1;i>=0;i--){
-                if(a.programacion && a.programacion[todas[i]]) return todas[i];
+            const idx = todas.indexOf(geuSesionDeFecha(a, new Date()));
+            if(idx >= 0) return todas[idx];
+            // No hay coincidencia exacta: la última sesión anterior a hoy.
+            const meta = geuPosicionHoy(a);
+            for(let i = todas.length - 1; i >= 0; i--){
+                const p = todas[i].split('_').map(Number);   // [mes, semana, dia]
+                if(p[0] < meta.mes || (p[0] === meta.mes && p[1] <= meta.semana)) return todas[i];
             }
             return todas[0];
+        }
+        // Posición escolar de una fecha: { mes: 0-9, semana: 1-n }
+        function geuPosicionHoy(a, fecha){
+            const f = fecha || new Date();
+            const mes = getMesEscolarActual();
+            // Semana del mes (1-indexada), acotada a las semanas que tiene ese mes.
+            const primero = new Date(f.getFullYear(), f.getMonth(), 1);
+            let semana = Math.ceil((f.getDate() + primero.getDay()) / 7);
+            const maxSem = (MESES[mes] || {semanas:4}).semanas;
+            semana = Math.max(1, Math.min(maxSem, semana));
+            return { mes, semana };
+        }
+        // Clave de sesión exacta para una fecha, si ese día el alumno tiene sesión.
+        function geuSesionDeFecha(a, fecha){
+            const f = fecha || new Date();
+            const dias = a.diasSesion || [1,3,4];
+            const dow = f.getDay();                 // 0=domingo … 6=sábado
+            if(dias.indexOf(dow) < 0) return null;  // hoy no le toca
+            const pos = geuPosicionHoy(a, f);
+            return pos.mes + '_' + pos.semana + '_' + dow;
         }
 
         // Al terminar un cuaderno, ofrecer activar el siguiente de la colección.
@@ -7826,6 +7853,31 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
             }
         }
 
+        // Ajusta la ficha de inicio y el ritmo de un nivel dentro del modal.
+        // No escribe en Firebase: solo actualiza los data-* del chip; el guardado
+        // real lo hace geuGuardarConfig() al pulsar Guardar.
+        async function geuAjustarNivel(nvId){
+            const el = document.querySelector('#geuModalContenido [data-nv="'+nvId+'"]');
+            if(!el) return;
+            const nv = GEU_COLECCIONES.flatMap(c=>c.niveles).find(n=>n.id===nvId);
+            const total = geuNumFichas(nv);
+            const iniAct = parseInt(el.dataset.ini||'1',10)||1;
+            const v1 = await pedirTexto('¿En qué ficha empieza (o va) el alumno en '+nv.label+'?\n\nEntre 1 y '+total+'. Útil si llega con el cuaderno ya empezado.',
+                String(iniAct), {titulo:'📗 '+nv.label+' · Ficha de inicio', ok:'Siguiente'});
+            if(v1===null) return;
+            const ini = Math.max(1, Math.min(total, parseInt(v1,10)||1));
+            const ritAct = parseInt(el.dataset.ritmo||'1',10)||1;
+            const v2 = await pedirTexto('¿Cuántas fichas hace por sesión?\n\nNormalmente 1. Pon 2 si suele hacer dos.',
+                String(ritAct), {titulo:'⏱️ '+nv.label+' · Ritmo', ok:'Aplicar'});
+            if(v2===null) return;
+            const rit = Math.max(1, Math.min(10, parseInt(v2,10)||1));
+            el.dataset.ini = ini;
+            el.dataset.ritmo = rit;
+            const cfg = el.querySelector('.geu-cfg');
+            if(cfg) cfg.firstChild.textContent = 'desde ficha '+ini+' · '+rit+'/sesión ';
+            toast(nv.label+': ficha '+ini+', '+rit+'/sesión — pulsa Guardar','success');
+        }
+
         function geuAbrirModal(alumId){
             const a = alumnos[alumId];
             const geu = a.geu || {};
@@ -7839,12 +7891,19 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
                 h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px">';
                 col.niveles.forEach(function(nv){
                     const activo = geu[nv.id] !== undefined && geu[nv.id] !== null;
-                    h += '<div data-nv="'+nv.id+'" onclick="geuToggleNivel(this,\''+col.id+'\''+')"'
+                    const est0 = geuNorm(geu[nv.id], null) || {ficha:1, ritmo:1};
+                    h += '<div data-nv="'+nv.id+'" data-ini="'+est0.ficha+'" data-ritmo="'+(est0.ritmo||1)+'"'
+                        +' oncontextmenu="event.preventDefault();geuAjustarNivel(\''+nv.id+'\');return false"'
+                        +' onclick="geuToggleNivel(this,\''+col.id+'\''+')"'
                         +' style="padding:7px 10px;border-radius:10px;border:2px solid '+(activo?col.color:'var(--border)')
                         +';background:'+(activo?col.color+'18':'var(--bg)')+';color:'+(activo?col.color:'var(--text-light)')
                         +';font-size:.75rem;font-weight:700;cursor:pointer;line-height:1.4">'
                         +'<div>'+nv.label+(activo?' ✓':'')+'</div>'
                         +'<div style="font-size:.62rem;font-weight:400;opacity:.75">'+nv.curso+'</div>'
+                        +'<div class="geu-cfg" style="font-size:.6rem;font-weight:400;opacity:.85;margin-top:2px'+(activo?'':';display:none')+'">'
+                        +'desde ficha '+est0.ficha+' · '+(est0.ritmo||1)+'/sesión '
+                        +'<span onclick="event.stopPropagation();geuAjustarNivel(\''+nv.id+'\')" style="text-decoration:underline;cursor:pointer">ajustar</span>'
+                        +'</div>'
                         +'</div>';
                 });
                 h += '</div></div>';
@@ -7856,6 +7915,7 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
 
         function geuToggleNivel(el, colId){
             const nvId = el.dataset.nv;
+            const _cfg = el.querySelector('.geu-cfg');
             const col  = GEU_COLECCIONES.find(function(c){return c.id===colId;});
             const nv   = col.niveles.find(function(n){return n.id===nvId;});
             const labelEl = el.querySelector('div');
@@ -7866,12 +7926,14 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
                 el.style.color       = 'var(--text-light)';
                 if(labelEl) labelEl.textContent = nv.label;
                 else el.firstChild.textContent = nv.label;
+                if(_cfg) _cfg.style.display = 'none';
             } else {
                 el.style.borderColor = col.color;
                 el.style.background  = col.color+'18';
                 el.style.color       = col.color;
                 if(labelEl) labelEl.textContent = nv.label+' ✓';
                 else el.firstChild.textContent = nv.label+' ✓';
+                if(_cfg) _cfg.style.display = '';
             }
         }
 
@@ -7885,12 +7947,21 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
             document.querySelectorAll('#geuModalContenido [data-nv]').forEach(el => {
                 const nvId   = el.dataset.nv;
                 const activo = el.textContent.includes('✓');
+                const ini   = parseInt(el.dataset.ini   || '1', 10) || 1;
+                const ritmo = parseInt(el.dataset.ritmo || '1', 10) || 1;
                 if(activo && geuActual[nvId] === undefined){
                     // Ficha de inicio: por si el alumno llega con el cuaderno empezado.
-                    const ini = parseInt(el.dataset.ini || '1', 10) || 1;
-                    const est = { ficha: ini, ancla: ancla, ritmo: 1 };
+                    const est = { ficha: ini, ancla: ancla, ritmo: ritmo };
                     updates[PA+'/'+alumId+'/geu/'+nvId] = est;
                     geuActual[nvId] = est;
+                } else if(activo && geuActual[nvId] !== undefined){
+                    // Ya estaba activo: aplicar cambios de ficha de inicio / ritmo si los hay.
+                    const prev = geuNorm(geuActual[nvId], ancla);
+                    if(prev.ficha !== ini || (prev.ritmo||1) !== ritmo){
+                        const est = { ficha: ini, ancla: ancla, ritmo: ritmo };
+                        updates[PA+'/'+alumId+'/geu/'+nvId] = est;
+                        geuActual[nvId] = est;
+                    }
                 } else if(!activo && geuActual[nvId] !== undefined){
                     updates[PA+'/'+alumId+'/geu/'+nvId] = null;
                     delete geuActual[nvId];

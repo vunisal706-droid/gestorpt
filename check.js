@@ -441,7 +441,7 @@ t('Se marca cuáles son estimados', /function geuFichasEsEstimado/.test(h) && /�
 t('geuFichas se sincroniza y cachea', /_refGeuFichas=db\.ref\(ROOT\+'\/geuFichas'\)/.test(h) && /cacheGuardar\('geuFichas'/.test(h));
 t('geuCambiarFicha tiene .catch()', /No se pudo guardar la ficha/.test(h));
 t('geuGuardarConfig tiene .catch()', /No se pudo guardar: '\+\(e\.message/.test(h));
-t('Ficha de inicio configurable al activar', /parseInt\(el\.dataset\.ini \|\| '1', 10\)/.test(h));
+t('Ficha de inicio configurable al activar', /parseInt\(el\.dataset\.ini\s+\|\| '1', 10\)/.test(h));
 const restos = (h.match(/nv\.fichas/g) || []).length;
 t('Sin lecturas directas de nv.fichas fuera del núcleo', restos <= 1, restos + ' ocurrencia(s) (1 = dentro de geuNumFichas)');
 
@@ -487,6 +487,54 @@ if (Gm) {
   if (sinInf.length) wa('Colecciones sin nivel de Infantil', sinInf.map(c => c.nombre).join(', '));
   else ok('Todas las colecciones cubren Infantil');
 }
+
+
+// ═══════════ 15. GEU: ancla real, ficha de inicio y ritmo ═══════════
+sec('15. GEU · ancla, ficha de inicio y ritmo');
+t('geuSesionHoy NO depende de una función inexistente', !/getSesionActualKey/.test(h));
+t('geuSesionHoy calcula desde la fecha real', /function geuSesionDeFecha/.test(h) && /function geuPosicionHoy/.test(h));
+t('Usa getMesEscolarActual (que sí existe)', /const mes = getMesEscolarActual\(\)/.test(h) && /function getMesEscolarActual/.test(h));
+t('Acota la semana a las del mes escolar', /Math\.min\(maxSem, semana\)/.test(h));
+t('Si hoy no es día de sesión, coge la anterior', /p\[0\] < meta\.mes \|\| \(p\[0\] === meta\.mes && p\[1\] <= meta\.semana\)/.test(h));
+t('guardarCelda ancla en la celda editada, no en "hoy"', /ancla: celdaEditando/.test(h));
+t('guardarCelda escribe el OBJETO en Firebase', /updates\[PA\+'\/'\+alumnoActual\+'\/geu\/'\+nvId\] = _estN/.test(h));
+t('Ya no se escribe "ficha + 1" suelto', !/geu\/'\+nvId\] = ficha \+ 1;/.test(h));
+t('Chips con data-ini y data-ritmo', /data-ini="'\+est0\.ficha\+'"/.test(h) && /data-ritmo="'\+\(est0\.ritmo\|\|1\)\+'"/.test(h));
+t('Existe geuAjustarNivel()', /async function geuAjustarNivel\(nvId\)/.test(h));
+t('Pregunta ficha de inicio Y ritmo', /Ficha de inicio/.test(h) && /· Ritmo/.test(h));
+t('Enlace "ajustar" en cada chip activo', /geuAjustarNivel\(\\''\+nv\.id\+'\\'\)" style="text-decoration:underline/.test(h));
+t('geuGuardarConfig lee ini y ritmo', /const ritmo = parseInt\(el\.dataset\.ritmo \|\| '1', 10\)/.test(h));
+t('Permite cambiar ini/ritmo de un nivel YA activo', /Ya estaba activo: aplicar cambios/.test(h));
+t('geuToggleNivel muestra/oculta la config', /_cfg\.style\.display = 'none'/.test(h) && /_cfg\.style\.display = ''/.test(h));
+
+// simulación de geuSesionHoy
+(function(){
+  const MESES = [{semanas:3},{semanas:4},{semanas:4},{semanas:2},{semanas:4},{semanas:4},{semanas:4},{semanas:3},{semanas:4},{semanas:3}];
+  const mapa = {8:0,9:1,10:2,11:3,0:4,1:5,2:6,3:7,4:8,5:9};
+  const dias = [1,3,4];
+  const todas = [];
+  for(let mi=0; mi<MESES.length; mi++) for(let s=1; s<=MESES[mi].semanas; s++) for(const d of dias) todas.push(mi+'_'+s+'_'+d);
+  const posDe = f => {
+    const mes = mapa.hasOwnProperty(f.getMonth()) ? mapa[f.getMonth()] : 0;
+    const primero = new Date(f.getFullYear(), f.getMonth(), 1);
+    let sem = Math.ceil((f.getDate() + primero.getDay()) / 7);
+    sem = Math.max(1, Math.min(MESES[mes].semanas, sem));
+    return { mes, sem };
+  };
+  const claveDe = f => { const d = f.getDay(); if(!dias.includes(d)) return null; const p = posDe(f); return p.mes+'_'+p.sem+'_'+d; };
+  let validas = 0, nulas = 0, fuera = 0;
+  for(let m=0; m<12; m++) for(let d=1; d<=28; d++){
+    const f = new Date(2026, m, d);
+    if(!mapa.hasOwnProperty(m)) continue;
+    const k = claveDe(f);
+    if(k === null){ nulas++; continue; }
+    if(todas.indexOf(k) >= 0) validas++; else fuera++;
+  }
+  t('Toda fecha lectiva mapea a una sesión existente', fuera === 0, validas + ' fechas válidas, ' + nulas + ' sin sesión, ' + fuera + ' fuera de rango');
+  const oct = claveDe(new Date(2026, 9, 14));   // miércoles 14 oct 2026
+  t('Ejemplo: mié 14-oct-2026 → sesión real', oct !== null && todas.indexOf(oct) >= 0, oct);
+  t('Ancla NO cae en la última sesión del curso', oct !== todas[todas.length-1]);
+})();
 
 // ═══════════ RESUMEN ═══════════
 console.log('\n' + '═'.repeat(66));
