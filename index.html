@@ -3326,7 +3326,15 @@
             return n;
         }
         // Ficha que corresponde a la sesión k para un nivel dado.
+        // Devuelve null si k es ANTERIOR al ancla: el cuaderno todavía no estaba
+        // activo, así que no hay ficha que mostrar. (Antes devolvía la ficha del
+        // ancla, así que todas las sesiones previas salían con la misma ficha.)
         function geuProyectar(a, item, k){
+            const todas = getTodasLasSesiones(a);
+            const iA = todas.indexOf(item.est.ancla);
+            const iK = todas.indexOf(k);
+            if(iK < 0) return null;
+            if(iA >= 0 && iK < iA) return null;            // antes de activarlo
             const n = geuSesionesEntre(a, item.est.ancla, k);
             if(n === null) return null;
             const total = geuNumFichas(item.nv);
@@ -7797,10 +7805,12 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
         function geuSesionHoy(a){
             const todas = getTodasLasSesiones(a);
             if(!todas.length) return null;
-            const idx = todas.indexOf(geuSesionDeFecha(a, new Date()));
-            if(idx >= 0) return todas[idx];
-            // No hay coincidencia exacta: la última sesión anterior a hoy.
             const meta = geuPosicionHoy(a);
+            // Vacaciones (julio/agosto): el cuaderno arranca en la primera sesión.
+            if(meta.fueraDeCurso) return todas[0];
+            const k = geuSesionDeFecha(a, new Date());
+            if(k && todas.indexOf(k) >= 0) return k;
+            // Hoy no es día de sesión: la última sesión anterior a hoy.
             for(let i = todas.length - 1; i >= 0; i--){
                 const p = todas[i].split('_').map(Number);   // [mes, semana, dia]
                 if(p[0] < meta.mes || (p[0] === meta.mes && p[1] <= meta.semana)) return todas[i];
@@ -7808,8 +7818,15 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
             return todas[0];
         }
         // Posición escolar de una fecha: { mes: 0-9, semana: 1-n }
+        // OJO: en julio y agosto no hay curso. getMesEscolarActual() devuelve 0
+        // (Septiembre) pero la semana se calcularía a partir del día de julio, lo
+        // que dejaba el ancla en "Septiembre, semana 3" — en mitad del arranque de
+        // curso. Fuera del periodo lectivo, el ancla debe ser la PRIMERA sesión.
         function geuPosicionHoy(a, fecha){
             const f = fecha || new Date();
+            const m = f.getMonth();                      // 0=enero … 11=diciembre
+            const lectivo = (m >= 8) || (m <= 5);        // sept-dic o ene-jun
+            if(!lectivo) return { mes: 0, semana: 1, fueraDeCurso: true };
             const mes = getMesEscolarActual();
             // Semana del mes (1-indexada), acotada a las semanas que tiene ese mes.
             const primero = new Date(f.getFullYear(), f.getMonth(), 1);
@@ -7821,10 +7838,11 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
         // Clave de sesión exacta para una fecha, si ese día el alumno tiene sesión.
         function geuSesionDeFecha(a, fecha){
             const f = fecha || new Date();
-            const dias = a.diasSesion || [1,3,4];
-            const dow = f.getDay();                 // 0=domingo … 6=sábado
-            if(dias.indexOf(dow) < 0) return null;  // hoy no le toca
             const pos = geuPosicionHoy(a, f);
+            if(pos.fueraDeCurso) return null;            // vacaciones → sin sesión de hoy
+            const dias = a.diasSesion || [1,3,4];
+            const dow = f.getDay();                      // 0=domingo … 6=sábado
+            if(dias.indexOf(dow) < 0) return null;       // hoy no le toca
             return pos.mes + '_' + pos.semana + '_' + dow;
         }
 
@@ -7996,9 +8014,18 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
         }
 
         // ─── Mes actual al abrir ──────────────────────────────────────────
+        let _gruposMesInit = false;
         function gruposSetMesActual(){
             const sel = document.getElementById('gruposMes');
-            if(sel && sel.value === '0') sel.value = String(getMesEscolarActual());
+            if(!sel) return;
+            // Antes: `if(sel.value === '0') sel.value = mesActual`. Pero '0' es
+            // SEPTIEMBRE, no "sin inicializar": era imposible ver septiembre en
+            // Grupos, siempre te devolvía al mes en curso. Ahora solo se ajusta
+            // la primera vez.
+            if(!_gruposMesInit){
+                _gruposMesInit = true;
+                sel.value = String(getMesEscolarActual());
+            }
         }
 
         // ─── Render principal ─────────────────────────────────────────────
@@ -8077,6 +8104,8 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
                 <div class="grupo-alumnos-strip">${statsHTML}</div>
                 <!-- Cuadrante compartido -->
                 ${cuadranteHTML}
+                <!-- Tabla de actividades generadas con IA (si se ha importado el JSON) -->
+                ${renderGrupoActividades(gId, mesIdx)}
             </div>`;
         }
 
@@ -8212,10 +8241,148 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
         }
 
         // ─── Modal actividades IA de grupo ────────────────────────────────
+        // ═══════════════════════════════════════════════════════════════════
+        // ACTIVIDADES IA DE GRUPO — importar el JSON y pintar la tabla
+        // Réplica de lo que ya existía para el alumno individual
+        // (sdaImportarActividadesJSON / renderTablaActividades), que faltaba aquí.
+        // Se guarda en {PG}/{gId}/actividadesGeneradas/{mes}
+        // ═══════════════════════════════════════════════════════════════════
+        function grupoIAImportarJSON(){
+            if(!grupoIAActual){toast('No hay grupo seleccionado','error');return;}
+            const g = grupos[grupoIAActual];
+            const txt = (document.getElementById('grupoIAJsonInput')||{}).value;
+            if(!txt || !txt.trim()){toast('Pega el JSON que te ha dado la IA','error');return;}
+            let actividades;
+            try{
+                const limpio = txt.replace(/```json?\n?/g,'').replace(/```/g,'').trim();
+                actividades = JSON.parse(limpio);
+            }catch(e){
+                toast('El JSON no es válido: '+e.message,'error');
+                return;
+            }
+            if(!actividades || typeof actividades !== 'object' || Array.isArray(actividades)){
+                toast('Se esperaba un objeto con las sesiones como clave','error');
+                return;
+            }
+            // Validar que las claves son sesiones reales del grupo (mes_semana_dia)
+            const claves = Object.keys(actividades);
+            const validas = claves.filter(k => /^\d+_\d+_\d+$/.test(k));
+            if(!validas.length){
+                toast('Ninguna clave parece una sesión (formato mes_semana_día)','error');
+                return;
+            }
+            // El JSON viene con las sesiones de TODO el trimestre en un objeto plano.
+            // Lo repartimos por meses, que es como se guarda y se pinta.
+            const porMes = {};
+            validas.forEach(k => {
+                const mi = parseInt(k.split('_')[0], 10);
+                if(!MESES[mi]) return;                       // índice de mes inexistente
+                (porMes[mi] = porMes[mi] || {})[k] = actividades[k];
+            });
+            const meses = Object.keys(porMes).map(Number).sort((a,b)=>a-b);
+            if(!meses.length){ toast('Ninguna sesión corresponde a un mes válido','error'); return; }
+
+            const updates = {};
+            meses.forEach(mi => { updates[PG+'/'+grupoIAActual+'/actividadesGeneradas/'+mi] = porMes[mi]; });
+            db.ref().update(updates)
+                .then(()=>{
+                    g.actividadesGeneradas = g.actividadesGeneradas || {};
+                    meses.forEach(mi => { g.actividadesGeneradas[mi] = porMes[mi]; });
+                    document.getElementById('grupoIAJsonInput').value = '';
+                    cerrarModal('modalGrupoIA');
+                    document.getElementById('gruposMes').value = meses[0];
+                    renderGrupos();
+                    const nombres = meses.map(mi=>MESES[mi].nombre).join(', ');
+                    toast(validas.length+' actividades importadas en '+meses.length+' mes(es): '+nombres+' ✓','success');
+                })
+                .catch(e=>{
+                    console.error(e);
+                    toast('No se pudo guardar: '+(e.message||'error'),'error');
+                });
+        }
+
+        // Tabla de actividades IA dentro de la tarjeta del grupo
+        function renderGrupoActividades(gId, mesIdx){
+            const g = grupos[gId];
+            const todas = (g && g.actividadesGeneradas) || {};
+            const act = todas[mesIdx];
+            const mes = MESES[mesIdx];
+            // Meses del MISMO trimestre que ya tienen actividades: así, si has importado
+            // el trimestre entero, sabes dónde está el resto sin ir mes a mes.
+            const hermanos = Object.keys(todas).map(Number)
+                .filter(mi => MESES[mi] && MESES[mi].trim === mes.trim && Object.keys(todas[mi]||{}).length)
+                .sort((a,b)=>a-b);
+            if(!act || !Object.keys(act).length){
+                if(!hermanos.length) return '';
+                // Este mes no tiene, pero otros del trimestre sí → avisar y dar acceso
+                return '<div style="margin-top:12px;border-top:1px solid var(--border);padding-top:10px;font-size:.75rem;color:var(--text-light)">'
+                     + '🤖 Hay actividades IA de este trimestre en: '
+                     + hermanos.map(mi => '<a href="#" onclick="event.preventDefault();document.getElementById(\'gruposMes\').value='+mi+';renderGrupos()" style="color:var(--primary);font-weight:600">'+MESES[mi].nombre+'</a>').join(' · ')
+                     + '</div>';
+            }
+            const dias = g.diasSesion || [1,3];
+            const DIAS_C2 = {0:'L',1:'M',2:'X',3:'J',4:'V'};
+            const otros = hermanos.filter(mi => mi !== mesIdx);
+            let h = '<div style="margin-top:12px;border-top:1px solid var(--border);padding-top:10px">';
+            h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;gap:8px;flex-wrap:wrap">';
+            h += '<span style="font-size:.78rem;font-weight:700;color:var(--primary)">🤖 Actividades IA · '+mes.nombre+' <span style="font-weight:500;opacity:.7">(T'+mes.trim+')</span></span>';
+            h += '<button class="btn btn-danger btn-sm no-print" onclick="grupoBorrarActividades(\''+gId+'\','+mesIdx+')">🗑️</button></div>';
+            if(otros.length){
+                h += '<div style="font-size:.7rem;color:var(--text-light);margin-bottom:6px">También en este trimestre: '
+                   + otros.map(mi => '<a href="#" onclick="event.preventDefault();document.getElementById(\'gruposMes\').value='+mi+';renderGrupos()" style="color:var(--primary);font-weight:600">'+MESES[mi].nombre+'</a>').join(' · ')
+                   + '</div>';
+            }
+            h += '<div style="overflow-x:auto"><table class="cuadrante-table"><thead><tr><th>S</th>';
+            dias.forEach(d => { h += '<th>'+(DIAS_C2[d]||d)+'</th>'; });
+            h += '</tr></thead><tbody>';
+            for(let s=1; s<=mes.semanas; s++){
+                h += '<tr><td>'+s+'</td>';
+                dias.forEach(d => {
+                    const k = mesIdx+'_'+s+'_'+d;
+                    const a = act[k];
+                    if(!a){ h += '<td class="celda celda-vacia"></td>'; return; }
+                    const nv = String(a.nivel||'').toLowerCase();
+                    const bg = nv.includes('bás')||nv.includes('bas')?'#dcfce7':nv.includes('med')?'#dbeafe':nv.includes('avan')?'#fef3c7':'#fff';
+                    const cl = nv.includes('bás')||nv.includes('bas')?'#166534':nv.includes('med')?'#1e40af':nv.includes('avan')?'#92400e':'#333';
+                    h += '<td class="celda" style="background:'+bg+';cursor:pointer" onclick="grupoVerActividad(\''+gId+'\','+mesIdx+',\''+k+'\')">'
+                       + '<div class="celda-obj" style="color:'+cl+'">'+esc(a.titulo||'')+'</div>'
+                       + (a.criterio?'<div class="celda-ind" style="font-family:monospace;font-size:.55rem;color:#888">'+esc(a.criterio)+'</div>':'')
+                       + (a.agrupamiento?'<div class="celda-ind" style="font-size:.55rem">👥 '+esc(a.agrupamiento)+'</div>':'')
+                       + '</td>';
+                });
+                h += '</tr>';
+            }
+            h += '</tbody></table></div></div>';
+            return h;
+        }
+        // Escape básico: los títulos vienen de la IA y pueden traer comillas
+        function esc(t){
+            return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+                .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+        }
+        function grupoVerActividad(gId, mesIdx, k){
+            const g = grupos[gId];
+            const a = g && g.actividadesGeneradas && g.actividadesGeneradas[mesIdx] ? g.actividadesGeneradas[mesIdx][k] : null;
+            if(!a) return;
+            verDetalleActividad(a);
+        }
+        async function grupoBorrarActividades(gId, mesIdx){
+            if(!await confirmarBorrado('Se borrará la tabla de actividades IA de '+MESES[mesIdx].nombre+' para este grupo.'))return;
+            try{
+                await db.ref(PG+'/'+gId+'/actividadesGeneradas/'+mesIdx).remove();
+                if(grupos[gId] && grupos[gId].actividadesGeneradas) delete grupos[gId].actividadesGeneradas[mesIdx];
+                renderGrupos();
+                toast('Tabla borrada','success');
+            }catch(e){
+                console.error(e);
+                toast('No se pudo borrar','error');
+            }
+        }
+
         function abrirGrupoIA(gId){
             grupoIAActual=gId;
             const g=grupos[gId];
-            const trim=getMesEscolarActual()<3?1:getMesEscolarActual()<7?2:3;
+            const trim=(MESES[getMesEscolarActual()]||{trim:1}).trim;
             document.getElementById('grupoIATrim').value=trim;
             document.getElementById('modalGrupoIATitulo').textContent='🤖 Actividades — '+g.nombre;
             const alumnosGrupo=(g.alumnos?Object.values(g.alumnos):[]).filter(id=>alumnos[id]);
@@ -8237,14 +8404,18 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
             let datosAlumnos='';
             alumnosGrupo.forEach(id=>{
                 const a=alumnos[id];
-                const areas=new Set(), objetivos=[], neaes=[];
+                const areas=new Set(), objetivos=[], neaes=[], criterios=new Set();
                 if(a.diagnostico||a.deficit||a.neae) neaes.push(a.diagnostico||a.deficit||a.neae);
                 if(a.programas){
                     Object.keys(a.programas).forEach(pId=>{
                         const p=a.programas[pId],info=AREAS[p.tipo]||{nombre:p.tipo};
                         areas.add(info.nombre);
                         (p.objetivos||[]).filter(o=>o.trimestre===trim).forEach(obj=>{
-                            objetivos.push(`O${obj.numero}: ${obj.descripcion}`);
+                            // Incluir el criterio LOMLOE, como en la programación individual:
+                            // sin él, la IA propone actividades que no se pueden evaluar.
+                            const cr = obj.criterio ? ` [${obj.criterio}]` : '';
+                            objetivos.push(`O${obj.numero}: ${obj.descripcion}${cr}`);
+                            if(obj.criterio) criterios.add(obj.criterio);
                         });
                     });
                 }
@@ -8261,11 +8432,27 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
                 datosAlumnos+=`\n── ${a.siglas} (${a.curso})${neaes.length?' ['+neaes.join(', ')+']':''}\n`;
                 if(areas.size) datosAlumnos+=`   Áreas PT: ${[...areas].join(', ')}\n`;
                 if(objetivos.length) datosAlumnos+=`   Objetivos T${trim}: ${objetivos.slice(0,4).join(' · ')}${objetivos.length>4?` +${objetivos.length-4} más`:''}\n`;
+                if(criterios.size) datosAlumnos+=`   Criterios LOMLOE: ${[...criterios].join(', ')}\n`;
                 if(geuInfo.length) datosAlumnos+=`   Material GEU: ${geuInfo.join(' | ')}\n`;
             });
 
             const dias=(g.diasSesion||[1,3]).map(d=>({0:'Lunes',1:'Martes',2:'Miércoles',3:'Jueves',4:'Viernes'})[d]||d).join(', ');
             const totalSes=MESES.filter(m=>m.trim===trim).reduce((s,m)=>s+m.semanas*(g.diasSesion||[1,3]).length,0);
+            // Claves de sesión de TODO el trimestre, no de un solo mes: el modal
+            // pide trimestre, así que el JSON debe cubrir el trimestre entero y la
+            // importación lo reparte por meses.
+            const diasG = g.diasSesion||[1,3];
+            const mesesTrim = MESES.map((m,i)=>({...m,i})).filter(m=>m.trim===trim);
+            const listaClaves = [];
+            const bloques = mesesTrim.map(m=>{
+                const ks=[];
+                for(let sem=1; sem<=m.semanas; sem++) diasG.forEach(d => ks.push(m.i+'_'+sem+'_'+d));
+                listaClaves.push(...ks);
+                return '### '+m.nombre.toUpperCase()+' (índice '+m.i+', '+ks.length+' sesiones)\n'+ks.join(', ');
+            });
+            const clavesGrupo = bloques.join('\n\n');
+            const clavesEj = listaClaves[0];
+            const nMeses = mesesTrim.length;
 
             const prompt=`# ACTIVIDADES DE GRUPO — PEDAGOGÍA TERAPÉUTICA
 ## CONTEXTO
@@ -8280,27 +8467,33 @@ ${tematica?'- Temática: '+tematica:''}
 
 ## ALUMNOS DEL GRUPO
 ${datosAlumnos}
-## INSTRUCCIONES
-Diseña 3 actividades para trabajar en grupo que:
-1. Permitan participar a TODOS los alumnos simultáneamente
-2. Incluyan un nivel de ejecución diferente para cada alumno según sus objetivos
-3. Usen el mismo material base con adaptaciones individuales
-4. Sean ejecutables en sesiones de 45-60 minutos
+## FORMATO DE RESPUESTA — JSON (OBLIGATORIO)
+Responde ÚNICAMENTE con un objeto JSON válido. Sin texto antes ni después, sin markdown, sin explicaciones.
+Una entrada por SESIÓN del TRIMESTRE ${trim} COMPLETO: ${listaClaves.length} sesiones repartidas en ${nMeses} meses.
 
-### ESTRUCTURA DE CADA ACTIVIDAD:
-#### ACTIVIDAD [N]: [TÍTULO]
-**Objetivo común del grupo:** breve
-**Material:** concreto y accesible
-**Dinámica:** descripción paso a paso de cómo funciona en grupo
+CLAVES DE SESIÓN (usa EXACTAMENTE estas, TODAS, en un único objeto plano):
+${clavesGrupo}
 
-**ADAPTACIÓN POR ALUMNO:**
-${alumnosGrupo.map(id=>`- ${alumnos[id].siglas}: [qué hace específicamente este alumno, con qué nivel de apoyo]`).join('\n')}
+Formato de cada entrada:
+{
+  "${clavesEj}": {
+    "titulo": "Nombre breve de la actividad grupal",
+    "desc": "Qué se hace, con qué material, y CÓMO SE ADAPTA a cada alumno del grupo (cita sus siglas)",
+    "criterio": "código LOMLOE exacto de los listados arriba",
+    "nivel": "básico | medio | avanzado",
+    "agrupamiento": "gran grupo | parejas | individual con apoyo | rotación"
+  }
+}
 
-**Evaluación:** cómo observar y registrar cada alumno durante la actividad
-**DUA aplicado:** qué principio universal se garantiza para todo el grupo
-
----
-Genera las 3 actividades completas.`;
+## REQUISITOS
+1. TODOS los alumnos participan a la vez, con el mismo material base.
+2. Cada actividad tiene un nivel de ejecución distinto por alumno según sus objetivos: dilo en "desc" citando las siglas.
+3. Usa SOLO códigos de criterio de los listados en cada alumno. No inventes ninguno.
+4. Sesiones de 45-60 minutos, material accesible en un aula de PT.
+5. Alterna niveles y agrupamientos a lo largo del mes.
+6. Rellena LAS ${listaClaves.length} claves. Un solo objeto JSON plano, sin anidar por meses.
+7. Progresión a lo largo del trimestre: de las primeras sesiones a las últimas debe notarse avance en dificultad.
+${tematica?'8. Hilo temático: '+tematica:''}`;
 
             document.getElementById('grupoIAPrompt').textContent=prompt;
             toast('Prompt generado ✓','success');
@@ -8717,7 +8910,7 @@ Genera ahora un resumen por cada uno de los ${total} alumnos en el formato indic
         function abrirGrupoSdA(gId){
             const g=grupos[gId];if(!g){toast('Grupo no encontrado','error');return;}
             window._gSdA=gId;_sdaCritsSelec=[];
-            const trim=getMesEscolarActual()<3?1:getMesEscolarActual()<7?2:3;
+            const trim=(MESES[getMesEscolarActual()]||{trim:1}).trim;
             document.querySelectorAll('.sda-tab').forEach(t=>t.classList.remove('active'));
             document.querySelectorAll('.sda-tab-content').forEach(c=>c.classList.remove('active'));
             document.querySelector('.sda-tab[data-tab="sdaCtx"]').classList.add('active');
@@ -8982,12 +9175,18 @@ Genera ahora un resumen por cada uno de los ${total} alumnos en el formato indic
                     <label class="form-label">Vista previa del prompt</label>
                     <div id="grupoIAPrompt" style="background:#1e293b;color:#e2e8f0;border-radius:8px;padding:12px;max-height:240px;overflow-y:auto;font-size:.72rem;font-family:monospace;white-space:pre-wrap;line-height:1.5">Pulsa "Generar" para previsualizar…</div>
                 </div>
+                <div class="form-group" style="margin-top:14px;border-top:1px solid var(--border);padding-top:14px">
+                    <label class="form-label">📥 Pegar el JSON que devuelva la IA</label>
+                    <textarea class="form-textarea" id="grupoIAJsonInput" rows="5" placeholder='Pega aquí la respuesta de la IA' style="font-family:monospace;font-size:.72rem"></textarea>
+                    <div style="font-size:.72rem;color:var(--text-light);margin-top:6px">La tabla de actividades aparecerá en la tarjeta del grupo. Toca una celda para ver el detalle.</div>
+                </div>
             </div>
             <div class="modal-footer" style="gap:8px;flex-wrap:wrap">
                 <button class="btn btn-secondary" onclick="cerrarModal('modalGrupoIA')">Cerrar</button>
                 <button class="btn btn-secondary btn-sm" onclick="grupoIAGenerarPrompt()">👁️ Generar</button>
                 <button class="btn btn-primary" onclick="grupoIACopiarPrompt()">📋 Copiar</button>
                 <button class="btn btn-ai btn-sm" onclick="grupoIAAbrir()">🤖 Abrir Gemini</button>
+                <button class="btn btn-primary" onclick="grupoIAImportarJSON()">📥 Importar tabla</button>
             </div>
         </div>
     </div>
