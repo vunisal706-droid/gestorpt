@@ -1181,7 +1181,7 @@
                     </div>
                 </div>
             </div>
-            <div class="modal-footer"><button class="btn btn-danger btn-sm" onclick="borrarCelda()">🗑️</button><button class="btn btn-secondary" onclick="cerrarModal('modalCelda')">Cancelar</button><button class="btn btn-primary" onclick="guardarCelda()">💾 Guardar</button></div>
+            <div class="modal-footer"><button class="btn btn-danger btn-sm" onclick="borrarCelda()">🗑️</button><button class="btn btn-secondary" onclick="cerrarModal('modalCelda')">Cancelar</button><button id="btnGuardarCelda" class="btn btn-primary" onclick="guardarCelda()">💾 Guardar</button></div>
         </div>
     </div>
 
@@ -3429,7 +3429,7 @@
             return '<td class="'+cls+'" onclick="editarCelda(\''+k+'\','+d+')">'+(icon?'<span class="celda-icon">'+icon+'</span>':'')+recursoIcon+'<div class="celda-obj" style="color:'+info.color+'">O'+obj.numero+'</div><div class="celda-ind">'+ind.substring(0,25)+(ind.length>25?'...':'')+'</div>'+criterio+geuHtml+'</td>';
         }
         function cambiarMes(dir){mesActual=Math.max(0,Math.min(9,mesActual+dir));renderProg();}
-        function editarCelda(k,d){celdaEditando=k;estadoCelda='asiste';resultadoCelda=null;const a=alumnos[alumnoActual],c=a.programacion?a.programacion[k]:{};document.getElementById('celdaTitulo').textContent=DIAS[d];document.querySelectorAll('.asist-btn').forEach(b=>b.classList.remove('selected'));document.querySelectorAll('.resultado-btn').forEach(b=>b.classList.remove('selected'));if(a.sincole&&a.sincole[k]){estadoCelda='sincole';document.querySelector('.asist-btn.sincole').classList.add('selected');document.getElementById('contenidoSesion').style.display='none';}else if(a.ausencias&&a.ausencias[k]){estadoCelda='ausencia';document.querySelector('.asist-btn.ausencia').classList.add('selected');document.getElementById('contenidoSesion').style.display='none';}else{document.querySelector('.asist-btn.asiste').classList.add('selected');document.getElementById('contenidoSesion').style.display='block';}resultadoCelda=(a.resultados&&a.resultados[k])?a.resultados[k]:null;if(resultadoCelda){const btn=document.querySelector('.resultado-btn.'+resultadoCelda);if(btn)btn.classList.add('selected');}const sel=document.getElementById('selPrograma');sel.innerHTML='<option value="">-</option>';if(a.programas){Object.keys(a.programas).forEach(pId=>{const p=a.programas[pId],info=AREAS[p.tipo]||{icon:'📄'};sel.innerHTML+='<option value="'+pId+'"'+(c.pId===pId?' selected':'')+'>'+info.icon+' '+(info.nombre||p.tipo)+'</option>';});}if(c.pId){cargarObjetivos();setTimeout(()=>{document.getElementById('selObjetivo').value=c.oIdx!==undefined?c.oIdx:'';cargarIndicadores();setTimeout(()=>{document.getElementById('selIndicador').value=c.iIdx!==undefined?c.iIdx:'';cargarRecursosSugeridos();setTimeout(()=>{document.getElementById('selRecurso').value=c.recursoId||'';if(c.recursoId)mostrarInfoRecurso(c.recursoId);},30);},30);},30);}else{document.getElementById('selObjetivo').innerHTML='<option value="">-</option>';document.getElementById('selIndicador').innerHTML='<option value="">-</option>';document.getElementById('selRecurso').innerHTML='<option value="">Sin recurso</option>';}abrirModal('modalCelda');
+        function editarCelda(k,d){celdaEditando=k;estadoCelda='asiste';resultadoCelda=null;const a=alumnos[alumnoActual],c=(a.programacion&&a.programacion[k])||{};document.getElementById('celdaTitulo').textContent=DIAS[d];document.querySelectorAll('.asist-btn').forEach(b=>b.classList.remove('selected'));document.querySelectorAll('.resultado-btn').forEach(b=>b.classList.remove('selected'));if(a.sincole&&a.sincole[k]){estadoCelda='sincole';document.querySelector('.asist-btn.sincole').classList.add('selected');document.getElementById('contenidoSesion').style.display='none';}else if(a.ausencias&&a.ausencias[k]){estadoCelda='ausencia';document.querySelector('.asist-btn.ausencia').classList.add('selected');document.getElementById('contenidoSesion').style.display='none';}else{document.querySelector('.asist-btn.asiste').classList.add('selected');document.getElementById('contenidoSesion').style.display='block';}resultadoCelda=(a.resultados&&a.resultados[k])?a.resultados[k]:null;if(resultadoCelda){const btn=document.querySelector('.resultado-btn.'+resultadoCelda);if(btn)btn.classList.add('selected');}const sel=document.getElementById('selPrograma');sel.innerHTML='<option value="">-</option>';if(a.programas){Object.keys(a.programas).forEach(pId=>{const p=a.programas[pId],info=AREAS[p.tipo]||{icon:'📄'};sel.innerHTML+='<option value="'+pId+'"'+(c.pId===pId?' selected':'')+'>'+info.icon+' '+(info.nombre||p.tipo)+'</option>';});}if(c.pId){cargarObjetivos();setTimeout(()=>{document.getElementById('selObjetivo').value=c.oIdx!==undefined?c.oIdx:'';cargarIndicadores();setTimeout(()=>{document.getElementById('selIndicador').value=c.iIdx!==undefined?c.iIdx:'';cargarRecursosSugeridos();setTimeout(()=>{document.getElementById('selRecurso').value=c.recursoId||'';if(c.recursoId)mostrarInfoRecurso(c.recursoId);},30);},30);},30);}else{document.getElementById('selObjetivo').innerHTML='<option value="">-</option>';document.getElementById('selIndicador').innerHTML='<option value="">-</option>';document.getElementById('selRecurso').innerHTML='<option value="">Sin recurso</option>';}abrirModal('modalCelda');
             // Cargar datos GEU guardados en esta celda (si los hay)
             const geuGuardado = c ? c.geu : null;
             geuCargarEnModal(geuGuardado);
@@ -3473,7 +3473,11 @@
                 updates[PA+'/'+alumnoActual+'/programacion/'+celdaEditando+'/geu'] = null;
             }
             const _aId = alumnoActual;
+            const _btnG = document.getElementById('btnGuardarCelda');
+            if(_btnG){ _btnG.disabled = true; _btnG.textContent = 'Guardando…'; }
+            const _restaurar = ()=>{ if(_btnG){ _btnG.disabled=false; _btnG.innerHTML='💾 Guardar'; } };
             db.ref().update(updates).then(()=>{
+                _restaurar();
                 if(_geuPendienteSiguiente){
                     const p=_geuPendienteSiguiente; _geuPendienteSiguiente=null;
                     geuProponerSiguiente(_aId, p.col, p.nv, p.k);
@@ -3481,6 +3485,13 @@
                 cerrarModal('modalCelda');
                 toast(resultadoCelda==='repetir'?'Repetición insertada ✓':'Guardado ✓','success');
                 if(document.getElementById('tabGeu') && document.getElementById('tabGeu').classList.contains('active')) renderGEUTab();
+            }).catch(e=>{
+                // Sin esto, un fallo de escritura dejaba el modal abierto SIN AVISAR:
+                // el botón Guardar parecía muerto.
+                console.error('guardarCelda', e);
+                _restaurar();
+                _geuPendienteSiguiente = null;
+                toast('No se pudo guardar: ' + (e && e.message ? e.message : 'error de conexión'), 'error');
             });}
         function borrarCelda(){const updates={};['programacion','ausencias','sincole','resultados'].forEach(t=>{updates[PA+'/'+alumnoActual+'/'+t+'/'+celdaEditando]=null;});db.ref().update(updates).then(()=>{cerrarModal('modalCelda');toast('Eliminado','success');});}
         function calcStats(a){const aus=a.ausencias||{},res=a.resultados||{};let ausencias=0,conseguidos=0,repetir=0;const dias=a.diasSesion||[1,3,4],porMes={},porTrim={1:{aus:0},2:{aus:0},3:{aus:0}};for(let mi=0;mi<MESES.length;mi++){const m=MESES[mi];porMes[mi]={aus:0};for(let s=1;s<=m.semanas;s++){for(let di=0;di<dias.length;di++){const k=mi+'_'+s+'_'+dias[di];if(aus[k]){ausencias++;porMes[mi].aus++;porTrim[m.trim].aus++;}if(res[k]==='conseguido')conseguidos++;if(res[k]==='repetir')repetir++;}}}return{ausencias:ausencias,conseguidos:conseguidos,repetir:repetir,porMes:porMes,porTrim:porTrim};}
