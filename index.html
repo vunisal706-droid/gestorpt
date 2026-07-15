@@ -3499,6 +3499,30 @@
                 updates[PA+'/'+alumnoActual+'/programacion/'+celdaEditando+'/geu'] = null;
             }
             const _aId = alumnoActual;
+            // Firebase RECHAZA (o peor, se cuelga) si un update() incluye una ruta
+            // y a la vez un descendiente suyo — p.ej. ".../programacion" junto con
+            // ".../programacion/1_1_3/geu". Pasa al deshacer una ausencia, porque
+            // se reescribe programacion entera Y se toca el geu de una celda.
+            // Fundimos los descendientes dentro del objeto ancestro y así el
+            // update queda con rutas disjuntas.
+            (function fusionarRutas(u){
+                const claves = Object.keys(u);
+                claves.forEach(hijo=>{
+                    const padre = claves.find(p=> p!==hijo && hijo.startsWith(p+'/'));
+                    if(!padre) return;
+                    const resto = hijo.slice(padre.length+1).split('/');   // p.ej. ['1_1_3','geu']
+                    let obj = u[padre];
+                    if(obj===null || typeof obj!=='object'){ delete u[hijo]; return; }
+                    // navegar/crear hasta el penúltimo tramo
+                    for(let i=0;i<resto.length-1;i++){
+                        if(typeof obj[resto[i]]!=='object' || obj[resto[i]]===null) obj[resto[i]]={};
+                        obj = obj[resto[i]];
+                    }
+                    const last = resto[resto.length-1];
+                    if(u[hijo]===null) delete obj[last]; else obj[last]=u[hijo];
+                    delete u[hijo];
+                });
+            })(updates);
             const _btnG = document.getElementById('btnGuardarCelda');
             if(_btnG){ _btnG.disabled = true; _btnG.textContent = 'Guardando…'; }
             const _restaurar = ()=>{ if(_btnG){ _btnG.disabled=false; _btnG.innerHTML='💾 Guardar'; } };
