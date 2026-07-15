@@ -2994,12 +2994,18 @@
             });
 
             // Assign sessions
+            // Las ausencias y "sin cole" NO consumen objetivo: el índice del pool
+            // solo avanza en las sesiones asistidas. Así la programación bascula
+            // sola —adelante al marcar una ausencia, y hacia atrás al deshacerla—
+            // sin necesidad de reajustes manuales (que no tenían inversa).
             let idxT={1:0,2:0,3:0};
+            const aus=a.ausencias||{}, sc=a.sincole||{};
             todasSesiones.forEach(k=>{
                 const mi=parseInt(k.split('_')[0]);
                 const trim=MESES[mi].trim;
                 const pool=poolT[trim];
                 if(!pool.length)return;
+                if(aus[k]||sc[k])return;              // día perdido: no gasta ficha del pool
                 prog[k]=pool[idxT[trim]%pool.length];
                 idxT[trim]++;
             });
@@ -3442,7 +3448,27 @@
         function cargarRecursosSugeridos(){const pId=document.getElementById('selPrograma').value;const sel=document.getElementById('selRecurso');sel.innerHTML='<option value="">Sin recurso</option>';sel.onchange=function(){mostrarInfoRecurso(this.value);};if(!pId)return;const a=alumnos[alumnoActual];if(!a.programas||!a.programas[pId])return;const area=a.programas[pId].tipo;const ciclo=a.curso.includes('Infantil')?'infantil':a.curso.includes('1º')||a.curso.includes('2º')?'ciclo1':a.curso.includes('3º')||a.curso.includes('4º')?'ciclo2':'ciclo3';const recursosFiltrados=RECURSOS_ONLINE.filter(r=>r.area===area&&r.nivel.includes(ciclo));recursosFiltrados.slice(0,10).forEach(r=>{sel.innerHTML+='<option value="'+r.id+'">'+r.titulo+'</option>';});if(recursosFiltrados.length===0){sel.innerHTML+='<option disabled>-- No hay recursos para esta área --</option>';}}
         
         function mostrarInfoRecurso(id){const info=document.getElementById('infoRecurso');if(!id){info.style.display='none';return;}const recurso=RECURSOS_ONLINE.find(r=>r.id===id);if(!recurso){info.style.display='none';return;}const fuente=recurso.fuente==='orientacion-andujar'?'🌍 Orientación Andújar':recurso.fuente==='arasaac'?'🎨 ARASAAC':recurso.fuente==='superpt'?'✨ SuperPT':recurso.fuente==='ptyal'?'📚 PTYAL':recurso.fuente==='aulapt'?'📋 AulaPT':recurso.fuente==='liveworksheets'?'💻 LiveWorksheets':'🔗 '+recurso.fuente;info.innerHTML='<strong>'+fuente+'</strong><br>'+recurso.descripcion+'<br><a href="'+recurso.url+'" target="_blank" style="color:#3b82f6;font-size:.75rem">Abrir recurso →</a>';info.style.display='block';}
-        function guardarCelda(){const a=alumnos[alumnoActual];const updates={};const contenidoActual=a.programacion?a.programacion[celdaEditando]:null;updates[PA+'/'+alumnoActual+'/ausencias/'+celdaEditando]=null;updates[PA+'/'+alumnoActual+'/sincole/'+celdaEditando]=null;updates[PA+'/'+alumnoActual+'/resultados/'+celdaEditando]=null;if(estadoCelda==='ausencia'||estadoCelda==='sincole'){const tipo=estadoCelda==='ausencia'?'ausencias':'sincole';updates[PA+'/'+alumnoActual+'/'+tipo+'/'+celdaEditando]=true;if(contenidoActual){const nuevaProg=reajustarDesde(a,celdaEditando);updates[PA+'/'+alumnoActual+'/programacion']=nuevaProg;}}else{const pId=document.getElementById('selPrograma').value;const oIdx=document.getElementById('selObjetivo').value;const iIdx=document.getElementById('selIndicador').value;const recursoId=document.getElementById('selRecurso').value;if(pId&&oIdx!==''){const nuevoContenido={pId:pId,oIdx:parseInt(oIdx),iIdx:iIdx!==''?parseInt(iIdx):0};if(recursoId)nuevoContenido.recursoId=recursoId;if(resultadoCelda==='repetir'){a.programacion=a.programacion||{};a.programacion[celdaEditando]=nuevoContenido;const nuevaProg=insertarRepeticion(a,celdaEditando,nuevoContenido);updates[PA+'/'+alumnoActual+'/programacion']=nuevaProg;}else{updates[PA+'/'+alumnoActual+'/programacion/'+celdaEditando]=nuevoContenido;}}if(resultadoCelda){updates[PA+'/'+alumnoActual+'/resultados/'+celdaEditando]=resultadoCelda;}}// Guardar dato GEU manual en la celda si está marcado
+        function guardarCelda(){const a=alumnos[alumnoActual];const updates={};const contenidoActual=a.programacion?a.programacion[celdaEditando]:null;updates[PA+'/'+alumnoActual+'/ausencias/'+celdaEditando]=null;updates[PA+'/'+alumnoActual+'/sincole/'+celdaEditando]=null;updates[PA+'/'+alumnoActual+'/resultados/'+celdaEditando]=null;if(estadoCelda==='ausencia'||estadoCelda==='sincole'){const tipo=estadoCelda==='ausencia'?'ausencias':'sincole';updates[PA+'/'+alumnoActual+'/'+tipo+'/'+celdaEditando]=true;
+                // Regenerar con la ausencia ya aplicada: generarProgramacion salta
+                // los días perdidos, así que todo se recoloca solo. Aplicamos el
+                // estado en una copia para que el cálculo lo tenga en cuenta.
+                const aTmp={...a, ausencias:{...(a.ausencias||{})}, sincole:{...(a.sincole||{})}};
+                aTmp[tipo]={...aTmp[tipo], [celdaEditando]:true};
+                updates[PA+'/'+alumnoActual+'/programacion']=generarProgramacion(aTmp);
+            }else{const pId=document.getElementById('selPrograma').value;const oIdx=document.getElementById('selObjetivo').value;const iIdx=document.getElementById('selIndicador').value;const recursoId=document.getElementById('selRecurso').value;
+                const eraAusencia=(a.ausencias&&a.ausencias[celdaEditando])||(a.sincole&&a.sincole[celdaEditando]);
+                if(pId&&oIdx!==''){const nuevoContenido={pId:pId,oIdx:parseInt(oIdx),iIdx:iIdx!==''?parseInt(iIdx):0};if(recursoId)nuevoContenido.recursoId=recursoId;if(resultadoCelda==='repetir'){a.programacion=a.programacion||{};a.programacion[celdaEditando]=nuevoContenido;const nuevaProg=insertarRepeticion(a,celdaEditando,nuevoContenido);updates[PA+'/'+alumnoActual+'/programacion']=nuevaProg;}else{updates[PA+'/'+alumnoActual+'/programacion/'+celdaEditando]=nuevoContenido;}}
+                else if(eraAusencia){
+                    // Deshacer una ausencia sin elegir contenido a mano: regenerar
+                    // para que el objetivo de este dia vuelva a su sitio y la
+                    // programacion bascule hacia atras. Antes esta rama no hacia
+                    // nada -> la casilla quedaba en blanco.
+                    const aTmp={...a, ausencias:{...(a.ausencias||{})}, sincole:{...(a.sincole||{})}};
+                    delete aTmp.ausencias[celdaEditando];
+                    delete aTmp.sincole[celdaEditando];
+                    updates[PA+'/'+alumnoActual+'/programacion']=generarProgramacion(aTmp);
+                }
+                if(resultadoCelda){updates[PA+'/'+alumnoActual+'/resultados/'+celdaEditando]=resultadoCelda;}}// Guardar dato GEU manual en la celda si está marcado
             const geuCb = document.getElementById('geuHecho');
             if(geuCb && geuCb.checked && estadoCelda === 'asiste'){
                 const colId = document.getElementById('geuColSel').value;
