@@ -8156,6 +8156,7 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
                     </div>
                     <div class="btn-group">
                         <button class="btn btn-ai btn-sm" onclick="abrirGrupoIA('${gId}')">🤖 Actividades IA</button>
+                        <button class="btn btn-secondary btn-sm no-print" onclick="imprimirGrupoOpciones('${gId}')">🖨️ Imprimir</button>
                         <button class="btn btn-primary btn-sm" onclick="abrirGrupoSdA('${gId}')">🎓 SdA Grupal</button>
                         <button class="btn btn-secondary btn-sm" onclick="editarGrupo('${gId}')">✏️</button>
                         <button class="btn btn-danger btn-sm" onclick="eliminarGrupo('${gId}')">🗑️</button>
@@ -8438,6 +8439,106 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
                 console.error(e);
                 toast('No se pudo borrar','error');
             }
+        }
+
+        // Imprime/descarga la programación de un grupo (mes o trimestre completo),
+        // con la MISMA plantilla institucional (logos UE/PROA+) que la del alumno.
+        // Muestra el cuadrante de sesiones + las actividades IA importadas y la
+        // ficha de cada alumno con sus objetivos del periodo.
+        function imprimirGrupoOpciones(gId){
+            _grupoImprimirId = gId;
+            const g = grupos[gId];
+            const mesActual = parseInt((document.getElementById('gruposMes')||{value:getMesEscolarActual()}).value,10)||0;
+            const trim = MESES[mesActual].trim;
+            avisarOpcionesImpresionGrupo(g, mesActual, trim);
+        }
+        let _grupoImprimirId = null;
+        async function avisarOpcionesImpresionGrupo(g, mesActual, trim){
+            const op = await _askAbrir({
+                titulo:'🖨️ Imprimir programación de '+g.nombre,
+                mensaje:'¿Qué periodo quieres imprimir?',
+                ok:'Mes ('+MESES[mesActual].nombre+')',
+                cancelar:'Trimestre '+trim+' completo'
+            });
+            // ok=true → mes; false → trimestre; null → cancelar (Escape/clic fuera)
+            if(op===null) return;
+            imprimirGrupo(_grupoImprimirId, op ? [mesActual] : MESES.map((m,i)=>({...m,i})).filter(m=>m.trim===trim).map(m=>m.i));
+        }
+
+        function imprimirGrupo(gId, mesesIdx){
+            const g = grupos[gId];
+            if(!g){ toast('Grupo no encontrado','error'); return; }
+            const dias = g.diasSesion || [1,3];
+            const DIAS_C2 = {0:'Lunes',1:'Lunes',2:'Martes',3:'Miércoles',4:'Jueves',5:'Viernes'};
+            const alumnosG = (g.alumnos||[]).map(id=>alumnos[id]).filter(Boolean);
+            const trim = MESES[mesesIdx[0]].trim;
+            const titulo = mesesIdx.length===1 ? MESES[mesesIdx[0]].nombre : 'Trimestre '+trim;
+
+            let html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Programación '+g.nombre+'</title><style>'
+                + 'body{font-family:Arial;padding:20px;font-size:11px;color:#1a2a24}'
+                + 'h1{color:#1a5f4a;font-size:17px;margin:6px 0}h2{font-size:13px;border-bottom:2px solid #1a5f4a;color:#1a5f4a;margin-top:20px}'
+                + 'h3{font-size:12px;color:#2d8a6e;margin:12px 0 4px}'
+                + 'table{width:100%;border-collapse:collapse;margin-bottom:14px}'
+                + 'th,td{border:1px solid #ccc;padding:6px;vertical-align:top}th{background:#1a5f4a;color:#fff}'
+                + 'td:first-child{background:#2d8a6e;color:#fff;text-align:center;width:36px}'
+                + '.meta{color:#666;font-size:10px}.crit{font-family:monospace;font-size:9px;color:#888}'
+                + '.nivel-bas{background:#dcfce7}.nivel-med{background:#dbeafe}.nivel-avan{background:#fef3c7}'
+                + '.page-break{page-break-after:always}.alumnos-box{background:#f5f7f6;border:1px solid #d4ddd9;border-radius:6px;padding:8px 12px;margin-bottom:12px;font-size:10px}'
+                + _LOGO_CSS + '</style></head><body>' + _LOGO_HTML;
+
+            html += '<h1>Programación de grupo — '+g.nombre+'</h1>';
+            html += '<div class="alumnos-box"><b>Alumnado del grupo:</b> '
+                 + (alumnosG.length ? alumnosG.map(a=>esc(a.siglas)+' ('+esc(a.curso||'')+')').join(' · ') : '—')
+                 + '<br><b>Días de sesión:</b> '+dias.map(d=>DIAS_C2[d]).join(', ')
+                 + ' &nbsp;·&nbsp; <b>Periodo:</b> '+titulo+'</div>';
+
+            mesesIdx.forEach(mi=>{
+                const mes = MESES[mi];
+                const act = (g.actividadesGeneradas && g.actividadesGeneradas[mi]) || {};
+                html += '<h2>'+mes.nombre+' (T'+mes.trim+')</h2>';
+                html += '<table><tr><th>Sem</th>';
+                dias.forEach(d=>{ html += '<th>'+DIAS_C2[d]+'</th>'; });
+                html += '</tr>';
+                for(let s=1;s<=mes.semanas;s++){
+                    html += '<tr><td>'+s+'</td>';
+                    dias.forEach(d=>{
+                        const k = mi+'_'+s+'_'+d;
+                        const a = act[k];
+                        if(!a){ html += '<td>-</td>'; return; }
+                        const nv = String(a.nivel||'').toLowerCase();
+                        const cls = nv.includes('bás')||nv.includes('bas')?'nivel-bas':nv.includes('med')?'nivel-med':nv.includes('avan')?'nivel-avan':'';
+                        html += '<td class="'+cls+'"><b>'+esc(a.titulo||'')+'</b>'
+                             + (a.criterio?'<br><span class="crit">'+esc(a.criterio)+'</span>':'')
+                             + (a.agrupamiento?'<br><span class="meta">👥 '+esc(a.agrupamiento)+'</span>':'')
+                             + (a.desc?'<br><span class="meta">'+esc(a.desc)+'</span>':'')
+                             + '</td>';
+                    });
+                    html += '</tr>';
+                }
+                html += '</table>';
+            });
+
+            // Ficha de objetivos por alumno (los del trimestre del periodo impreso)
+            html += '<h2>Objetivos por alumno (T'+trim+')</h2>';
+            alumnosG.forEach(a=>{
+                html += '<h3>'+esc(a.siglas)+' — '+esc(a.curso||'')+'</h3>';
+                const objs = [];
+                Object.keys(a.programas||{}).forEach(pId=>{
+                    const p = a.programas[pId];
+                    (p.objetivos||[]).filter(o=>o.trimestre===trim).forEach(o=>{
+                        objs.push('O'+o.numero+': '+esc(o.descripcion||'')+(o.criterio?' <span class="crit">['+esc(o.criterio)+']</span>':''));
+                    });
+                });
+                html += objs.length ? '<ul style="margin:4px 0">'+objs.map(o=>'<li>'+o+'</li>').join('')+'</ul>'
+                                    : '<p class="meta">Sin objetivos para este trimestre.</p>';
+            });
+
+            html += '</body></html>';
+            const win = window.open('','_blank');
+            if(!win){ toast('Permite las ventanas emergentes para imprimir','error'); return; }
+            win.document.write(html);
+            win.document.close();
+            setTimeout(()=>{ win.print(); }, 500);
         }
 
         function abrirGrupoIA(gId){
