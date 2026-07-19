@@ -1,4 +1,4 @@
-// Service Worker de Gestor PE — v3
+// Service Worker de Gestor PE — v5
 // Objetivo: que la app funcione DE VERDAD sin conexión.
 //  · App shell (HTML, manifest, iconos) → cacheada.
 //  · Librerías de CDN (Firebase, Chart.js, mammoth, docx…) → cacheadas también.
@@ -6,7 +6,7 @@
 //  · HTML: network-first (para no servir lógica vieja).
 //  · Resto: stale-while-revalidate.
 
-const VERSION     = 'v3';
+const VERSION     = 'v5';
 const CACHE_SHELL = 'gestor-pe-shell-' + VERSION;
 const CACHE_LIBS  = 'gestor-pe-libs-'  + VERSION;
 const CACHES_OK   = [CACHE_SHELL, CACHE_LIBS];

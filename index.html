@@ -217,6 +217,13 @@
         .ciclo-ciclo2{background:#d1fae5;color:#065f46}
         .ciclo-ciclo3{background:#fef3c7;color:#92400e}
         .print-logo-global{display:none;text-align:center;padding:8px 0 10px;border-bottom:2px solid #d4ddd9;margin-bottom:14px}@media print{.no-print{display:none!important}body{background:#fff}.card{box-shadow:none;border:1px solid #ddd}.print-logo-global{display:block!important}}
+        /* Marco de impresión de la propia app: cabecera repetida en todas las páginas */
+        .print-marco{width:100%;border-collapse:collapse;margin:0}
+        .print-marco>thead{display:table-header-group}
+        .print-marco>thead>tr>td,.print-marco>tbody>tr>td{border:none!important;padding:0!important;background:transparent!important}
+        .print-marco>thead .logo-inst-app{text-align:center;padding:8px 0 10px;border-bottom:2px solid #d4ddd9;margin-bottom:14px}
+        .print-marco>thead .logo-inst-app img{height:38px;width:auto;max-width:100%}
+        .print-marco .print-logo-global{display:none!important}
         /* SÉNECA STYLES */
         .seneca-programa{background:var(--bg-card);border-radius:var(--radius);padding:16px;margin-bottom:16px;box-shadow:var(--shadow);border-left:5px solid var(--primary)}
         .seneca-programa-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid var(--primary)}
@@ -2575,10 +2582,43 @@
         function crearAlumno(){const siglas=document.getElementById('nuevoSiglas').value.trim().toUpperCase();if(!siglas){toast('Introduce siglas','error');return;}const cursoSel=document.getElementById('nuevoCurso'),cursoTexto=cursoSel.options[cursoSel.selectedIndex].text,ciclo=cursoSel.value;db.ref(PA).push().set({siglas:siglas,curso:cursoTexto,ciclo:ciclo,diasSesion:diasSel.slice(),programas:{},programacion:{},evaluaciones:{},ausencias:{},sincole:{},resultados:{},pasados:{}}).then(()=>{cerrarModal('modalNuevo');toast(siglas+' creado ✓','success');});}
         // ── ENCABEZAMIENTO INSTITUCIONAL PROA+ / UE ─────────────────────
         const _LOGO_B64 = 'data:image/jpeg;base64,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';
-        const _LOGO_CSS = '.logo-inst{text-align:center;padding:8px 0 12px;border-bottom:2px solid #d4ddd9;margin-bottom:16px;page-break-inside:avoid}.logo-inst img{height:38px;width:auto;max-width:100%}.logo-inst-portada{text-align:center;margin-bottom:18px}.logo-inst-portada img{height:42px;width:auto;max-width:90%}';
+        const _LOGO_CSS = '.logo-inst{text-align:center;padding:8px 0 12px;border-bottom:2px solid #d4ddd9;margin-bottom:16px;page-break-inside:avoid}.logo-inst img{height:38px;width:auto;max-width:100%}.logo-inst-portada{text-align:center;margin-bottom:18px}.logo-inst-portada img{height:42px;width:auto;max-width:90%}'
+            /* Marco con <thead> repetido: la cabecera institucional sale en TODAS las páginas al imprimir */
+            + '.marco-inst{width:100%;border-collapse:collapse;margin:0}'
+            + '.marco-inst>thead{display:table-header-group}'
+            + '.marco-inst>thead>tr>td,.marco-inst>tbody>tr>td{border:none!important;padding:0!important;background:transparent!important;color:inherit!important;text-align:left!important;width:auto!important}';
         const _LOGO_HTML  = '<div class="logo-inst"><img src="'+_LOGO_B64+'" alt="Encabezamiento institucional PROA+"></div>';
         (function(){const el=document.getElementById('printLogoGlobal');if(el)el.src=_LOGO_B64;})();
         const _LOGO_PORT  = '<div class="logo-inst-portada"><img src="'+_LOGO_B64+'" alt="Encabezamiento institucional PROA+"></div>';
+        // Envoltorio del cuerpo del documento: el logo va en un <thead>, que los
+        // navegadores repiten en cada página impresa → cabecera en TODAS las hojas.
+        const _LOGO_ABRE   = '<table class="marco-inst"><thead><tr><td>'+_LOGO_HTML+'</td></tr></thead><tbody><tr><td>';
+        const _LOGO_CIERRA = '</td></tr></tbody></table>';
+
+        // ── Impresión de la propia app (botón 🖨️ / Ctrl+P): antes de imprimir
+        // se envuelve todo el <body> en una tabla cuyo <thead> lleva el logo,
+        // de modo que la cabecera se repite en TODAS las páginas; al terminar
+        // se restaura el DOM tal cual estaba.
+        (function(){
+            let _marcoApp = null;
+            window.addEventListener('beforeprint', () => {
+                if(_marcoApp) return;
+                const t = document.createElement('table');
+                t.className = 'print-marco';
+                t.innerHTML = '<thead><tr><td><div class="logo-inst-app"><img src="'+_LOGO_B64+'" alt="Encabezamiento institucional PROA+"></div></td></tr></thead><tbody><tr><td></td></tr></tbody>';
+                const td = t.querySelector('tbody td');
+                while(document.body.firstChild) td.appendChild(document.body.firstChild);
+                document.body.appendChild(t);
+                _marcoApp = t;
+            });
+            window.addEventListener('afterprint', () => {
+                if(!_marcoApp) return;
+                const td = _marcoApp.querySelector('tbody td');
+                while(td.firstChild) document.body.insertBefore(td.firstChild, _marcoApp);
+                _marcoApp.remove();
+                _marcoApp = null;
+            });
+        })();
         // ───────────────────────────────────────────────────────────────────
 
         function abrirAlumno(id){alumnoActual=id;mesActual=getMesEscolarActual();evalTrim=1;document.getElementById('screenInicio').classList.remove('active');document.getElementById('screenAlumno').classList.add('active');const a=alumnos[id],diasStr=(a.diasSesion||[0,2,4]).map(d=>DIAS_C[d]).join('-');document.getElementById('alumnoHeader').innerHTML='<div class="alumno-header-siglas">'+a.siglas+'</div><div><h2 style="font-size:.95rem">'+a.curso+'</h2><p style="color:var(--text-light);font-size:.75rem">'+diasStr+'</p></div><div style="margin-left:auto" class="btn-group no-print"><button class="btn btn-secondary btn-sm" onclick="volverInicio()">← Volver</button><button class="btn btn-secondary btn-sm" onclick="window.print()">🖨️</button><button class="btn btn-danger btn-sm" onclick="eliminarAlumno(\''+id+'\')">🗑️</button><button class=\"btn btn-secondary btn-sm\" onclick=\"abrirEditarAlumno(\''+id+'\')\">✏️ Editar</button></div>';document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===0));document.querySelectorAll('.tab-content').forEach((c,i)=>c.classList.toggle('active',i===0));renderProgs();renderProg();renderEval();renderAsis();}
@@ -4850,7 +4890,7 @@
             h+=`</div>`;
             // Show in print window
             const win=window.open('','_blank');
-            win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>ACI ${a.siglas}</title><style>body{font-family:serif;padding:20px;max-width:800px;margin:0 auto}@media print{body{padding:0}}${_LOGO_CSS}</style></head><body>${_LOGO_HTML}${h}<script>window.onload=function(){window.print();}<\/script></body></html>`);
+            win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>ACI ${a.siglas}</title><style>body{font-family:serif;padding:20px;max-width:800px;margin:0 auto}@media print{body{padding:0}}${_LOGO_CSS}</style></head><body>${_LOGO_ABRE}${h}${_LOGO_CIERRA}<script>window.onload=function(){window.print();}<\/script></body></html>`);
             win.document.close();
         }
 
@@ -6037,7 +6077,7 @@ ${instrucciones}
                 ? '<h2 style="margin-top:20px;color:#ef4444">✗ No Conseguidos ('+informeData.noConseguidos.length+')</h2>'+(informeData.noConseguidos.map(x=>'<p class="indicador" style="color:#991b1b">• '+x.programa+' '+x.objetivo+': '+x.indicador+'</p>').join(''))
                 : '';
             const win = window.open('','_blank');
-            win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Informe</title><style>body{font-family:Arial;padding:30px;max-width:800px;margin:0 auto}h1{color:#1a5f4a}h2{margin-top:20px}.indicador{margin:5px 0 5px 20px}'+_LOGO_CSS+'</style></head><body>'+_LOGO_HTML+
+            win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Informe</title><style>body{font-family:Arial;padding:30px;max-width:800px;margin:0 auto}h1{color:#1a5f4a}h2{margin-top:20px}.indicador{margin:5px 0 5px 20px}'+_LOGO_CSS+'</style></head><body>'+_LOGO_ABRE+
                 '<h1>INFORME T'+informeData.trim+' — '+a.siglas+'</h1>'
                 +'<p>Curso: '+a.curso+' | Fecha: '+new Date().toLocaleDateString('es-ES')+'</p>'
                 +criteriosHtml
@@ -6046,7 +6086,7 @@ ${instrucciones}
                 +'<h2>🔄 En Proceso ('+informeData.proceso.length+')</h2>'+(informeData.proceso.map(x=>'<p class="indicador">• '+x.programa+' '+x.objetivo+': '+x.indicador+'</p>').join('')||'<p>Ninguno</p>')
                 +ncHtml
                 +califHtml
-                +'<p style="margin-top:40px">Fdo: _______________</p></body></html>');
+                +'<p style="margin-top:40px">Fdo: _______________</p>'+_LOGO_CIERRA+'</body></html>');
             win.document.close();
             setTimeout(()=>{ win.print(); }, 300);
         }
@@ -6131,6 +6171,8 @@ body{font-family:Arial,sans-serif;font-size:10px;color:#222}
                 <div class="footer">Generado el ${new Date().toLocaleDateString('es-ES')}</div>
             </div>`;
 
+            html += _LOGO_ABRE; // cabecera institucional repetida en todas las páginas
+
             // UN BLOQUE POR ALUMNO
             ids.forEach(id => {
                 const a = alumnos[id];
@@ -6161,7 +6203,7 @@ body{font-family:Arial,sans-serif;font-size:10px;color:#222}
                 const criterios = getCriteriosResumen(a, trim);
                 const bloqueantes = getIndicadoresBloqueantes(a, trim, 3);
 
-                html += `<div class="alumno-bloque">${_LOGO_HTML}<div class="alumno-cabecera">
+                html += `<div class="alumno-bloque"><div class="alumno-cabecera">
                         <div class="alumno-nombre">📋 ${a.siglas}</div>
                         <div class="alumno-meta">${a.curso} &nbsp;|&nbsp; T${trim} &nbsp;|&nbsp; ${periodoTexto}<br>Fecha: ${new Date().toLocaleDateString('es-ES')}</div>
                     </div>
@@ -6198,7 +6240,7 @@ body{font-family:Arial,sans-serif;font-size:10px;color:#222}
                 </div>`;
             });
 
-            html += '</body></html>';
+            html += _LOGO_CIERRA + '</body></html>';
 
             const win = window.open('', '_blank');
             win.document.write(html);
@@ -6934,9 +6976,10 @@ body{font-family:Arial,sans-serif;font-size:10px;color:#333}
             html += '<div class="portada-footer">Pedagogía Terapéutica</div>';
             html += '</div>';
 
+            html += _LOGO_ABRE; // cabecera institucional repetida en todas las páginas
+
             // === GRÁFICAS DE RESULTADOS ===
             html += '<div class="contenido page-break">';
-            html += _LOGO_HTML;
             html += '<div class="titulo">Resultados por Alumno</div>';
             html += '<div class="subtitulo">'+tituloTrimestre+'</div>';
             html += '<hr class="sep">';
@@ -6986,7 +7029,6 @@ body{font-family:Arial,sans-serif;font-size:10px;color:#333}
 
             // === TABLA RESUMEN ===
             html += '<div class="contenido page-break">';
-            html += _LOGO_HTML;
             html += '<div class="titulo">Resumen General</div>';
             html += '<div class="subtitulo">'+tituloTrimestre+'</div>';
             html += '<hr class="sep">';
@@ -7064,7 +7106,7 @@ body{font-family:Arial,sans-serif;font-size:10px;color:#333}
             html += '</table>';
             html += '</div>';
 
-            html += '</body></html>';
+            html += _LOGO_CIERRA + '</body></html>';
             
             const win = window.open('','_blank');
             win.document.write(html);
@@ -7072,7 +7114,7 @@ body{font-family:Arial,sans-serif;font-size:10px;color:#333}
             setTimeout(() => {win.print();}, 500);
         }
         
-        function imprimirTodos(){const mesSeleccionado=parseInt(document.getElementById('printMes').value);const ids=Object.keys(alumnos);let html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Programaciones</title><style>body{font-family:Arial;padding:20px;font-size:11px}h1{color:#1a5f4a;font-size:16px}h2{font-size:14px;border-bottom:2px solid #1a5f4a}table{width:100%;border-collapse:collapse;margin-bottom:15px}th,td{border:1px solid #ccc;padding:6px}th{background:#1a5f4a;color:#fff}td:first-child{background:#2d8a6e;color:#fff;text-align:center;width:50px}.page-break{page-break-after:always}'+_LOGO_CSS+'</style></head><body>'+_LOGO_HTML+'';ids.forEach((id,idx)=>{const a=alumnos[id],dias=a.diasSesion||[1,3,4];html+='<div'+(idx<ids.length-1?' class="page-break"':'')+'><h1>'+a.siglas+' - '+a.curso+'</h1>';const mesesAImprimir=mesSeleccionado===-1?MESES.map((_,i)=>i):[mesSeleccionado];mesesAImprimir.forEach(mi=>{const mes=MESES[mi];html+='<h2>'+mes.nombre+' (T'+mes.trim+')</h2><table><tr><th>S</th>';dias.forEach(d=>{html+='<th>'+DIAS_C[d]+'</th>';});html+='</tr>';for(let s=1;s<=mes.semanas;s++){html+='<tr><td>'+s+'</td>';dias.forEach(d=>{const k=mi+'_'+s+'_'+d,c=a.programacion?a.programacion[k]:null;if(c&&a.programas&&a.programas[c.pId]){const p=a.programas[c.pId],obj=p.objetivos?p.objetivos[c.oIdx]:null;if(obj){const ind=obj.indicadores?(obj.indicadores[c.iIdx]||''):'';const gTxt=geuTextoSesion(a,k);html+='<td><b>O'+obj.numero+'</b><br>'+ind.substring(0,20)+(gTxt?'<br><span style="font-size:.7em;color:#555">'+gTxt+'</span>':'')+'</td>';}else{html+='<td>-</td>';}}else{const gTxt=geuTextoSesion(a,k);html+='<td>'+(gTxt?'<span style="font-size:.7em;color:#555">'+gTxt+'</span>':'-')+'</td>';}});html+='</tr>';}html+='</table>';});html+='</div>';});html+='</body></html>';const win=window.open('','_blank');win.document.write(html);win.document.close();setTimeout(()=>{win.print();},500);cerrarModal('modalImprimir');}
+        function imprimirTodos(){const mesSeleccionado=parseInt(document.getElementById('printMes').value);const ids=Object.keys(alumnos);let html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Programaciones</title><style>body{font-family:Arial;padding:20px;font-size:11px}h1{color:#1a5f4a;font-size:16px}h2{font-size:14px;border-bottom:2px solid #1a5f4a}table{width:100%;border-collapse:collapse;margin-bottom:15px}th,td{border:1px solid #ccc;padding:6px}th{background:#1a5f4a;color:#fff}td:first-child{background:#2d8a6e;color:#fff;text-align:center;width:50px}.page-break{page-break-after:always}'+_LOGO_CSS+'</style></head><body>'+_LOGO_ABRE;ids.forEach((id,idx)=>{const a=alumnos[id],dias=a.diasSesion||[1,3,4];html+='<div'+(idx<ids.length-1?' class="page-break"':'')+'><h1>'+a.siglas+' - '+a.curso+'</h1>';const mesesAImprimir=mesSeleccionado===-1?MESES.map((_,i)=>i):[mesSeleccionado];mesesAImprimir.forEach(mi=>{const mes=MESES[mi];html+='<h2>'+mes.nombre+' (T'+mes.trim+')</h2><table><tr><th>S</th>';dias.forEach(d=>{html+='<th>'+DIAS_C[d]+'</th>';});html+='</tr>';for(let s=1;s<=mes.semanas;s++){html+='<tr><td>'+s+'</td>';dias.forEach(d=>{const k=mi+'_'+s+'_'+d,c=a.programacion?a.programacion[k]:null;if(c&&a.programas&&a.programas[c.pId]){const p=a.programas[c.pId],obj=p.objetivos?p.objetivos[c.oIdx]:null;if(obj){const ind=obj.indicadores?(obj.indicadores[c.iIdx]||''):'';const gTxt=geuTextoSesion(a,k);html+='<td><b>O'+obj.numero+'</b><br>'+ind.substring(0,20)+(gTxt?'<br><span style="font-size:.7em;color:#555">'+gTxt+'</span>':'')+'</td>';}else{html+='<td>-</td>';}}else{const gTxt=geuTextoSesion(a,k);html+='<td>'+(gTxt?'<span style="font-size:.7em;color:#555">'+gTxt+'</span>':'-')+'</td>';}});html+='</tr>';}html+='</table>';});html+='</div>';});html+=_LOGO_CIERRA+'</body></html>';const win=window.open('','_blank');win.document.write(html);win.document.close();setTimeout(()=>{win.print();},500);cerrarModal('modalImprimir');}
 
         async function imprimirCompacto(){
             const mesSeleccionado=parseInt(document.getElementById('printMes').value);
@@ -7197,9 +7239,10 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
             html+='<div class="portada-footer">Pedagog\u00EDa Terap\u00E9utica</div>';
             html+='</div>';
 
+            html+=_LOGO_ABRE; // cabecera institucional repetida en todas las páginas
+
             // === PARTE 1: PROGRAMACIONES ===
             html+='<div class="contenido page-break">';
-            html+=_LOGO_HTML;
             html+='<div class="titulo">Programaciones</div>';
             html+='<div class="subtitulo">'+tituloMes+'</div>';
             html+='<hr class="sep">';
@@ -7237,7 +7280,6 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
 
             // === PARTE 2: VALORACIÓN DE INDICADORES ===
             html+='<div class="contenido page-break">';
-            html+=_LOGO_HTML;
             html+='<div class="eval-titulo">Valoraci\u00F3n de Indicadores</div>';
             html+='<div class="eval-sub">'+tituloMes+'</div>';
             html+='<hr class="sep">';
@@ -7290,7 +7332,6 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
             // === PARTE 3: RELACIÓN OBJETIVOS-INDICADORES (solo meses sueltos) ===
             if(mesSeleccionado!==-1){
                 html+='<div class="contenido page-break">';
-                html+=_LOGO_HTML;
                 html+='<div class="titulo">Relaci\u00F3n Objetivos - Indicadores</div>';
                 html+='<div class="subtitulo">'+tituloMes+'</div>';
                 html+='<hr class="sep">';
@@ -7341,7 +7382,7 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
                 html+='</div>';
             }
 
-            html+='</body></html>';
+            html+=_LOGO_CIERRA+'</body></html>';
             const win=window.open('','_blank');
             win.document.write(html);
             win.document.close();
@@ -8484,7 +8525,7 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
                 + '.meta{color:#666;font-size:10px}.crit{font-family:monospace;font-size:9px;color:#888}'
                 + '.nivel-bas{background:#dcfce7}.nivel-med{background:#dbeafe}.nivel-avan{background:#fef3c7}'
                 + '.page-break{page-break-after:always}.alumnos-box{background:#f5f7f6;border:1px solid #d4ddd9;border-radius:6px;padding:8px 12px;margin-bottom:12px;font-size:10px}'
-                + _LOGO_CSS + '</style></head><body>' + _LOGO_HTML;
+                + _LOGO_CSS + '</style></head><body>' + _LOGO_ABRE;
 
             html += '<h1>Programación de grupo — '+g.nombre+'</h1>';
             html += '<div class="alumnos-box"><b>Alumnado del grupo:</b> '
@@ -8533,7 +8574,7 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
                                     : '<p class="meta">Sin objetivos para este trimestre.</p>';
             });
 
-            html += '</body></html>';
+            html += _LOGO_CIERRA + '</body></html>';
             const win = window.open('','_blank');
             if(!win){ toast('Permite las ventanas emergentes para imprimir','error'); return; }
             win.document.write(html);
