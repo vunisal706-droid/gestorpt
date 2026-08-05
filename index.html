@@ -1318,7 +1318,19 @@
             });
             return _chartPromise;
         }
-        firebase.initializeApp({databaseURL:"https://gestorpt-7946b-default-rtdb.europe-west1.firebasedatabase.app"});
+        // Configuración completa del proyecto. Antes solo llevaba databaseURL,
+        // que le basta a Realtime Database, pero Authentication necesita
+        // además apiKey, authDomain y projectId. Estos valores son públicos
+        // por diseño: lo que protege los datos son las reglas, no ellos.
+        firebase.initializeApp({
+            apiKey:"AIzaSyC7NgtJ1lUecZr5LR3jK1wURfzNIakJ1-8",
+            authDomain:"gestorpt-7946b.firebaseapp.com",
+            databaseURL:"https://gestorpt-7946b-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId:"gestorpt-7946b",
+            storageBucket:"gestorpt-7946b.firebasestorage.app",
+            messagingSenderId:"415895342026",
+            appId:"1:415895342026:web:c516c24d7dc27cc89d1d33"
+        });
         const db=firebase.database();
         // ─── SESIÓN ANÓNIMA ──────────────────────────────────────────────
         // Firebase necesita saber que quien pide los datos es esta app y no
