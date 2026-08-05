@@ -6,7 +6,7 @@
 //  · HTML: network-first (para no servir lógica vieja).
 //  · Resto: stale-while-revalidate.
 
-const VERSION     = 'v5';
+const VERSION     = 'v6';
 const CACHE_SHELL = 'gestor-pe-shell-' + VERSION;
 const CACHE_LIBS  = 'gestor-pe-libs-'  + VERSION;
 const CACHES_OK   = [CACHE_SHELL, CACHE_LIBS];
@@ -24,6 +24,7 @@ const APP_SHELL = [
 const LIBS = [
   'https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js',
   'https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js',
+  'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js',
   'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js'
 ];
 
@@ -63,7 +64,9 @@ self.addEventListener('fetch', (event) => {
   // Nunca interceptar Firebase Realtime Database (websocket / long-polling):
   // su propia caché interna gestiona el offline.
   if (url.hostname.endsWith('firebasedatabase.app') ||
-      url.hostname.endsWith('firebaseio.com')) return;
+      url.hostname.endsWith('firebaseio.com') ||
+      url.hostname === 'identitytoolkit.googleapis.com' ||
+      url.hostname === 'securetoken.googleapis.com') return;
 
   // 1) HTML → network-first, con fallback a caché.
   if (request.mode === 'navigate' ||

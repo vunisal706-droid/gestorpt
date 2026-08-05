@@ -1276,6 +1276,7 @@
 
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script>
         // ─── Carga perezosa de Mammoth (solo al importar .docx) ─────────
         let _mammothPromise=null;
@@ -1319,6 +1320,27 @@
         }
         firebase.initializeApp({databaseURL:"https://gestorpt-7946b-default-rtdb.europe-west1.firebasedatabase.app"});
         const db=firebase.database();
+        // ─── SESIÓN ANÓNIMA ──────────────────────────────────────────────
+        // Firebase necesita saber que quien pide los datos es esta app y no
+        // alguien escribiendo la URL de la base en el navegador. Esto abre una
+        // sesión anónima al cargar: no hay pantalla nueva, no cambia nada para
+        // quien usa la app, y las contraseñas de siempre siguen igual.
+        // Si fallara, la app sigue funcionando como hasta ahora.
+        window._authReady = (function(){
+            try{
+                if(!firebase.auth) return Promise.resolve(null);
+                firebase.auth().signInAnonymously().catch(function(e){
+                    console.warn('[GestorPE] Sesión anónima no disponible:', e && e.code);
+                });
+                return new Promise(function(res){
+                    var hecho=false;
+                    firebase.auth().onAuthStateChanged(function(u){
+                        if(u && !hecho){ hecho=true; console.log('[GestorPE] Sesión iniciada'); res(u); }
+                    });
+                    setTimeout(function(){ if(!hecho){ hecho=true; res(null); } }, 6000);
+                });
+            }catch(e){ return Promise.resolve(null); }
+        })();
         // ─── PERFILES (PT) ───────────────────────────────────────────────
         // Cada perfil (maestro/a de PT) tiene su propio árbol de datos en Firebase,
         // totalmente independiente de los demás. El perfil "Víctor" usa la raíz
