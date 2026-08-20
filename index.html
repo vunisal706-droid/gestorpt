@@ -319,25 +319,52 @@
     <!-- SELECTOR DE PERFIL (PT) -->
     <div class="perfil-overlay" id="screenPerfil">
         <div class="perfil-box">
-            <h2>👋 ¿Quién eres?</h2>
-            <p>Selecciona tu perfil para acceder a tus alumnos, grupos y programaciones.</p>
-            <button class="perfil-btn" onclick="elegirPerfil('victor')">
+            <h2>🔐 Acceso</h2>
+            <p>Selecciona quién eres e introduce tu usuario IdEA de Séneca.</p>
+
+            <div style="text-align:left;margin:14px 0 6px;font-size:.82rem;font-weight:700;color:#475569">Perfil</div>
+            <button class="perfil-btn" id="btnPerfilVictor" onclick="seleccionarPerfil('victor')">
                 <span class="perfil-emoji">👨‍🏫</span>
                 <span><span class="perfil-nombre">Víctor</span><br><span class="perfil-sub">Pedagogía Terapéutica</span></span>
             </button>
-            <button class="perfil-btn" onclick="elegirPerfil('encarna')">
+            <button class="perfil-btn" id="btnPerfilEncarna" onclick="seleccionarPerfil('encarna')">
                 <span class="perfil-emoji">👩‍🏫</span>
                 <span><span class="perfil-nombre">Encarna</span><br><span class="perfil-sub">Pedagogía Terapéutica</span></span>
             </button>
+
+            <div style="text-align:left;margin:16px 0 6px;font-size:.82rem;font-weight:700;color:#475569">
+                <label for="peIdea">Usuario IdEA</label>
+            </div>
+            <input type="password" id="peIdea" placeholder="Tu usuario de Séneca"
+                   autocomplete="off" autocapitalize="off" spellcheck="false"
+                   style="width:100%;padding:12px 14px;border:2px solid #cbd5e1;border-radius:10px;
+                          font-size:15px;outline:none;box-sizing:border-box;background:#fff;color:#1e293b"
+                   onkeydown="if(event.key==='Enter')entrarGestorPE()">
+            <div style="font-size:11.5px;color:#64748b;margin:7px 0 0;text-align:left;line-height:1.5">
+                Es tu <strong>usuario</strong> de Séneca, no la contraseña.
+            </div>
+
+            <button id="peBtnEntrar" onclick="entrarGestorPE()"
+                    style="width:100%;margin-top:14px;padding:13px;border:0;border-radius:10px;
+                           background:#1565C0;color:#fff;font-size:15px;font-weight:700;cursor:pointer">
+                Entrar
+            </button>
+
+            <label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:13px;color:#475569;cursor:pointer">
+                <input type="checkbox" id="peRecordar" checked style="width:17px;height:17px;cursor:pointer">
+                Mantener la sesión en este dispositivo
+            </label>
+
+            <div id="peError" style="display:none;margin-top:12px;padding:10px 13px;border-radius:9px;
+                                     background:#FEE2E2;color:#B91C1C;font-size:13px;line-height:1.5;text-align:left"></div>
         </div>
     </div>
     <script>
-        // Evita parpadeos: si no hay perfil guardado en este dispositivo, mostramos
-        // el selector inmediatamente, antes de que se pinte el resto de la app.
+        // La app arranca siempre bloqueada. Solo se abre cuando Firebase
+        // confirma una sesión válida.
         (function(){
-            if(!localStorage.getItem('gestorpe_perfil')){
-                document.getElementById('screenPerfil').style.display='flex';
-            }
+            var sp = document.getElementById('screenPerfil');
+            if (sp) sp.style.display = 'flex';
         })();
     </script>
     <div class="print-logo-global"><img src="" id="printLogoGlobal" style="height:40px;width:auto;max-width:100%" alt="Encabezamiento institucional"></div>
@@ -1332,35 +1359,23 @@
             appId:"1:415895342026:web:c516c24d7dc27cc89d1d33"
         });
         const db=firebase.database();
-        // ─── SESIÓN ANÓNIMA ──────────────────────────────────────────────
-        // Firebase necesita saber que quien pide los datos es esta app y no
-        // alguien escribiendo la URL de la base en el navegador. Esto abre una
-        // sesión anónima al cargar: no hay pantalla nueva, no cambia nada para
-        // quien usa la app, y las contraseñas de siempre siguen igual.
-        // Si fallara, la app sigue funcionando como hasta ahora.
-        window._authReady = (function(){
-            try{
-                if(!firebase.auth) return Promise.resolve(null);
-                firebase.auth().signInAnonymously().catch(function(e){
-                    console.warn('[GestorPE] Sesión anónima no disponible:', e && e.code);
-                });
-                return new Promise(function(res){
-                    var hecho=false;
-                    firebase.auth().onAuthStateChanged(function(u){
-                        if(u && !hecho){ hecho=true; console.log('[GestorPE] Sesión iniciada'); res(u); }
-                    });
-                    setTimeout(function(){ if(!hecho){ hecho=true; res(null); } }, 6000);
-                });
-            }catch(e){ return Promise.resolve(null); }
-        })();
+        // ─── ACCESO ──────────────────────────────────────────────────────
+        // Los datos de esta app son expedientes de alumnado NEAE, así que el
+        // acceso se verifica contra Firebase Authentication: cada perfil tiene
+        // su cuenta (<idea>@capitulaciones.local) y las reglas de la base solo
+        // aceptan a esos dos usuarios. La sesión anónima anterior no servía:
+        // cualquiera que abriera la URL obtenía una y pasaba el filtro.
+        const PE_DOMINIO = '@capitulaciones.local';
+        window._authReady = Promise.resolve(null);
+
         // ─── PERFILES (PT) ───────────────────────────────────────────────
         // Cada perfil (maestro/a de PT) tiene su propio árbol de datos en Firebase,
         // totalmente independiente de los demás. El perfil "Víctor" usa la raíz
         // histórica 'gestorpe' (todo lo que ya existía sigue estando ahí);
         // los perfiles nuevos usan una raíz propia que empieza vacía.
         const PERFILES={
-            victor:{nombre:'Víctor',emoji:'👨‍🏫',root:'gestorpe'},
-            encarna:{nombre:'Encarna',emoji:'👩‍🏫',root:'gestorpe_encarna'}
+            victor:{nombre:'Víctor',emoji:'👨‍🏫',root:'gestorpe',idea:'vunisal706'},
+            encarna:{nombre:'Encarna',emoji:'👩‍🏫',root:'gestorpe_encarna',idea:'emunrom369'}
         };
         let PERFIL=null, ROOT='gestorpe';
         function aplicarPerfil(p){
@@ -1369,15 +1384,76 @@
             const badge=document.getElementById('perfilBadge');
             if(badge){const info=PERFILES[p]||{nombre:p,emoji:'👤'};badge.textContent=info.emoji+' '+info.nombre;}
         }
-        function elegirPerfil(p){
-            localStorage.setItem('gestorpe_perfil',p);
+        // Perfil elegido en la pantalla de acceso (aún sin validar)
+        let _perfilSel = null;
+        function seleccionarPerfil(p){
+            _perfilSel = p;
+            ['victor','encarna'].forEach(function(x){
+                const b = document.getElementById('btnPerfil' + x.charAt(0).toUpperCase() + x.slice(1));
+                if (b) {
+                    b.style.borderColor = (x === p) ? '#1565C0' : '';
+                    b.style.background  = (x === p) ? '#E3F2FD' : '';
+                }
+            });
+            const c = document.getElementById('peIdea');
+            if (c) c.focus();
+        }
+
+        function peError(msg){
+            const d = document.getElementById('peError');
+            if (!d) return;
+            d.innerHTML = msg;
+            d.style.display = 'block';
+            const b = document.getElementById('peBtnEntrar');
+            if (b) { b.disabled = false; b.textContent = 'Entrar'; }
+        }
+
+        async function entrarGestorPE(){
+            const d = document.getElementById('peError');
+            if (d) d.style.display = 'none';
+            const idea = (document.getElementById('peIdea').value || '').trim().toLowerCase();
+            const recordar = document.getElementById('peRecordar').checked;
+            const btn = document.getElementById('peBtnEntrar');
+
+            if (!_perfilSel) return peError('Selecciona primero tu perfil.');
+            if (!idea)       return peError('Escribe tu usuario IdEA.');
+
+            btn.disabled = true; btn.textContent = 'Comprobando…';
+
+            try {
+                await firebase.auth().setPersistence(
+                    recordar ? firebase.auth.Auth.Persistence.LOCAL
+                             : firebase.auth.Auth.Persistence.SESSION
+                );
+            } catch(e){ console.warn('Persistencia:', e && e.code); }
+
+            try {
+                const cred = await firebase.auth().signInWithEmailAndPassword(idea + PE_DOMINIO, idea);
+                const esperado = (PERFILES[_perfilSel] || {}).idea;
+                if (esperado && idea !== esperado) {
+                    await firebase.auth().signOut().catch(function(){});
+                    return peError('Ese usuario IdEA no corresponde al perfil seleccionado.');
+                }
+                abrirApp(_perfilSel);
+            } catch(e){
+                console.warn('Acceso rechazado:', e && e.code);
+                if (e.code === 'auth/network-request-failed') return peError('Sin conexión. Inténtalo de nuevo.');
+                if (e.code === 'auth/too-many-requests')      return peError('Demasiados intentos. Espera unos minutos.');
+                if (e.code === 'auth/user-not-found')         return peError('Esa cuenta no está dada de alta.');
+                return peError('El usuario IdEA no es correcto.');
+            }
+        }
+
+        function abrirApp(p){
+            localStorage.setItem('gestorpe_perfil', p);
             aplicarPerfil(p);
             const sp=document.getElementById('screenPerfil');
             if(sp)sp.style.display='none';
             iniciarDatosPerfil();
         }
         async function cambiarPerfil(){
-            if(!await confirmar('Se recargará la aplicación y volverás a elegir quién eres.',{titulo:'¿Cambiar de perfil?',ok:'Cambiar'}))return;
+            if(!await confirmar('Se cerrará la sesión y habrá que volver a entrar con el usuario IdEA.',{titulo:'¿Cambiar de perfil?',ok:'Cambiar'}))return;
+            try { await firebase.auth().signOut(); } catch(e){}
             localStorage.removeItem('gestorpe_perfil');
             location.reload();
         }
@@ -2624,12 +2700,27 @@
         // Arranque: si ya hay un perfil guardado en este dispositivo, entramos
         // directamente; si no, el selector de perfil (#screenPerfil) ya está
         // visible y esperamos a que el usuario pulse Víctor o Encarna.
+        // Solo se entra si Firebase confirma la sesión. El perfil guardado en
+        // el navegador no basta: sin sesión válida las reglas rechazan todo.
         (function(){
-            const guardado=localStorage.getItem('gestorpe_perfil');
-            if(guardado&&PERFILES[guardado]){
-                aplicarPerfil(guardado);
-                iniciarDatosPerfil();
-            }
+            let resuelto = false;
+            firebase.auth().onAuthStateChanged(function(u){
+                if (resuelto) return;
+                resuelto = true;
+                const sp = document.getElementById('screenPerfil');
+                const guardado = localStorage.getItem('gestorpe_perfil');
+
+                if (u && guardado && PERFILES[guardado]) {
+                    if (sp) sp.style.display = 'none';
+                    aplicarPerfil(guardado);
+                    iniciarDatosPerfil();
+                    return;
+                }
+                if (!u) {
+                    try { localStorage.removeItem('gestorpe_perfil'); } catch(e){}
+                }
+                if (sp) sp.style.display = 'flex';
+            });
         })();
 
         function cambiarSeccion(s,btn){document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');document.getElementById('seccionAlumnos').style.display=s==='alumnos'?'block':'none';document.getElementById('seccionEstadisticas').style.display=s==='estadisticas'?'block':'none';document.getElementById('seccionSDA').style.display=s==='sda'?'block':'none';document.getElementById('seccionBiblioteca').style.display=s==='biblioteca'?'block':'none';document.getElementById('seccionRecursos').style.display=s==='recursos'?'block':'none';document.getElementById('seccionSeguimiento').style.display=s==='seguimiento'?'block':'none';document.getElementById('seccionGrupos').style.display=s==='grupos'?'block':'none';document.getElementById('seccionACI').style.display=s==='aci'?'block':'none';document.getElementById('seccionMemoria').style.display=s==='memoria'?'block':'none';document.getElementById('seccionInformes').style.display=s==='informes'?'block':'none';if(s==='biblioteca'){if(alumnoActual&&alumnos[alumnoActual]){const fc=document.getElementById('filtroCiclo');if(fc&&!fc.value)fc.value=getCicloDeAlumno(alumnos[alumnoActual]);}renderBiblioteca();}if(s==='estadisticas')renderEstadisticasGlobal();if(s==='recursos')inicializarRecursos();if(s==='seguimiento')renderSeguimiento();if(s==='grupos')renderGrupos();if(s==='aci')renderAciSeccion();if(s==='memoria')memoriaIniciar();if(s==='informes')informesIniciar();}
