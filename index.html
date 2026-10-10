@@ -1186,7 +1186,7 @@
                     <div class="form-group"><label class="form-label">Objetivo</label><select class="form-select" id="selObjetivo" onchange="cargarIndicadores()"></select></div>
                     <div class="form-group"><label class="form-label">Indicador</label><select class="form-select" id="selIndicador" onchange="cargarRecursosSugeridos()"></select></div>
                     <div class="form-group"><label class="form-label">🎯 Recurso vinculado (opcional)</label><select class="form-select" id="selRecurso"><option value="">Sin recurso</option></select></div>
-                    <div id="infoRecurso" style="display:none;background:var(--bg);padding:10px;border-radius:8px;margin-top:8px;font-size:.8rem"></div>
+                    <div id="infoRecurso" style="display:none;background:var(--bg);padding:10px;border-radius:8px;margin-top:8px;font-size:.8rem"></div><div id="appsSugeridasCelda" style="display:none;background:#f0fdfa;border:1px solid #99f6e4;padding:10px;border-radius:8px;margin-top:8px"></div>
                     <div class="form-group"><label class="form-label">Resultado</label><div class="resultado-btns"><button type="button" class="resultado-btn conseguido" onclick="setResultado('conseguido',this)">✅ Conseguido</button><button type="button" class="resultado-btn repetir" onclick="setResultado('repetir',this)">🔄 Repetir</button></div></div>
                     <div id="geuCeldaWrap" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
                         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.85rem;font-weight:600">
@@ -2891,7 +2891,7 @@
         async function eliminarAlumno(id){const al=alumnos[id]||{};if(!await confirmarBorrado('Se borrarán TODOS los datos de '+(al.siglas||'este alumno')+': programas, evaluaciones, asistencia y ACI.\n\nEsta acción no se puede deshacer.',{titulo:'⚠️ Eliminar alumno'}))return;db.ref(PA+'/'+id).remove();volverInicio();toast('Eliminado','success');}
 
         // PROGRAMAS
-        function renderProgs(){const a=alumnos[alumnoActual];let h='<div class="card"><div class="card-header"><h3 class="card-title">📄 Programas</h3><button class="btn btn-primary btn-sm no-print" onclick="abrirModalAddProg()">➕</button></div>';if(!a.programas||!Object.keys(a.programas).length){h+='<div class="empty-state">Sin programas</div>';}else{Object.keys(a.programas).forEach(pId=>{const p=a.programas[pId],info=AREAS[p.tipo]||{icon:'📄',nombre:p.tipo,color:'#666'};const rotulo=(p.modalidad==='pra'&&p.nombre)?p.nombre:info.nombre;const chipPRA=p.modalidad==='pra'?'<span style="font-size:.62rem;font-weight:700;background:#dcfce7;color:#166534;padding:2px 7px;border-radius:8px;margin-left:4px" title="Programa de refuerzo del aprendizaje · art. 16 Orden 30/05/2023">PRA</span>':'';const cOrig=p.cicloOrigen?((CICLOS[p.cicloOrigen]||{}).nombre||p.cicloOrigen):'';const chipCiclo=cOrig?'<span style="font-size:.62rem;font-weight:600;background:#eef2ff;color:#4338ca;padding:2px 7px;border-radius:8px;margin-left:6px">'+cOrig+'</span>':'';const chipAdap=p.adaptacionCiclo?'<span style="font-size:.62rem;font-weight:700;background:#fef3c7;color:#78350f;padding:2px 7px;border-radius:8px;margin-left:4px" title="Objetivos de un ciclo distinto al del alumno (adaptación curricular)">⚠️ Adaptación de ciclo</span>':'';h+='<div class="programa-card" style="border-left-color:'+info.color+'"><div class="programa-header"><span class="programa-titulo">'+info.icon+' '+rotulo+chipPRA+chipCiclo+chipAdap+'</span><button class="btn btn-danger btn-sm no-print" onclick="elimProg(\''+pId+'\')">🗑️</button></div>';(p.objetivos||[]).forEach(obj=>{h+='<div class="objetivo-card"><div class="objetivo-header"><span class="objetivo-num">O'+obj.numero+'</span><span class="trimestre-badge t'+obj.trimestre+'">T'+obj.trimestre+'</span></div><div class="objetivo-desc">'+obj.descripcion+'</div>';if(obj.indicadores&&obj.indicadores.length){h+='<ul class="indicadores-list">'+obj.indicadores.map(x=>'<li>• '+x+'</li>').join('')+'</ul>';}h+='</div>';});h+='</div>';});}h+='<div class="btn-group no-print" style="margin-top:12px"><button class="btn btn-secondary btn-sm" onclick="regenerarProg()">🔄 Regenerar</button><button class="btn btn-ai btn-sm" onclick="generarPromptIA()">🤖 IA</button><button class="btn btn-warning btn-sm" onclick="abrirModal(\'modalImportJSON\')">📥 JSON</button><button class="btn btn-secondary btn-sm" onclick="actualizarCriteriosLOMLOE()" title="Añade los criterios LOMLOE sin borrar nada">🏷️ Criterios</button></div></div>';
+        function renderProgs(){const a=alumnos[alumnoActual];let h='<div class="card"><div class="card-header"><h3 class="card-title">📄 Programas</h3><button class="btn btn-primary btn-sm no-print" onclick="abrirModalAddProg()">➕</button></div>';if(!a.programas||!Object.keys(a.programas).length){h+='<div class="empty-state">Sin programas</div>';}else{Object.keys(a.programas).forEach(pId=>{const p=a.programas[pId],info=AREAS[p.tipo]||{icon:'📄',nombre:p.tipo,color:'#666'};const rotulo=(p.modalidad==='pra'&&p.nombre)?p.nombre:info.nombre;const chipPRA=p.modalidad==='pra'?'<span style="font-size:.62rem;font-weight:700;background:#dcfce7;color:#166534;padding:2px 7px;border-radius:8px;margin-left:4px" title="Programa de refuerzo del aprendizaje · art. 16 Orden 30/05/2023">PRA</span>':'';const cOrig=p.cicloOrigen?((CICLOS[p.cicloOrigen]||{}).nombre||p.cicloOrigen):'';const chipCiclo=cOrig?'<span style="font-size:.62rem;font-weight:600;background:#eef2ff;color:#4338ca;padding:2px 7px;border-radius:8px;margin-left:6px">'+cOrig+'</span>':'';const chipAdap=p.adaptacionCiclo?'<span style="font-size:.62rem;font-weight:700;background:#fef3c7;color:#78350f;padding:2px 7px;border-radius:8px;margin-left:4px" title="Objetivos de un ciclo distinto al del alumno (adaptación curricular)">⚠️ Adaptación de ciclo</span>':'';h+='<div class="programa-card" style="border-left-color:'+info.color+'"><div class="programa-header"><span class="programa-titulo">'+info.icon+' '+rotulo+chipPRA+chipCiclo+chipAdap+'</span><button class="btn btn-danger btn-sm no-print" onclick="elimProg(\''+pId+'\')">🗑️</button></div>';(p.objetivos||[]).forEach(obj=>{h+='<div class="objetivo-card"><div class="objetivo-header"><span class="objetivo-num">O'+obj.numero+'</span><span class="trimestre-badge t'+obj.trimestre+'">T'+obj.trimestre+'</span></div><div class="objetivo-desc">'+obj.descripcion+'</div>';if(obj.indicadores&&obj.indicadores.length){h+='<ul class="indicadores-list">'+obj.indicadores.map(x=>'<li>• '+x+'</li>').join('')+'</ul>';}const _ap=appsSugeridas(obj,'',p.tipo,p.cicloOrigen||getCicloDeAlumno(a),2);if(_ap.length){h+='<div class="no-print" style="margin-top:6px">'+_ap.map(x=>chipApp(x,false)).join('')+'</div>';}h+='</div>';});h+='</div>';});}h+='<div class="btn-group no-print" style="margin-top:12px"><button class="btn btn-secondary btn-sm" onclick="regenerarProg()">🔄 Regenerar</button><button class="btn btn-ai btn-sm" onclick="generarPromptIA()">🤖 IA</button><button class="btn btn-warning btn-sm" onclick="abrirModal(\'modalImportJSON\')">📥 JSON</button><button class="btn btn-secondary btn-sm" onclick="actualizarCriteriosLOMLOE()" title="Añade los criterios LOMLOE sin borrar nada">🏷️ Criterios</button></div></div>';
         document.getElementById('tabProgramas').innerHTML=h;}
 
         function renderGEUTab(){
@@ -3695,7 +3695,9 @@
                   ind=obj.indicadores?(obj.indicadores[c.iIdx]||''):'';
             const criterio=obj.criterio?'<div style="font-size:.55rem;color:#888;margin-top:2px;font-family:monospace">'+obj.criterio+'</div>':'';
             const recursoIcon=c.recursoId?'<span style="position:absolute;bottom:2px;left:2px;font-size:.6rem" title="Recurso vinculado">🔗</span>':'';
-            return '<td class="'+cls+'" onclick="editarCelda(\''+k+'\','+d+')">'+(icon?'<span class="celda-icon">'+icon+'</span>':'')+recursoIcon+'<div class="celda-obj" style="color:'+info.color+'">O'+obj.numero+'</div><div class="celda-ind">'+ind.substring(0,25)+(ind.length>25?'...':'')+'</div>'+criterio+geuHtml+'</td>';
+            const appsC=(aus||sc)?[]:appsDeCelda(a,c);
+            const appHtml=appsC.length?'<div class="no-print">'+chipApp(appsC[0],true)+'</div>':'';
+            return '<td class="'+cls+'" onclick="editarCelda(\''+k+'\','+d+')">'+(icon?'<span class="celda-icon">'+icon+'</span>':'')+recursoIcon+'<div class="celda-obj" style="color:'+info.color+'">O'+obj.numero+'</div><div class="celda-ind">'+ind.substring(0,25)+(ind.length>25?'...':'')+'</div>'+criterio+appHtml+geuHtml+'</td>';
         }
         function cambiarMes(dir){mesActual=Math.max(0,Math.min(9,mesActual+dir));renderProg();}
         function editarCelda(k,d){celdaEditando=k;estadoCelda='asiste';resultadoCelda=null;const a=alumnos[alumnoActual],c=(a.programacion&&a.programacion[k])||{};document.getElementById('celdaTitulo').textContent=DIAS[d];document.querySelectorAll('.asist-btn').forEach(b=>b.classList.remove('selected'));document.querySelectorAll('.resultado-btn').forEach(b=>b.classList.remove('selected'));if(a.sincole&&a.sincole[k]){estadoCelda='sincole';document.querySelector('.asist-btn.sincole').classList.add('selected');document.getElementById('contenidoSesion').style.display='none';}else if(a.ausencias&&a.ausencias[k]){estadoCelda='ausencia';document.querySelector('.asist-btn.ausencia').classList.add('selected');document.getElementById('contenidoSesion').style.display='none';}else{document.querySelector('.asist-btn.asiste').classList.add('selected');document.getElementById('contenidoSesion').style.display='block';}resultadoCelda=(a.resultados&&a.resultados[k])?a.resultados[k]:null;if(resultadoCelda){const btn=document.querySelector('.resultado-btn.'+resultadoCelda);if(btn)btn.classList.add('selected');}const sel=document.getElementById('selPrograma');sel.innerHTML='<option value="">-</option>';if(a.programas){Object.keys(a.programas).forEach(pId=>{const p=a.programas[pId],info=AREAS[p.tipo]||{icon:'📄'};sel.innerHTML+='<option value="'+pId+'"'+(c.pId===pId?' selected':'')+'>'+info.icon+' '+(info.nombre||p.tipo)+'</option>';});}if(c.pId){cargarObjetivos();setTimeout(()=>{document.getElementById('selObjetivo').value=c.oIdx!==undefined?c.oIdx:'';cargarIndicadores();setTimeout(()=>{document.getElementById('selIndicador').value=c.iIdx!==undefined?c.iIdx:'';cargarRecursosSugeridos();setTimeout(()=>{document.getElementById('selRecurso').value=c.recursoId||'';if(c.recursoId)mostrarInfoRecurso(c.recursoId);},30);},30);},30);}else{document.getElementById('selObjetivo').innerHTML='<option value="">-</option>';document.getElementById('selIndicador').innerHTML='<option value="">-</option>';document.getElementById('selRecurso').innerHTML='<option value="">Sin recurso</option>';}abrirModal('modalCelda');
@@ -3706,9 +3708,9 @@
         function setEstado(e,btn){estadoCelda=e;document.querySelectorAll('.asist-btn').forEach(b=>b.classList.remove('selected'));btn.classList.add('selected');document.getElementById('contenidoSesion').style.display=e==='asiste'?'block':'none';}
         function setResultado(r,btn){if(resultadoCelda===r){resultadoCelda=null;btn.classList.remove('selected');}else{resultadoCelda=r;document.querySelectorAll('.resultado-btn').forEach(b=>b.classList.remove('selected'));btn.classList.add('selected');}}
         function cargarObjetivos(){const a=alumnos[alumnoActual],pId=document.getElementById('selPrograma').value,sel=document.getElementById('selObjetivo');sel.innerHTML='<option value="">-</option>';document.getElementById('selIndicador').innerHTML='<option value="">-</option>';if(!pId||!a.programas||!a.programas[pId])return;a.programas[pId].objetivos.forEach((o,i)=>{sel.innerHTML+='<option value="'+i+'">O'+o.numero+': '+o.descripcion.substring(0,20)+'...</option>';});}
-        function cargarIndicadores(){const a=alumnos[alumnoActual],pId=document.getElementById('selPrograma').value,oIdx=document.getElementById('selObjetivo').value,sel=document.getElementById('selIndicador');sel.innerHTML='<option value="">-</option>';if(!pId||oIdx==='')return;const inds=a.programas[pId].objetivos[parseInt(oIdx)].indicadores||[];inds.forEach((x,i)=>{sel.innerHTML+='<option value="'+i+'">'+x.substring(0,30)+'...</option>';});cargarRecursosSugeridos();}
+        function cargarIndicadores(){setTimeout(renderAppsCelda,0);const a=alumnos[alumnoActual],pId=document.getElementById('selPrograma').value,oIdx=document.getElementById('selObjetivo').value,sel=document.getElementById('selIndicador');sel.innerHTML='<option value="">-</option>';if(!pId||oIdx==='')return;const inds=a.programas[pId].objetivos[parseInt(oIdx)].indicadores||[];inds.forEach((x,i)=>{sel.innerHTML+='<option value="'+i+'">'+x.substring(0,30)+'...</option>';});cargarRecursosSugeridos();}
         
-        function cargarRecursosSugeridos(){const pId=document.getElementById('selPrograma').value;const sel=document.getElementById('selRecurso');sel.innerHTML='<option value="">Sin recurso</option>';sel.onchange=function(){mostrarInfoRecurso(this.value);};if(!pId)return;const a=alumnos[alumnoActual];if(!a.programas||!a.programas[pId])return;const area=a.programas[pId].tipo;const ciclo=a.curso.includes('Infantil')?'infantil':a.curso.includes('1º')||a.curso.includes('2º')?'ciclo1':a.curso.includes('3º')||a.curso.includes('4º')?'ciclo2':'ciclo3';const recursosFiltrados=RECURSOS_ONLINE.filter(r=>r.area===area&&r.nivel.includes(ciclo));recursosFiltrados.slice(0,10).forEach(r=>{sel.innerHTML+='<option value="'+r.id+'">'+r.titulo+'</option>';});if(recursosFiltrados.length===0){sel.innerHTML+='<option disabled>-- No hay recursos para esta área --</option>';}}
+        function cargarRecursosSugeridos(){renderAppsCelda();const pId=document.getElementById('selPrograma').value;const sel=document.getElementById('selRecurso');sel.innerHTML='<option value="">Sin recurso</option>';sel.onchange=function(){mostrarInfoRecurso(this.value);};if(!pId)return;const a=alumnos[alumnoActual];if(!a.programas||!a.programas[pId])return;const area=a.programas[pId].tipo;const ciclo=a.curso.includes('Infantil')?'infantil':a.curso.includes('1º')||a.curso.includes('2º')?'ciclo1':a.curso.includes('3º')||a.curso.includes('4º')?'ciclo2':'ciclo3';const recursosFiltrados=RECURSOS_ONLINE.filter(r=>r.area===area&&r.nivel.includes(ciclo));recursosFiltrados.slice(0,10).forEach(r=>{sel.innerHTML+='<option value="'+r.id+'">'+r.titulo+'</option>';});if(recursosFiltrados.length===0){sel.innerHTML+='<option disabled>-- No hay recursos para esta área --</option>';}}
         
         function mostrarInfoRecurso(id){const info=document.getElementById('infoRecurso');if(!id){info.style.display='none';return;}const recurso=RECURSOS_ONLINE.find(r=>r.id===id);if(!recurso){info.style.display='none';return;}const fuente=recurso.fuente==='orientacion-andujar'?'🌍 Orientación Andújar':recurso.fuente==='arasaac'?'🎨 ARASAAC':recurso.fuente==='superpt'?'✨ SuperPT':recurso.fuente==='ptyal'?'📚 PTYAL':recurso.fuente==='aulapt'?'📋 AulaPT':recurso.fuente==='liveworksheets'?'💻 LiveWorksheets':'🔗 '+recurso.fuente;info.innerHTML='<strong>'+fuente+'</strong><br>'+recurso.descripcion+'<br><a href="'+recurso.url+'" target="_blank" style="color:#3b82f6;font-size:.75rem">Abrir recurso →</a>';info.style.display='block';}
         function guardarCelda(){const a=alumnos[alumnoActual];const updates={};const contenidoActual=a.programacion?a.programacion[celdaEditando]:null;updates[PA+'/'+alumnoActual+'/ausencias/'+celdaEditando]=null;updates[PA+'/'+alumnoActual+'/sincole/'+celdaEditando]=null;updates[PA+'/'+alumnoActual+'/resultados/'+celdaEditando]=null;if(estadoCelda==='ausencia'||estadoCelda==='sincole'){const tipo=estadoCelda==='ausencia'?'ausencias':'sincole';updates[PA+'/'+alumnoActual+'/'+tipo+'/'+celdaEditando]=true;
@@ -4441,6 +4443,23 @@
                 
                 // Agrupar objetivos similares
                 const objetivosAgrupados=agruparObjetivos(p.objetivos||[]);
+
+                // Todos los objetivos juntos, para pegarlos de una vez en Séneca
+                h+='<div class="seneca-seccion" style="border:2px solid var(--primary)">';
+                h+='<div class="seneca-seccion-header">';
+                h+='<span class="seneca-seccion-titulo">🎯 Objetivos del programa ('+objetivosAgrupados.length+')</span>';
+                h+='<button class="btn-copiar" onclick="copiarIndicadoresSeneca(this)" title="Copia todos los objetivos, uno por línea">📋 Copiar todos</button>';
+                h+='</div>';
+                h+='<div class="seneca-indicadores-lista">';
+                objetivosAgrupados.forEach((oa,i)=>{
+                    h+='<div class="seneca-indicador-item">';
+                    h+='<span class="seneca-indicador-num">'+(i+1)+'</span>';
+                    h+='<span class="seneca-indicador-texto">'+oa.descripcion+'</span>';
+                    h+='<button class="btn-copiar btn-copiar-sm" onclick="copiarSeneca(this,\''+escaparTexto(oa.descripcion)+'\')">📋</button>';
+                    h+='</div>';
+                });
+                h+='</div>';
+                h+='</div>';
                 
                 objetivosAgrupados.forEach((objAgrupado,idx)=>{
                     h+='<div class="seneca-objetivo">';
@@ -4485,7 +4504,9 @@
                     h+='</div>';
                     
                     // Actividades
-                    const actividades=generarActividades(objAgrupado,p.tipo);
+                    let actividades=generarActividades(objAgrupado,p.tipo);
+                    const _apSen=appsSugeridas({descripcion:objAgrupado.descripcion,indicadores:objAgrupado.indicadores},'',p.tipo,p.cicloOrigen||getCicloDeAlumno(a),2);
+                    if(_apSen.length){actividades+='\n5. Refuerzo digital con '+_apSen.map(x=>'«'+x.nombre+'»').join(' y ')+' (apps del centro)';}
                     h+='<div class="seneca-seccion">';
                     h+='<div class="seneca-seccion-header">';
                     h+='<span class="seneca-seccion-titulo">🎮 Actividades</span>';
@@ -7358,7 +7379,7 @@ body{font-family:Arial,sans-serif;font-size:10px;color:#333}
             setTimeout(() => {win.print();}, 500);
         }
         
-        function imprimirTodos(){const mesSeleccionado=parseInt(document.getElementById('printMes').value);const ids=Object.keys(alumnos);let html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Programaciones</title><style>body{font-family:Arial;padding:20px;font-size:11px}h1{color:#1a5f4a;font-size:16px}h2{font-size:14px;border-bottom:2px solid #1a5f4a}table{width:100%;border-collapse:collapse;margin-bottom:15px}th,td{border:1px solid #ccc;padding:6px}th{background:#1a5f4a;color:#fff}td:first-child{background:#2d8a6e;color:#fff;text-align:center;width:50px}.page-break{page-break-after:always}'+_LOGO_CSS+'</style></head><body>'+_LOGO_ABRE;ids.forEach((id,idx)=>{const a=alumnos[id],dias=a.diasSesion||[1,3,4];html+='<div'+(idx<ids.length-1?' class="page-break"':'')+'><h1>'+a.siglas+' - '+a.curso+'</h1>';const mesesAImprimir=mesSeleccionado===-1?MESES.map((_,i)=>i):[mesSeleccionado];mesesAImprimir.forEach(mi=>{const mes=MESES[mi];html+='<h2>'+mes.nombre+' (T'+mes.trim+')</h2><table><tr><th>S</th>';dias.forEach(d=>{html+='<th>'+DIAS_C[d]+'</th>';});html+='</tr>';for(let s=1;s<=mes.semanas;s++){html+='<tr><td>'+s+'</td>';dias.forEach(d=>{const k=mi+'_'+s+'_'+d,c=a.programacion?a.programacion[k]:null;if(c&&a.programas&&a.programas[c.pId]){const p=a.programas[c.pId],obj=p.objetivos?p.objetivos[c.oIdx]:null;if(obj){const ind=obj.indicadores?(obj.indicadores[c.iIdx]||''):'';const gTxt=geuTextoSesion(a,k);html+='<td><b>O'+obj.numero+'</b><br>'+ind.substring(0,20)+(gTxt?'<br><span style="font-size:.7em;color:#555">'+gTxt+'</span>':'')+'</td>';}else{html+='<td>-</td>';}}else{const gTxt=geuTextoSesion(a,k);html+='<td>'+(gTxt?'<span style="font-size:.7em;color:#555">'+gTxt+'</span>':'-')+'</td>';}});html+='</tr>';}html+='</table>';});html+='</div>';});html+=_LOGO_CIERRA+'</body></html>';const win=window.open('','_blank');win.document.write(html);win.document.close();setTimeout(()=>{win.print();},500);cerrarModal('modalImprimir');}
+        function imprimirTodos(){const mesSeleccionado=parseInt(document.getElementById('printMes').value);const ids=Object.keys(alumnos);let html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Programaciones</title><style>body{font-family:Arial;padding:20px;font-size:11px}h1{color:#1a5f4a;font-size:16px}h2{font-size:14px;border-bottom:2px solid #1a5f4a}table{width:100%;border-collapse:collapse;margin-bottom:15px}th,td{border:1px solid #ccc;padding:6px}th{background:#1a5f4a;color:#fff}td:first-child{background:#2d8a6e;color:#fff;text-align:center;width:50px}.page-break{page-break-after:always}'+_LOGO_CSS+'</style></head><body>'+_LOGO_ABRE;ids.forEach((id,idx)=>{const a=alumnos[id],dias=a.diasSesion||[1,3,4];html+='<div'+(idx<ids.length-1?' class="page-break"':'')+'><h1>'+a.siglas+' - '+a.curso+'</h1>';const mesesAImprimir=mesSeleccionado===-1?MESES.map((_,i)=>i):[mesSeleccionado];mesesAImprimir.forEach(mi=>{const mes=MESES[mi];html+='<h2>'+mes.nombre+' (T'+mes.trim+')</h2><table><tr><th>S</th>';dias.forEach(d=>{html+='<th>'+DIAS_C[d]+'</th>';});html+='</tr>';for(let s=1;s<=mes.semanas;s++){html+='<tr><td>'+s+'</td>';dias.forEach(d=>{const k=mi+'_'+s+'_'+d,c=a.programacion?a.programacion[k]:null;if(c&&a.programas&&a.programas[c.pId]){const p=a.programas[c.pId],obj=p.objetivos?p.objetivos[c.oIdx]:null;if(obj){const ind=obj.indicadores?(obj.indicadores[c.iIdx]||''):'';const gTxt=geuTextoSesion(a,k);const _apS=appsDeCelda(a,c);html+='<td><b>O'+obj.numero+'</b><br>'+ind.substring(0,20)+(_apS.length?'<br><span style="font-size:.7em;color:#0f766e">'+_apS[0].icon+' '+_apS[0].nombre+'</span>':'')+(gTxt?'<br><span style="font-size:.7em;color:#555">'+gTxt+'</span>':'')+'</td>';}else{html+='<td>-</td>';}}else{const gTxt=geuTextoSesion(a,k);html+='<td>'+(gTxt?'<span style="font-size:.7em;color:#555">'+gTxt+'</span>':'-')+'</td>';}});html+='</tr>';}html+='</table>';});html+='</div>';});html+=_LOGO_CIERRA+'</body></html>';const win=window.open('','_blank');win.document.write(html);win.document.close();setTimeout(()=>{win.print();},500);cerrarModal('modalImprimir');}
 
         async function imprimirCompacto(){
             const mesSeleccionado=parseInt(document.getElementById('printMes').value);
@@ -7511,7 +7532,8 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
                                 const p=a.programas[c.pId],obj=p.objetivos?p.objetivos[c.oIdx]:null;
                                 if(obj){
                                     const ind=obj.indicadores?(obj.indicadores[c.iIdx]||''):'';
-                                    html+='<td><span class="ob">O'+obj.numero+'</span> '+ind.substring(0,25)+'</td>';
+                                    const _apI=appsDeCelda(a,c);
+                                    html+='<td><span class="ob">O'+obj.numero+'</span> '+ind.substring(0,25)+(_apI.length?'<br><span style="font-size:8px;color:#0f766e">'+_apI[0].icon+' '+_apI[0].nombre+'</span>':'')+'</td>';
                                 }else html+='<td>-</td>';
                             }else html+='<td>-</td>';
                         });
@@ -7596,7 +7618,7 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
                                     const ind=obj.indicadores?(obj.indicadores[c.iIdx]||''):'';
                                     const info=AREAS[p.tipo]||{nombre:p.tipo};
                                     if(!objMap.has(oKey)){
-                                        objMap.set(oKey,{objNum:obj.numero,desc:obj.descripcion||'',area:info.nombre,indicadores:new Set()});
+                                        objMap.set(oKey,{objNum:obj.numero,desc:obj.descripcion||'',area:info.nombre,indicadores:new Set(),apps:appsSugeridas(obj,'',p.tipo,p.cicloOrigen||getCicloDeAlumno(a),2)});
                                     }
                                     if(ind) objMap.get(oKey).indicadores.add(ind);
                                 }
@@ -7608,7 +7630,7 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
 
                     html+='<div class="bloque-alumno">';
                     html+='<div class="eval-sec">'+a.siglas+' - '+a.curso+'</div>';
-                    html+='<table class="rel-table"><tr><th class="rel-obj">Obj</th><th class="rel-area">\u00C1rea</th><th class="rel-desc">Objetivo</th><th>Indicadores trabajados</th></tr>';
+                    html+='<table class="rel-table"><tr><th class="rel-obj">Obj</th><th class="rel-area">\u00C1rea</th><th class="rel-desc">Objetivo</th><th>Indicadores trabajados</th><th style="width:110px">Apps sugeridas</th></tr>';
                     let ri=0;
                     objMap.forEach(v=>{
                         const bg=ri%2===0?'':'style="background:#f8f9fa"';
@@ -7618,6 +7640,7 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
                         html+='<td class="rel-area-td">'+v.area+'</td>';
                         html+='<td>'+v.desc+'</td>';
                         html+='<td>'+inds.join(', ')+'</td>';
+                        html+='<td style="font-size:8px;color:#0f766e">'+((v.apps||[]).map(x=>x.icon+' '+x.nombre).join('<br>')||'—')+'</td>';
                         html+='</tr>';
                         ri++;
                     });
@@ -7910,6 +7933,139 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
         // ══════════════════════════════════════════════════════════════════
         // MATERIAL GEU — Lecturas Comprensivas + Matemáticas Fáciles
         // ══════════════════════════════════════════════════════════════════
+        // ══════════════════════════════════════════════════════════════════
+        // APPS DEL CENTRO — sugerencias para trabajar cada objetivo/indicador
+        // Se detectan por palabras clave del objetivo y del indicador, filtrando
+        // por ciclo (el de origen del programa si es una adaptación de ciclo).
+        // ══════════════════════════════════════════════════════════════════
+        const APPS_BASE='https://vunisal706-droid.github.io/';
+        // Tipos de programa que encajan con cada familia de apps (evita, p. ej., sugerir
+        // una app de lectura para «leer el reloj» o una de mates para «recortar figuras»).
+        const _LENG=['comunicativo','dislexia','pra_lcl','tel','di','lectoescritura','tea','cognitivo'];
+        const _MATE=['cognitivo','discalculia','di','pra_mat','tdah'];
+        const APPS_CENTRO=[
+            {id:'aulapt',  nombre:'Aula PT',               corto:'Aula PT',      icon:'✍️', url:'aulapt/', soloTipos:_LENG.concat(['motor','tdah','discalculia']),
+             ciclos:['infantil','ciclo1','ciclo2','ciclo3'],
+             re:/grafo|grafia|grafomot|\btrazo|\btraza|caligraf|\bescritura|\bescribe|\bcopia\b|\bcopiar|dictado|letra ligada|legib|renglon|\bpinza|\bagarre|\blapiz|fonolog|\bsilab|\brimas?\b|\bfonemas?\b|sonido inicial|lectura fluida|\bfluidez|sentido numerico|funciones ejecutivas/},
+            {id:'pt',      nombre:'Entrenamiento Cognitivo',corto:'Entr. cognitivo',icon:'🧠', url:'pt/',
+             ciclos:['infantil','ciclo1','ciclo2','ciclo3'],
+             re:/\batencion|\bmemoria|concentra|\binhib|\bimpuls|autocontrol|flexibilidad|funciones ejecutivas|distrac|discrimina|\bdiferencias\b/},
+            {id:'tesoro',  nombre:'El Tesoro de Capitulín', corto:'Tesoro',       icon:'💎', url:'tesoro/', soloTipos:_LENG,
+             ciclos:['infantil','ciclo1'],
+             re:/\bsilab|decodific|\bletras?\b|\bvocal|\bfonema|lee palabras|lectura inicial|lectoescritura|codigo lector/},
+            {id:'superlector',nombre:'SuperLector',         corto:'SuperLector',  icon:'🦸', url:'superlector/', soloTipos:_LENG,
+             ciclos:['infantil','ciclo1'],
+             re:/\blectura|\blee\b|\bleer\b|\bpalabras\b|\bfrases\b|lectoescritura|nombre escrito|globalmente/},
+            {id:'lecturapp',nombre:'LecturApp',             corto:'LecturApp',    icon:'📚', url:'lecturapp2/', soloTipos:_LENG,
+             ciclos:['ciclo1','ciclo2','ciclo3'],
+             re:/comprension lectora|comprende textos|comprension de textos|idea principal|ideas principales|inferenc|\btextos?\b|lectura comprensiva|lectura critica/},
+            {id:'lectura', nombre:'Lecturas y Comprensión', corto:'Lecturas',     icon:'📖', url:'lectura/', soloTipos:_LENG,
+             ciclos:['ciclo1','ciclo2','ciclo3'],
+             re:/comprension lectora|\blectura|\bcuentos?\b|narrac|\btextos?\b/},
+            {id:'tildes',  nombre:'La Aventura de las Tildes',corto:'Tildes',     icon:'´', url:'tildes/', soloTipos:_LENG,
+             ciclos:['ciclo2','ciclo3'],
+             re:/\btilde|acentu|\bagudas?\b|\bllanas?\b|esdrujula|silaba tonica/},
+            {id:'llevadas',nombre:'Capitulín y las Ranas',  corto:'Llevadas',     icon:'🐸', url:'llevadas/', soloTipos:_MATE,
+             ciclos:['ciclo1','ciclo2','ciclo3'],
+             re:/\bllevad/},
+            {id:'sumasrestas',nombre:'Capitulín Sumas y Restas',corto:'Sumas y restas',icon:'➕', url:'capitulinsumasyrestas/', soloTipos:_MATE,
+             ciclos:['ciclo1','ciclo2'],
+             re:/\bsuma|\bresta|\banadir|\bquitar|\bcalculo/},
+            {id:'cavernicola',nombre:'Cavernícola Sumas y Restas',corto:'Cavernícola',icon:'🦴', url:'cavernicola/', soloTipos:_MATE,
+             ciclos:['ciclo1'],
+             re:/\bsuma|\bresta/},
+            {id:'multi',   nombre:'Capitulín Multiplicaciones',corto:'Multiplicaciones',icon:'✖️', url:'Capitulinmultiplicaciones/', soloTipos:_MATE,
+             ciclos:['ciclo1','ciclo2','ciclo3'],
+             re:/multiplic|\btablas? del\b|tablas de multiplicar|\btablas\b/},
+            {id:'caballero',nombre:'Caballero Multiplicaciones',corto:'Caballero',icon:'🛡️', url:'caballero/', soloTipos:_MATE,
+             ciclos:['ciclo2','ciclo3'],
+             re:/multiplic|\btablas? del\b/},
+            {id:'division',nombre:'Quest de Divisiones',    corto:'Divisiones',   icon:'🏺', url:'division/', soloTipos:_MATE,
+             ciclos:['ciclo2','ciclo3'],
+             re:/\bdivis|\bdivide|\breparto|\brepart|\bcociente/},
+            {id:'problemas',nombre:'Resolución de Problemas',corto:'Problemas',   icon:'🧩', url:'Resoluciondeproblemas/', soloTipos:_MATE,
+             ciclos:['ciclo1','ciclo2','ciclo3'],
+             re:/\bproblemas?\b|\benunciado/},
+            {id:'matemagia',nombre:'Matemagia',             corto:'Matemagia',    icon:'🪄', url:'matemagia/', soloTipos:_MATE,
+             ciclos:['ciclo1','ciclo2','ciclo3'],
+             re:/\bnumer(o|os|acion|ica)\b|\bcifras?\b|valor posicional|\bdecenas?\b|\bcentenas?\b|\bfraccion|\bdecimal|geometr|\bfiguras?\b|perimetro|\barea\b|\bmedir\b|\bmedidas?\b|\breloj|\bhoras?\b|\bmonedas?\b|\beuros?\b|\bdinero|\bestimar?\b|series numericas|porcentaje|proporcional/},
+            {id:'infantil',nombre:'Capitulín Infantil',     corto:'Capitulín Inf.',icon:'🧸', url:'infantil/',
+             ciclos:['infantil'],
+             re:/\bnumer|\bcantidad|\bcuenta\b|\bcontar\b|\bvocal|\bformas?\b|\bcolor|\blogic|clasific|\bseries?\b|\barriba|\bdentro|\bgrande|emocion|\bsombra|empareja|\btamano/},
+            {id:'tea',     nombre:'Capitulín TEA',          corto:'Capitulín TEA',icon:'🧩', url:'TEA/', soloTipos:['tea','social','comunicativo','di','autonomia'],
+             ciclos:['infantil','ciclo1','ciclo2'], boostTipos:['tea'],
+             re:/anticip|\brutina|pictogram|\bagenda|horario visual|historia social|\bemocion/},
+            {id:'muevete', nombre:'¡Muévete con Capitulín!',corto:'Muévete',      icon:'🤸', url:'muevete/', soloTipos:['psicomotor','motor','tdah','tea','di'],
+             ciclos:['infantil','ciclo1','ciclo2','ciclo3'],
+             re:/\bsalt[ao]|\bcorre\b|\bcorrer\b|\bcarrera\b|\bequilibrio|coordinacion dinamica|motricidad gruesa|\bdesplaza|esquema corporal|lateralidad|\bbaila|\britmo|\bmovimiento|psicomot|\bvolteret|\blanza/},
+            {id:'ingles',  nombre:'Capitulín English Adventure',corto:'English',  icon:'🇬🇧', url:'ingles/',
+             ciclos:['infantil','ciclo1','ciclo2','ciclo3'],
+             re:/\bingles\b|\benglish\b/},
+            {id:'animales',nombre:'Animales',               corto:'Animales',     icon:'🦁', url:'animales/',
+             ciclos:['infantil','ciclo1','ciclo2'],
+             re:/\banimal|seres vivos/},
+            {id:'escape',  nombre:'Escape Room Educativo',  corto:'Escape Room',  icon:'🔐', url:'escaperoom/', soloTipos:['cognitivo','discalculia','tdah','pra_mat'],
+             ciclos:['ciclo2','ciclo3'],
+             re:/\brazonamiento|\blogic|acertij|\bdeduc|\bpatron|abstract/},
+            {id:'robotica',nombre:'CapiRobots',             corto:'CapiRobots',   icon:'🤖', url:'robotica/',
+             ciclos:['ciclo1','ciclo2','ciclo3'],
+             re:/pensamiento computacional|\bprogramar\b|secuencias? de acciones|\brobot/}
+        ];
+        function _normTxt(t){return String(t||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');}
+        // Devuelve hasta `max` apps ordenadas por relevancia.
+        // obj: objetivo; ind: indicador concreto (opcional); tipo: tipo de programa; ciclo.
+        function appsSugeridas(obj, ind, tipo, ciclo, max){
+            if(!obj) return [];
+            const tObj=_normTxt(obj.descripcion), tInd=_normTxt(ind||''),
+                  tTodos=_normTxt((obj.indicadores||[]).join(' · '));
+            const res=[];
+            APPS_CENTRO.forEach(app=>{
+                if(ciclo && app.ciclos.indexOf(ciclo)<0) return;
+                if(app.soloTipos && app.soloTipos.indexOf(tipo)<0) return;
+                const re=new RegExp(app.re.source,'g');
+                const n=s=>(s.match(re)||[]).length;
+                let pts = n(tObj)*2 + n(tInd)*3 + (ind?0:n(tTodos));
+                if(pts && app.boostTipos && app.boostTipos.indexOf(tipo)>=0) pts+=3;
+                if(pts>0) res.push({app,pts});
+            });
+            res.sort((a,b)=>b.pts-a.pts);
+            // Evitar dos apps "gemelas" (p. ej. dos de multiplicar o dos de lectura) en la misma sugerencia
+            const gemelas={caballero:'multi',cavernicola:'sumasrestas',lectura:'lecturapp'};
+            const out=[];
+            res.forEach(r=>{
+                if(out.length>=(max||2)) return;
+                const g=gemelas[r.app.id];
+                if(g && out.some(o=>o.id===g)) return;
+                if(out.some(o=>gemelas[o.id]===r.app.id)) return;
+                out.push(r.app);
+            });
+            return out;
+        }
+        function appsDeCelda(a,c){
+            if(!c||!a.programas||!a.programas[c.pId]) return [];
+            const p=a.programas[c.pId], obj=p.objetivos?p.objetivos[c.oIdx]:null;
+            if(!obj) return [];
+            const ind=obj.indicadores?(obj.indicadores[c.iIdx]||''):'';
+            return appsSugeridas(obj, ind, p.tipo, p.cicloOrigen||getCicloDeAlumno(a), 1);
+        }
+        function chipApp(app, mini){
+            return '<a href="'+APPS_BASE+app.url+'" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Trabajar con '+app.nombre+'" '
+                +'style="display:inline-block;text-decoration:none;font-size:'+(mini?'.55rem':'.7rem')+';font-weight:700;color:#0f766e;background:#ccfbf1;border:1px solid #5eead4;border-radius:'+(mini?'4px':'10px')+';padding:'+(mini?'1px 5px':'2px 8px')+';margin:'+(mini?'2px 0 0':'2px 4px 2px 0')+'">'
+                +app.icon+' '+(mini?app.corto:app.nombre)+'</a>';
+        }
+        function renderAppsCelda(){
+            const box=document.getElementById('appsSugeridasCelda'); if(!box) return;
+            const a=alumnos[alumnoActual];
+            const pId=document.getElementById('selPrograma').value, oIdx=document.getElementById('selObjetivo').value, iIdx=document.getElementById('selIndicador').value;
+            if(!a||!pId||oIdx===''){box.style.display='none';return;}
+            const p=a.programas[pId], obj=p&&p.objetivos?p.objetivos[parseInt(oIdx)]:null;
+            const ind=obj&&iIdx!==''?(obj.indicadores||[])[parseInt(iIdx)]:'';
+            const apps=appsSugeridas(obj, ind, p.tipo, p.cicloOrigen||getCicloDeAlumno(a), 3);
+            if(!apps.length){box.style.display='none';return;}
+            box.innerHTML='<div style="font-size:.75rem;font-weight:700;color:#0f766e;margin-bottom:4px">🎮 Se puede trabajar con:</div>'+apps.map(x=>chipApp(x,false)).join('');
+            box.style.display='block';
+        }
+
         const GEU_COLECCIONES = [
             {id:'lc', nombre:'Lecturas Comprensivas', icon:'📖', color:'#3b82f6',
              niveles:[
