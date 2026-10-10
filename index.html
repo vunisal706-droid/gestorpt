@@ -2511,8 +2511,56 @@
             if(alumnoActual&&alumnos[alumnoActual]){renderProgs();renderProg();renderEval();renderAsis();}
             if(document.getElementById('seccionACI').style.display!=='none')renderAciSeccion();
         }
+        // ── Criterios LOMLOE: completa automáticamente los objetivos que no lo tengan ──
+        // (programas asignados antes de que las plantillas llevaran criterio).
+        // Busca el mismo objetivo en las plantillas: por descripción y, si no, por
+        // coincidencia de indicadores; como último recurso, el criterio más habitual
+        // de ese tipo de programa y ciclo. Solo escribe el campo «criterio».
+        let _criteriosRevisados=false;
+        function completarCriteriosFaltantes(data){
+            const norm=t=>String(t||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
+            const fuentes=[];
+            const addFuente=pl=>{if(pl&&pl.objetivos)(Array.isArray(pl.objetivos)?pl.objetivos:Object.values(pl.objetivos)).forEach(o=>{if(o&&o.criterio)fuentes.push({tipo:pl.tipo,ciclo:pl.ciclo,desc:norm(o.descripcion),inds:(o.indicadores||[]).map(norm),criterio:o.criterio});});};
+            PLANTILLAS_BASE.forEach(addFuente);
+            Object.values(plantillas||{}).forEach(pl=>{if(!pl.esBase)addFuente(pl);});
+            const masComun=(tipo,ciclo)=>{const c={};fuentes.forEach(f=>{if(f.tipo===tipo&&(!ciclo||f.ciclo===ciclo))c[f.criterio]=(c[f.criterio]||0)+1;});let best='',n=0;Object.keys(c).forEach(k=>{if(c[k]>n){n=c[k];best=k;}});return best;};
+            const buscar=(o,tipo,ciclo)=>{
+                const d=norm(o.descripcion);
+                const m=fuentes.find(f=>f.tipo===tipo&&f.ciclo===ciclo&&f.desc===d)
+                     ||fuentes.find(f=>f.tipo===tipo&&f.desc===d)
+                     ||fuentes.find(f=>f.desc===d);
+                if(m)return m.criterio;
+                const inds=(o.indicadores||[]).map(norm);
+                if(inds.length){
+                    let best=null,bn=0;
+                    fuentes.forEach(f=>{if(f.tipo!==tipo)return;const n=inds.filter(x=>f.inds.indexOf(x)>=0).length;const n2=n*10+(f.ciclo===ciclo?1:0);if(n>=2&&n2>bn){bn=n2;best=f;}});
+                    if(best)return best.criterio;
+                }
+                return masComun(tipo,ciclo)||masComun(tipo,null);
+            };
+            const updates={};let n=0;
+            Object.keys(data||{}).forEach(id=>{
+                const a=data[id];if(!a||!a.programas)return;
+                const cicloA=getCicloDeAlumno(a);
+                Object.keys(a.programas).forEach(pId=>{
+                    const p=a.programas[pId];if(!p||!p.objetivos)return;
+                    Object.keys(p.objetivos).forEach(k=>{
+                        const o=p.objetivos[k];if(!o||o.criterio)return;
+                        const c=buscar(o,p.tipo,p.cicloOrigen||cicloA);
+                        if(c){o.criterio=c;updates[PA+'/'+id+'/programas/'+pId+'/objetivos/'+k+'/criterio']=c;n++;}
+                    });
+                });
+            });
+            return {updates,n};
+        }
         function _handlerAlumnos(snap){
-            aplicarAlumnos(snap.val()||{});
+            const _data=snap.val()||{};
+            const _cr=completarCriteriosFaltantes(_data);
+            if(_cr.n&&!_criteriosRevisados){
+                _criteriosRevisados=true;
+                db.ref().update(_cr.updates).then(()=>toast('🏷️ '+_cr.n+' objetivos sin criterio LOMLOE: asignados automáticamente','success')).catch(e=>console.warn('criterios',e));
+            }
+            aplicarAlumnos(_data);
             cacheGuardar('alumnos',alumnos,true);   // espejo local
             if(!_geuMigrado){ _geuMigrado=true; geuMigrarLegacy(); }
         }
@@ -2521,7 +2569,7 @@
             if(_refGrupos)_refGrupos.off();
             // 1) Pintar YA lo que haya en caché (la app es usable al instante,
             //    incluso sin red). Firebase lo sobrescribirá al conectar.
-            const cA=cacheLeer('alumnos',true); if(cA)aplicarAlumnos(cA);
+            const cA=cacheLeer('alumnos',true); if(cA){completarCriteriosFaltantes(cA);aplicarAlumnos(cA);}
             const cG=cacheLeer('grupos',true);  if(cG&&typeof _handlerGruposLocal==='function')_handlerGruposLocal(cG);
             // 2) Escuchar Firebase.
             _refAlumnos=db.ref(PA);_refAlumnos.on('value',_handlerAlumnos);
@@ -4013,7 +4061,7 @@
 
                 const haySinCriterio = Object.keys(grupos).some(k=>k==='sin_criterio');
                 if(haySinCriterio){
-                    h += '<div class="calif-sin-criterio">⚠️ Algunos objetivos no tienen criterio LOMLOE asignado. Usa el botón <strong>🏷️ Criterios</strong> en la pestaña Programas para asignarlos.</div>';
+                    h += '<div class="calif-sin-criterio">⚠️ Algunos objetivos no tienen criterio LOMLOE. Se asignan solos al recargar la app con conexión.</div>';
                 }
 
                 Object.keys(grupos).forEach(criterioKey=>{
