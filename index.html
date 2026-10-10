@@ -4460,7 +4460,8 @@
                     // Indicadores - cada uno con su botón de copiar
                     h+='<div class="seneca-seccion">';
                     h+='<div class="seneca-seccion-header">';
-                    h+='<span class="seneca-seccion-titulo">📊 Indicadores</span>';
+                    h+='<span class="seneca-seccion-titulo">📊 Indicadores ('+objAgrupado.indicadores.length+')</span>';
+                    h+='<button class="btn-copiar" onclick="copiarIndicadoresSeneca(this)" title="Copia todos, uno por línea, para el marcador «Pegar en Séneca»">📋 Copiar todos</button>';
                     h+='</div>';
                     h+='<div class="seneca-indicadores-lista">';
                     objAgrupado.indicadores.forEach((ind,i)=>{
@@ -6169,6 +6170,26 @@ ${instrucciones}
             setTimeout(fn,400);
         }
         // ══ FIN HUB INFORMES ══════════════════════════════════════════
+
+        // Copia todos los indicadores de un bloque, uno por línea, sin números ni iconos.
+        // Pensado para el marcador «Pegar en Séneca», que reparte cada línea en una casilla.
+        function copiarIndicadoresSeneca(btn){
+            const seccion=btn.closest('.seneca-seccion');
+            const lineas=[...seccion.querySelectorAll('.seneca-indicador-texto')]
+                .map(el=>el.textContent.trim()).filter(Boolean);
+            if(!lineas.length){toast('No hay indicadores','error');return;}
+            const marcar=()=>{
+                const orig=btn.innerHTML;
+                btn.innerHTML='✓ '+lineas.length+' copiados';
+                btn.classList.add('copiado');
+                setTimeout(()=>{btn.innerHTML=orig;btn.classList.remove('copiado');},1800);
+            };
+            navigator.clipboard.writeText(lineas.join('\n')).then(marcar).catch(()=>{
+                const ta=document.createElement('textarea');ta.value=lineas.join('\n');
+                document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
+                marcar();
+            });
+        }
 
         function copiarSeneca(btn,texto){
             const textoReal=texto.replace(/\\n/g,'\n');
