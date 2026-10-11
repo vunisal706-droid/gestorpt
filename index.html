@@ -4525,31 +4525,17 @@
                     h+='<div class="seneca-contenido">'+objAgrupado.descripcion+'</div>';
                     h+='</div>';
                     
-                    // Indicadores - cada uno con su botón de copiar
-                    h+='<div class="seneca-seccion">';
-                    h+='<div class="seneca-seccion-header">';
-                    h+='<span class="seneca-seccion-titulo">📊 Indicadores ('+objAgrupado.indicadores.length+')</span>';
-                    h+='<button class="btn-copiar" onclick="copiarIndicadoresSeneca(this)" title="Copia todos, uno por línea, para el marcador «Pegar en Séneca»">📋 Copiar todos</button>';
-                    h+='</div>';
-                    h+='<div class="seneca-indicadores-lista">';
-                    objAgrupado.indicadores.forEach((ind,i)=>{
-                        h+='<div class="seneca-indicador-item">';
-                        h+='<span class="seneca-indicador-num">'+(i+1)+'</span>';
-                        h+='<span class="seneca-indicador-texto">'+ind+'</span>';
-                        h+='<button class="btn-copiar btn-copiar-sm" onclick="copiarSeneca(this,\''+escaparTexto(ind)+'\')">📋</button>';
-                        h+='</div>';
-                    });
-                    h+='</div>';
-                    h+='</div>';
-                    
+                    // Indicadores — editables solo para Séneca
+                    h+=senecaLista('📊 Indicadores',objAgrupado.indicadores,pId,idx,'ind');
+
                     // Contenidos — una casilla por contenido, como pide Séneca
-                    h+=senecaLista('📚 Contenidos',generarContenidos(objAgrupado,p.tipo));
+                    h+=senecaLista('📚 Contenidos',generarContenidos(objAgrupado,p.tipo),pId,idx,'cont');
 
                     // Actividades — una casilla por actividad
                     const actividades=generarActividades(objAgrupado,p.tipo);
                     const _apSen=appsSugeridas({descripcion:objAgrupado.descripcion,indicadores:objAgrupado.indicadores},'',p.tipo,p.cicloOrigen||getCicloDeAlumno(a),2);
                     if(_apSen.length){actividades.push('Refuerzo digital con '+_apSen.map(x=>'«'+x.nombre+'»').join(' y ')+' (apps del centro)');}
-                    h+=senecaLista('🎮 Actividades',actividades);
+                    h+=senecaLista('🎮 Actividades',actividades,pId,idx,'act');
                     
                     // Competencias
                     const competencias=generarCompetencias(p.tipo);
@@ -6015,17 +6001,53 @@ ${instruccionesFormato}`;
         // ── Pestaña Séneca: utilidades ─────────────────────────────────
         function _escHTML(t){return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
         // Lista numerada con «Copiar todos» (una línea por casilla) y copiar individual
-        function senecaLista(titulo,items){
-            let h='<div class="seneca-seccion"><div class="seneca-seccion-header">';
-            h+='<span class="seneca-seccion-titulo">'+titulo+' ('+items.length+')</span>';
+        // Lista numerada con «Copiar todos» (una línea por casilla) y botón de editar cada elemento.
+        // Las ediciones se guardan aparte ({alumno}/seneca/{pId}/{obj}/{lista}) y solo afectan a Séneca.
+        function _senecaOverride(pId,idx,lista){
+            const a=alumnos[alumnoActual];
+            const o=a&&a.seneca&&a.seneca[pId]&&a.seneca[pId][idx]&&a.seneca[pId][idx][lista];
+            return Array.isArray(o)?o:(o&&typeof o==='object'?Object.values(o):null);
+        }
+        function senecaLista(titulo,items,pId,idx,lista){
+            const ov=_senecaOverride(pId,idx,lista);
+            const lst=(ov&&ov.length)?ov:items;
+            let h='<div class="seneca-seccion" data-pid="'+pId+'" data-idx="'+idx+'" data-lista="'+lista+'"><div class="seneca-seccion-header">';
+            h+='<span class="seneca-seccion-titulo">'+titulo+' ('+lst.length+')'+(ov?' <span style="font-size:.65rem;font-weight:600;background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:8px">editado</span>':'')+'</span>';
+            h+='<div style="display:flex;gap:6px">';
+            if(ov)h+='<button class="btn-copiar" style="background:#94a3b8" onclick="senecaRestaurar(this)" title="Volver al texto original">↺</button>';
             h+='<button class="btn-copiar" onclick="copiarIndicadoresSeneca(this)" title="Copia todos, uno por línea, para el favorito «Pegar en Séneca»">📋 Copiar todos</button>';
-            h+='</div><div class="seneca-indicadores-lista">';
-            items.forEach((t,i)=>{
+            h+='</div></div><div class="seneca-indicadores-lista">';
+            lst.forEach((t,i)=>{
                 h+='<div class="seneca-indicador-item"><span class="seneca-indicador-num">'+(i+1)+'</span>';
                 h+='<span class="seneca-indicador-texto">'+_escHTML(t)+'</span>';
-                h+='<button class="btn-copiar btn-copiar-sm" onclick="copiarItemSeneca(this)">📋</button></div>';
+                h+='<button class="btn-copiar btn-copiar-sm" style="background:#f59e0b" onclick="senecaEditarItem(this,'+i+')" title="Editar (vacío = eliminar)">✏️</button></div>';
             });
             return h+'</div></div>';
+        }
+        function _senecaGuardarLista(sec,arr){
+            const pId=sec.dataset.pid, idx=sec.dataset.idx, lista=sec.dataset.lista;
+            const a=alumnos[alumnoActual];
+            const ref=db.ref(PA+'/'+alumnoActual+'/seneca/'+pId+'/'+idx+'/'+lista);
+            a.seneca=a.seneca||{}; a.seneca[pId]=a.seneca[pId]||{}; a.seneca[pId][idx]=a.seneca[pId][idx]||{};
+            if(arr===null){ delete a.seneca[pId][idx][lista]; }
+            else a.seneca[pId][idx][lista]=arr;
+            renderSeneca();
+            return (arr===null?ref.remove():ref.set(arr)).then(()=>toast('Guardado ✓','success')).catch(e=>toast('No se pudo guardar: '+e.message,'error'));
+        }
+        async function senecaEditarItem(btn,i){
+            const sec=btn.closest('.seneca-seccion');
+            const arr=[...sec.querySelectorAll('.seneca-indicador-texto')].map(e=>e.textContent.trim());
+            const v=await pedirTexto('Edita el texto. Si lo dejas vacío, se elimina de la lista.\nSolo cambia lo que se copia a Séneca.',arr[i],{titulo:'✏️ Editar elemento '+(i+1),ok:'Guardar'});
+            if(v===null){
+                if(document.getElementById('askInput').value.trim()!=='')return; // cancelado
+                if(!await confirmarBorrado('¿Eliminar «'+arr[i]+'» de esta lista?'))return;
+                arr.splice(i,1);
+            } else arr[i]=v;
+            _senecaGuardarLista(sec,arr);
+        }
+        async function senecaRestaurar(btn){
+            if(!await confirmar('Se descartarán tus cambios y volverá el texto original.',{titulo:'↺ Restaurar lista',ok:'Restaurar'}))return;
+            _senecaGuardarLista(btn.closest('.seneca-seccion'),null);
         }
         // Bloque de texto único (un recuadro de Séneca)
         function senecaBloqueTexto(titulo,texto){
