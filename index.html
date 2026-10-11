@@ -4553,7 +4553,7 @@
                 // Apartados finales de ESTE programa específico
                 h+='<div class="seneca-objetivo" style="border-color:#f59e0b"><div class="seneca-objetivo-header"><span class="seneca-objetivo-titulo" style="color:#b45309">🗂️ Organización y Recursos Materiales</span></div>';
                 h+=senecaBloqueTexto('🏫 Organización',senecaOrganizacion(alumnoActual,p));
-                h+=senecaBloqueTexto('🧰 Recursos Materiales',senecaRecursos(alumnoActual));
+                h+=senecaBloqueTexto('🧰 Recursos Materiales',senecaRecursos(alumnoActual,p));
                 h+='</div>';
 
                 h+='</div>'; // cierre seneca-programa
@@ -6130,43 +6130,73 @@ ${instruccionesFormato}`;
             ].join('\n').slice(0,500);
         }
 
-        function senecaRecursos(id){
+        // Recursos según el programa: los de comunicación → Lengua; los cognitivos → Matemáticas
+        function senecaRecursos(id,p){
             const a=alumnos[id];
-            const progs=Object.values(a.programas||{});
-            const tipos=new Set(progs.map(p=>p.tipo));
-            const ciclo=getCicloDeAlumno(a);
+            const t=p.tipo;
+            const ciclo=p.cicloOrigen||getCicloDeAlumno(a);
+            const bajo=(ciclo==='infantil'||ciclo==='ciclo1');
             const cur=_senecaCurso(a);
-            const tiene=(...t)=>t.some(x=>tipos.has(x));
-            let prog=[], mat=['fichas adaptadas a '+cur];
-            const geu=[];
-            GEU_COLECCIONES.forEach(col=>col.niveles.forEach(nv=>{if(a.geu&&a.geu[nv.id]!=null)geu.push((col.id==='lc'?'Lecturas':'Cálculo')+' '+nv.label);}));
-            if(geu.length)prog.push('GEU ('+geu.join(', ')+')');
-            if(tiene('comunicativo','lectoescritura','dislexia','tel','pra_lcl','di')){
-                if(ciclo==='infantil'||ciclo==='ciclo1')prog.push('Letrilandia');
-                mat.push('tarjetas de letras y lecturas graduadas');
+            const LENG=['comunicativo','lectoescritura','dislexia','tel','pra_lcl'];
+            const MATE=['cognitivo','discalculia','pra_mat','tdah'];
+            const geuDe=col=>{const r=[];GEU_COLECCIONES.forEach(c=>{if(c.id!==col)return;c.niveles.forEach(nv=>{if(a.geu&&a.geu[nv.id]!=null)r.push(nv.label);});});return r;};
+            let prog=[], mat=[];
+            if(LENG.includes(t)){
+                const g=geuDe('lc'); if(g.length)prog.push('GEU Lecturas Comprensivas ('+g.join(', ')+')');
+                prog.push(bajo?'Letrilandia':'lecturas graduadas del nivel');
+                if(t==='dislexia')prog.push('PROLEC-R');
+                mat.push('libro de Lengua de '+cur+' adaptado', bajo?'abecedario móvil y tarjetas de sílabas':'textos adaptados y fichas de comprensión lectora', 'dictados y fichas de ortografía');
+                if(t==='comunicativo'||t==='tel')mat.push('láminas de vocabulario y secuencias para narrar');
+            } else if(MATE.includes(t)){
+                const g=geuDe('cf'); if(g.length)prog.push('GEU Cálculo Fácil ('+g.join(', ')+')');
+                prog.push('método ABN');
+                if(t==='cognitivo'||t==='tdah')prog.push(bajo?'Progresint':'PIAAR-R, Progresint');
+                mat.push('libro de Matemáticas de '+cur+' adaptado', bajo?'regletas, material de conteo y recta numérica':'bloques multibase, ábaco y tabla del 100', 'fichas de cálculo y problemas');
+                if(t==='tdah')mat.push('temporizador visual y agenda');
+            } else {
+                const M={
+                    tea:{p:['TEACCH','PEHIS'],m:['agenda visual y pictogramas','historias sociales']},
+                    social:{p:['PEHIS'],m:['tarjetas de emociones','juegos cooperativos']},
+                    di:{p:['método ABN',bajo?'Letrilandia':'lectoescritura funcional'],m:['libros de Lengua y Matemáticas de '+cur+' adaptados','pictogramas','dinero de juguete']},
+                    autonomia:{p:[],m:['secuencias de rutinas con pictogramas','material de vida diaria']},
+                    motor:{p:['cuadernos de grafomotricidad'],m:['plastilina, punzón y tijeras','pautas de escritura']},
+                    psicomotor:{p:[],m:['material de psicomotricidad (aros, picas, pelotas)','circuitos motrices']}
+                }[t]||{p:[],m:[]};
+                prog.push(...M.p); mat.push(...M.m);
             }
-            if(tiene('cognitivo','tdah'))prog.push('PIAAR-R','Progresint');
-            if(tiene('cognitivo','discalculia','pra_mat','di')){prog.push('método ABN');mat.push('regletas y bloques multibase');}
-            if(tiene('social','tea'))prog.push('PEHIS');
-            if(tiene('tea')){prog.push('TEACCH');mat.push('agenda visual y pictogramas');}
-            if(tiene('tdah'))mat.push('temporizador visual');
-            if(tiene('motor','psicomotor'))mat.push('material de grafomotricidad y psicomotricidad');
+            mat.push('fichas adaptadas a '+cur);
+            // Apps propias del centro: primero las que encajan con sus objetivos, luego las del área y ciclo
             const apps=new Map();
-            progs.forEach(p=>(p.objetivos||[]).forEach(o=>appsSugeridas(o,'',p.tipo,p.cicloOrigen||ciclo,2).forEach(x=>apps.set(x.id,x.nombre))));
-            let soft=[...apps.values()];
-            prog=[...new Set(prog)]; mat=[...new Set(mat)];
+            (p.objetivos||[]).forEach(o=>appsSugeridas(o,'',t,ciclo,2).forEach(x=>apps.set(x.id,x.nombre)));
+            const extra={cognitivo:['pt'],tdah:['pt'],infantil:['infantil']};
+            APPS_CENTRO.forEach(x=>{
+                if(!(x.ciclos||[]).includes(ciclo))return;
+                const delArea=x.soloTipos?x.soloTipos.includes(t):((extra[t]||[]).includes(x.id)||(ciclo==='infantil'&&x.id==='infantil'));
+                if(delArea)apps.set(x.id,x.nombre);
+            });
+            const APP_LENG=['tesoro','superlector','lecturapp','lectura','tildes'];
+            const APP_MATE=['llevadas','sumasrestas','cavernicola','multi','caballero','division','problemas','matemagia','escape'];
+            if(MATE.includes(t))APP_LENG.concat(t==='cognitivo'?['aulapt']:[]).forEach(k=>apps.delete(k));
+            if(LENG.includes(t))APP_MATE.forEach(k=>apps.delete(k));
+            // En los cognitivos, que aparezca al menos una app de Matemáticas
+            if(MATE.includes(t)&&![...apps.keys()].some(k=>APP_MATE.includes(k))){
+                const m=APPS_CENTRO.find(x=>APP_MATE.includes(x.id)&&(x.ciclos||[]).includes(ciclo));
+                if(m)apps.set(m.id,m.nombre);
+            }
+            let soft=[...apps.values()].slice(0,4);
+            const generales=LENG.includes(t)?'LiveWorksheets, Wordwall y ARASAAC':MATE.includes(t)?'LiveWorksheets, Wordwall y GeoGebra':'LiveWorksheets, Wordwall y ARASAAC';
             const montar=()=>[
                 'Bibliografía: Orden 30/05/2023 (currículo de '+cur+') e Instrucciones 8/03/2017 (NEAE).',
                 prog.length?'Programas editados: '+prog.join(', ')+'.':'',
-                'Software: '+(soft.length?'apps del centro ('+soft.join(', ')+'), ':'')+'ARASAAC y LiveWorksheets.',
-                'Web: arasaac.org, orientacionandujar.es, aulapt.org.',
+                'Software: '+(soft.length?'apps propias del centro ('+soft.join(', ')+') y generales ('+generales+').':generales+'.'),
+                'Web: orientacionandujar.es, aulapt.org.',
                 'Materiales: '+mat.join(', ')+'.'
             ].filter(Boolean).join('\n');
-            let t=montar();
-            while(t.length>500&&soft.length){soft.pop();t=montar();}
-            while(t.length>500&&mat.length>1){mat.pop();t=montar();}
-            while(t.length>500&&prog.length>1){prog.pop();t=montar();}
-            return t.slice(0,500);
+            let txt=montar();
+            while(txt.length>500&&mat.length>3){mat.splice(mat.length-2,1);txt=montar();}
+            while(txt.length>500&&soft.length>2){soft.pop();txt=montar();}
+            while(txt.length>500&&prog.length>1){prog.pop();txt=montar();}
+            return txt.slice(0,500);
         }
 
         function escaparTexto(texto){
