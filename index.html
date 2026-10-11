@@ -4462,6 +4462,7 @@
             const a=alumnos[alumnoActual];
             let h='<div class="card"><div class="card-header"><h3 class="card-title">🏛️ Exportar a Séneca</h3></div>';
             h+='<div class="seneca-info">ℹ️ Esta sección organiza los datos del programa específico para copiarlos fácilmente a Séneca. Usa los botones de copiar para trasladar cada parte.</div>';
+            h+=senecaBloqueMarcador();
             
             if(!a.programas||!Object.keys(a.programas).length){
                 h+='<div class="empty-state">Sin programas creados</div></div>';
@@ -4541,27 +4542,14 @@
                     h+='</div>';
                     h+='</div>';
                     
-                    // Contenidos
-                    const contenidos=generarContenidos(objAgrupado,p.tipo);
-                    h+='<div class="seneca-seccion">';
-                    h+='<div class="seneca-seccion-header">';
-                    h+='<span class="seneca-seccion-titulo">📚 Contenidos</span>';
-                    h+='<button class="btn-copiar" onclick="copiarSeneca(this,`'+escaparTexto(contenidos)+'`)">📋 Copiar</button>';
-                    h+='</div>';
-                    h+='<div class="seneca-contenido">'+contenidos+'</div>';
-                    h+='</div>';
-                    
-                    // Actividades
-                    let actividades=generarActividades(objAgrupado,p.tipo);
+                    // Contenidos — una casilla por contenido, como pide Séneca
+                    h+=senecaLista('📚 Contenidos',generarContenidos(objAgrupado,p.tipo));
+
+                    // Actividades — una casilla por actividad
+                    const actividades=generarActividades(objAgrupado,p.tipo);
                     const _apSen=appsSugeridas({descripcion:objAgrupado.descripcion,indicadores:objAgrupado.indicadores},'',p.tipo,p.cicloOrigen||getCicloDeAlumno(a),2);
-                    if(_apSen.length){actividades+='\n5. Refuerzo digital con '+_apSen.map(x=>'«'+x.nombre+'»').join(' y ')+' (apps del centro)';}
-                    h+='<div class="seneca-seccion">';
-                    h+='<div class="seneca-seccion-header">';
-                    h+='<span class="seneca-seccion-titulo">🎮 Actividades</span>';
-                    h+='<button class="btn-copiar" onclick="copiarSeneca(this,`'+escaparTexto(actividades)+'`)">📋 Copiar</button>';
-                    h+='</div>';
-                    h+='<div class="seneca-contenido">'+actividades+'</div>';
-                    h+='</div>';
+                    if(_apSen.length){actividades.push('Refuerzo digital con '+_apSen.map(x=>'«'+x.nombre+'»').join(' y ')+' (apps del centro)');}
+                    h+=senecaLista('🎮 Actividades',actividades);
                     
                     // Competencias
                     const competencias=generarCompetencias(p.tipo);
@@ -4579,6 +4567,13 @@
                 h+='</div>'; // cierre seneca-programa
                 progNum++;
             });
+
+            // Apartados finales que pide Séneca tras los programas específicos
+            h+='<div class="seneca-programa" style="border-left-color:#f59e0b">';
+            h+='<div class="seneca-programa-header" style="border-bottom-color:#f59e0b"><span class="seneca-programa-titulo" style="color:#b45309">🗂️ Apartados finales del programa</span></div>';
+            h+=senecaBloqueTexto('🏫 Organización',senecaOrganizacion(alumnoActual));
+            h+=senecaBloqueTexto('🧰 Recursos Materiales',senecaRecursos(alumnoActual));
+            h+='</div>';
             
             h+='</div>'; // cierre card
             document.getElementById('tabSeneca').innerHTML=h;
@@ -4720,22 +4715,26 @@
                 'psicomotor':['Esquema corporal','Coordinación dinámica general','Equilibrio y control postural','Orientación espacial y temporal','Lateralidad'],
                 'motor':['Motricidad fina','Coordinación óculo-manual','Grafomotricidad','Manipulación de objetos','Precisión y destreza manual'],
                 'social':['Habilidades sociales básicas','Regulación emocional','Interacción con iguales','Normas de convivencia','Empatía y asertividad'],
-                'autonomia':['Hábitos de autonomía personal','Autocuidado e higiene','Organización y planificación','Responsabilidad en tareas','Independencia funcional']
+                'autonomia':['Hábitos de autonomía personal','Autocuidado e higiene','Organización y planificación','Responsabilidad en tareas','Independencia funcional'],
+                'lectoescritura':['Correspondencia fonema-grafema','Lectura de sílabas, palabras y frases','Conciencia fonológica','Escritura al dictado y copia','Comprensión de textos breves'],
+                'tdah':['Atención sostenida y selectiva','Control de impulsos','Planificación y organización de tareas','Autorregulación emocional','Autoinstrucciones'],
+                'dislexia':['Conciencia fonológica','Fluidez lectora','Estrategias de comprensión lectora','Ortografía con apoyos visuales','Vocabulario lector'],
+                'discalculia':['Sentido numérico','Valor posicional','Comprensión de las operaciones','Cálculo mental y estimación','Resolución de problemas con manipulativos'],
+                'tea':['Anticipación de rutinas con apoyos visuales','Comunicación funcional','Reconocimiento de emociones','Flexibilidad ante cambios','Habilidades sociales en el aula'],
+                'tel':['Comprensión de vocabulario y estructuras','Expresión oral en frases completas','Comprensión de textos e instrucciones','Narración de experiencias','Vocabulario académico de área'],
+                'di':['Lectoescritura funcional','Numeración y cálculo funcional','Comprensión de instrucciones','Autonomía en rutinas escolares','Habilidades sociales básicas'],
+                'pra_lcl':['Comprensión lectora','Expresión escrita','Ortografía y gramática del nivel','Comunicación oral','Vocabulario'],
+                'pra_mat':['Numeración y valor posicional','Operaciones y cálculo','Resolución de problemas','Medida','Geometría y datos']
             };
-            
             const base=contenidosBase[tipo]||['Contenidos específicos del área','Habilidades funcionales','Generalización de aprendizajes'];
-            
-            // Personalizar según indicadores
-            const palabrasClave=objAgrupado.indicadores.join(' ').toLowerCase();
-            let contenidos=[...base];
-            
-            if(palabrasClave.includes('vocabulario')||palabrasClave.includes('palabra'))contenidos.push('Ampliación del léxico');
-            if(palabrasClave.includes('comprens'))contenidos.push('Comprensión de instrucciones');
-            if(palabrasClave.includes('escrib')||palabrasClave.includes('lectura'))contenidos.push('Iniciación a la lectoescritura');
-            if(palabrasClave.includes('número')||palabrasClave.includes('contar'))contenidos.push('Conceptos numéricos básicos');
-            if(palabrasClave.includes('atención'))contenidos.push('Estrategias atencionales');
-            
-            return contenidos.slice(0,5).map((c,i)=>(i+1)+'. '+c).join('\n');
+            const palabrasClave=(objAgrupado.indicadores||[]).join(' ').toLowerCase();
+            const contenidos=[...base];
+            const add=t=>{if(!contenidos.includes(t))contenidos.unshift(t);};
+            if(palabrasClave.includes('vocabulario')||palabrasClave.includes('palabra'))add('Ampliación del léxico');
+            if(palabrasClave.includes('comprens'))add('Comprensión de instrucciones y textos');
+            if(palabrasClave.includes('número')||palabrasClave.includes('contar'))add('Conceptos numéricos básicos');
+            if(palabrasClave.includes('atención'))add('Estrategias atencionales');
+            return contenidos.slice(0,5);
         }
         
 
@@ -5982,15 +5981,23 @@ ${instruccionesFormato}`;
 
         function generarActividades(objAgrupado,tipo){
             const actividadesBase={
-                'comunicativo':['Juegos de denominación y descripción de imágenes','Actividades de comprensión de órdenes y narraciones','Ejercicios de conciencia fonológica (rimas, segmentación)','Diálogos guiados y role-playing comunicativo'],
+                'comunicativo':['Juegos de denominación y descripción de imágenes','Comprensión de órdenes y narraciones','Conciencia fonológica: rimas y segmentación','Diálogos guiados y role-playing comunicativo'],
                 'cognitivo':['Actividades de atención visual y auditiva','Juegos de memoria y secuenciación','Resolución de problemas manipulativos','Tareas de clasificación y seriación'],
                 'psicomotor':['Circuitos motrices y juegos de movimiento','Actividades de equilibrio y coordinación','Ejercicios de esquema corporal','Juegos de orientación espacial'],
-                'motor':['Actividades de recorte, picado y pegado','Ejercicios de grafomotricidad','Manipulación de plastilina y materiales','Juegos de ensartado y encaje'],
-                'social':['Role-playing de situaciones sociales','Juegos cooperativos en pequeño grupo','Actividades de identificación emocional','Dinámicas de turnos y normas'],
-                'autonomia':['Rutinas de autocuidado guiadas','Tareas de organización del material','Actividades de responsabilidad','Secuencias de autonomía personal']
+                'motor':['Recorte, picado y pegado','Fichas de grafomotricidad progresiva','Modelado con plastilina','Juegos de ensartado y encaje'],
+                'social':['Role-playing de situaciones sociales','Juegos cooperativos en pequeño grupo','Identificación de emociones con imágenes','Dinámicas de turnos y normas'],
+                'autonomia':['Rutinas de autocuidado guiadas con pictogramas','Organización del material de trabajo','Encargos de responsabilidad en el aula','Secuencias de autonomía personal'],
+                'lectoescritura':['Asociación letra-sonido con apoyo visual','Lectura de sílabas y palabras con tarjetas','Dictados breves de palabras trabajadas','Lectura de frases con pictogramas'],
+                'tdah':['Tareas cortas con temporizador visual','Juegos de stop y control de impulsos','Uso de agenda y lista de pasos','Autoinstrucciones antes de cada tarea'],
+                'dislexia':['Juegos de conciencia fonológica','Lecturas repetidas para mejorar la fluidez','Lectura comprensiva con subrayado guiado','Ortografía visual con tarjetas de palabras'],
+                'discalculia':['Representación de cantidades con regletas y bloques','Operaciones con material manipulativo','Juegos de cálculo mental','Problemas de la vida diaria con dibujo previo'],
+                'tea':['Agenda visual y anticipación de la sesión','Historias sociales de situaciones cotidianas','Juegos de turnos y atención conjunta','Identificación de emociones con pictogramas'],
+                'tel':['Juegos de vocabulario por categorías','Ampliación de frases con apoyo visual','Comprensión de cuentos con imágenes','Narración de experiencias con secuencias'],
+                'di':['Lectura de palabras del entorno con imagen','Cálculo funcional con dinero y objetos reales','Seguimiento de instrucciones con pictogramas','Rutinas de autonomía en el aula'],
+                'pra_lcl':['Lectura comprensiva de textos adaptados','Producción de textos breves con guion','Dictados y ortografía del nivel','Exposiciones orales breves'],
+                'pra_mat':['Cálculo con material manipulativo','Problemas contextualizados paso a paso','Juegos de cálculo mental','Medida y geometría con objetos reales']
             };
-            
-            return(actividadesBase[tipo]||['Actividades manipulativas','Juegos estructurados','Tareas funcionales','Generalización en contextos naturales']).slice(0,4).map((a,i)=>(i+1)+'. '+a).join('\n');
+            return (actividadesBase[tipo]||['Actividades manipulativas','Juegos estructurados','Tareas funcionales','Generalización en contextos naturales']).slice(0,4);
         }
         
         function generarCompetencias(tipo){
@@ -6005,6 +6012,141 @@ ${instruccionesFormato}`;
             return competenciasMap[tipo]||'CPSAA (Competencia Personal, Social y de Aprender a Aprender)';
         }
         
+        // ── Pestaña Séneca: utilidades ─────────────────────────────────
+        function _escHTML(t){return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+        // Lista numerada con «Copiar todos» (una línea por casilla) y copiar individual
+        function senecaLista(titulo,items){
+            let h='<div class="seneca-seccion"><div class="seneca-seccion-header">';
+            h+='<span class="seneca-seccion-titulo">'+titulo+' ('+items.length+')</span>';
+            h+='<button class="btn-copiar" onclick="copiarIndicadoresSeneca(this)" title="Copia todos, uno por línea, para el favorito «Pegar en Séneca»">📋 Copiar todos</button>';
+            h+='</div><div class="seneca-indicadores-lista">';
+            items.forEach((t,i)=>{
+                h+='<div class="seneca-indicador-item"><span class="seneca-indicador-num">'+(i+1)+'</span>';
+                h+='<span class="seneca-indicador-texto">'+_escHTML(t)+'</span>';
+                h+='<button class="btn-copiar btn-copiar-sm" onclick="copiarItemSeneca(this)">📋</button></div>';
+            });
+            return h+'</div></div>';
+        }
+        // Bloque de texto único (un recuadro de Séneca)
+        function senecaBloqueTexto(titulo,texto){
+            let h='<div class="seneca-seccion"><div class="seneca-seccion-header">';
+            h+='<span class="seneca-seccion-titulo">'+titulo+' <span style="font-weight:400;color:var(--text-light);font-size:.72rem">· '+texto.length+' caracteres</span></span>';
+            h+='<button class="btn-copiar" onclick="copiarBloqueSeneca(this)">📋 Copiar</button>';
+            h+='</div><div class="seneca-contenido seneca-bloque-texto">'+_escHTML(texto)+'</div></div>';
+            return h;
+        }
+        function _copiarTexto(btn,txt,etiqueta){
+            const marcar=()=>{const o=btn.innerHTML;btn.innerHTML=etiqueta||'✓ Copiado';btn.classList.add('copiado');setTimeout(()=>{btn.innerHTML=o;btn.classList.remove('copiado');},1600);};
+            navigator.clipboard.writeText(txt).then(marcar).catch(()=>{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);marcar();});
+        }
+        function copiarItemSeneca(btn){_copiarTexto(btn,btn.parentElement.querySelector('.seneca-indicador-texto').textContent.trim(),'✓');}
+        function copiarBloqueSeneca(btn){_copiarTexto(btn,btn.closest('.seneca-seccion').querySelector('.seneca-bloque-texto').textContent.trim());}
+
+        // Favorito «Pegar en Séneca»: rellena casillas consecutivas, una línea por casilla
+        function _marcadorSeneca(){(async()=>{
+          let doc=document, st=doc.activeElement;
+          while(st && st.tagName==='IFRAME'){ try{ doc=st.contentDocument; st=doc.activeElement; }catch(e){ break; } }
+          if(!st || st.tagName!=='TEXTAREA'){ alert('Primero haz clic en la PRIMERA casilla vacía de Séneca y después pulsa este favorito.'); return; }
+          const rellenar=t=>{
+            const lineas=t.split(/\r?\n/).map(s=>s.replace(/^\s*\d+[\.\)\-]?\s+/,'').replace(/\s*📋\s*$/,'').trim()).filter(s=>/[a-záéíóúüñ]/i.test(s));
+            if(!lineas.length){ alert('El portapapeles está vacío. Pulsa antes «Copiar todos» en Gestor PE.'); return; }
+            const casillas=[...doc.querySelectorAll('textarea')].filter(e=>e.offsetParent);
+            let i=casillas.indexOf(st); if(i<0) i=0;
+            let n=0;
+            for(const s of lineas){ const e=casillas[i+n]; if(!e) break; e.focus(); e.value=s; ['input','change','keyup','blur'].forEach(v=>e.dispatchEvent(new Event(v,{bubbles:true}))); n++; }
+            alert(n+' de '+lineas.length+' líneas pegadas.'+(n<lineas.length?'\n\nFaltan casillas: sube el número, pulsa MOSTRAR y vuelve a intentarlo.':'\n\nRevisa las casillas antes de guardar.'));
+          };
+          try{ rellenar(await navigator.clipboard.readText()); }
+          catch(e){
+            const a=doc.createElement('textarea');
+            a.placeholder='Edge no ha dejado leer el portapapeles. Pega aquí con Ctrl+V';
+            a.style.cssText='position:fixed;top:20%;left:20%;width:60%;height:40%;z-index:2147483647;font-size:16px;padding:12px;border:4px solid #1a5f4a;border-radius:12px';
+            doc.body.appendChild(a); a.focus();
+            a.addEventListener('paste',()=>setTimeout(()=>{ const v=a.value; a.remove(); rellenar(v); },0));
+          }
+        })();}
+        function _codigoMarcadorSeneca(){return 'javascript:'+encodeURIComponent('('+_marcadorSeneca.toString()+')()');}
+        function copiarCodigoMarcador(btn){_copiarTexto(btn,_codigoMarcadorSeneca(),'✓ Código copiado');}
+        function senecaBloqueMarcador(){
+            const href=_codigoMarcadorSeneca().replace(/"/g,'&quot;');
+            return '<details class="no-print" style="background:#f0faf6;border:2px dashed var(--primary-light);border-radius:10px;padding:10px 14px;margin-bottom:16px">'
+              +'<summary style="cursor:pointer;font-weight:700;color:var(--primary);font-size:.88rem">📌 Favorito «Pegar en Séneca» — rellena todas las casillas de golpe</summary>'
+              +'<div style="font-size:.8rem;line-height:1.55;margin-top:10px;color:var(--text)">'
+              +'<b>Instalar (una vez):</b> muestra la barra de favoritos con <b>Ctrl+Mayús+B</b> y <b>arrastra</b> este botón hasta ella:'
+              +'<div style="text-align:center;margin:10px 0"><a href="'+href+'" onclick="event.preventDefault();toast(\'Arrástralo a la barra de favoritos, no lo pulses aquí\',\'error\')" style="display:inline-block;background:var(--primary);color:#fff;text-decoration:none;font-weight:700;padding:10px 20px;border-radius:10px;cursor:grab">📋 Pegar en Séneca</a></div>'
+              +'¿No te deja arrastrar? <button class="btn btn-secondary btn-sm" onclick="copiarCodigoMarcador(this)">Copiar código</button> y en Séneca: <b>Ctrl+D</b> → nombre «Pegar en Séneca» → carpeta «Barra de favoritos» → <b>Más…</b> → pega el código en URL → Guardar.'
+              +'<div style="margin-top:8px"><b>Usar:</b> aquí pulsa <b>Copiar todos</b> (objetivos, indicadores, contenidos o actividades) → en Séneca pon el número de casillas y pulsa MOSTRAR → clic en la <b>primera casilla vacía</b> → pulsa el favorito. Si Edge pide permiso para el portapapeles, <b>Permitir</b>.</div>'
+              +'</div></details>';
+        }
+
+        // ── Organización (apartado final del programa en Séneca) · máx. 500 caracteres ──
+        function _listaY(arr){return arr.length>1?arr.slice(0,-1).join(', ')+' y '+arr[arr.length-1]:(arr[0]||'');}
+        function senecaOrganizacion(id){
+            const a=alumnos[id];
+            const DN=['lunes','martes','miércoles','jueves','viernes'];
+            const dias=(a.diasSesion||[1,3,4]).slice().sort();
+            const diasStr=_listaY(dias.map(d=>DN[d]).filter(Boolean));
+            let nGrupo=0;
+            Object.values(grupos||{}).forEach(g=>{
+                const al=Array.isArray(g.alumnos)?g.alumnos:Object.values(g.alumnos||{});
+                if(al.includes(id))nGrupo=Math.max(nGrupo,al.filter(x=>alumnos[x]).length);
+            });
+            const progs=Object.values(a.programas||{});
+            const porT={1:0,2:0,3:0};
+            progs.forEach(p=>(p.objetivos||[]).forEach(o=>{const t=parseInt(o.trimestre)||1;porT[t]=(porT[t]||0)+1;}));
+            const tipos=new Set(progs.map(p=>p.tipo));
+            const inf=getCicloDeAlumno(a)==='infantil';
+            const curso=(cursosMeta[CURSO]&&cursosMeta[CURSO].nombre)||CURSO.replace('-','/');
+            const ag=nGrupo>1?'Agrupamiento: pequeño grupo en el aula de PT, con apoyo puntual en el aula ordinaria.'
+                            :'Agrupamiento: atención individual en el aula de PT, con apoyo puntual en el aula ordinaria.';
+            const esp='Espacios y tiempos: aula de PT; '+dias.length+' sesiones semanales ('+diasStr+') '
+                +(inf?'en los momentos de lenguaje y lógico-matemática.':'en el horario de las áreas instrumentales (Lengua y Matemáticas).');
+            const tem='Temporalización: curso '+curso+', objetivos por trimestres (T1: '+porT[1]+', T2: '+porT[2]+', T3: '+porT[3]+') con revisión trimestral.';
+            const prof=['tutor/a','EOE'];
+            if(tipos.has('tel')||tipos.has('comunicativo')||tipos.has('tea'))prof.push('AL');
+            const coo='Coordinación: mensual con '+_listaY(prof)+'; información trimestral a la familia.';
+            return [ag,esp,tem,coo].join('\n').slice(0,500);
+        }
+
+        // ── Recursos materiales (apartado final del programa en Séneca) · máx. 500 caracteres ──
+        function senecaRecursos(id){
+            const a=alumnos[id];
+            const progs=Object.values(a.programas||{});
+            const tipos=new Set(progs.map(p=>p.tipo));
+            const ciclo=getCicloDeAlumno(a);
+            const tiene=(...t)=>t.some(x=>tipos.has(x));
+            let prog=[], mat=['fichas adaptadas de elaboración propia'];
+            const geu=[];
+            GEU_COLECCIONES.forEach(col=>col.niveles.forEach(nv=>{if(a.geu&&a.geu[nv.id]!==undefined&&a.geu[nv.id]!==null)geu.push((col.id==='lc'?'Lecturas':'Cálculo')+' '+nv.label);}));
+            if(geu.length)prog.push('GEU ('+geu.join(', ')+')');
+            if(tiene('comunicativo','lectoescritura','dislexia','tel','pra_lcl','di')){
+                if(ciclo==='infantil'||ciclo==='ciclo1')prog.push('Letrilandia');
+                mat.push('tarjetas de letras y lecturas graduadas');
+            }
+            if(tiene('cognitivo','tdah'))prog.push('PIAAR-R','Progresint');
+            if(tiene('cognitivo','discalculia','pra_mat','di')){prog.push('método ABN');mat.push('regletas y bloques multibase');}
+            if(tiene('social','tea'))prog.push('PEHIS');
+            if(tiene('tea')){prog.push('TEACCH');mat.push('agenda visual y pictogramas');}
+            if(tiene('tdah'))mat.push('temporizador visual');
+            if(tiene('motor','psicomotor'))mat.push('material de grafomotricidad y psicomotricidad');
+            const apps=new Map();
+            progs.forEach(p=>(p.objetivos||[]).forEach(o=>appsSugeridas(o,'',p.tipo,p.cicloOrigen||ciclo,2).forEach(x=>apps.set(x.id,x.nombre))));
+            let soft=[...apps.values()];
+            prog=[...new Set(prog)]; mat=[...new Set(mat)];
+            const montar=()=>[
+                'Bibliografía: Orden 30/05/2023 e Instrucciones 8/03/2017 (NEAE).',
+                prog.length?'Programas editados: '+prog.join(', ')+'.':'',
+                'Software: '+(soft.length?'apps del centro ('+soft.join(', ')+'), ':'')+'ARASAAC y LiveWorksheets.',
+                'Web: arasaac.org, orientacionandujar.es, aulapt.org.',
+                'Materiales: '+mat.join(', ')+'.'
+            ].filter(Boolean).join('\n');
+            let t=montar();
+            while(t.length>500&&soft.length){soft.pop();t=montar();}
+            while(t.length>500&&mat.length>1){mat.pop();t=montar();}
+            while(t.length>500&&prog.length>1){prog.pop();t=montar();}
+            return t.slice(0,500);
+        }
+
         function escaparTexto(texto){
             return texto.replace(/`/g,"'").replace(/\\/g,'\\\\').replace(/\n/g,'\\n');
         }
