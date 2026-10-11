@@ -4550,17 +4550,16 @@
                     h+='</div>'; // cierre seneca-objetivo
                 });
                 
+                // Apartados finales de ESTE programa específico
+                h+='<div class="seneca-objetivo" style="border-color:#f59e0b"><div class="seneca-objetivo-header"><span class="seneca-objetivo-titulo" style="color:#b45309">🗂️ Organización y Recursos Materiales</span></div>';
+                h+=senecaBloqueTexto('🏫 Organización',senecaOrganizacion(alumnoActual,p));
+                h+=senecaBloqueTexto('🧰 Recursos Materiales',senecaRecursos(alumnoActual));
+                h+='</div>';
+
                 h+='</div>'; // cierre seneca-programa
                 progNum++;
             });
 
-            // Apartados finales que pide Séneca tras los programas específicos
-            h+='<div class="seneca-programa" style="border-left-color:#f59e0b">';
-            h+='<div class="seneca-programa-header" style="border-bottom-color:#f59e0b"><span class="seneca-programa-titulo" style="color:#b45309">🗂️ Apartados finales del programa</span></div>';
-            h+=senecaBloqueTexto('🏫 Organización',senecaOrganizacion(alumnoActual));
-            h+=senecaBloqueTexto('🧰 Recursos Materiales',senecaRecursos(alumnoActual));
-            h+='</div>';
-            
             h+='</div>'; // cierre card
             document.getElementById('tabSeneca').innerHTML=h;
         }
@@ -6103,43 +6102,44 @@ ${instruccionesFormato}`;
 
         // ── Organización (apartado final del programa en Séneca) · máx. 500 caracteres ──
         function _listaY(arr){return arr.length>1?arr.slice(0,-1).join(', ')+' y '+arr[arr.length-1]:(arr[0]||'');}
-        function senecaOrganizacion(id){
+        const _SEN_LENG=['comunicativo','lectoescritura','dislexia','tel','pra_lcl'];
+        const _SEN_MATE=['discalculia','pra_mat'];
+        function _senecaCurso(a){return a.curso||((CICLOS[getCicloDeAlumno(a)]||{}).nombre)||'su curso';}
+        function senecaOrganizacion(id,p){
             const a=alumnos[id];
             const DN=['lunes','martes','miércoles','jueves','viernes'];
             const dias=(a.diasSesion||[1,3,4]).slice().sort();
             const diasStr=_listaY(dias.map(d=>DN[d]).filter(Boolean));
-            let nGrupo=0;
+            let enGrupo=false;
             Object.values(grupos||{}).forEach(g=>{
                 const al=Array.isArray(g.alumnos)?g.alumnos:Object.values(g.alumnos||{});
-                if(al.includes(id))nGrupo=Math.max(nGrupo,al.filter(x=>alumnos[x]).length);
+                if(al.includes(id)&&al.filter(x=>alumnos[x]).length>1)enGrupo=true;
             });
-            const progs=Object.values(a.programas||{});
-            const porT={1:0,2:0,3:0};
-            progs.forEach(p=>(p.objetivos||[]).forEach(o=>{const t=parseInt(o.trimestre)||1;porT[t]=(porT[t]||0)+1;}));
-            const tipos=new Set(progs.map(p=>p.tipo));
+            const cur=_senecaCurso(a);
             const inf=getCicloDeAlumno(a)==='infantil';
+            const porT={1:0,2:0,3:0};
+            (p.objetivos||[]).forEach(o=>{const k=parseInt(o.trimestre)||1;porT[k]=(porT[k]||0)+1;});
             const curso=(cursosMeta[CURSO]&&cursosMeta[CURSO].nombre)||CURSO.replace('-','/');
-            const ag=nGrupo>1?'Agrupamiento: pequeño grupo en el aula de PT, con apoyo puntual en el aula ordinaria.'
-                            :'Agrupamiento: atención individual en el aula de PT, con apoyo puntual en el aula ordinaria.';
-            const esp='Espacios y tiempos: aula de PT; '+dias.length+' sesiones semanales ('+diasStr+') '
-                +(inf?'en los momentos de lenguaje y lógico-matemática.':'en el horario de las áreas instrumentales (Lengua y Matemáticas).');
-            const tem='Temporalización: curso '+curso+', objetivos por trimestres (T1: '+porT[1]+', T2: '+porT[2]+', T3: '+porT[3]+') con revisión trimestral.';
             const prof=['tutor/a','EOE'];
-            if(tipos.has('tel')||tipos.has('comunicativo')||tipos.has('tea'))prof.push('AL');
-            const coo='Coordinación: mensual con '+_listaY(prof)+'; información trimestral a la familia.';
-            return [ag,esp,tem,coo].join('\n').slice(0,500);
+            if(['tel','comunicativo','tea'].includes(p.tipo))prof.push('AL');
+            return [
+                'Agrupamiento: '+(enGrupo?'pequeño grupo':'atención individual')+' en el aula de PT, con apoyo puntual en su aula de '+cur+'.',
+                'Espacios y tiempos: aula de PT; '+dias.length+' sesiones semanales ('+diasStr+') '+(inf?'en los momentos de lenguaje y lógico-matemática.':'en el horario de las áreas instrumentales (Lengua y Matemáticas).'),
+                'Temporalización: curso '+curso+' ('+cur+'), objetivos por trimestres (T1: '+porT[1]+', T2: '+porT[2]+', T3: '+porT[3]+') con revisión trimestral.',
+                'Coordinación: mensual con '+_listaY(prof)+'; información trimestral a la familia.'
+            ].join('\n').slice(0,500);
         }
 
-        // ── Recursos materiales (apartado final del programa en Séneca) · máx. 500 caracteres ──
         function senecaRecursos(id){
             const a=alumnos[id];
             const progs=Object.values(a.programas||{});
             const tipos=new Set(progs.map(p=>p.tipo));
             const ciclo=getCicloDeAlumno(a);
+            const cur=_senecaCurso(a);
             const tiene=(...t)=>t.some(x=>tipos.has(x));
-            let prog=[], mat=['fichas adaptadas de elaboración propia'];
+            let prog=[], mat=['fichas adaptadas a '+cur];
             const geu=[];
-            GEU_COLECCIONES.forEach(col=>col.niveles.forEach(nv=>{if(a.geu&&a.geu[nv.id]!==undefined&&a.geu[nv.id]!==null)geu.push((col.id==='lc'?'Lecturas':'Cálculo')+' '+nv.label);}));
+            GEU_COLECCIONES.forEach(col=>col.niveles.forEach(nv=>{if(a.geu&&a.geu[nv.id]!=null)geu.push((col.id==='lc'?'Lecturas':'Cálculo')+' '+nv.label);}));
             if(geu.length)prog.push('GEU ('+geu.join(', ')+')');
             if(tiene('comunicativo','lectoescritura','dislexia','tel','pra_lcl','di')){
                 if(ciclo==='infantil'||ciclo==='ciclo1')prog.push('Letrilandia');
@@ -6156,7 +6156,7 @@ ${instruccionesFormato}`;
             let soft=[...apps.values()];
             prog=[...new Set(prog)]; mat=[...new Set(mat)];
             const montar=()=>[
-                'Bibliografía: Orden 30/05/2023 e Instrucciones 8/03/2017 (NEAE).',
+                'Bibliografía: Orden 30/05/2023 (currículo de '+cur+') e Instrucciones 8/03/2017 (NEAE).',
                 prog.length?'Programas editados: '+prog.join(', ')+'.':'',
                 'Software: '+(soft.length?'apps del centro ('+soft.join(', ')+'), ':'')+'ARASAAC y LiveWorksheets.',
                 'Web: arasaac.org, orientacionandujar.es, aulapt.org.',
