@@ -1301,6 +1301,7 @@
         </div>
     </div>
 
+    <script src="/agenda/calendario.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
@@ -1461,7 +1462,7 @@
         // Los datos de cada curso viven en {ROOT}/cursos/{id}/(alumnos|grupos|aci)
         // Las plantillas (biblioteca) se comparten entre todos los cursos de un mismo perfil.
         let CURSO='2025-26', PA, PG, PACI, cursosMeta={};
-        function setCursoPaths(){const b=ROOT+'/cursos/'+CURSO;PA=b+'/alumnos';PG=b+'/grupos';PACI=b+'/aci';}
+        function setCursoPaths(){const b=ROOT+'/cursos/'+CURSO;PA=b+'/alumnos';PG=b+'/grupos';PACI=b+'/aci';try{ajustarMesesAlCalendario();}catch(e){}}
         setCursoPaths();
         let alumnos={},plantillas={},alumnoActual=null,mesActual=0,diasSel=[1,3,4],celdaEditando=null,docExtraido=null,docExtraidoPlantilla=null,estadoCelda='asiste',resultadoCelda=null,evalTrim=1,charts={},informeData=null,recursos={},recursosFavoritos=[],tabRecursosActual='todos';
         // Nº real de fichas por cuaderno GEU. Se declara AQUÍ, antes del arranque
@@ -1590,7 +1591,59 @@
         
         const CICLOS={infantil:{nombre:'Infantil',icon:'💒'},ciclo1:{nombre:'1º Ciclo',icon:'🔵'},ciclo2:{nombre:'2º Ciclo',icon:'🟢'},ciclo3:{nombre:'3º Ciclo',icon:'🟠'}};
         const AREAS={psicomotor:{nombre:'Desarrollo Psicomotor',short:'Psicomotor',icon:'🏃',color:'#8b5cf6'},motor:{nombre:'Desarrollo Motor',short:'D. Motor',icon:'✋',color:'#06b6d4'},comunicativo:{nombre:'Desarrollo Comunicativo',short:'D. Comunicat.',icon:'💬',color:'#10b981'},cognitivo:{nombre:'Desarrollo Cognitivo',short:'D. Cognitivo',icon:'🧠',color:'#3b82f6'},social:{nombre:'Desarrollo Social-Emocional',short:'D. Social-Em.',icon:'❤️',color:'#ec4899'},autonomia:{nombre:'Autonomía Personal',short:'Autonomía',icon:'🎯',color:'#f59e0b'},lectoescritura:{nombre:'Lectoescritura',short:'Lectoescrit.',icon:'📖',color:'#6366f1'},tdah:{nombre:'TDAH',short:'TDAH',icon:'⚡',color:'#f97316'},dislexia:{nombre:'Dislexia (PT)',short:'Dislexia',icon:'📘',color:'#0d9488'},discalculia:{nombre:'Discalculia (PT)',short:'Discalculia',icon:'🔢',color:'#7c3aed'},tea:{nombre:'TEA (PT)',short:'TEA',icon:'🧩',color:'#0891b2'},tel:{nombre:'TEL / Disfasia (PT)',short:'TEL/Disfasia',icon:'💭',color:'#059669'},di:{nombre:'Discapacidad Intelectual (PT)',short:'Dis. Intelectual',icon:'🌱',color:'#b45309'},pra_lcl:{nombre:'Refuerzo curricular · Lengua',short:'Refuerzo Lengua',icon:'📗',color:'#0f766e'},pra_mat:{nombre:'Refuerzo curricular · Matemáticas',short:'Refuerzo Mates',icon:'🔷',color:'#1d4ed8'}};
-        const MESES=[{nombre:'Septiembre',semanas:3,trim:1},{nombre:'Octubre',semanas:4,trim:1},{nombre:'Noviembre',semanas:4,trim:1},{nombre:'Diciembre',semanas:2,trim:1},{nombre:'Enero',semanas:3,trim:2},{nombre:'Febrero',semanas:4,trim:2},{nombre:'Marzo',semanas:3,trim:2},{nombre:'Abril',semanas:3,trim:3},{nombre:'Mayo',semanas:4,trim:3},{nombre:'Junio',semanas:3,trim:3}];
+        let MESES=[{nombre:'Septiembre',semanas:3,trim:1},{nombre:'Octubre',semanas:4,trim:1},{nombre:'Noviembre',semanas:4,trim:1},{nombre:'Diciembre',semanas:2,trim:1},{nombre:'Enero',semanas:3,trim:2},{nombre:'Febrero',semanas:4,trim:2},{nombre:'Marzo',semanas:3,trim:2},{nombre:'Abril',semanas:3,trim:3},{nombre:'Mayo',semanas:4,trim:3},{nombre:'Junio',semanas:3,trim:3}];
+        // ── Calendario escolar real (calendario común del centro, app Agenda) ──────────
+        // Cada mes tiene tantas semanas como semanas reales con algún día lectivo (lunes a viernes,
+        // la semana pertenece al mes de su lunes). Festivos y vacaciones salen solos como «sin cole».
+        const _pad2=n=>String(n).padStart(2,'0'), _isoD=d=>d.getFullYear()+'-'+_pad2(d.getMonth()+1)+'-'+_pad2(d.getDate());
+        function _hoyIso(){return _isoD(new Date());}
+        function _sinColeCal(ds){return (window.CalendarioCole&&CalendarioCole.sinCole)?CalendarioCole.sinCole(ds):null;}
+        let CAL_FIRMA='';
+        if(window.CalendarioCole&&CalendarioCole.listo) CalendarioCole.listo.then(()=>{try{
+            if(ajustarMesesAlCalendario()&&typeof alumnos!=='undefined'&&alumnos){aplicarCalendarioAlumnos();if(alumnoActual&&alumnos[alumnoActual]&&document.getElementById('tabProgramacion'))renderProg();}
+        }catch(e){console.warn('calendario',e);}});
+        function ajustarMesesAlCalendario(){
+            if(!window.CalendarioCole) return false;
+            const y=parseInt(CURSO,10); if(!y) return false;
+            const firma=[];
+            for(let mi=0;mi<10;mi++){
+                const mesReal=(8+mi)%12, anio=mi<4?y:y+1;
+                const lunes=[];
+                const d=new Date(anio,mesReal,1,12);
+                while(d.getDay()!==1) d.setDate(d.getDate()+1);
+                for(;d.getMonth()===mesReal;d.setDate(d.getDate()+7)){
+                    let lectivo=false;
+                    for(let k=0;k<5;k++){const x=new Date(d);x.setDate(x.getDate()+k);if(!_sinColeCal(_isoD(x))){lectivo=true;break;}}
+                    if(lectivo) lunes.push(_isoD(d));
+                }
+                if(lunes.length){MESES[mi].semanas=lunes.length;MESES[mi].lunes=lunes;}
+                firma.push(lunes.length);
+            }
+            CAL_FIRMA=CURSO+':'+firma.join('');
+            return true;
+        }
+        // Fecha real (AAAA-MM-DD) de una sesión «mes_semana_día» o null si no se conoce
+        function fechaDeClave(k){
+            const p=String(k).split('_').map(Number), m=MESES[p[0]];
+            if(!m||!m.lunes||!m.lunes[p[1]-1]) return null;
+            const d=new Date(m.lunes[p[1]-1]+'T12:00'); d.setDate(d.getDate()+(p[2]-1));
+            return _isoD(d);
+        }
+        // Sesiones del alumno que caen en día sin cole según el calendario (no se guardan: se calculan)
+        function sinColeCalendario(a){
+            const out={};
+            getTodasLasSesiones(a).forEach(k=>{const f=fechaDeClave(k); const x=f?_sinColeCal(f):null; if(x&&x.tipo!=='finde') out[k]=x.nombre||'Sin cole';});
+            return out;
+        }
+        function aplicarCalendarioAlumnos(){
+            Object.keys(alumnos||{}).forEach(id=>{const a=alumnos[id]; const auto=sinColeCalendario(a); a._scAuto=auto; a.sincole=Object.assign({},a.sincole||{}); Object.keys(auto).forEach(k=>{a.sincole[k]=true;});});
+        }
+        // Regenera la programación sin tocar las sesiones ya pasadas (ni las que tienen resultado)
+        function regenerarConservandoPasado(a){
+            const nueva=generarProgramacion(a), vieja=a.programacion||{}, hoy=_hoyIso(), res=a.resultados||{};
+            Object.keys(vieja).forEach(k=>{const f=fechaDeClave(k); if((f&&f<hoy)||res[k]) nueva[k]=vieja[k];});
+            return nueva;
+        }
         const DIAS=['Lunes','Martes','Miércoles','Jueves','Viernes'],DIAS_C=['L','M','X','J','V'];
         const LECTO=['A','E','I','O','U','M','P','S','L','T','N','D','F','B','V','J','R','C','Q','G','H','CH','Ñ','Y','LL','Z','X','K','W'].map((l,i)=>({numero:i+1,descripcion:'Letra '+l,trimestre:i<10?1:(i<20?2:3),criterio:'LCL.1.3.1',indicadores:['Reconoce '+l,'Traza '+l,'Lee sílabas con '+l]}));
         
@@ -2506,6 +2559,7 @@
         // frescos de Firebase como con la copia en caché al arrancar sin red.
         function aplicarAlumnos(data){
             alumnos=data||{};
+            aplicarCalendarioAlumnos();
             aciData={};Object.keys(alumnos).forEach(id=>{if(alumnos[id].aci)aciData[id]=alumnos[id].aci;});
             renderInicio();
             if(alumnoActual&&alumnos[alumnoActual]){renderProgs();renderProg();renderEval();renderAsis();}
@@ -3310,6 +3364,7 @@
             // sola —adelante al marcar una ausencia, y hacia atrás al deshacerla—
             // sin necesidad de reajustes manuales (que no tenían inversa).
             let idxT={1:0,2:0,3:0};
+            const usoRec={};
             const aus=a.ausencias||{}, sc=a.sincole||{};
             todasSesiones.forEach(k=>{
                 const mi=parseInt(k.split('_')[0]);
@@ -3317,12 +3372,15 @@
                 const pool=poolT[trim];
                 if(!pool.length)return;
                 if(aus[k]||sc[k])return;              // día perdido: no gasta ficha del pool
-                prog[k]=pool[idxT[trim]%pool.length];
+                const _it=pool[idxT[trim]%pool.length];
+                const _recs=recursosParaSesion(a,_it), _ik=_it.pId+'|'+_it.oIdx+'|'+_it.iIdx;
+                usoRec[_ik]=(usoRec[_ik]||0)+1;
+                prog[k]=_recs.length?Object.assign({},_it,{recursoId:_recs[(usoRec[_ik]-1)%Math.min(3,_recs.length)].id}):Object.assign({},_it);
                 idxT[trim]++;
             });
             return prog;
         }
-        function regenerarProg(){const a=alumnos[alumnoActual];if(!a.programas||!Object.keys(a.programas).length){toast('Añade programa','error');return;}const nueva=generarProgramacion(a);db.ref(PA+'/'+alumnoActual+'/programacion').set(nueva).then(()=>{a.programacion=nueva;renderProg();toast('Regenerado ✓','success');});}
+        function regenerarProg(){const a=alumnos[alumnoActual];if(!a.programas||!Object.keys(a.programas).length){toast('Añade programa','error');return;}const nueva=regenerarConservandoPasado(a);db.ref(PA+'/'+alumnoActual+'/programacion').set(nueva).then(()=>{a.programacion=nueva;renderProg();toast('Regenerado ✓ (las sesiones ya pasadas no se tocan)','success');});}
         function reajustarDesde(a,desdeClave){const todasSesiones=getTodasLasSesiones(a);const idx=todasSesiones.indexOf(desdeClave);if(idx<0)return a.programacion;const nueva={...a.programacion};for(let i=todasSesiones.length-1;i>idx;i--){const keyActual=todasSesiones[i];const keyAnterior=todasSesiones[i-1];if(nueva[keyAnterior]){nueva[keyActual]=nueva[keyAnterior];}}delete nueva[desdeClave];return nueva;}
         function insertarRepeticion(a,clave,contenido){const todasSesiones=getTodasLasSesiones(a);const idx=todasSesiones.indexOf(clave);if(idx<0)return a.programacion;const dias=a.diasSesion||[1,3,4];let idxRepetir=idx+dias.length;if(idxRepetir>=todasSesiones.length)idxRepetir=todasSesiones.length-1;const claveRepetir=todasSesiones[idxRepetir];const nueva={...a.programacion};for(let i=todasSesiones.length-1;i>idxRepetir;i--){const keyActual=todasSesiones[i];const keyAnterior=todasSesiones[i-1];if(nueva[keyAnterior]){nueva[keyActual]=nueva[keyAnterior];}}nueva[claveRepetir]=contenido;return nueva;}
         function generarPromptIA(){const a=alumnos[alumnoActual];if(!a.programas||!Object.keys(a.programas).length){toast('Añade programas','error');return;}const dias=a.diasSesion||[1,3,4];const todasSesiones=getTodasLasSesiones(a);let prompt='Genera programación COMPLETA curso 2025/2026.\n\n👤 '+a.siglas+' ('+a.curso+')\n📆 '+dias.map(d=>DIAS_C[d]).join(', ')+'\n📊 '+todasSesiones.length+' sesiones\n\n📚 PROGRAMAS:\n';Object.keys(a.programas).forEach(pId=>{const p=a.programas[pId],info=AREAS[p.tipo]||{nombre:p.tipo};prompt+='\n🔷 '+info.nombre+' (ID: "'+pId+'")\n';(p.objetivos||[]).forEach((obj,oi)=>{prompt+='  O'+obj.numero+' (oIdx:'+oi+', T'+obj.trimestre+'): '+obj.descripcion+'\n';(obj.indicadores||[]).forEach((ind,ii)=>{prompt+='    - iIdx:'+ii+': '+ind+'\n';});});});prompt+='\n📤 RESPONDE SOLO JSON:\n{"mes_semana_dia": {"pId": "...", "oIdx": N, "iIdx": N}, ...}\n\n⚠️ '+todasSesiones.length+' entradas. Alterna 50-50. Respeta trimestres.';navigator.clipboard.writeText(prompt).then(()=>{toast('Copiado','success');window.open('https://chat.openai.com/','_blank');});}
@@ -3518,7 +3576,7 @@
                 if(alumnoActual&&alumnos[alumnoActual])renderProg();
             }).catch(e=>toast('Error: '+e.message,'error'));
         }
-        function renderProg(){const a=alumnos[alumnoActual],dias=a.diasSesion||[1,3,4],noms=dias.map(d=>DIAS_C[d]),mes=MESES[mesActual],st=calcStats(a);let h='<div class="card"><div class="stats-box no-print"><div class="stat-item"><div class="stat-num" style="color:var(--danger)">'+(st.porMes[mesActual]?st.porMes[mesActual].aus:0)+'</div><div class="stat-label">Ausencias</div></div></div><div class="cuadrante-nav no-print"><button class="nav-btn" onclick="cambiarMes(-1)">◀</button><select class="form-select" style="width:auto" onchange="mesActual=parseInt(this.value);renderProg()">';for(let i=0;i<MESES.length;i++){h+='<option value="'+i+'"'+(i===mesActual?' selected':'')+'>'+MESES[i].nombre+'</option>';}h+='</select><button class="nav-btn" onclick="cambiarMes(1)">▶</button><span class="trimestre-badge t'+mes.trim+'">T'+mes.trim+'</span></div><div class="leyenda no-print"><div class="leyenda-item"><div class="leyenda-color" style="background:#fee2e2"></div>Ausencia</div><div class="leyenda-item"><div class="leyenda-color" style="background:#e0e7ff"></div>Sin cole</div></div><div style="overflow-x:auto;margin-top:8px"><table class="cuadrante-table"><thead><tr><th>S</th>';for(let i=0;i<noms.length;i++){h+='<th>'+noms[i]+'</th>';}h+='</tr></thead><tbody>';for(let si=0;si<mes.semanas;si++){const sem=si+1;h+='<tr><td>'+sem+'</td>';for(let di=0;di<dias.length;di++){h+=renderCelda(a,mesActual+'_'+sem+'_'+dias[di],dias[di]);}h+='</tr>';}h+='</tbody></table></div></div>';h+='<div class="btn-group no-print" style="margin-top:12px"><button class="btn btn-ai btn-sm" onclick="abrirModalSdA()">🎓 Generar actividades con IA</button></div>';h+='<div id="tablaActividadesIA"></div>';document.getElementById('tabProgramacion').innerHTML=h;autoRepararProgramacion();renderTablaActividades(a,mesActual);}
+        function renderProg(){const a=alumnos[alumnoActual],dias=a.diasSesion||[1,3,4],noms=dias.map(d=>DIAS_C[d]),mes=MESES[mesActual],st=calcStats(a);let h='<div class="card"><div class="stats-box no-print"><div class="stat-item"><div class="stat-num" style="color:var(--danger)">'+(st.porMes[mesActual]?st.porMes[mesActual].aus:0)+'</div><div class="stat-label">Ausencias</div></div></div><div class="cuadrante-nav no-print"><button class="nav-btn" onclick="cambiarMes(-1)">◀</button><select class="form-select" style="width:auto" onchange="mesActual=parseInt(this.value);renderProg()">';for(let i=0;i<MESES.length;i++){h+='<option value="'+i+'"'+(i===mesActual?' selected':'')+'>'+MESES[i].nombre+'</option>';}h+='</select><button class="nav-btn" onclick="cambiarMes(1)">▶</button><span class="trimestre-badge t'+mes.trim+'">T'+mes.trim+'</span></div><div class="leyenda no-print"><div class="leyenda-item"><div class="leyenda-color" style="background:#fee2e2"></div>Ausencia</div><div class="leyenda-item"><div class="leyenda-color" style="background:#e0e7ff"></div>Sin cole</div></div><div style="overflow-x:auto;margin-top:8px"><table class="cuadrante-table"><thead><tr><th>S</th>';for(let i=0;i<noms.length;i++){h+='<th>'+noms[i]+'</th>';}h+='</tr></thead><tbody>';for(let si=0;si<mes.semanas;si++){const sem=si+1;const _lu=mes.lunes&&mes.lunes[si];let _rot=''+sem;if(_lu){const _d1=new Date(_lu+'T12:00'),_d5=new Date(_d1);_d5.setDate(_d5.getDate()+4);_rot=sem+'<div style="font-size:.6rem;color:#64748b;white-space:nowrap">'+_d1.getDate()+'-'+_d5.getDate()+' '+['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][_d5.getMonth()]+'</div>';}h+='<tr><td>'+_rot+'</td>';for(let di=0;di<dias.length;di++){h+=renderCelda(a,mesActual+'_'+sem+'_'+dias[di],dias[di]);}h+='</tr>';}h+='</tbody></table></div></div>';h+='<div class="btn-group no-print" style="margin-top:12px"><button class="btn btn-ai btn-sm" onclick="abrirModalSdA()">🎓 Generar actividades con IA</button></div>';h+='<div id="tablaActividadesIA"></div>';document.getElementById('tabProgramacion').innerHTML=h;autoRepararProgramacion();renderTablaActividades(a,mesActual);}
 
         // Detecta meses vacíos y regenera si hay programas disponibles
         function autoRepararProgramacion(){
@@ -3545,8 +3603,10 @@
                 }
             }
             // If more than 20% of remaining sessions are empty → auto-regenerate silently
-            if(esperadas>0&&vacias/esperadas>0.2){
-                const nueva=generarProgramacion(a);
+            const cambioCal = CAL_FIRMA && a.calAjuste!==CAL_FIRMA;
+            if(cambioCal || (esperadas>0&&vacias/esperadas>0.2)){
+                const nueva=regenerarConservandoPasado(a);
+                if(cambioCal){ a.calAjuste=CAL_FIRMA; db.ref(PA+'/'+alumnoActual+'/calAjuste').set(CAL_FIRMA); }
                 db.ref(PA+'/'+alumnoActual+'/programacion').set(nueva).then(()=>{
                     a.programacion=nueva;
                     renderProg();
@@ -3704,6 +3764,8 @@
                   res=a.resultados?a.resultados[k]:null;
             let cls='celda',icon='';
             if(sc){cls+=' celda-sincole';icon='🏫';}
+            const _motivo=(a._scAuto&&a._scAuto[k])?a._scAuto[k]:'';
+            if(_motivo){return '<td class="'+cls+'" title="'+_motivo+'" style="font-size:.6rem;color:#4338ca"><span class="celda-icon">🏫</span>'+_motivo+'</td>';}
             else if(aus){cls+=' celda-ausencia';icon='❌';}
             else if(res==='conseguido'){icon='✅';}
             else if(res==='repetir'){icon='🔄';}
@@ -3758,7 +3820,7 @@
         function cargarObjetivos(){const a=alumnos[alumnoActual],pId=document.getElementById('selPrograma').value,sel=document.getElementById('selObjetivo');sel.innerHTML='<option value="">-</option>';document.getElementById('selIndicador').innerHTML='<option value="">-</option>';if(!pId||!a.programas||!a.programas[pId])return;a.programas[pId].objetivos.forEach((o,i)=>{sel.innerHTML+='<option value="'+i+'">O'+o.numero+': '+o.descripcion.substring(0,20)+'...</option>';});}
         function cargarIndicadores(){setTimeout(renderAppsCelda,0);const a=alumnos[alumnoActual],pId=document.getElementById('selPrograma').value,oIdx=document.getElementById('selObjetivo').value,sel=document.getElementById('selIndicador');sel.innerHTML='<option value="">-</option>';if(!pId||oIdx==='')return;const inds=a.programas[pId].objetivos[parseInt(oIdx)].indicadores||[];inds.forEach((x,i)=>{sel.innerHTML+='<option value="'+i+'">'+x.substring(0,30)+'...</option>';});cargarRecursosSugeridos();}
         
-        function cargarRecursosSugeridos(){renderAppsCelda();const pId=document.getElementById('selPrograma').value;const sel=document.getElementById('selRecurso');sel.innerHTML='<option value="">Sin recurso</option>';sel.onchange=function(){mostrarInfoRecurso(this.value);};if(!pId)return;const a=alumnos[alumnoActual];if(!a.programas||!a.programas[pId])return;const area=a.programas[pId].tipo;const ciclo=a.curso.includes('Infantil')?'infantil':a.curso.includes('1º')||a.curso.includes('2º')?'ciclo1':a.curso.includes('3º')||a.curso.includes('4º')?'ciclo2':'ciclo3';const recursosFiltrados=RECURSOS_ONLINE.filter(r=>r.area===area&&r.nivel.includes(ciclo));recursosFiltrados.slice(0,10).forEach(r=>{sel.innerHTML+='<option value="'+r.id+'">'+r.titulo+'</option>';});if(recursosFiltrados.length===0){sel.innerHTML+='<option disabled>-- No hay recursos para esta área --</option>';}}
+        function cargarRecursosSugeridos(){renderAppsCelda();const pId=document.getElementById('selPrograma').value;const sel=document.getElementById('selRecurso');sel.innerHTML='<option value="">Sin recurso</option>';sel.onchange=function(){mostrarInfoRecurso(this.value);};if(!pId)return;const a=alumnos[alumnoActual];if(!a.programas||!a.programas[pId])return;const area=a.programas[pId].tipo;const ciclo=a.curso.includes('Infantil')?'infantil':a.curso.includes('1º')||a.curso.includes('2º')?'ciclo1':a.curso.includes('3º')||a.curso.includes('4º')?'ciclo2':'ciclo3';const _oS=document.getElementById('selObjetivo'),_iS=document.getElementById('selIndicador');const _rec=(_oS&&_oS.value!=='')?recursosParaSesion(a,{pId:pId,oIdx:parseInt(_oS.value),iIdx:parseInt((_iS&&_iS.value)||0)}):[];_rec.slice(0,8).forEach(r=>{sel.innerHTML+='<option value="'+r.id+'">⭐ '+r.titulo+'</option>';});const recursosFiltrados=RECURSOS_ONLINE.filter(r=>r.area===area&&r.nivel.includes(ciclo)&&_rec.indexOf(r)<0);recursosFiltrados.slice(0,10).forEach(r=>{sel.innerHTML+='<option value="'+r.id+'">'+r.titulo+'</option>';});if(recursosFiltrados.length===0&&!_rec.length){sel.innerHTML+='<option disabled>-- No hay recursos para esta área --</option>';}const _cc=(a.programacion||{})[celdaEditando];if(_cc&&_cc.recursoId&&!sel.querySelector('option[value="'+_cc.recursoId+'"]')){const _r=RECURSOS_ONLINE.find(x=>x.id===_cc.recursoId);if(_r)sel.innerHTML+='<option value="'+_r.id+'">'+_r.titulo+'</option>';}}
         
         function mostrarInfoRecurso(id){const info=document.getElementById('infoRecurso');if(!id){info.style.display='none';return;}const recurso=RECURSOS_ONLINE.find(r=>r.id===id);if(!recurso){info.style.display='none';return;}const fuente=recurso.fuente==='orientacion-andujar'?'🌍 Orientación Andújar':recurso.fuente==='arasaac'?'🎨 ARASAAC':recurso.fuente==='superpt'?'✨ SuperPT':recurso.fuente==='ptyal'?'📚 PTYAL':recurso.fuente==='aulapt'?'📋 AulaPT':recurso.fuente==='liveworksheets'?'💻 LiveWorksheets':'🔗 '+recurso.fuente;info.innerHTML='<strong>'+fuente+'</strong><br>'+recurso.descripcion+'<br><a href="'+recurso.url+'" target="_blank" style="color:#3b82f6;font-size:.75rem">Abrir recurso →</a>';info.style.display='block';}
         function guardarCelda(){const a=alumnos[alumnoActual];const updates={};const contenidoActual=a.programacion?a.programacion[celdaEditando]:null;updates[PA+'/'+alumnoActual+'/ausencias/'+celdaEditando]=null;updates[PA+'/'+alumnoActual+'/sincole/'+celdaEditando]=null;updates[PA+'/'+alumnoActual+'/resultados/'+celdaEditando]=null;if(estadoCelda==='ausencia'||estadoCelda==='sincole'){const tipo=estadoCelda==='ausencia'?'ausencias':'sincole';updates[PA+'/'+alumnoActual+'/'+tipo+'/'+celdaEditando]=true;
@@ -8253,6 +8315,32 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
              ciclos:['ciclo1','ciclo2','ciclo3'],
              re:/pensamiento computacional|\bprogramar\b|secuencias? de acciones|\brobot/}
         ];
+        const _STOP=new Set('para con por los las del una unos unas que sus como sobre entre desde hasta cada todo toda todos todas mediante segun sin muy mas menos este esta estos estas otro otra otros otras usar usa uso hace hacer realiza realizar trabajar trabaja apoyo ayuda forma tipo nivel'.split(' '));
+        function _raices(t){return _normTxt(t).split(/[^a-zñ]+/).filter(w=>w.length>=4&&!_STOP.has(w)).map(w=>w.slice(0,5));}
+        // Cuánto encaja una actividad del banco con un objetivo/indicador (0 = nada)
+        function puntuarRecurso(r,obj,ind,tipo){
+            if(!r||!obj) return 0;
+            const rr=new Set(_raices(r.titulo+' '+r.descripcion+' '+(r.etiquetas||[]).join(' ')+' '+(r.categoria||'')));
+            let pts=0;
+            _raices(ind||'').forEach(w=>{if(rr.has(w))pts+=3;});
+            _raices(obj.descripcion||'').forEach(w=>{if(rr.has(w))pts+=2;});
+            if(!pts) return 0;   // sin coincidencia de contenido no se propone
+            const cr=String(obj.criterio||'').toUpperCase(), et=(r.etiquetas||[]).join(' ')+' '+(r.categoria||'');
+            if(/^(MA|MAT)/.test(cr)&&/matem|calcul|numer|problem/.test(et))pts+=3;
+            if(/^(LCL|LEN|CCL)/.test(cr)&&/lect|escrit|fonolog|vocabul|comprens|silab|lenguaj/.test(et))pts+=3;
+            if(pts&&r.area===tipo)pts+=2;
+            return pts;
+        }
+        const _cacheRec={};
+        function recursosParaSesion(a,c){
+            if(!a||!c||!a.programas||!a.programas[c.pId]) return [];
+            const p=a.programas[c.pId], obj=(p.objetivos||[])[c.oIdx]; if(!obj) return [];
+            const ind=(obj.indicadores||[])[c.iIdx]||'', ciclo=a.curso&&a.curso.includes('Infantil')?'infantil':a.curso&&(a.curso.includes('1º')||a.curso.includes('2º'))?'ciclo1':a.curso&&(a.curso.includes('3º')||a.curso.includes('4º'))?'ciclo2':'ciclo3';
+            const key=c.pId+'|'+c.oIdx+'|'+c.iIdx+'|'+ciclo+'|'+(obj.descripcion||'').length;
+            if(_cacheRec[key]) return _cacheRec[key];
+            const lista=RECURSOS_ONLINE.filter(r=>!r.nivel||r.nivel.includes(ciclo)).map(r=>({r,pts:puntuarRecurso(r,obj,ind,p.tipo)})).filter(x=>x.pts>=4).sort((x,y)=>y.pts-x.pts).map(x=>x.r);
+            return (_cacheRec[key]=lista);
+        }
         function _normTxt(t){return String(t||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');}
         // Devuelve hasta `max` apps ordenadas por relevancia.
         // obj: objetivo; ind: indicador concreto (opcional); tipo: tipo de programa; ciclo.
@@ -8572,6 +8660,11 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
             const lectivo = (m >= 8) || (m <= 5);        // sept-dic o ene-jun
             if(!lectivo) return { mes: 0, semana: 1, fueraDeCurso: true };
             const mes = getMesEscolarActual();
+            // Con el calendario real: la semana es la del lunes de esta semana dentro del mes escolar
+            if(MESES[mes] && MESES[mes].lunes){
+                const lu=new Date(f); lu.setHours(12,0,0,0); lu.setDate(lu.getDate()-((lu.getDay()+6)%7));
+                for(let mi=0;mi<MESES.length;mi++){const ix=(MESES[mi].lunes||[]).indexOf(_isoD(lu)); if(ix>=0) return {mes:mi, semana:ix+1};}
+            }
             // Semana del mes (1-indexada), acotada a las semanas que tiene ese mes.
             const primero = new Date(f.getFullYear(), f.getMonth(), 1);
             let semana = Math.ceil((f.getDate() + primero.getDay()) / 7);
