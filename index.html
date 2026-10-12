@@ -1638,6 +1638,63 @@
         function aplicarCalendarioAlumnos(){
             Object.keys(alumnos||{}).forEach(id=>{const a=alumnos[id]; const auto=sinColeCalendario(a); a._scAuto=auto; a.sincole=Object.assign({},a.sincole||{}); Object.keys(auto).forEach(k=>{a.sincole[k]=true;});});
         }
+        // Rótulo de una semana con sus fechas reales: «2 · 12-16 oct»
+        function rotuloSemana(mi,s){const m=MESES[mi],lu=m&&m.lunes&&m.lunes[s-1];if(!lu)return ''+s;const d1=new Date(lu+'T12:00'),d5=new Date(d1);d5.setDate(d5.getDate()+4);return s+' · '+d1.getDate()+'-'+d5.getDate()+' '+['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][d5.getMonth()];}
+        function _fCorta(ds){if(!ds)return '';const d=new Date(ds+'T12:00');return d.getDate()+'/'+(d.getMonth()+1);}
+        // Momentos de evaluación de cada criterio (como en las SdA): en cada trimestre, cada criterio
+        // se evalúa dos veces con dos instrumentos (Plan de Centro): a mitad de lo programado
+        // (observación con registro) y en la última sesión en que se trabaja (producción o prueba adaptada).
+        function momentosEvaluacion(a){
+            const porK={}, lista={1:[],2:[],3:[]};
+            if(!a||!a.programas||!a.programacion) return {porK,lista};
+            const aus=a.ausencias||{}, sc=a.sincole||{}, grupos={};
+            getTodasLasSesiones(a).forEach(k=>{
+                const c=a.programacion[k]; if(!c||aus[k]||sc[k]) return;
+                const p=a.programas[c.pId], obj=p&&p.objetivos?p.objetivos[c.oIdx]:null; if(!obj) return;
+                const t=MESES[parseInt(k)].trim, g=t+'|'+c.pId+'|'+c.oIdx;
+                (grupos[g]=grupos[g]||{t,p,obj,ks:[]}).ks.push(k);
+            });
+            Object.values(grupos).forEach(g=>{
+                const crit=g.obj.criterio||('O'+g.obj.numero), n=g.ks.length;
+                const m1=n>=2?g.ks[Math.floor((n-1)/2)]:null, m2=g.ks[n-1];
+                const area=(AREAS[g.p.tipo]||{}).nombre||g.p.tipo;
+                if(m1)(porK[m1]=porK[m1]||[]).push({crit,n:1,obj:g.obj});
+                (porK[m2]=porK[m2]||[]).push({crit,n:2,obj:g.obj});
+                lista[g.t].push({crit,obj:g.obj,area,sesiones:n,m1,m2,f1:m1?fechaDeClave(m1):null,f2:fechaDeClave(m2)});
+            });
+            [1,2,3].forEach(t=>lista[t].sort((x,y)=>String(x.f2||x.m2).localeCompare(String(y.f2||y.m2))));
+            return {porK,lista};
+        }
+        // Contenido de una casilla para imprimir: objetivo, indicador, criterio, actividad, app y evaluación
+        function celdaImpresa(a,k,mom){
+            const motivo=a._scAuto&&a._scAuto[k];
+            if(motivo) return '<td style="background:#eef2ff;color:#4338ca;font-size:8px">🏫 '+motivo+'</td>';
+            if(a.ausencias&&a.ausencias[k]) return '<td style="background:#fee2e2;font-size:8px">Ausencia</td>';
+            if(a.sincole&&a.sincole[k]) return '<td style="background:#eef2ff;font-size:8px">🏫 Sin cole</td>';
+            const c=a.programacion?a.programacion[k]:null, gTxt=geuTextoSesion(a,k);
+            if(!(c&&a.programas&&a.programas[c.pId])) return '<td>'+(gTxt?'<span style="font-size:8px;color:#555">'+gTxt+'</span>':'-')+'</td>';
+            const p=a.programas[c.pId],obj=p.objetivos?p.objetivos[c.oIdx]:null; if(!obj) return '<td>-</td>';
+            const ind=obj.indicadores?(obj.indicadores[c.iIdx]||''):'', rec=c.recursoId?RECURSOS_ONLINE.find(r=>r.id===c.recursoId):null, ap=appsDeCelda(a,c);
+            const ev=((mom&&mom.porK[k])||[]).map(e=>'<div style="margin-top:2px;font-size:8px;font-weight:700;color:#b45309">📝 Evalúa '+e.crit+(e.n===1?' (observación)':' (producción/prueba)')+'</div>').join('');
+            return '<td'+(ev?' style="background:#fffbeb"':'')+'><span class="ob">O'+obj.numero+'</span> '+ind+
+              (obj.criterio?'<div style="font-size:8px;color:#555;font-family:monospace">'+obj.criterio+'</div>':'')+
+              (rec?'<div style="font-size:8px;color:#1d4ed8">📎 '+rec.titulo+'</div>':'')+
+              (ap.length?'<div style="font-size:8px;color:#0f766e">'+ap[0].icon+' '+ap[0].nombre+'</div>':'')+
+              (gTxt?'<div style="font-size:8px;color:#555">'+gTxt+'</div>':'')+ev+'</td>';
+        }
+        // Tabla resumen «Criterios trabajados y cuándo se evalúan» de los trimestres de los meses impresos
+        function tablaCriteriosEval(a,mom,meses){
+            const trims=[...new Set(meses.map(mi=>MESES[mi].trim))];
+            let h='';
+            trims.forEach(t=>{
+                const L=mom.lista[t]; if(!L||!L.length) return;
+                h+='<div style="font-size:10px;font-weight:700;color:#1a5f4a;margin:6px 0 2px">Criterios de evaluación trabajados · Trimestre '+t+'</div>';
+                h+='<table><tr><th style="width:70px">Criterio</th><th>Objetivo</th><th style="width:40px">Sesiones</th><th style="width:105px">1.ª evaluación<br>(observación con registro)</th><th style="width:105px">2.ª evaluación<br>(producción o prueba adaptada)</th></tr>';
+                L.forEach(x=>{h+='<tr><td style="font-family:monospace;font-size:8px">'+x.crit+'</td><td>O'+x.obj.numero+' · '+x.obj.descripcion+' <span style="color:#888">('+x.area+')</span></td><td style="text-align:center">'+x.sesiones+'</td><td style="text-align:center">'+(x.f1?_fCorta(x.f1):(x.m1?'S'+x.m1.split('_')[1]:'—'))+'</td><td style="text-align:center">'+(x.f2?_fCorta(x.f2):'S'+x.m2.split('_')[1])+'</td></tr>';});
+                h+='</table>';
+            });
+            return h;
+        }
         // Regenera la programación sin tocar las sesiones ya pasadas (ni las que tienen resultado)
         function regenerarConservandoPasado(a){
             const nueva=generarProgramacion(a), vieja=a.programacion||{}, hoy=_hoyIso(), res=a.resultados||{};
@@ -3576,7 +3633,7 @@
                 if(alumnoActual&&alumnos[alumnoActual])renderProg();
             }).catch(e=>toast('Error: '+e.message,'error'));
         }
-        function renderProg(){const a=alumnos[alumnoActual],dias=a.diasSesion||[1,3,4],noms=dias.map(d=>DIAS_C[d]),mes=MESES[mesActual],st=calcStats(a);let h='<div class="card"><div class="stats-box no-print"><div class="stat-item"><div class="stat-num" style="color:var(--danger)">'+(st.porMes[mesActual]?st.porMes[mesActual].aus:0)+'</div><div class="stat-label">Ausencias</div></div></div><div class="cuadrante-nav no-print"><button class="nav-btn" onclick="cambiarMes(-1)">◀</button><select class="form-select" style="width:auto" onchange="mesActual=parseInt(this.value);renderProg()">';for(let i=0;i<MESES.length;i++){h+='<option value="'+i+'"'+(i===mesActual?' selected':'')+'>'+MESES[i].nombre+'</option>';}h+='</select><button class="nav-btn" onclick="cambiarMes(1)">▶</button><span class="trimestre-badge t'+mes.trim+'">T'+mes.trim+'</span></div><div class="leyenda no-print"><div class="leyenda-item"><div class="leyenda-color" style="background:#fee2e2"></div>Ausencia</div><div class="leyenda-item"><div class="leyenda-color" style="background:#e0e7ff"></div>Sin cole</div></div><div style="overflow-x:auto;margin-top:8px"><table class="cuadrante-table"><thead><tr><th>S</th>';for(let i=0;i<noms.length;i++){h+='<th>'+noms[i]+'</th>';}h+='</tr></thead><tbody>';for(let si=0;si<mes.semanas;si++){const sem=si+1;const _lu=mes.lunes&&mes.lunes[si];let _rot=''+sem;if(_lu){const _d1=new Date(_lu+'T12:00'),_d5=new Date(_d1);_d5.setDate(_d5.getDate()+4);_rot=sem+'<div style="font-size:.6rem;color:#64748b;white-space:nowrap">'+_d1.getDate()+'-'+_d5.getDate()+' '+['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][_d5.getMonth()]+'</div>';}h+='<tr><td>'+_rot+'</td>';for(let di=0;di<dias.length;di++){h+=renderCelda(a,mesActual+'_'+sem+'_'+dias[di],dias[di]);}h+='</tr>';}h+='</tbody></table></div></div>';h+='<div class="btn-group no-print" style="margin-top:12px"><button class="btn btn-ai btn-sm" onclick="abrirModalSdA()">🎓 Generar actividades con IA</button></div>';h+='<div id="tablaActividadesIA"></div>';document.getElementById('tabProgramacion').innerHTML=h;autoRepararProgramacion();renderTablaActividades(a,mesActual);}
+        function renderProg(){const a=alumnos[alumnoActual],dias=a.diasSesion||[1,3,4],noms=dias.map(d=>DIAS_C[d]),mes=MESES[mesActual],st=calcStats(a);window._momCache=momentosEvaluacion(a);let h='<div class="card"><div class="stats-box no-print"><div class="stat-item"><div class="stat-num" style="color:var(--danger)">'+(st.porMes[mesActual]?st.porMes[mesActual].aus:0)+'</div><div class="stat-label">Ausencias</div></div></div><div class="cuadrante-nav no-print"><button class="nav-btn" onclick="cambiarMes(-1)">◀</button><select class="form-select" style="width:auto" onchange="mesActual=parseInt(this.value);renderProg()">';for(let i=0;i<MESES.length;i++){h+='<option value="'+i+'"'+(i===mesActual?' selected':'')+'>'+MESES[i].nombre+'</option>';}h+='</select><button class="nav-btn" onclick="cambiarMes(1)">▶</button><span class="trimestre-badge t'+mes.trim+'">T'+mes.trim+'</span></div><div class="leyenda no-print"><div class="leyenda-item"><div class="leyenda-color" style="background:#fee2e2"></div>Ausencia</div><div class="leyenda-item"><div class="leyenda-color" style="background:#e0e7ff"></div>Sin cole</div></div><div style="overflow-x:auto;margin-top:8px"><table class="cuadrante-table"><thead><tr><th>S</th>';for(let i=0;i<noms.length;i++){h+='<th>'+noms[i]+'</th>';}h+='</tr></thead><tbody>';for(let si=0;si<mes.semanas;si++){const sem=si+1;const _lu=mes.lunes&&mes.lunes[si];let _rot=''+sem;if(_lu){const _d1=new Date(_lu+'T12:00'),_d5=new Date(_d1);_d5.setDate(_d5.getDate()+4);_rot=sem+'<div style="font-size:.6rem;color:#64748b;white-space:nowrap">'+_d1.getDate()+'-'+_d5.getDate()+' '+['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][_d5.getMonth()]+'</div>';}h+='<tr><td>'+_rot+'</td>';for(let di=0;di<dias.length;di++){h+=renderCelda(a,mesActual+'_'+sem+'_'+dias[di],dias[di]);}h+='</tr>';}h+='</tbody></table></div>';h+='<div class="crit-eval" style="margin-top:10px;font-size:.78rem">'+tablaCriteriosEval(a,window._momCache,[mesActual]).replace(/<table>/g,'<table style="width:100%;border-collapse:collapse;font-size:.72rem">').replace(/<th/g,'<th style="background:#1a5f4a;color:#fff;padding:3px;border:1px solid #ccc"').replace(/<td/g,'<td style="border:1px solid #ddd;padding:3px"')+'</div></div>';h+='<div class="btn-group no-print" style="margin-top:12px"><button class="btn btn-ai btn-sm" onclick="abrirModalSdA()">🎓 Generar actividades con IA</button></div>';h+='<div id="tablaActividadesIA"></div>';document.getElementById('tabProgramacion').innerHTML=h;autoRepararProgramacion();renderTablaActividades(a,mesActual);}
 
         // Detecta meses vacíos y regenera si hay programas disponibles
         function autoRepararProgramacion(){
@@ -3804,10 +3861,13 @@
             const info=AREAS[p.tipo]||{color:'#666'},
                   ind=obj.indicadores?(obj.indicadores[c.iIdx]||''):'';
             const criterio=obj.criterio?'<div style="font-size:.55rem;color:#888;margin-top:2px;font-family:monospace">'+obj.criterio+'</div>':'';
-            const recursoIcon=c.recursoId?'<span style="position:absolute;bottom:2px;left:2px;font-size:.6rem" title="Recurso vinculado">🔗</span>':'';
+            const _rObj=c.recursoId?RECURSOS_ONLINE.find(r=>r.id===c.recursoId):null;
+            const recursoIcon=c.recursoId?'<span style="position:absolute;bottom:2px;left:2px;font-size:.6rem" title="Actividad del banco: '+(_rObj?_rObj.titulo.replace(/"/g,''):'vinculada')+'">📎</span>':'';
+            const _ev=(!aus&&!sc&&window._momCache&&window._momCache.porK[k])||[];
+            const evHtml=_ev.length?'<div style="font-size:.55rem;font-weight:700;color:#b45309" title="'+_ev.map(e=>'Evaluación '+e.n+' de '+e.crit).join(' · ')+'">📝 '+_ev.map(e=>e.crit).join(', ')+'</div>':'';
             const appsC=(aus||sc)?[]:appsDeCelda(a,c);
             const appHtml=appsC.length?'<div class="no-print">'+chipApp(appsC[0],true)+'</div>':'';
-            return '<td class="'+cls+'" onclick="editarCelda(\''+k+'\','+d+')">'+(icon?'<span class="celda-icon">'+icon+'</span>':'')+recursoIcon+'<div class="celda-obj" style="color:'+info.color+'">O'+obj.numero+'</div><div class="celda-ind">'+ind.substring(0,25)+(ind.length>25?'...':'')+'</div>'+criterio+appHtml+geuHtml+'</td>';
+            return '<td class="'+cls+'" onclick="editarCelda(\''+k+'\','+d+')">'+(icon?'<span class="celda-icon">'+icon+'</span>':'')+recursoIcon+'<div class="celda-obj" style="color:'+info.color+'">O'+obj.numero+'</div><div class="celda-ind">'+ind.substring(0,25)+(ind.length>25?'...':'')+'</div>'+criterio+appHtml+geuHtml+evHtml+'</td>';
         }
         function cambiarMes(dir){mesActual=Math.max(0,Math.min(9,mesActual+dir));renderProg();}
         function editarCelda(k,d){celdaEditando=k;estadoCelda='asiste';resultadoCelda=null;const a=alumnos[alumnoActual],c=(a.programacion&&a.programacion[k])||{};document.getElementById('celdaTitulo').textContent=DIAS[d];document.querySelectorAll('.asist-btn').forEach(b=>b.classList.remove('selected'));document.querySelectorAll('.resultado-btn').forEach(b=>b.classList.remove('selected'));if(a.sincole&&a.sincole[k]){estadoCelda='sincole';document.querySelector('.asist-btn.sincole').classList.add('selected');document.getElementById('contenidoSesion').style.display='none';}else if(a.ausencias&&a.ausencias[k]){estadoCelda='ausencia';document.querySelector('.asist-btn.ausencia').classList.add('selected');document.getElementById('contenidoSesion').style.display='none';}else{document.querySelector('.asist-btn.asiste').classList.add('selected');document.getElementById('contenidoSesion').style.display='block';}resultadoCelda=(a.resultados&&a.resultados[k])?a.resultados[k]:null;if(resultadoCelda){const btn=document.querySelector('.resultado-btn.'+resultadoCelda);if(btn)btn.classList.add('selected');}const sel=document.getElementById('selPrograma');sel.innerHTML='<option value="">-</option>';if(a.programas){Object.keys(a.programas).forEach(pId=>{const p=a.programas[pId],info=AREAS[p.tipo]||{icon:'📄'};sel.innerHTML+='<option value="'+pId+'"'+(c.pId===pId?' selected':'')+'>'+info.icon+' '+(info.nombre||p.tipo)+'</option>';});}if(c.pId){cargarObjetivos();setTimeout(()=>{document.getElementById('selObjetivo').value=c.oIdx!==undefined?c.oIdx:'';cargarIndicadores();setTimeout(()=>{document.getElementById('selIndicador').value=c.iIdx!==undefined?c.iIdx:'';cargarRecursosSugeridos();setTimeout(()=>{document.getElementById('selRecurso').value=c.recursoId||'';if(c.recursoId)mostrarInfoRecurso(c.recursoId);},30);},30);},30);}else{document.getElementById('selObjetivo').innerHTML='<option value="">-</option>';document.getElementById('selIndicador').innerHTML='<option value="">-</option>';document.getElementById('selRecurso').innerHTML='<option value="">Sin recurso</option>';}abrirModal('modalCelda');
@@ -7683,7 +7743,7 @@ body{font-family:Arial,sans-serif;font-size:10px;color:#333}
             setTimeout(() => {win.print();}, 500);
         }
         
-        function imprimirTodos(){const mesSeleccionado=parseInt(document.getElementById('printMes').value);const ids=Object.keys(alumnos);let html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Programaciones</title><style>body{font-family:Arial;padding:20px;font-size:11px}h1{color:#1a5f4a;font-size:16px}h2{font-size:14px;border-bottom:2px solid #1a5f4a}table{width:100%;border-collapse:collapse;margin-bottom:15px}th,td{border:1px solid #ccc;padding:6px}th{background:#1a5f4a;color:#fff}td:first-child{background:#2d8a6e;color:#fff;text-align:center;width:50px}.page-break{page-break-after:always}'+_LOGO_CSS+'</style></head><body>'+_LOGO_ABRE;ids.forEach((id,idx)=>{const a=alumnos[id],dias=a.diasSesion||[1,3,4];html+='<div'+(idx<ids.length-1?' class="page-break"':'')+'><h1>'+a.siglas+' - '+a.curso+'</h1>';const mesesAImprimir=mesSeleccionado===-1?MESES.map((_,i)=>i):[mesSeleccionado];mesesAImprimir.forEach(mi=>{const mes=MESES[mi];html+='<h2>'+mes.nombre+' (T'+mes.trim+')</h2><table><tr><th>S</th>';dias.forEach(d=>{html+='<th>'+DIAS_C[d]+'</th>';});html+='</tr>';for(let s=1;s<=mes.semanas;s++){html+='<tr><td>'+s+'</td>';dias.forEach(d=>{const k=mi+'_'+s+'_'+d,c=a.programacion?a.programacion[k]:null;if(c&&a.programas&&a.programas[c.pId]){const p=a.programas[c.pId],obj=p.objetivos?p.objetivos[c.oIdx]:null;if(obj){const ind=obj.indicadores?(obj.indicadores[c.iIdx]||''):'';const gTxt=geuTextoSesion(a,k);const _apS=appsDeCelda(a,c);html+='<td><b>O'+obj.numero+'</b><br>'+ind.substring(0,20)+(_apS.length?'<br><span style="font-size:.7em;color:#0f766e">'+_apS[0].icon+' '+_apS[0].nombre+'</span>':'')+(gTxt?'<br><span style="font-size:.7em;color:#555">'+gTxt+'</span>':'')+'</td>';}else{html+='<td>-</td>';}}else{const gTxt=geuTextoSesion(a,k);html+='<td>'+(gTxt?'<span style="font-size:.7em;color:#555">'+gTxt+'</span>':'-')+'</td>';}});html+='</tr>';}html+='</table>';});html+='</div>';});html+=_LOGO_CIERRA+'</body></html>';const win=window.open('','_blank');win.document.write(html);win.document.close();setTimeout(()=>{win.print();},500);cerrarModal('modalImprimir');}
+        function imprimirTodos(){const mesSeleccionado=parseInt(document.getElementById('printMes').value);const ids=Object.keys(alumnos);let html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Programaciones</title><style>body{font-family:Arial;padding:20px;font-size:11px}h1{color:#1a5f4a;font-size:16px}h2{font-size:14px;border-bottom:2px solid #1a5f4a}table{width:100%;border-collapse:collapse;margin-bottom:15px}th,td{border:1px solid #ccc;padding:6px}th{background:#1a5f4a;color:#fff}td:first-child{background:#2d8a6e;color:#fff;text-align:center;width:60px}.ob{font-weight:700;color:#1a5f4a}.page-break{page-break-after:always}'+_LOGO_CSS+'</style></head><body>'+_LOGO_ABRE;ids.forEach((id,idx)=>{const a=alumnos[id],dias=a.diasSesion||[1,3,4];html+='<div'+(idx<ids.length-1?' class="page-break"':'')+'><h1>'+a.siglas+' - '+a.curso+'</h1>';const mesesAImprimir=mesSeleccionado===-1?MESES.map((_,i)=>i):[mesSeleccionado];mesesAImprimir.forEach(mi=>{const mes=MESES[mi];html+='<h2>'+mes.nombre+' (T'+mes.trim+')</h2><table><tr><th>S</th>';dias.forEach(d=>{html+='<th>'+DIAS_C[d]+'</th>';});html+='</tr>';const _mom=momentosEvaluacion(a);for(let s=1;s<=mes.semanas;s++){html+='<tr><td style="width:60px">'+rotuloSemana(mi,s)+'</td>';dias.forEach(d=>{html+=celdaImpresa(a,mi+'_'+s+'_'+d,_mom);});html+='</tr>';}html+='</table>'+tablaCriteriosEval(a,_mom,[mi]);});html+='</div>';});html+=_LOGO_CIERRA+'</body></html>';const win=window.open('','_blank');win.document.write(html);win.document.close();setTimeout(()=>{win.print();},500);cerrarModal('modalImprimir');}
 
         async function imprimirCompacto(){
             const mesSeleccionado=parseInt(document.getElementById('printMes').value);
@@ -7828,22 +7888,15 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
                     html+='<table><tr><th>S</th>';
                     dias.forEach(d=>{html+='<th>'+DIAS_C[d]+'</th>';});
                     html+='</tr>';
+                    const _mom=momentosEvaluacion(a);
                     for(let s=1;s<=mes.semanas;s++){
-                        html+='<tr><td>'+s+'</td>';
-                        dias.forEach(d=>{
-                            const k=mi+'_'+s+'_'+d,c=a.programacion?a.programacion[k]:null;
-                            if(c&&a.programas&&a.programas[c.pId]){
-                                const p=a.programas[c.pId],obj=p.objetivos?p.objetivos[c.oIdx]:null;
-                                if(obj){
-                                    const ind=obj.indicadores?(obj.indicadores[c.iIdx]||''):'';
-                                    const _apI=appsDeCelda(a,c);
-                                    html+='<td><span class="ob">O'+obj.numero+'</span> '+ind.substring(0,25)+(_apI.length?'<br><span style="font-size:8px;color:#0f766e">'+_apI[0].icon+' '+_apI[0].nombre+'</span>':'')+'</td>';
-                                }else html+='<td>-</td>';
-                            }else html+='<td>-</td>';
-                        });
+                        html+='<tr><td style="width:60px">'+rotuloSemana(mi,s)+'</td>';
+                        dias.forEach(d=>{ html+=celdaImpresa(a,mi+'_'+s+'_'+d,_mom); });
                         html+='</tr>';
                     }
-                    html+='</table></div>';
+                    html+='</table>';
+                    html+=tablaCriteriosEval(a,_mom,[mi]);
+                    html+='</div>';
                 });
             });
             html+='</div>';
