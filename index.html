@@ -894,6 +894,7 @@
             <div class="tabs no-print">
                 <button class="tab active" onclick="cambiarTab('programas')">📄 Programas</button>
                 <button class="tab" onclick="cambiarTab('programacion')">📅 Programación</button>
+                <button class="tab" onclick="cambiarTab('inicial')">🔎 Ev. inicial</button>
                 <button class="tab" onclick="cambiarTab('evaluacion')">📊 Evaluación</button>
                 <button class="tab" onclick="cambiarTab('asistencia')">📈 Resumen</button>
                 <button class="tab" onclick="cambiarTab('geu')">📚 GEU</button>
@@ -901,6 +902,7 @@
             </div>
             <div id="tabProgramas" class="tab-content active"></div>
             <div id="tabProgramacion" class="tab-content"></div>
+            <div id="tabInicial" class="tab-content"></div>
             <div id="tabEvaluacion" class="tab-content"></div>
             <div id="tabAsistencia" class="tab-content"></div>
             <div id="tabGeu" class="tab-content"></div>
@@ -1181,6 +1183,7 @@
             <div class="modal-header"><h3 class="modal-title" id="celdaTitulo">Sesión</h3><button class="modal-close" onclick="cerrarModal('modalCelda')">×</button></div>
             <div class="modal-body">
                 <div class="form-group"><label class="form-label">Estado</label><div class="asist-btns"><button type="button" class="asist-btn asiste" onclick="setEstado('asiste',this)">✅ Asiste</button><button type="button" class="asist-btn ausencia" onclick="setEstado('ausencia',this)">❌ Ausencia</button><button type="button" class="asist-btn sincole" onclick="setEstado('sincole',this)">🏫 Sin cole</button></div></div>
+                <div id="evalCeldaBox" style="display:none;background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;padding:10px 12px;margin-bottom:12px"></div>
                 <div id="contenidoSesion">
                     <div class="form-group"><label class="form-label">Programa</label><select class="form-select" id="selPrograma" onchange="cargarObjetivos()"></select></div>
                     <div class="form-group"><label class="form-label">Objetivo</label><select class="form-select" id="selObjetivo" onchange="cargarIndicadores()"></select></div>
@@ -1652,18 +1655,42 @@
                 const c=a.programacion[k]; if(!c||aus[k]||sc[k]) return;
                 const p=a.programas[c.pId], obj=p&&p.objetivos?p.objetivos[c.oIdx]:null; if(!obj) return;
                 const t=MESES[parseInt(k)].trim, g=t+'|'+c.pId+'|'+c.oIdx;
-                (grupos[g]=grupos[g]||{t,p,obj,ks:[]}).ks.push(k);
+                (grupos[g]=grupos[g]||{t,p,obj,pId:c.pId,oIdx:c.oIdx,ks:[]}).ks.push(k);
             });
             Object.values(grupos).forEach(g=>{
                 const crit=g.obj.criterio||('O'+g.obj.numero), n=g.ks.length;
                 const m1=n>=2?g.ks[Math.floor((n-1)/2)]:null, m2=g.ks[n-1];
                 const area=(AREAS[g.p.tipo]||{}).nombre||g.p.tipo;
-                if(m1)(porK[m1]=porK[m1]||[]).push({crit,n:1,obj:g.obj});
-                (porK[m2]=porK[m2]||[]).push({crit,n:2,obj:g.obj});
-                lista[g.t].push({crit,obj:g.obj,area,sesiones:n,m1,m2,f1:m1?fechaDeClave(m1):null,f2:fechaDeClave(m2)});
+                const base=g.t+'~'+g.pId+'~'+g.oIdx, ec=a.evalCriterios||{};
+                if(m1)(porK[m1]=porK[m1]||[]).push({crit,n:1,obj:g.obj,clave:base+'~1',t:g.t,pId:g.pId,oIdx:g.oIdx});
+                (porK[m2]=porK[m2]||[]).push({crit,n:2,obj:g.obj,clave:base+'~2',t:g.t,pId:g.pId,oIdx:g.oIdx});
+                lista[g.t].push({crit,obj:g.obj,area,sesiones:n,m1,m2,f1:m1?fechaDeClave(m1):null,f2:fechaDeClave(m2),n1:ec[base+'~1']||null,n2:ec[base+'~2']||null});
             });
             [1,2,3].forEach(t=>lista[t].sort((x,y)=>String(x.f2||x.m2).localeCompare(String(y.f2||y.m2))));
             return {porK,lista};
+        }
+        // Nota del criterio en una sesión de evaluación (📝): nivel 1-4 de la rúbrica del centro
+        const NIVELES_RUB={1:'No conseguido',2:'En proceso',3:'Conseguido',4:'Con destreza'};
+        function pintarEvalCelda(k){
+            const box=document.getElementById('evalCeldaBox'); if(!box) return;
+            const a=alumnos[alumnoActual], mom=momentosEvaluacion(a), ev=mom.porK[k]||[];
+            if(!ev.length){box.style.display='none';box.innerHTML='';return;}
+            const ec=a.evalCriterios||{};
+            box.innerHTML=ev.map(e=>'<div style="font-weight:700;color:#92400e;font-size:.85rem">📝 '+(e.n===1?'1.ª evaluación (observación)':'2.ª evaluación (producción o prueba)')+' · '+e.crit+'</div><div style="font-size:.75rem;color:#78350f;margin:2px 0 6px">O'+e.obj.numero+' · '+e.obj.descripcion+'</div><div style="display:flex;gap:6px;flex-wrap:wrap">'+[1,2,3,4].map(n=>'<button type="button" class="btn btn-sm" style="'+(ec[e.clave]===n?'background:#d97706;color:#fff;border-color:#d97706':'background:#fff;color:#92400e;border:1px solid #fcd34d')+'" onclick="guardarEvalCriterio(\''+e.clave+'\','+n+')">'+n+' · '+NIVELES_RUB[n]+'</button>').join('')+'</div>').join('<hr style="border:0;border-top:1px dashed #fcd34d;margin:8px 0">');
+            box.style.display='block';
+        }
+        function guardarEvalCriterio(clave,nivel){
+            const a=alumnos[alumnoActual]; if(!a) return;
+            const ec=Object.assign({},a.evalCriterios||{}); ec[clave]=(ec[clave]===nivel)?null:nivel;
+            const up={}; up[PA+'/'+alumnoActual+'/evalCriterios/'+clave]=ec[clave];
+            // La 2.ª evaluación (final del trimestre) pasa a los indicadores de ese objetivo: 1→NC, 2→P, 3-4→C
+            const pr=clave.split('~'); const t=+pr[0], pId=pr[1], oIdx=+pr[2], n=+pr[3];
+            if(n===2&&a.programas&&a.programas[pId]){
+                const obj=(a.programas[pId].objetivos||[])[oIdx];
+                const val=ec[clave]?(ec[clave]===1?'NC':ec[clave]===2?'P':'C'):null;
+                (obj&&obj.indicadores||[]).forEach((_,ii)=>{up[PA+'/'+alumnoActual+'/evaluaciones/'+pId+'_'+oIdx+'_'+ii+'_T'+t]=val;});
+            }
+            db.ref().update(up).then(()=>{a.evalCriterios=ec; window._momCache=momentosEvaluacion(a); pintarEvalCelda(celdaEditando); toast(ec[clave]?'Nivel '+nivel+' guardado ✓':'Nivel quitado','success');}).catch(e=>toast('Error: '+e.message,'error'));
         }
         // Contenido de una casilla para imprimir: objetivo, indicador, criterio, actividad, app y evaluación
         function celdaImpresa(a,k,mom){
@@ -1690,7 +1717,7 @@
                 const L=mom.lista[t]; if(!L||!L.length) return;
                 h+='<div style="font-size:10px;font-weight:700;color:#1a5f4a;margin:6px 0 2px">Criterios de evaluación trabajados · Trimestre '+t+'</div>';
                 h+='<table><tr><th style="width:70px">Criterio</th><th>Objetivo</th><th style="width:40px">Sesiones</th><th style="width:105px">1.ª evaluación<br>(observación con registro)</th><th style="width:105px">2.ª evaluación<br>(producción o prueba adaptada)</th></tr>';
-                L.forEach(x=>{h+='<tr><td style="font-family:monospace;font-size:8px">'+x.crit+'</td><td>O'+x.obj.numero+' · '+x.obj.descripcion+' <span style="color:#888">('+x.area+')</span></td><td style="text-align:center">'+x.sesiones+'</td><td style="text-align:center">'+(x.f1?_fCorta(x.f1):(x.m1?'S'+x.m1.split('_')[1]:'—'))+'</td><td style="text-align:center">'+(x.f2?_fCorta(x.f2):'S'+x.m2.split('_')[1])+'</td></tr>';});
+                L.forEach(x=>{h+='<tr><td style="font-family:monospace;font-size:8px">'+x.crit+'</td><td>O'+x.obj.numero+' · '+x.obj.descripcion+' <span style="color:#888">('+x.area+')</span></td><td style="text-align:center">'+x.sesiones+'</td><td style="text-align:center">'+(x.f1?_fCorta(x.f1):(x.m1?'S'+x.m1.split('_')[1]:'—'))+(x.n1?' · <b>nivel '+x.n1+'</b>':'')+'</td><td style="text-align:center">'+(x.f2?_fCorta(x.f2):'S'+x.m2.split('_')[1])+(x.n2?' · <b>nivel '+x.n2+'</b>':'')+'</td></tr>';});
                 h+='</table>';
             });
             return h;
@@ -3005,7 +3032,7 @@
 
         function abrirAlumno(id){alumnoActual=id;mesActual=getMesEscolarActual();evalTrim=1;document.getElementById('screenInicio').classList.remove('active');document.getElementById('screenAlumno').classList.add('active');const a=alumnos[id],diasStr=(a.diasSesion||[0,2,4]).map(d=>DIAS_C[d]).join('-');document.getElementById('alumnoHeader').innerHTML='<div class="alumno-header-siglas">'+a.siglas+'</div><div><h2 style="font-size:.95rem">'+a.curso+'</h2><p style="color:var(--text-light);font-size:.75rem">'+diasStr+'</p></div><div style="margin-left:auto" class="btn-group no-print"><button class="btn btn-secondary btn-sm" onclick="volverInicio()">← Volver</button><button class="btn btn-secondary btn-sm" onclick="window.print()">🖨️</button><button class="btn btn-danger btn-sm" onclick="eliminarAlumno(\''+id+'\')">🗑️</button><button class=\"btn btn-secondary btn-sm\" onclick=\"abrirEditarAlumno(\''+id+'\')\">✏️ Editar</button></div>';document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===0));document.querySelectorAll('.tab-content').forEach((c,i)=>c.classList.toggle('active',i===0));renderProgs();renderProg();renderEval();renderAsis();}
         function volverInicio(){alumnoActual=null;document.getElementById('screenAlumno').classList.remove('active');document.getElementById('screenInicio').classList.add('active');}
-        function cambiarTab(t){document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));event.target.classList.add('active');document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));document.getElementById('tab'+t.charAt(0).toUpperCase()+t.slice(1)).classList.add('active');if(t==='asistencia')setTimeout(renderAsisCharts,100);if(t==='evaluacion')setTimeout(renderEvalCharts,100);if(t==='seneca')renderSeneca();if(t==='geu')renderGEUTab();}
+        function cambiarTab(t){document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));event.target.classList.add('active');document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));document.getElementById('tab'+t.charAt(0).toUpperCase()+t.slice(1)).classList.add('active');if(t==='asistencia')setTimeout(renderAsisCharts,100);if(t==='evaluacion')setTimeout(renderEvalCharts,100);if(t==='seneca')renderSeneca();if(t==='geu')renderGEUTab();if(t==='inicial')renderInicial();}
         var _diasEdit=[];
 
         function abrirEditarAlumno(id){
@@ -3864,13 +3891,13 @@
             const _rObj=c.recursoId?RECURSOS_ONLINE.find(r=>r.id===c.recursoId):null;
             const recursoIcon=c.recursoId?'<span style="position:absolute;bottom:2px;left:2px;font-size:.6rem" title="Actividad del banco: '+(_rObj?_rObj.titulo.replace(/"/g,''):'vinculada')+'">📎</span>':'';
             const _ev=(!aus&&!sc&&window._momCache&&window._momCache.porK[k])||[];
-            const evHtml=_ev.length?'<div style="font-size:.55rem;font-weight:700;color:#b45309" title="'+_ev.map(e=>'Evaluación '+e.n+' de '+e.crit).join(' · ')+'">📝 '+_ev.map(e=>e.crit).join(', ')+'</div>':'';
+            const _ecc=a.evalCriterios||{};const evHtml=_ev.length?'<div style="font-size:.55rem;font-weight:700;color:#b45309" title="'+_ev.map(e=>'Evaluación '+e.n+' de '+e.crit+(_ecc[e.clave]?' · nivel '+_ecc[e.clave]:' · pendiente')).join(' · ')+'">📝 '+_ev.map(e=>e.crit+(_ecc[e.clave]?' ✓'+_ecc[e.clave]:'')).join(', ')+'</div>':'';
             const appsC=(aus||sc)?[]:appsDeCelda(a,c);
             const appHtml=appsC.length?'<div class="no-print">'+chipApp(appsC[0],true)+'</div>':'';
             return '<td class="'+cls+'" onclick="editarCelda(\''+k+'\','+d+')">'+(icon?'<span class="celda-icon">'+icon+'</span>':'')+recursoIcon+'<div class="celda-obj" style="color:'+info.color+'">O'+obj.numero+'</div><div class="celda-ind">'+ind.substring(0,25)+(ind.length>25?'...':'')+'</div>'+criterio+appHtml+geuHtml+evHtml+'</td>';
         }
         function cambiarMes(dir){mesActual=Math.max(0,Math.min(9,mesActual+dir));renderProg();}
-        function editarCelda(k,d){celdaEditando=k;estadoCelda='asiste';resultadoCelda=null;const a=alumnos[alumnoActual],c=(a.programacion&&a.programacion[k])||{};document.getElementById('celdaTitulo').textContent=DIAS[d];document.querySelectorAll('.asist-btn').forEach(b=>b.classList.remove('selected'));document.querySelectorAll('.resultado-btn').forEach(b=>b.classList.remove('selected'));if(a.sincole&&a.sincole[k]){estadoCelda='sincole';document.querySelector('.asist-btn.sincole').classList.add('selected');document.getElementById('contenidoSesion').style.display='none';}else if(a.ausencias&&a.ausencias[k]){estadoCelda='ausencia';document.querySelector('.asist-btn.ausencia').classList.add('selected');document.getElementById('contenidoSesion').style.display='none';}else{document.querySelector('.asist-btn.asiste').classList.add('selected');document.getElementById('contenidoSesion').style.display='block';}resultadoCelda=(a.resultados&&a.resultados[k])?a.resultados[k]:null;if(resultadoCelda){const btn=document.querySelector('.resultado-btn.'+resultadoCelda);if(btn)btn.classList.add('selected');}const sel=document.getElementById('selPrograma');sel.innerHTML='<option value="">-</option>';if(a.programas){Object.keys(a.programas).forEach(pId=>{const p=a.programas[pId],info=AREAS[p.tipo]||{icon:'📄'};sel.innerHTML+='<option value="'+pId+'"'+(c.pId===pId?' selected':'')+'>'+info.icon+' '+(info.nombre||p.tipo)+'</option>';});}if(c.pId){cargarObjetivos();setTimeout(()=>{document.getElementById('selObjetivo').value=c.oIdx!==undefined?c.oIdx:'';cargarIndicadores();setTimeout(()=>{document.getElementById('selIndicador').value=c.iIdx!==undefined?c.iIdx:'';cargarRecursosSugeridos();setTimeout(()=>{document.getElementById('selRecurso').value=c.recursoId||'';if(c.recursoId)mostrarInfoRecurso(c.recursoId);},30);},30);},30);}else{document.getElementById('selObjetivo').innerHTML='<option value="">-</option>';document.getElementById('selIndicador').innerHTML='<option value="">-</option>';document.getElementById('selRecurso').innerHTML='<option value="">Sin recurso</option>';}abrirModal('modalCelda');
+        function editarCelda(k,d){celdaEditando=k;estadoCelda='asiste';resultadoCelda=null;const a=alumnos[alumnoActual],c=(a.programacion&&a.programacion[k])||{};document.getElementById('celdaTitulo').textContent=DIAS[d];document.querySelectorAll('.asist-btn').forEach(b=>b.classList.remove('selected'));document.querySelectorAll('.resultado-btn').forEach(b=>b.classList.remove('selected'));if(a.sincole&&a.sincole[k]){estadoCelda='sincole';document.querySelector('.asist-btn.sincole').classList.add('selected');document.getElementById('contenidoSesion').style.display='none';}else if(a.ausencias&&a.ausencias[k]){estadoCelda='ausencia';document.querySelector('.asist-btn.ausencia').classList.add('selected');document.getElementById('contenidoSesion').style.display='none';}else{document.querySelector('.asist-btn.asiste').classList.add('selected');document.getElementById('contenidoSesion').style.display='block';}resultadoCelda=(a.resultados&&a.resultados[k])?a.resultados[k]:null;if(resultadoCelda){const btn=document.querySelector('.resultado-btn.'+resultadoCelda);if(btn)btn.classList.add('selected');}const sel=document.getElementById('selPrograma');sel.innerHTML='<option value="">-</option>';if(a.programas){Object.keys(a.programas).forEach(pId=>{const p=a.programas[pId],info=AREAS[p.tipo]||{icon:'📄'};sel.innerHTML+='<option value="'+pId+'"'+(c.pId===pId?' selected':'')+'>'+info.icon+' '+(info.nombre||p.tipo)+'</option>';});}if(c.pId){cargarObjetivos();setTimeout(()=>{document.getElementById('selObjetivo').value=c.oIdx!==undefined?c.oIdx:'';cargarIndicadores();setTimeout(()=>{document.getElementById('selIndicador').value=c.iIdx!==undefined?c.iIdx:'';cargarRecursosSugeridos();setTimeout(()=>{document.getElementById('selRecurso').value=c.recursoId||'';if(c.recursoId)mostrarInfoRecurso(c.recursoId);},30);},30);},30);}else{document.getElementById('selObjetivo').innerHTML='<option value="">-</option>';document.getElementById('selIndicador').innerHTML='<option value="">-</option>';document.getElementById('selRecurso').innerHTML='<option value="">Sin recurso</option>';}pintarEvalCelda(k);abrirModal('modalCelda');
             // Cargar datos GEU guardados en esta celda (si los hay)
             const geuGuardado = c ? c.geu : null;
             geuCargarEnModal(geuGuardado);
@@ -3882,7 +3909,7 @@
         
         function cargarRecursosSugeridos(){renderAppsCelda();const pId=document.getElementById('selPrograma').value;const sel=document.getElementById('selRecurso');sel.innerHTML='<option value="">Sin recurso</option>';sel.onchange=function(){mostrarInfoRecurso(this.value);};if(!pId)return;const a=alumnos[alumnoActual];if(!a.programas||!a.programas[pId])return;const area=a.programas[pId].tipo;const ciclo=a.curso.includes('Infantil')?'infantil':a.curso.includes('1º')||a.curso.includes('2º')?'ciclo1':a.curso.includes('3º')||a.curso.includes('4º')?'ciclo2':'ciclo3';const _oS=document.getElementById('selObjetivo'),_iS=document.getElementById('selIndicador');const _rec=(_oS&&_oS.value!=='')?recursosParaSesion(a,{pId:pId,oIdx:parseInt(_oS.value),iIdx:parseInt((_iS&&_iS.value)||0)}):[];_rec.slice(0,8).forEach(r=>{sel.innerHTML+='<option value="'+r.id+'">⭐ '+r.titulo+'</option>';});const recursosFiltrados=RECURSOS_ONLINE.filter(r=>r.area===area&&r.nivel.includes(ciclo)&&_rec.indexOf(r)<0);recursosFiltrados.slice(0,10).forEach(r=>{sel.innerHTML+='<option value="'+r.id+'">'+r.titulo+'</option>';});if(recursosFiltrados.length===0&&!_rec.length){sel.innerHTML+='<option disabled>-- No hay recursos para esta área --</option>';}const _cc=(a.programacion||{})[celdaEditando];if(_cc&&_cc.recursoId&&!sel.querySelector('option[value="'+_cc.recursoId+'"]')){const _r=RECURSOS_ONLINE.find(x=>x.id===_cc.recursoId);if(_r)sel.innerHTML+='<option value="'+_r.id+'">'+_r.titulo+'</option>';}}
         
-        function mostrarInfoRecurso(id){const info=document.getElementById('infoRecurso');if(!id){info.style.display='none';return;}const recurso=RECURSOS_ONLINE.find(r=>r.id===id);if(!recurso){info.style.display='none';return;}const fuente=recurso.fuente==='orientacion-andujar'?'🌍 Orientación Andújar':recurso.fuente==='arasaac'?'🎨 ARASAAC':recurso.fuente==='superpt'?'✨ SuperPT':recurso.fuente==='ptyal'?'📚 PTYAL':recurso.fuente==='aulapt'?'📋 AulaPT':recurso.fuente==='liveworksheets'?'💻 LiveWorksheets':'🔗 '+recurso.fuente;info.innerHTML='<strong>'+fuente+'</strong><br>'+recurso.descripcion+'<br><a href="'+recurso.url+'" target="_blank" style="color:#3b82f6;font-size:.75rem">Abrir recurso →</a>';info.style.display='block';}
+        function mostrarInfoRecurso(id){const info=document.getElementById('infoRecurso');if(!id){info.style.display='none';return;}const recurso=RECURSOS_ONLINE.find(r=>r.id===id);if(!recurso){info.style.display='none';return;}const fuente=recurso.fuente==='orientacion-andujar'?'🌍 Orientación Andújar':recurso.fuente==='arasaac'?'🎨 ARASAAC':recurso.fuente==='superpt'?'✨ SuperPT':recurso.fuente==='ptyal'?'📚 PTYAL':recurso.fuente==='aulapt-capi'?'🏫 Aula PT del centro':recurso.fuente==='aulapt'?'📋 AulaPT':recurso.fuente==='liveworksheets'?'💻 LiveWorksheets':'🔗 '+recurso.fuente;info.innerHTML='<strong>'+fuente+'</strong><br>'+recurso.descripcion+'<br><a href="'+recurso.url+'" target="_blank" style="color:#3b82f6;font-size:.75rem">Abrir recurso →</a>';info.style.display='block';}
         function guardarCelda(){const a=alumnos[alumnoActual];const updates={};const contenidoActual=a.programacion?a.programacion[celdaEditando]:null;updates[PA+'/'+alumnoActual+'/ausencias/'+celdaEditando]=null;updates[PA+'/'+alumnoActual+'/sincole/'+celdaEditando]=null;updates[PA+'/'+alumnoActual+'/resultados/'+celdaEditando]=null;if(estadoCelda==='ausencia'||estadoCelda==='sincole'){const tipo=estadoCelda==='ausencia'?'ausencias':'sincole';updates[PA+'/'+alumnoActual+'/'+tipo+'/'+celdaEditando]=true;
                 // Regenerar con la ausencia ya aplicada: generarProgramacion salta
                 // los días perdidos, así que todo se recoloca solo. Aplicamos el
@@ -6353,6 +6380,52 @@ ${instruccionesFormato}`;
                 ids.map(id=>'<option value="'+id+'">'+alumnos[id].siglas+' — '+(alumnos[id].curso||'')+'</option>').join('');
         }
 
+        // ══ REGISTRO DE EVALUACIÓN INICIAL (datos reales para el informe) ══
+        const EI_NIVELES=['','Adecuado a su curso','Ligero desfase','Desfase de un curso','Desfase de dos o más cursos','No se observa / no procede'];
+        const EI_FORT=['Buena actitud ante la tarea','Acepta la ayuda del adulto','Constancia y esfuerzo','Comprensión oral','Expresión oral','Memoria visual','Gusto por cuentos y lectura','Cálculo mental sencillo','Motivación con juegos y TIC','Trabajo con material manipulativo','Buena relación con iguales','Autonomía en rutinas','Motricidad fina','Imitación y juego simbólico'];
+        const EI_DIF=['Atención sostenida','Memoria de trabajo','Lenguaje oral (comprensión)','Lenguaje oral (expresión)','Conciencia fonológica','Decodificación','Fluidez lectora','Comprensión lectora','Escritura y ortografía','Grafomotricidad','Numeración','Cálculo','Resolución de problemas','Regulación emocional','Conducta','Relación con iguales','Autonomía personal'];
+        const EI_FUENTES=['Observación en el aula','Observación en las sesiones de PT','Pruebas de evaluación inicial del centro','Prueba común de comprensión lectora','Información de la tutoría','Entrevista con la familia','Informes de cursos anteriores','Informe del EOE'];
+        function eiAreas(a){
+            const inf=(a.curso||'').includes('Infantil');
+            return inf?['Crecimiento en Armonía','Descubrimiento y Exploración del Entorno','Comunicación y Representación de la Realidad']
+                      :['Lengua Castellana y Literatura','Matemáticas','Atención y funciones ejecutivas','Desarrollo socioemocional'];
+        }
+        function _eiEsc(t){return String(t||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+        function renderInicial(){
+            const a=alumnos[alumnoActual]; if(!a) return;
+            const ei=a.evalInicial||{}, areas=eiAreas(a), na=ei.areas||{};
+            const chk=(lista,sel,grp)=>'<div style="display:flex;flex-wrap:wrap;gap:6px">'+lista.map((x,i)=>'<label style="display:inline-flex;align-items:center;gap:5px;background:var(--bg);border:1px solid var(--border);border-radius:16px;padding:4px 10px;font-size:.8rem;cursor:pointer"><input type="checkbox" data-ei="'+grp+'" value="'+_eiEsc(x)+'"'+((sel||[]).includes(x)?' checked':'')+'>'+_eiEsc(x)+'</label>').join('')+'</div>';
+            let h='<div class="card"><div class="card-header"><h3 class="card-title">🔎 Evaluación inicial</h3>'+(ei.fecha?'<span style="font-size:.75rem;color:var(--text-light)">Guardada el '+ei.fecha.split('-').reverse().join('/')+'</span>':'')+'</div>';
+            h+='<p style="font-size:.8rem;color:var(--text-light);margin-bottom:10px">Lo que registres aquí se usa al generar el informe de evaluación inicial, así el informe parte de tus datos reales.</p>';
+            h+='<div style="font-weight:700;margin:6px 0">Nivel de competencia por áreas</div>';
+            areas.forEach((ar,i)=>{const v=na[ar]||{};h+='<div style="display:grid;grid-template-columns:1fr;gap:4px;margin-bottom:8px;padding:8px;border:1px solid var(--border);border-radius:8px"><div style="font-weight:600;font-size:.85rem">'+ar+'</div><div style="display:flex;gap:6px;flex-wrap:wrap"><select class="form-select" data-eia="'+i+'" data-k="nivel" style="width:auto;min-width:200px">'+EI_NIVELES.map(n=>'<option'+(v.nivel===n?' selected':'')+'>'+n+'</option>').join('')+'</select><input class="form-input" data-eia="'+i+'" data-k="ref" placeholder="Nivel de referencia (p. ej. 2.º, 5 años)" value="'+_eiEsc(v.ref)+'" style="flex:1;min-width:160px"></div><input class="form-input" data-eia="'+i+'" data-k="nota" placeholder="Qué hace / qué le cuesta (opcional)" value="'+_eiEsc(v.nota)+'"></div>';});
+            h+='<div style="font-weight:700;margin:10px 0 6px">Fortalezas</div>'+chk(EI_FORT,ei.fortalezas,'fortalezas')+'<input class="form-input" id="eiFortOtra" placeholder="Otra fortaleza" value="'+_eiEsc(ei.fortOtra)+'" style="margin-top:6px">';
+            h+='<div style="font-weight:700;margin:10px 0 6px">Aspectos a desarrollar</div>'+chk(EI_DIF,ei.dificultades,'dificultades')+'<input class="form-input" id="eiDifOtra" placeholder="Otro aspecto" value="'+_eiEsc(ei.difOtra)+'" style="margin-top:6px">';
+            h+='<div style="font-weight:700;margin:10px 0 6px">Fuentes de información</div>'+chk(EI_FUENTES,ei.fuentes||['Observación en el aula','Observación en las sesiones de PT','Información de la tutoría','Entrevista con la familia'],'fuentes');
+            h+='<div style="font-weight:700;margin:10px 0 6px">Observaciones</div><textarea class="form-textarea" id="eiObs" rows="3" placeholder="Cualquier dato útil: cómo trabaja, qué le motiva, acuerdos con la familia…" style="width:100%">'+_eiEsc(ei.obs)+'</textarea>';
+            h+='<div class="btn-group" style="margin-top:10px"><button class="btn btn-primary" onclick="guardarInicial()">💾 Guardar evaluación inicial</button></div></div>';
+            document.getElementById('tabInicial').innerHTML=h;
+        }
+        function guardarInicial(){
+            const a=alumnos[alumnoActual]; if(!a) return;
+            const box=document.getElementById('tabInicial'), areas=eiAreas(a), na={};
+            areas.forEach((ar,i)=>{const g=k=>(box.querySelector('[data-eia="'+i+'"][data-k="'+k+'"]')||{}).value||''; const v={nivel:g('nivel'),ref:g('ref').trim(),nota:g('nota').trim()}; if(v.nivel||v.ref||v.nota) na[ar]=v;});
+            const sel=grp=>[...box.querySelectorAll('input[data-ei="'+grp+'"]:checked')].map(x=>x.value);
+            const ei={areas:na,fortalezas:sel('fortalezas'),dificultades:sel('dificultades'),fuentes:sel('fuentes'),fortOtra:document.getElementById('eiFortOtra').value.trim(),difOtra:document.getElementById('eiDifOtra').value.trim(),obs:document.getElementById('eiObs').value.trim(),fecha:new Date().toISOString().slice(0,10)};
+            db.ref(PA+'/'+alumnoActual+'/evalInicial').set(ei).then(()=>{a.evalInicial=ei;renderInicial();toast('Evaluación inicial guardada ✓','success');}).catch(e=>toast('Error: '+e.message,'error'));
+        }
+        // Texto de la evaluación inicial registrada, para el prompt del informe
+        function textoEvalInicial(a){
+            const ei=a&&a.evalInicial; if(!ei) return '';
+            let t='\n════════════════════════════════════\nEVALUACIÓN INICIAL REGISTRADA POR EL MAESTRO DE PT (datos reales: basa el informe en ellos)\n════════════════════════════════════\n';
+            const ar=ei.areas||{};
+            if(Object.keys(ar).length){t+='Nivel de competencia por áreas:\n';Object.keys(ar).forEach(k=>{const v=ar[k];t+='  • '+k+': '+[v.nivel,v.ref?'nivel de referencia '+v.ref:'',v.nota].filter(Boolean).join(' · ')+'\n';});}
+            const f=(ei.fortalezas||[]).concat(ei.fortOtra?[ei.fortOtra]:[]); if(f.length) t+='Fortalezas: '+f.join('; ')+'\n';
+            const d=(ei.dificultades||[]).concat(ei.difOtra?[ei.difOtra]:[]); if(d.length) t+='Aspectos a desarrollar: '+d.join('; ')+'\n';
+            if((ei.fuentes||[]).length) t+='Fuentes de información: '+ei.fuentes.join('; ')+'\n';
+            if(ei.obs) t+='Observaciones: '+ei.obs+'\n';
+            return t+'(No inventes datos que no aparezcan aquí ni en los programas.)\n';
+        }
         function evalInicialBuildPrompt(id, obs, formato){
             const a=alumnos[id];
             if(!a)return null;
@@ -6397,7 +6470,7 @@ DATOS DEL ALUMNO/A
 Código / Iniciales: ${nombreCodigo}
 Curso: ${curso} ${ciclo?'('+ciclo+')':''}
 Sesiones PT: ${dias}
-${obsTexto}
+${obsTexto}${textoEvalInicial(a)}
 ════════════════════════════════════
 PROGRAMAS ESPECÍFICOS PT
 ════════════════════════════════════
@@ -8033,6 +8106,24 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
         
         // BANCO DE ACTIVIDADES CON RECURSOS ONLINE
         const RECURSOS_ONLINE = [
+            // AULA PT DEL CENTRO (actividades propias, con enlace directo a la sección)
+            {id:'apt1',titulo:'🏫 Taller de Grafía · letras',tipo:'online',fuente:'aulapt-capi',url:'https://vunisal706-droid.github.io/aulapt/#grafia',descripcion:'Letra ligada paso a paso con punto de inicio y dirección del trazo. Grafomotricidad, escritura de letras y copia.',area:'motor',nivel:['infantil', 'ciclo1', 'ciclo2'],etiquetas:['grafomotricidad', 'escritura', 'letras', 'trazo', 'copia', 'caligrafia'],categoria:'aulapt'},
+            {id:'apt2',titulo:'🏫 Taller de Grafía · sílabas, palabras y frases',tipo:'online',fuente:'aulapt-capi',url:'https://vunisal706-droid.github.io/aulapt/#grafia',descripcion:'Escritura de sílabas, palabras y frases en letra ligada con pauta. Copia, separación de palabras y mayúscula inicial.',area:'comunicativo',nivel:['ciclo1', 'ciclo2'],etiquetas:['escritura', 'copia', 'silabas', 'palabras', 'frases', 'separar', 'mayuscula', 'dictado'],categoria:'aulapt'},
+            {id:'apt3',titulo:'🏫 Cartilla de lectura',tipo:'online',fuente:'aulapt-capi',url:'https://vunisal706-droid.github.io/aulapt/#cartilla',descripcion:'Una lección por letra en el orden del cole: sílabas directas, palabras y frases solo con letras ya vistas. Decodificación y lectura inicial.',area:'comunicativo',nivel:['infantil', 'ciclo1', 'ciclo2'],etiquetas:['lectoescritura', 'lectura', 'decodificacion', 'silabas', 'palabras', 'frases', 'letras'],categoria:'aulapt'},
+            {id:'apt4',titulo:'🏫 Sopas de letras',tipo:'online',fuente:'aulapt-capi',url:'https://vunisal706-droid.github.io/aulapt/#sopas',descripcion:'Sopas de letras por temas, letras o lecciones de la cartilla. Atención selectiva, percepción visual y reconocimiento de palabras.',area:'cognitivo',nivel:['ciclo1', 'ciclo2', 'ciclo3'],etiquetas:['atencion', 'percepcion', 'visual', 'busqueda', 'palabras', 'vocabulario', 'discriminacion'],categoria:'aulapt'},
+            {id:'apt5',titulo:'🏫 Lectura Fluida · textos graduados',tipo:'online',fuente:'aulapt-capi',url:'https://vunisal706-droid.github.io/aulapt/#lectura',descripcion:'Textos graduados con letra adaptada, sílabas de colores y regla de lectura. Fluidez, velocidad, entonación, puntuación y comprensión de frases y textos.',area:'comunicativo',nivel:['ciclo1', 'ciclo2', 'ciclo3'],etiquetas:['fluidez', 'lectura', 'velocidad', 'entonacion', 'puntuacion', 'textos', 'comprension', 'frases'],categoria:'aulapt'},
+            {id:'apt6',titulo:'🏫 Minuto lector',tipo:'online',fuente:'aulapt-capi',url:'https://vunisal706-droid.github.io/aulapt/#lectura',descripcion:'Lectura guiada y minuto lector con registro de palabras por minuto para seguir la evolución de la fluidez lectora.',area:'comunicativo',nivel:['ciclo1', 'ciclo2', 'ciclo3'],etiquetas:['fluidez', 'velocidad', 'palabras por minuto', 'lectura', 'regresiones', 'silabeo'],categoria:'aulapt'},
+            {id:'apt7',titulo:'🏫 Conciencia fonológica',tipo:'online',fuente:'aulapt-capi',url:'https://vunisal706-droid.github.io/aulapt/#fono',descripcion:'Rimas, segmentar sílabas, sílaba y sonido inicial, contar y manipular fonemas.',area:'comunicativo',nivel:['infantil', 'ciclo1', 'ciclo2'],etiquetas:['fonologia', 'conciencia', 'rimas', 'silabas', 'sonido', 'inicial', 'segmentar', 'fonemas'],categoria:'aulapt'},
+            {id:'apt8',titulo:'🏫 Discriminación b/d/p/q',tipo:'online',fuente:'aulapt-capi',url:'https://vunisal706-droid.github.io/aulapt/#fono',descripcion:'Discriminación de letras de grafía parecida y en espejo con apoyo visual.',area:'comunicativo',nivel:['ciclo1', 'ciclo2', 'ciclo3'],etiquetas:['letras', 'similares', 'discriminacion', 'percepcion', 'visual', 'inversiones'],categoria:'aulapt'},
+            {id:'apt9',titulo:'🏫 Palabra y dibujo · vocabulario',tipo:'online',fuente:'aulapt-capi',url:'https://vunisal706-droid.github.io/aulapt/#fono',descripcion:'Asociar palabra e imagen, completar y ordenar palabras y frases para ampliar vocabulario y comprensión.',area:'comunicativo',nivel:['infantil', 'ciclo1', 'ciclo2'],etiquetas:['vocabulario', 'palabras', 'imagen', 'comprension', 'frases', 'ordenar', 'completar'],categoria:'aulapt'},
+            {id:'apt10',titulo:'🏫 Separar palabras y ortografía',tipo:'online',fuente:'aulapt-capi',url:'https://vunisal706-droid.github.io/aulapt/#fono',descripcion:'Separar palabras en frases, reglas ortográficas, mayúsculas y dictado.',area:'comunicativo',nivel:['ciclo1', 'ciclo2', 'ciclo3'],etiquetas:['ortografia', 'reglas', 'mayusculas', 'separar', 'dictado', 'omisiones', 'escritura'],categoria:'aulapt'},
+            {id:'apt11',titulo:'🏫 Numeración con U, D, C y UM',tipo:'online',fuente:'aulapt-capi',url:'https://vunisal706-droid.github.io/aulapt/#num',descripcion:'Valor posicional con los colores del cole, recta numérica y tabla del 100. Leer, escribir, ordenar y comparar números.',area:'cognitivo',nivel:['ciclo1', 'ciclo2', 'ciclo3'],etiquetas:['numeracion', 'valor posicional', 'numeros', 'recta', 'comparar', 'ordenar', 'matematicas', 'cantidades'],categoria:'aulapt'},
+            {id:'apt12',titulo:'🏫 Cálculo mental OAOA y ABN',tipo:'online',fuente:'aulapt-capi',url:'https://vunisal706-droid.github.io/aulapt/#num',descripcion:'Cálculo mental y operaciones ABN: sumas y restas, también con llevadas, tablas de multiplicar y estrategias de cálculo.',area:'cognitivo',nivel:['ciclo1', 'ciclo2', 'ciclo3'],etiquetas:['calculo', 'sumas', 'restas', 'llevadas', 'multiplicacion', 'tablas', 'matematicas', 'mental', 'operaciones'],categoria:'aulapt'},
+            {id:'apt13',titulo:'🏫 Problemas y series',tipo:'online',fuente:'aulapt-capi',url:'https://vunisal706-droid.github.io/aulapt/#num',descripcion:'Resolución de problemas con los pasos comunes del centro y series numéricas.',area:'cognitivo',nivel:['ciclo1', 'ciclo2', 'ciclo3'],etiquetas:['problemas', 'resolucion', 'series', 'patrones', 'razonamiento', 'logico', 'matematicas', 'datos'],categoria:'aulapt'},
+            {id:'apt14',titulo:'🏫 Agenda de la sesión y temporizador',tipo:'online',fuente:'aulapt-capi',url:'https://vunisal706-droid.github.io/aulapt/#ffee',descripcion:'Agenda visual de la sesión y temporizador para anticipar, organizar el trabajo y mantener la atención.',area:'cognitivo',nivel:['infantil', 'ciclo1', 'ciclo2', 'ciclo3'],etiquetas:['agenda', 'rutina', 'anticipacion', 'planificacion', 'organizacion', 'atencion', 'sostenida', 'tiempo'],categoria:'aulapt'},
+            {id:'apt15',titulo:'🏫 Autoinstrucciones',tipo:'online',fuente:'aulapt-capi',url:'https://vunisal706-droid.github.io/aulapt/#ffee',descripcion:'Pasos de autoinstrucción para planificar la tarea, seguir pasos en orden y revisar el trabajo.',area:'cognitivo',nivel:['ciclo1', 'ciclo2', 'ciclo3'],etiquetas:['autoinstrucciones', 'planificacion', 'pasos', 'revisar', 'metacognicion', 'impulsividad', 'autocontrol'],categoria:'aulapt'},
+            {id:'apt16',titulo:'🏫 Memoria de trabajo y atención',tipo:'online',fuente:'aulapt-capi',url:'https://vunisal706-droid.github.io/aulapt/#ffee',descripcion:'Juegos de memoria de trabajo y atención: retener instrucciones, secuencias y series.',area:'cognitivo',nivel:['infantil', 'ciclo1', 'ciclo2', 'ciclo3'],etiquetas:['memoria', 'trabajo', 'atencion', 'instrucciones', 'secuencias', 'retener', 'concentracion'],categoria:'aulapt'},
+            {id:'apt17',titulo:'🏫 Comprensión lectora (app del centro)',tipo:'online',fuente:'aulapt-capi',url:'https://vunisal706-droid.github.io/lectura/',descripcion:'Lecturas graduadas con preguntas de comprensión literal e inferencial: personajes, secuencia, idea principal.',area:'comunicativo',nivel:['ciclo1','ciclo2','ciclo3'],etiquetas:['comprension','lectora','literal','inferencial','personajes','secuencia','idea principal','textos'],categoria:'aulapt'},
             // ORIENTACIÓN ANDÚJAR (15 recursos)
             {id:'r1',titulo:'Fichas de sílabas simples',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/lectoescritura/',descripcion:'Colección completa de fichas para trabajar sílabas simples. Incluye todas las consonantes y vocales.',area:'comunicativo',nivel:['infantil','ciclo1'],etiquetas:['silabas','conciencia-fonologica','fichas'],categoria:'lectoescritura'},
             {id:'r2',titulo:'Cuaderno de atención',tipo:'online',fuente:'orientacion-andujar',url:'https://www.orientacionandujar.es/tag/fichas-imprimibles/',descripcion:'Cuaderno completo para trabajar habilidades básicas de atención. Ejercicios variados y progresivos.',area:'cognitivo',nivel:['infantil','ciclo1','ciclo2','ciclo3'],etiquetas:['atencion','concentracion','estimulacion'],categoria:'atencion'},
@@ -8382,6 +8473,7 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
             if(/^(MA|MAT)/.test(cr)&&/matem|calcul|numer|problem/.test(et))pts+=3;
             if(/^(LCL|LEN|CCL)/.test(cr)&&/lect|escrit|fonolog|vocabul|comprens|silab|lenguaj/.test(et))pts+=3;
             if(pts&&r.area===tipo)pts+=2;
+            if(pts&&r.fuente==='aulapt-capi')pts+=2;   // se prefieren las actividades propias del centro
             return pts;
         }
         const _cacheRec={};
