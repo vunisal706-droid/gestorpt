@@ -225,6 +225,22 @@
         .print-marco>thead .logo-inst-app img{height:38px;width:auto;max-width:100%}
         .print-marco .print-logo-global{display:none!important}
         /* SÉNECA STYLES */
+        .al-bloque{border:2px solid #bae6fd;border-radius:12px;margin-bottom:8px;background:#f0f9ff}
+        .al-bloque>summary{cursor:pointer;font-weight:800;color:#0369a1;padding:10px 12px}
+        .al-sub{background:#fff;border-radius:10px;margin:0 8px 8px;padding:2px 10px}
+        .al-sub>summary{cursor:pointer;font-weight:700;color:var(--text);padding:8px 0;font-size:.88rem}
+        .al-item{padding:5px 6px;border-radius:8px;font-size:.84rem;line-height:1.35}
+        .al-item.on{background:#e0f2fe}
+        .al-chip{font-family:inherit;font-size:.74rem;padding:3px 9px;border-radius:999px;border:1.5px solid #7dd3fc;background:#fff;color:#0369a1;cursor:pointer}
+        .al-chip.on{background:#0ea5e9;border-color:#0ea5e9;color:#fff}
+        .al-num{display:inline-block;background:#0ea5e9;color:#fff;border-radius:999px;font-size:.7rem;padding:1px 8px;margin-left:6px}
+        .al-card{border:2px solid #bae6fd;border-radius:12px;padding:12px;margin-bottom:14px;background:#f8fdff}
+        .al-sec{font-weight:700;font-size:.82rem;color:var(--primary-dark);margin:12px 0 6px}
+        .al-fila{display:flex;gap:6px;align-items:flex-start;margin-bottom:5px}
+        .al-fila textarea{flex:1;margin:0;resize:none;overflow:hidden;font-size:.84rem;padding:7px 9px;min-height:34px}
+        .al-tri{width:62px;flex:0 0 62px;padding:6px;font-size:.8rem}
+        .al-n{font-weight:700;color:#0369a1;min-width:20px;text-align:center;padding-top:8px;font-size:.8rem}
+        .al-x{border:none;background:#fee2e2;color:#b91c1c;border-radius:8px;width:30px;height:32px;cursor:pointer;flex:0 0 auto}
         .seneca-programa{background:var(--bg-card);border-radius:var(--radius);padding:16px;margin-bottom:16px;box-shadow:var(--shadow);border-left:5px solid var(--primary)}
         .seneca-programa-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid var(--primary)}
         .seneca-programa-titulo{font-size:1.1rem;font-weight:700;color:var(--primary)}
@@ -330,6 +346,10 @@
             <button class="perfil-btn" id="btnPerfilEncarna" onclick="seleccionarPerfil('encarna')">
                 <span class="perfil-emoji">👩‍🏫</span>
                 <span><span class="perfil-nombre">Encarna</span><br><span class="perfil-sub">Pedagogía Terapéutica</span></span>
+            </button>
+            <button class="perfil-btn" id="btnPerfilLorena" onclick="seleccionarPerfil('lorena')">
+                <span class="perfil-emoji">🗣️</span>
+                <span><span class="perfil-nombre">Lorena</span><br><span class="perfil-sub">Audición y Lenguaje</span></span>
             </button>
 
             <div style="text-align:left;margin:16px 0 6px;font-size:.82rem;font-weight:700;color:#475569">
@@ -1178,6 +1198,14 @@
         </div>
     </div>
 
+    <div class="modal-overlay" id="modalAL">
+        <div class="modal" style="max-width:820px;width:96vw">
+            <div class="modal-header"><h3 class="modal-title" id="alTitulo">🗣️ Programa de AL</h3><button class="modal-close" onclick="cerrarModal('modalAL')">×</button></div>
+            <div class="modal-body" id="alCuerpo" style="max-height:68vh;overflow-y:auto"></div>
+            <div class="modal-footer" id="alPie" style="display:flex;gap:8px;align-items:center"></div>
+        </div>
+    </div>
+
     <div class="modal-overlay" id="modalCelda">
         <div class="modal">
             <div class="modal-header"><h3 class="modal-title" id="celdaTitulo">Sesión</h3><button class="modal-close" onclick="cerrarModal('modalCelda')">×</button></div>
@@ -1379,7 +1407,11 @@
         // los perfiles nuevos usan una raíz propia que empieza vacía.
         const PERFILES={
             victor:{nombre:'Víctor',emoji:'👨‍🏫',root:'gestorpe',idea:'vunisal706'},
-            encarna:{nombre:'Encarna',emoji:'👩‍🏫',root:'gestorpe_encarna',idea:'emunrom369'}
+            encarna:{nombre:'Encarna',emoji:'👩‍🏫',root:'gestorpe_encarna',idea:'emunrom369'},
+            // Audición y Lenguaje: trabaja en dos colegios; cada uno tiene su propio árbol de datos
+            lorena:{nombre:'Lorena',emoji:'🗣️',root:'gestorpe_lorena',idea:'mdesgar302',al:true,
+                    centros:{cap:{nombre:'CEIP Capitulaciones',corto:'Capitulaciones',lugar:'Santa Fe',emoji:'🏫',root:'gestorpe_lorena'},
+                             rc:{nombre:'CEIP Reyes Católicos',corto:'Reyes Católicos',lugar:'Santa Fe',emoji:'🏛️',root:'gestorpe_lorena_rc'}}}
         };
         let PERFIL=null, ROOT='gestorpe';
         function aplicarPerfil(p){
@@ -1392,7 +1424,7 @@
         let _perfilSel = null;
         function seleccionarPerfil(p){
             _perfilSel = p;
-            ['victor','encarna'].forEach(function(x){
+            ['victor','encarna','lorena'].forEach(function(x){
                 const b = document.getElementById('btnPerfil' + x.charAt(0).toUpperCase() + x.slice(1));
                 if (b) {
                     b.style.borderColor = (x === p) ? '#1565C0' : '';
@@ -1453,7 +1485,7 @@
             aplicarPerfil(p);
             const sp=document.getElementById('screenPerfil');
             if(sp)sp.style.display='none';
-            iniciarDatosPerfil();
+            elegirCentro(p, iniciarDatosPerfil);
         }
         async function cambiarPerfil(){
             if(!await confirmar('Se cerrará la sesión y habrá que volver a entrar con el usuario IdEA.',{titulo:'¿Cambiar de perfil?',ok:'Cambiar'}))return;
@@ -1593,7 +1625,7 @@
         });
         
         const CICLOS={infantil:{nombre:'Infantil',icon:'💒'},ciclo1:{nombre:'1º Ciclo',icon:'🔵'},ciclo2:{nombre:'2º Ciclo',icon:'🟢'},ciclo3:{nombre:'3º Ciclo',icon:'🟠'}};
-        const AREAS={psicomotor:{nombre:'Desarrollo Psicomotor',short:'Psicomotor',icon:'🏃',color:'#8b5cf6'},motor:{nombre:'Desarrollo Motor',short:'D. Motor',icon:'✋',color:'#06b6d4'},comunicativo:{nombre:'Desarrollo Comunicativo',short:'D. Comunicat.',icon:'💬',color:'#10b981'},cognitivo:{nombre:'Desarrollo Cognitivo',short:'D. Cognitivo',icon:'🧠',color:'#3b82f6'},social:{nombre:'Desarrollo Social-Emocional',short:'D. Social-Em.',icon:'❤️',color:'#ec4899'},autonomia:{nombre:'Autonomía Personal',short:'Autonomía',icon:'🎯',color:'#f59e0b'},lectoescritura:{nombre:'Lectoescritura',short:'Lectoescrit.',icon:'📖',color:'#6366f1'},tdah:{nombre:'TDAH',short:'TDAH',icon:'⚡',color:'#f97316'},dislexia:{nombre:'Dislexia (PT)',short:'Dislexia',icon:'📘',color:'#0d9488'},discalculia:{nombre:'Discalculia (PT)',short:'Discalculia',icon:'🔢',color:'#7c3aed'},tea:{nombre:'TEA (PT)',short:'TEA',icon:'🧩',color:'#0891b2'},tel:{nombre:'TEL / Disfasia (PT)',short:'TEL/Disfasia',icon:'💭',color:'#059669'},di:{nombre:'Discapacidad Intelectual (PT)',short:'Dis. Intelectual',icon:'🌱',color:'#b45309'},pra_lcl:{nombre:'Refuerzo curricular · Lengua',short:'Refuerzo Lengua',icon:'📗',color:'#0f766e'},pra_mat:{nombre:'Refuerzo curricular · Matemáticas',short:'Refuerzo Mates',icon:'🔷',color:'#1d4ed8'}};
+        const AREAS={psicomotor:{nombre:'Desarrollo Psicomotor',short:'Psicomotor',icon:'🏃',color:'#8b5cf6'},motor:{nombre:'Desarrollo Motor',short:'D. Motor',icon:'✋',color:'#06b6d4'},comunicativo:{nombre:'Desarrollo Comunicativo',short:'D. Comunicat.',icon:'💬',color:'#10b981'},cognitivo:{nombre:'Desarrollo Cognitivo',short:'D. Cognitivo',icon:'🧠',color:'#3b82f6'},social:{nombre:'Desarrollo Social-Emocional',short:'D. Social-Em.',icon:'❤️',color:'#ec4899'},autonomia:{nombre:'Autonomía Personal',short:'Autonomía',icon:'🎯',color:'#f59e0b'},lectoescritura:{nombre:'Lectoescritura',short:'Lectoescrit.',icon:'📖',color:'#6366f1'},tdah:{nombre:'TDAH',short:'TDAH',icon:'⚡',color:'#f97316'},dislexia:{nombre:'Dislexia (PT)',short:'Dislexia',icon:'📘',color:'#0d9488'},discalculia:{nombre:'Discalculia (PT)',short:'Discalculia',icon:'🔢',color:'#7c3aed'},tea:{nombre:'TEA (PT)',short:'TEA',icon:'🧩',color:'#0891b2'},tel:{nombre:'TEL / Disfasia (PT)',short:'TEL/Disfasia',icon:'💭',color:'#059669'},di:{nombre:'Discapacidad Intelectual (PT)',short:'Dis. Intelectual',icon:'🌱',color:'#b45309'},pra_lcl:{nombre:'Refuerzo curricular · Lengua',short:'Refuerzo Lengua',icon:'📗',color:'#0f766e'},pra_mat:{nombre:'Refuerzo curricular · Matemáticas',short:'Refuerzo Mates',icon:'🔷',color:'#1d4ed8'},al:{nombre:'Audición y Lenguaje',short:'AL',icon:'🗣️',color:'#0ea5e9'}};
         let MESES=[{nombre:'Septiembre',semanas:3,trim:1},{nombre:'Octubre',semanas:4,trim:1},{nombre:'Noviembre',semanas:4,trim:1},{nombre:'Diciembre',semanas:2,trim:1},{nombre:'Enero',semanas:3,trim:2},{nombre:'Febrero',semanas:4,trim:2},{nombre:'Marzo',semanas:3,trim:2},{nombre:'Abril',semanas:3,trim:3},{nombre:'Mayo',semanas:4,trim:3},{nombre:'Junio',semanas:3,trim:3}];
         // ── Calendario escolar real (calendario común del centro, app Agenda) ──────────
         // Cada mes tiene tantas semanas como semanas reales con algún día lectivo (lunes a viernes,
@@ -2899,7 +2931,7 @@
                 if (u && guardado && PERFILES[guardado]) {
                     if (sp) sp.style.display = 'none';
                     aplicarPerfil(guardado);
-                    iniciarDatosPerfil();
+                    elegirCentro(guardado, iniciarDatosPerfil);
                     return;
                 }
                 if (!u) {
@@ -3077,7 +3109,7 @@
         async function eliminarAlumno(id){const al=alumnos[id]||{};if(!await confirmarBorrado('Se borrarán TODOS los datos de '+(al.siglas||'este alumno')+': programas, evaluaciones, asistencia y ACI.\n\nEsta acción no se puede deshacer.',{titulo:'⚠️ Eliminar alumno'}))return;db.ref(PA+'/'+id).remove();volverInicio();toast('Eliminado','success');}
 
         // PROGRAMAS
-        function renderProgs(){const a=alumnos[alumnoActual];let h='<div class="card"><div class="card-header"><h3 class="card-title">📄 Programas</h3><button class="btn btn-primary btn-sm no-print" onclick="abrirModalAddProg()">➕</button></div>';if(!a.programas||!Object.keys(a.programas).length){h+='<div class="empty-state">Sin programas</div>';}else{Object.keys(a.programas).forEach(pId=>{const p=a.programas[pId],info=AREAS[p.tipo]||{icon:'📄',nombre:p.tipo,color:'#666'};const rotulo=(p.modalidad==='pra'&&p.nombre)?p.nombre:info.nombre;const chipPRA=p.modalidad==='pra'?'<span style="font-size:.62rem;font-weight:700;background:#dcfce7;color:#166534;padding:2px 7px;border-radius:8px;margin-left:4px" title="Programa de refuerzo del aprendizaje · art. 16 Orden 30/05/2023">PRA</span>':'';const cOrig=p.cicloOrigen?((CICLOS[p.cicloOrigen]||{}).nombre||p.cicloOrigen):'';const chipCiclo=cOrig?'<span style="font-size:.62rem;font-weight:600;background:#eef2ff;color:#4338ca;padding:2px 7px;border-radius:8px;margin-left:6px">'+cOrig+'</span>':'';const chipAdap=p.adaptacionCiclo?'<span style="font-size:.62rem;font-weight:700;background:#fef3c7;color:#78350f;padding:2px 7px;border-radius:8px;margin-left:4px" title="Objetivos de un ciclo distinto al del alumno (adaptación curricular)">⚠️ Adaptación de ciclo</span>':'';h+='<div class="programa-card" style="border-left-color:'+info.color+'"><div class="programa-header"><span class="programa-titulo">'+info.icon+' '+rotulo+chipPRA+chipCiclo+chipAdap+'</span><button class="btn btn-danger btn-sm no-print" onclick="elimProg(\''+pId+'\')">🗑️</button></div>';(p.objetivos||[]).forEach(obj=>{h+='<div class="objetivo-card"><div class="objetivo-header"><span class="objetivo-num">O'+obj.numero+'</span><span class="trimestre-badge t'+obj.trimestre+'">T'+obj.trimestre+'</span></div><div class="objetivo-desc">'+obj.descripcion+'</div>';if(obj.indicadores&&obj.indicadores.length){h+='<ul class="indicadores-list">'+obj.indicadores.map(x=>'<li>• '+x+'</li>').join('')+'</ul>';}const _ap=appsSugeridas(obj,'',p.tipo,p.cicloOrigen||getCicloDeAlumno(a),2);if(_ap.length){h+='<div class="no-print" style="margin-top:6px">'+_ap.map(x=>chipApp(x,false)).join('')+'</div>';}h+='</div>';});h+='</div>';});}h+='<div class="btn-group no-print" style="margin-top:12px"><button class="btn btn-secondary btn-sm" onclick="regenerarProg()">🔄 Regenerar</button><button class="btn btn-ai btn-sm" onclick="generarPromptIA()">🤖 IA</button><button class="btn btn-warning btn-sm" onclick="abrirModal(\'modalImportJSON\')">📥 JSON</button><button class="btn btn-secondary btn-sm" onclick="actualizarCriteriosLOMLOE()" title="Añade los criterios LOMLOE sin borrar nada">🏷️ Criterios</button></div></div>';
+        function renderProgs(){const a=alumnos[alumnoActual];let h='<div class="card"><div class="card-header"><h3 class="card-title">📄 Programas</h3><button class="btn btn-primary btn-sm no-print" onclick="abrirModalAddProg()">➕</button></div>';if(!a.programas||!Object.keys(a.programas).length){h+='<div class="empty-state">Sin programas</div>';}else{Object.keys(a.programas).forEach(pId=>{const p=a.programas[pId],info=AREAS[p.tipo]||{icon:'📄',nombre:p.tipo,color:'#666'};const rotulo=(p.modalidad==='pra'&&p.nombre)?p.nombre:info.nombre;const chipPRA=p.modalidad==='pra'?'<span style="font-size:.62rem;font-weight:700;background:#dcfce7;color:#166534;padding:2px 7px;border-radius:8px;margin-left:4px" title="Programa de refuerzo del aprendizaje · art. 16 Orden 30/05/2023">PRA</span>':'';const cOrig=p.cicloOrigen?((CICLOS[p.cicloOrigen]||{}).nombre||p.cicloOrigen):'';const chipCiclo=cOrig?'<span style="font-size:.62rem;font-weight:600;background:#eef2ff;color:#4338ca;padding:2px 7px;border-radius:8px;margin-left:6px">'+cOrig+'</span>':'';const chipAdap=p.adaptacionCiclo?'<span style="font-size:.62rem;font-weight:700;background:#fef3c7;color:#78350f;padding:2px 7px;border-radius:8px;margin-left:4px" title="Objetivos de un ciclo distinto al del alumno (adaptación curricular)">⚠️ Adaptación de ciclo</span>':'';h+='<div class="programa-card" style="border-left-color:'+info.color+'"><div class="programa-header"><span class="programa-titulo">'+info.icon+' '+rotulo+chipPRA+chipCiclo+chipAdap+'</span>'+(p.tipo==='al'?'<button class="btn btn-secondary btn-sm no-print" style="margin-right:6px" onclick="alEditar(\''+pId+'\')" title="Editar indicadores, objetivos, contenidos y actividades">✏️ Editar</button>':'')+'<button class="btn btn-danger btn-sm no-print" onclick="elimProg(\''+pId+'\')">🗑️</button></div>';(p.objetivos||[]).forEach(obj=>{h+='<div class="objetivo-card"><div class="objetivo-header"><span class="objetivo-num">O'+obj.numero+'</span><span class="trimestre-badge t'+obj.trimestre+'">T'+obj.trimestre+'</span></div><div class="objetivo-desc">'+obj.descripcion+'</div>';if(obj.indicadores&&obj.indicadores.length){h+='<ul class="indicadores-list">'+obj.indicadores.map(x=>'<li>• '+x+'</li>').join('')+'</ul>';}const _ap=appsSugeridas(obj,'',p.tipo,p.cicloOrigen||getCicloDeAlumno(a),2);if(_ap.length){h+='<div class="no-print" style="margin-top:6px">'+_ap.map(x=>chipApp(x,false)).join('')+'</div>';}h+='</div>';});h+='</div>';});}h+='<div class="btn-group no-print" style="margin-top:12px"><button class="btn btn-secondary btn-sm" onclick="regenerarProg()">🔄 Regenerar</button><button class="btn btn-ai btn-sm" onclick="generarPromptIA()">🤖 IA</button><button class="btn btn-warning btn-sm" onclick="abrirModal(\'modalImportJSON\')">📥 JSON</button><button class="btn btn-secondary btn-sm" onclick="actualizarCriteriosLOMLOE()" title="Añade los criterios LOMLOE sin borrar nada">🏷️ Criterios</button></div></div>';
         document.getElementById('tabProgramas').innerHTML=h;}
 
         function renderGEUTab(){
@@ -3163,6 +3195,7 @@
         }
 
         function abrirModalAddProg(){
+            if(esPerfilAL()){alAbrir(null);return;}
             const a=alumnos[alumnoActual];
             const cicloAlumno=getCicloDeAlumno(a);
             const sel=document.getElementById('selPlantilla');
@@ -4622,6 +4655,7 @@
             let progNum=1;
             Object.keys(a.programas).forEach(pId=>{
                 const p=a.programas[pId];
+                if(p.tipo==='al'){h+=renderSenecaAL(pId,p,a,progNum);progNum++;return;}
                 const info=AREAS[p.tipo]||{icon:'📄',nombre:p.tipo};
                 const nombrePrograma='PROGRAMA ESPECÍFICO PARA EL DESARROLLO '+info.nombre.toUpperCase();
                 
@@ -4858,7 +4892,8 @@
                 'tel':['Comprensión de vocabulario y estructuras','Expresión oral en frases completas','Comprensión de textos e instrucciones','Narración de experiencias','Vocabulario académico de área'],
                 'di':['Lectoescritura funcional','Numeración y cálculo funcional','Comprensión de instrucciones','Autonomía en rutinas escolares','Habilidades sociales básicas'],
                 'pra_lcl':['Comprensión lectora','Expresión escrita','Ortografía y gramática del nivel','Comunicación oral','Vocabulario'],
-                'pra_mat':['Numeración y valor posicional','Operaciones y cálculo','Resolución de problemas','Medida','Geometría y datos']
+                'pra_mat':['Numeración y valor posicional','Operaciones y cálculo','Resolución de problemas','Medida','Geometría y datos'],
+                'al':['Comprensión y expresión oral','Discriminación auditiva y conciencia fonológica','Articulación y habla','Vocabulario y estructuración de frases','Uso social del lenguaje']
             };
             const base=contenidosBase[tipo]||['Contenidos específicos del área','Habilidades funcionales','Generalización de aprendizajes'];
             const palabrasClave=(objAgrupado.indicadores||[]).join(' ').toLowerCase();
@@ -6129,7 +6164,8 @@ ${instruccionesFormato}`;
                 'tel':['Juegos de vocabulario por categorías','Ampliación de frases con apoyo visual','Comprensión de cuentos con imágenes','Narración de experiencias con secuencias'],
                 'di':['Lectura de palabras del entorno con imagen','Cálculo funcional con dinero y objetos reales','Seguimiento de instrucciones con pictogramas','Rutinas de autonomía en el aula'],
                 'pra_lcl':['Lectura comprensiva de textos adaptados','Producción de textos breves con guion','Dictados y ortografía del nivel','Exposiciones orales breves'],
-                'pra_mat':['Cálculo con material manipulativo','Problemas contextualizados paso a paso','Juegos de cálculo mental','Medida y geometría con objetos reales']
+                'pra_mat':['Cálculo con material manipulativo','Problemas contextualizados paso a paso','Juegos de cálculo mental','Medida y geometría con objetos reales'],
+                'al':['Praxias y ejercicios de soplo ante el espejo','Juegos de discriminación auditiva y conciencia fonológica','Denominación y descripción de láminas','Conversaciones y narraciones guiadas']
             };
             return (actividadesBase[tipo]||['Actividades manipulativas','Juegos estructurados','Tareas funcionales','Generalización en contextos naturales']).slice(0,4);
         }
@@ -6141,7 +6177,8 @@ ${instruccionesFormato}`;
                 'psicomotor':'CPSAA (Competencia Personal, Social y de Aprender a Aprender)',
                 'motor':'CPSAA (Competencia Personal, Social y de Aprender a Aprender)',
                 'social':'CPSAA (Competencia Personal, Social y de Aprender a Aprender)\nCC (Competencia Ciudadana)',
-                'autonomia':'CPSAA (Competencia Personal, Social y de Aprender a Aprender)'
+                'autonomia':'CPSAA (Competencia Personal, Social y de Aprender a Aprender)',
+                'al':'CCL (Competencia en Comunicación Lingüística)\nCPSAA (Competencia Personal, Social y de Aprender a Aprender)'
             };
             return competenciasMap[tipo]||'CPSAA (Competencia Personal, Social y de Aprender a Aprender)';
         }
@@ -6269,11 +6306,13 @@ ${instruccionesFormato}`;
             const porT={1:0,2:0,3:0};
             (p.objetivos||[]).forEach(o=>{const k=parseInt(o.trimestre)||1;porT[k]=(porT[k]||0)+1;});
             const curso=(cursosMeta[CURSO]&&cursosMeta[CURSO].nombre)||CURSO.replace('-','/');
-            const prof=['tutor/a','EOE'];
-            if(['tel','comunicativo','tea'].includes(p.tipo))prof.push('AL');
+            const esAL=(p.tipo==='al'||esPerfilAL());
+            const aula=esAL?'AL':'PT';
+            const prof=esAL?['tutor/a','PT','EOE']:['tutor/a','EOE'];
+            if(!esAL&&['tel','comunicativo','tea'].includes(p.tipo))prof.push('AL');
             return [
-                'Agrupamiento: '+(enGrupo?'pequeño grupo':'atención individual')+' en el aula de PT, con apoyo puntual en su aula de '+cur+'.',
-                'Espacios y tiempos: aula de PT; '+dias.length+' sesiones semanales ('+diasStr+') '+(inf?'en los momentos de lenguaje y lógico-matemática.':'en el horario de las áreas instrumentales (Lengua y Matemáticas).'),
+                'Agrupamiento: '+(enGrupo?'pequeño grupo':'atención individual')+' en el aula de '+aula+', con apoyo puntual en su aula de '+cur+'.',
+                'Espacios y tiempos: aula de '+aula+'; '+dias.length+' sesiones semanales ('+diasStr+') '+(esAL?'en horario coordinado con la tutoría.':inf?'en los momentos de lenguaje y lógico-matemática.':'en el horario de las áreas instrumentales (Lengua y Matemáticas).'),
                 'Temporalización: curso '+curso+' ('+cur+'), objetivos por trimestres (T1: '+porT[1]+', T2: '+porT[2]+', T3: '+porT[3]+') con revisión trimestral.',
                 'Coordinación: mensual con '+_listaY(prof)+'; información trimestral a la familia.'
             ].join('\n').slice(0,500);
@@ -10456,9 +10495,444 @@ Genera ahora un resumen por cada uno de los ${total} alumnos en el formato indic
     </script>
 
 <script>
+// ═══════════════════════════════════════════════════════════════════
+// AUDICIÓN Y LENGUAJE (perfil Lorena)
+// Programa específico de AL a partir del catálogo de indicadores de su
+// «Plan de trabajo de AL». Ella marca indicadores (y sus opciones) y la app
+// propone objetivos, contenidos, actividades y competencias, todo editable.
+// Se guarda como UN programa (tipo 'al') con un objetivo por bloque; por
+// dentro, cada bloque se reparte en trimestres para que la programación y la
+// evaluación funcionen igual que en PT.
+// ═══════════════════════════════════════════════════════════════════
+const AL_CATALOGO = [{"id":"b1","num":"1","nombre":"Prerrequisitos","subs":[{"id":"s1_1","num":"1.1","nombre":"Atención","items":[{"t":"Fijación de la mirada en los objetos","op":[]},{"t":"Fijación de la mirada cuando le hablan","op":[]},{"t":"Escucha cuando le hablan","op":[]},{"t":"Aumento de los tiempos de atención","op":[]},{"t":"Mejora de sus habilidades de atención conjunta","op":[]},{"t":"Mantenimiento del contacto ocular","op":[]},{"t":"Mantenimiento de la atención en la realización de una tarea","op":[]},{"t":"Permanencia sentado","op":[]},{"t":"Mantenimiento de la atención sostenida por vía visual","op":[]},{"t":"Mantenimiento de atención sostenida por vía auditiva","op":[]},{"t":"Concentración tras un cambio o descanso","op":[]}]},{"id":"s1_2","num":"1.2","nombre":"Imitación","items":[{"t":"Imitación de posturas, gestos y desplazamientos","op":[]},{"t":"Imitación de expresiones faciales","op":["alegría","tristeza","miedo","enfado","sorpresa"]},{"t":"Imitación de acciones simples: comer, beber, reír, dormir","op":[]},{"t":"Imitación de praxias","op":[]},{"t":"Imitación de sonidos (cuerpo, calle…)","op":[]},{"t":"Imitación de onomatopeyas de animales","op":[]},{"t":"Imitación de fonemas","op":[]},{"t":"Imitación de sílabas","op":[]},{"t":"Imitación de palabras","op":[]},{"t":"Reproducción de modelos verbales","op":[]}]},{"id":"s1_3","num":"1.3","nombre":"Seguimiento de instrucciones","items":[{"t":"Interpretación de gestos faciales, emocionales","op":[]},{"t":"Comprensión de la intención comunicativa","op":[]},{"t":"Seguimiento instrucciones gestuales","op":[]},{"t":"Seguimiento instrucciones verbales","op":[]},{"t":"Comprensión y ejecución de órdenes de una acción","op":[]},{"t":"Comprensión y ejecución de órdenes relacionadas","op":[]},{"t":"Comprensión y ejecución de órdenes no relacionadas","op":[]},{"t":"Comprensión ejecución de órdenes de más de 2 acciones","op":[]},{"t":"Detección de absurdos verbales","op":[]},{"t":"Detección de absurdos verbales y los sabe explicar","op":[]},{"t":"Detección de diferencias entre dos imágenes","op":[]}]},{"id":"s1_4","num":"1.4","nombre":"Percepción","items":[{"t":"Discriminación de ruido-sonido-silencio","op":[],"sec":"Percepción auditiva"},{"t":"Discriminación de sonidos iguales-diferentes","op":[],"sec":"Percepción auditiva"},{"t":"Discriminación de sonidos","op":["cuerpo","cosas","animales","instrumentos"],"sec":"Percepción auditiva"},{"t":"Asociación de onomatopeya a objeto-animal","op":[],"sec":"Percepción auditiva"},{"t":"Diferenciación de palabras largas y cortas","op":[],"sec":"Percepción auditiva"},{"t":"Discriminación de palabras","op":[],"sec":"Percepción auditiva"},{"t":"Discriminación de sílabas","op":[],"sec":"Percepción auditiva"},{"t":"Discriminación de fonemas","op":[],"sec":"Percepción auditiva"},{"t":"Repetición de palabras con contrastes mínimos","op":[],"sec":"Percepción auditiva"},{"t":"Fijación de la mirada a la persona que habla o se mueve","op":[],"sec":"Percepción visual"},{"t":"Seguimiento con los ojos de un objeto en movimiento","op":[],"sec":"Percepción visual"},{"t":"Asociación objetos o imágenes iguales","op":[],"sec":"Percepción visual"},{"t":"Emparejamiento de objetos-imágenes","op":[],"sec":"Percepción visual"},{"t":"Emparejamiento de objetos-imágenes según un criterio","op":[],"sec":"Percepción visual"},{"t":"Resolución de laberintos","op":[],"sec":"Percepción visual"},{"t":"Composición de puzles","op":[],"sec":"Percepción visual"},{"t":"Compleción de figuras incompletas","op":[],"sec":"Percepción visual"},{"t":"Descubrimiento de errores en dibujos","op":[],"sec":"Percepción visual"},{"t":"Localización de semejanzas y diferencias","op":[],"sec":"Percepción visual"}]},{"id":"s1_5","num":"1.5","nombre":"Ritmo","items":[{"t":"Seguimiento de un ritmo sencillo con su cuerpo","op":[]},{"t":"Marcación del pulso de una canción","op":[]},{"t":"Reproducción de estructuras rítmicas sencillas","op":[]},{"t":"Reconocimiento de palabras largas y cortas","op":[]},{"t":"Reconocimiento de la sílaba tónica y la átona","op":[]},{"t":"Seguimiento de esquemas rítmicos con fonemas","op":[]},{"t":"Interpreta estructuras rítmicas sencillas","op":[]}]},{"id":"s1_6","num":"1.6","nombre":"Organización espacio-temporal","items":[{"t":"Situación y ubicación de los objetos en el espacio","op":[],"sec":"Organización espacial"},{"t":"Discriminación de conceptos","op":["por tamaño","por distancia","por dirección"],"sec":"Organización espacial"},{"t":"Discriminación de conceptos","op":["momentos de día","calendario","por tiempo"],"sec":"Organización temporal"},{"t":"Situación y organización temporalmente de rutinas diarias","op":[],"sec":"Organización temporal"},{"t":"Secuenciación y ordenación de escenas de cuentos","op":[],"sec":"Organización temporal"},{"t":"Ordenación de secuencias temporales","op":["2 ele","3 ele","4 ele","5 ele","6 ele","7 ele","8 ele"],"sec":"Organización temporal"}]}]},{"id":"b2","num":"2","nombre":"Fonética-Fonología","subs":[{"id":"s2_1","num":"2.1","nombre":"Prosodia","items":[{"t":"Empleo de un tono adecuado","op":[]},{"t":"Empleo de un volumen adecuado","op":[]},{"t":"Empleo de un habla fluida","op":[]},{"t":"Empleo de un ritmo adecuado","op":[]},{"t":"Empleo de un timbre adecuado","op":[]},{"t":"Expresión de emociones y sentimientos: sorpresa, duda","op":[]},{"t":"Imitación de personajes usando distintos ritmos","op":[]},{"t":"Pronunciación de frases con distintas intenciones","op":[]},{"t":"Recitación de poemas, retahílas, adivinanzas","op":[]}]},{"id":"s2_2","num":"2.2","nombre":"Respiración y soplo","items":[{"t":"Limpieza nasal autónoma","op":[]},{"t":"Imitación del mecanismo correcto de respiración","op":[]},{"t":"Inspiración nasal correcta","op":[]},{"t":"Espiración bucal correcta","op":[]},{"t":"Retención del aire","op":[]},{"t":"Intensidad del soplo adecuada","op":[]},{"t":"Duración del soplo adecuada","op":[]},{"t":"Direccionalidad del soplo adecuada","op":[]},{"t":"Control del soplo adecuado","op":[]},{"t":"Aumento de la capacidad respiratoria","op":[]},{"t":"Coordinación de la respiración-fonación","op":[]}]},{"id":"s2_4","num":"2.4","nombre":"Relajación","items":[{"t":"Relajación de las partes de la cara","op":[]},{"t":"Relajación de músculos del cuello","op":[]},{"t":"Relajación de las distintas partes del cuerpo","op":[]},{"t":"Realización de ejercicios de tensión-distensión","op":[]}]},{"id":"s2_5","num":"2.5","nombre":"Discriminación","items":[{"t":"Discriminación de ruido-sonido-silencio","op":[],"sec":"Discriminación auditiva"},{"t":"Discriminación de sonidos iguales-diferentes","op":[],"sec":"Discriminación auditiva"},{"t":"Discriminación de sonidos (cuerpo, casa, animales…)","op":[],"sec":"Discriminación auditiva"},{"t":"Asociación de onomatopeya a objeto-animal","op":[],"sec":"Discriminación auditiva"},{"t":"Diferenciación de palabras largas y cortas","op":[],"sec":"Discriminación auditiva"},{"t":"Reconocimiento de cualidades del sonido","op":["fuerte/flojo","corto/largo","grave/agudo"],"sec":"Discriminación auditiva"},{"t":"Discriminación de fonemas","op":["vocales","consonantes","grupos consonánticos"],"sec":"Discriminación fonológica"},{"t":"Discriminación de sílabas","op":["igual punto articulación","igual modo articulación"],"sec":"Discriminación fonológica"},{"t":"Discriminación de palabras","op":[],"sec":"Discriminación fonológica"},{"t":"Repetición de palabras con contrastes mínimos","op":[],"sec":"Discriminación fonológica"},{"t":"Reconocimiento de palabras con la misma estructura","op":[],"sec":"Discriminación fonológica"}]},{"id":"s2_6","num":"2.6","nombre":"Habilidades meta-lingüísticas","items":[{"t":"Segmentación de palabras de una oración","op":[],"sec":"Conciencia léxica"},{"t":"Invención de oraciones a partir de una palabra o imagen","op":[],"sec":"Conciencia léxica"},{"t":"Identificación de una frase a partir de una palabra","op":[],"sec":"Conciencia léxica"},{"t":"Composición de oraciones con palabras dadas","op":[],"sec":"Conciencia léxica"},{"t":"Comparación de palabras por su longitud","op":[],"sec":"Conciencia léxica"},{"t":"Segmentación de palabras en sílabas","op":[],"sec":"Conciencia silábica"},{"t":"Omisión de sílaba","op":["posición inicial","posición media","posición final"],"sec":"Conciencia silábica"},{"t":"Adición de sílaba","op":["posición inicial","posición media","posición final"],"sec":"Conciencia silábica"},{"t":"Sustitución de sílabas","op":["posición inicial","posición media","posición final"],"sec":"Conciencia silábica"},{"t":"Inversión del orden de las sílabas de una palabra","op":[],"sec":"Conciencia silábica"},{"t":"Ordenación de sílabas para formar palabras","op":[],"sec":"Conciencia silábica"},{"t":"Formación de palabras encadenadas","op":[],"sec":"Conciencia silábica"},{"t":"Compleción de la sílaba de una palabra","op":["posición inicial","posición media","posición final"],"sec":"Conciencia silábica"},{"t":"Discriminación de sílabas","op":[],"sec":"Conciencia silábica"},{"t":"Identifica palabras con contrastes mínimos (sílabas)","op":[],"sec":"Conciencia silábica"},{"t":"Identificación de imágenes que llevan una sílaba dada","op":["posición inicial","posición media","posición final"],"sec":"Conciencia silábica"},{"t":"Conteo de las sílabas de una palabra","op":[],"sec":"Conciencia silábica"},{"t":"Identificación de palabras que riman","op":[],"sec":"Conciencia silábica"},{"t":"Composición de palabras con sílabas dadas","op":[],"sec":"Conciencia silábica"},{"t":"Identificación de la sílaba tónica","op":[],"sec":"Conciencia silábica"},{"t":"Deletreo de palabras","op":[],"sec":"Conciencia fonológica"},{"t":"Identificación de los diferentes fonemas y grafías","op":[],"sec":"Conciencia fonológica"},{"t":"Compleción de palabras con el fonema correspondiente","op":["posición inicial","posición media","posición final"],"sec":"Conciencia fonológica"},{"t":"Identificación de palabras con contrastes mínimos","op":[],"sec":"Conciencia fonológica"},{"t":"Identificación de imágenes que llevan un fonema dado","op":[],"sec":"Conciencia fonológica"},{"t":"Omisión de un fonema","op":["posición inicial","posición media","posición final"],"sec":"Conciencia fonológica"},{"t":"Adición de un fonema","op":["posición inicial","posición media","posición final"],"sec":"Conciencia fonológica"},{"t":"Sustitución de un fonema","op":["posición inicial","posición media","posición final"],"sec":"Conciencia fonológica"},{"t":"Composición de palabras con fonemas dados","op":[],"sec":"Conciencia fonológica"},{"t":"Ordenación de letras para formar palabras","op":[],"sec":"Conciencia fonológica"}]},{"id":"s2_7","num":"2.7","nombre":"Alfabeto","items":[{"t":"Asociación de cada fonema con su grafema","op":[]},{"t":"Conocimiento del nombre de cada grafema","op":[]},{"t":"Conocimiento del orden de los diferentes grafemas","op":[]}]},{"id":"s2_8","num":"2.8","nombre":"Memoria secuencia auditiva","items":[{"t":"Memorización auditiva con apoyo visual","op":[]},{"t":"Memorización auditiva sin apoyo visual","op":[]},{"t":"Repetición de series de sonidos","op":[]},{"t":"Repetición de series de palabras","op":[]},{"t":"Repetición de frases","op":["sencillas","complejas"]},{"t":"Reproducción de adivinanzas, poemas, canciones","op":[]}]},{"id":"s2_9","num":"2.9","nombre":"Articulación","items":[{"t":"Articulación de los fonemas vocálicos: /a/e/i/o/u/","op":[]},{"t":"Articulación de los diptongos crecientes","op":["ia","ie","io","ua","ue","iu","ui","uo"]},{"t":"Articulación de los diptongos decrecientes","op":["ai","ei","oi","eu","au"]},{"t":"Articulación de los fonemas bilabiales","op":["m","p","b"]},{"t":"Articulación de los fonemas dentales","op":["s","t"]},{"t":"Articulación de los fonemas interdentales","op":["d","z"]},{"t":"Articulación de los fonemas labiodentales","op":["f"]},{"t":"Articulación de los fonemas velares","op":["k","j","g"]},{"t":"Articulación de fonemas alveolares","op":["l","n","r","rr"]},{"t":"Articulación de los fonemas palatales","op":["ll","ñ","ch"]},{"t":"Articulación de los fonemas nasales","op":["m","n","ñ"]},{"t":"Articulación de fonemas oclusivos","op":["b","d","g","k","p","t"]},{"t":"Articulación de fonemas fricativos","op":["f","s","j","y","z"]},{"t":"Articulación de los fonemas líquidos","op":["l","ll"]},{"t":"Articulación de los fonemas vibrantes","op":["r","rr"]},{"t":"Articulación de los sinfones laterales","op":["bl","pl","fl","cl","gl"]},{"t":"Articulación de los sinfones vibrantes","op":["br","pr","fr","cr","gr","tr","dr"]},{"t":"Articulación correcta de palabras","op":["bisílabas","trisílabas","polisílabas","en inicial","en medio","en final"]},{"t":"Articulación correcta del fonema aislado","op":[]},{"t":"Articulación correcta de frases","op":["en inicial","en medio","en final"]},{"t":"Articulación correcta de poemas, trabalenguas","op":[]},{"t":"Articulación correcta en lenguaje espontáneo","op":[]},{"t":"Orden de adquisición: p-m-t-f-k-n-b-l-ñ-s-g-d-ch-z-j-y-ll-r-rr-x","op":[]},{"t":"Orden de adquisición de inversas","op":["l","n","r","s"]},{"t":"Coloca correctamente la boca en posición","op":[]},{"t":"Pronuncia el fonema en lenguaje repetido","op":[]},{"t":"Pronuncia el fonema en lenguaje dirigido con apoyo visual","op":[]},{"t":"Pronuncia el fonema en lenguaje dirigido sin apoyo visual","op":[]},{"t":"Pronuncia el fonema en lenguaje espontáneo","op":[]},{"t":"Lo generaliza a su lenguaje espontáneo","op":[]}]}]},{"id":"b3","num":"3","nombre":"Léxico-Semántica","subs":[{"id":"s3_1","num":"3.1","nombre":"Vocabulario","items":[{"t":"Designación de vocabulario básico","op":["cuerpo","colegio","casa","animales","plantas","ropa","alimentos","familia","el tiempo"]},{"t":"Comprensión de vocabulario básico","op":["cuerpo","colegio","casa","animales","plantas","ropa","alimentos","familia","el tiempo"]},{"t":"Denominación de vocabulario básico","op":["cuerpo","colegio","casa","animales","plantas","ropa","alimentos","familia","el tiempo"]},{"t":"Utilización de vocabulario básico","op":["cuerpo","colegio","casa","animales","plantas","ropa","alimentos","familia","el tiempo"]},{"t":"Definición de vocabulario básico","op":["cuerpo","colegio","casa","animales","plantas","ropa","alimentos","familia","el tiempo"]},{"t":"Identificación de familias léxicas","op":[]},{"t":"Formación de familias léxicas","op":[]},{"t":"Compleción de mapas conceptuales","op":[]},{"t":"Establecimiento de relaciones entre las palabras","op":[]},{"t":"Nombramiento de palabras dada una definición","op":[]},{"t":"Definición de palabras dadas","op":[]},{"t":"Identificación de sinónimos de una palabra dada","op":[]},{"t":"Identificación de antónimos de una palabra dada","op":[]},{"t":"Identificación de palabras polisémicas","op":[]},{"t":"Asociación de palabras","op":[]},{"t":"Identificación de absurdos","op":[]},{"t":"Formación de palabras nuevas","op":["diminutivos","aumentativos","derivadas","palabras compuestas"]}]},{"id":"s3_2","num":"3.2","nombre":"Conceptos espaciales","items":[{"t":"Expresión y comprensión de conceptos","op":["dentro-fuera","grande-mediano-pequeño","alto-bajo","arriba-abajo","encima-debajo","lleno-vacío","gordo-delgado","cerca-lejos","corto-largo","igual-diferente","ancho-estrecho","deprisa-despacio","delante-detrás","al lado-en medio-de frente","al principio-al final","revés-derecho","derecha-izquierda"]}]},{"id":"s3_3","num":"3.3","nombre":"Conceptos temporales","items":[{"t":"Expresión y comprensión de conceptos","op":["día-noche","ahora-antes-después","pronto-tarde","mañana-mediodía-tarde-noche","hoy-ayer-mañana","semana","meses","estaciones","horas"]}]},{"id":"s3_4","num":"3.4","nombre":"Comprensión","items":[{"t":"Comprensión de órdenes","op":["de una acción","de dos acciones","de tres acciones"]},{"t":"Comprensión de preguntas sencillas","op":[]},{"t":"Comprensión de frases de","op":["dos palabras","tres palabras","cuatro palabras","cinco palabras","seis palabras","siete palabras"]}]},{"id":"s3_5","num":"3.5","nombre":"Relaciones léxicas","items":[{"t":"Categorización- clasificación","op":[]},{"t":"Comparación","op":[]},{"t":"Diferenciación","op":[]},{"t":"Cierre gramatical","op":[]},{"t":"Clasificación de palabras","op":[]},{"t":"Creación de categorías semánticas","op":[]}]}]},{"id":"b4","num":"4","nombre":"Morfosintaxis","subs":[{"id":"s4_1","num":"4.1","nombre":"Formación de frases","items":[{"t":"Utilización de palabra-frase","op":[]},{"t":"Utilización de frases sencillas: S-V","op":[]},{"t":"Utilización de frases sencillas: S-V-CD","op":[]},{"t":"Utilización de frases sencillas: S-V-Atributo","op":[]},{"t":"Utilización de frases sencillas: S-V-CD-CC","op":[]},{"t":"Utilización de frases sencillas: S-V-CD-CI","op":[]},{"t":"Comprensión de palabra-frase","op":[]},{"t":"Comprensión de frases sencillas: S-V","op":[]},{"t":"Comprensión de frases sencillas: S-V-CD","op":[]},{"t":"Comprensión de frases sencillas: S-V-CC","op":[]},{"t":"Comprensión de frases sencillas: S-V-CD-CC","op":[]},{"t":"Comprensión de frases sencillas: S-V-CD-CI","op":[]},{"t":"Utilización de frases negativas","op":[]},{"t":"Utilización de frases interrogativas","op":[]},{"t":"Utilización de frases exclamativas","op":[]},{"t":"Utilización de frases imperativas","op":[]},{"t":"Utilización de frases reflexivas","op":[]},{"t":"Utilización de frases condicionales","op":[]},{"t":"Comprensión de frases negativas","op":[]},{"t":"Comprensión de frases interrogativas","op":[]},{"t":"Comprensión de frases exclamativas","op":[]},{"t":"Comprensión de frases imperativas","op":[]},{"t":"Comprensión de frases reflexivas","op":[]},{"t":"Comprensión de frases condicionales","op":[]}]},{"id":"s4_2","num":"4.2","nombre":"Elementos morfológicos","items":[{"t":"Utilización correcta de artículos","op":[]},{"t":"Utilización correcta de la concordancia de género","op":[]},{"t":"Utilización correcta de la concordancia de número","op":[]},{"t":"Utilización correcta de adjetivos","op":[]},{"t":"Utilización correcta de determinantes","op":[]},{"t":"Utilización correcta de pronombres personales","op":[]},{"t":"Utilización correcta de posesivos","op":[]},{"t":"Utilización correcta de adverbios","op":[]},{"t":"Utilización correcta de preposiciones","op":[]},{"t":"Utilización correcta de conjunciones","op":[]},{"t":"Utilización correcta de verbos en presente","op":["en presente","en pasado","en futuro"]}]},{"id":"s4_3","num":"4.3","nombre":"Organización del discurso","items":[{"t":"Realización de descripciones adecuadamente","op":[]},{"t":"Ordenación de secuencias de viñetas","op":["2","3","4","5","6","7","8","9","10"]},{"t":"Compleción de frases","op":[]},{"t":"Compleción de textos","op":[]},{"t":"Respuesta a preguntas sobre una lámina","op":[]},{"t":"Descripción con apoyo visual","op":["objetos","animales","personas","situaciones"]},{"t":"Respeto del orden cronológico de un hecho","op":[]},{"t":"Utilización de enunciados completos y organizados","op":[]},{"t":"Definición de palabras","op":["con apoyo visual","sin apoyo visual"]}]}]},{"id":"b5","num":"5","nombre":"Pragmática","subs":[{"id":"s5_1","num":"5.1","nombre":"Comunicación pre-verbal","items":[{"t":"Muestra de intencionalidad comunicativa","op":[]},{"t":"Respuesta gestual a través de","op":["mirada","gestos","signos","SAAC"]},{"t":"Mantenimiento del contacto ocular","op":[]},{"t":"Relación con los compañeros","op":[]},{"t":"Participación en juegos de turnos","op":[]},{"t":"Participación en juegos reglados","op":[]},{"t":"Petición de ayuda","op":[]},{"t":"Reclamo del adulto para conseguir algo","op":[]}]},{"id":"s5_2","num":"5.2","nombre":"Habilidades conversacionales","items":[{"t":"Iniciación de una conversación","op":[]},{"t":"Mantenimiento del tema de una conversación","op":[]},{"t":"Sabe finalizar una conversación","op":[]},{"t":"Respeto del turno de habla","op":[]},{"t":"Escucha atenta a los que intervienen","op":[]},{"t":"Demanda de atención","op":[]},{"t":"Solicita ayuda","op":[]},{"t":"Seguimiento de consignas","op":[]},{"t":"Respuesta a las preguntas con coherencia","op":[]},{"t":"Descripción de","op":["objetos","animales","personas","situaciones"]},{"t":"Narración de un cuento, experiencias","op":["cuentos","acontecimientos","expresiones"]},{"t":"Narración de un hecho o experiencia en orden, con claridad","op":[]}]},{"id":"s5_3","num":"5.3","nombre":"Comprensión y uso de estructuras básicas","items":[{"t":"Respuesta a preguntas de identificación personal","op":[]},{"t":"Respuesta a preguntas de: ¿quién es?, ¿qué hace?","op":[]},{"t":"Respuesta a preguntas de sí/no","op":[]},{"t":"Respuesta a preguntas de: ¿por qué?, ¿para qué?","op":[]},{"t":"Formulación de preguntas","op":[]},{"t":"Formulación de preguntas dándole una respuesta","op":[]},{"t":"Comprensión del lenguaje implícito","op":[]}]},{"id":"s5_4","num":"5.4","nombre":"Funciones del lenguaje","items":[{"t":"INSTRUMENTAL: Pide y rechaza objetos","op":[]},{"t":"REGULADORA: Pide realizar acciones a otros","op":[]},{"t":"INTERACTIVA: Reacciona ante las personas","op":[]},{"t":"PERSONAL: Expresa emociones y sentimientos","op":[]},{"t":"HEURÍSTICA: Pide información","op":[]},{"t":"IMAGINATIVA: Crea e inventa historias","op":[]},{"t":"REPRESENTATIVA: Expresa ideas","op":[]},{"t":"RITUAL: Utiliza los buenos modales","op":[]},{"t":"PRAGMÁTICA: Satisface necesidades e interactúa","op":[]},{"t":"MATÉTICA: Aprende y desarrolla vocabulario","op":[]},{"t":"INFORMATIVA: Da información","op":[]}]},{"id":"s5_5","num":"5.5","nombre":"Habilidades comunicativas sociales","items":[{"t":"Saludo al encontrarse con otros","op":[]},{"t":"Despedida al irse","op":[]},{"t":"Escucha a los compañeros","op":[]},{"t":"Respeto del turno de palabra","op":[]},{"t":"Muestra de agradecimiento","op":[]},{"t":"Disculpa, petición de perdón","op":[]},{"t":"Regulación de su conducta","op":[]},{"t":"Sonrisa como respuesta","op":[]},{"t":"Petición de permiso","op":[]},{"t":"Petición de Ayuda","op":[]}]},{"id":"s5_6","num":"5.6","nombre":"Emociones","items":[{"t":"Reconocimiento de emociones en los demás","op":[]},{"t":"Expresión de emociones adecuadamente","op":[]},{"t":"Respuesta con distintas emociones acordes a situaciones","op":[]}]},{"id":"s5_7","num":"5.7","nombre":"Otros elementos","items":[{"t":"Comprensión de situaciones causa - efecto","op":[]},{"t":"Comprensión de lenguaje no literal","op":["bromas y chistes","Dobles sentidos","Ironías","Frases hechas y refranes","Metáforas","Inferencias"]},{"t":"Utilización de lenguaje no literal","op":["bromas y chistes","Dobles sentidos","Ironías","Frases hechas y refranes","Metáforas","Inferencias"]}]}]},{"id":"b6","num":"6","nombre":"Habilidades psicolingüísticas","subs":[{"id":"s6_1","num":"6.1","nombre":"Memoria visual","items":[{"t":"Recuerdo de objetos escondidos","op":[]},{"t":"Repetición de series de palabras con apoyo visual","op":[]},{"t":"Repetición de series de palabras sin apoyo visual","op":[]},{"t":"Repetición de frases leídas previamente","op":[]},{"t":"Recuerdo de imágenes","op":[]}]},{"id":"s6_2","num":"6.2","nombre":"Memoria verbal","items":[{"t":"Repetición de secuencias de sonidos","op":[]},{"t":"Repetición de secuencias de sílabas","op":[]},{"t":"Repetición de secuencias de palabras","op":[]},{"t":"Repetición de secuencias de frases","op":[]},{"t":"Repetición de poesías y retahílas","op":[]},{"t":"Repetición de canciones y refranes","op":[]}]},{"id":"s6_3","num":"6.3","nombre":"Comprensión verbal - razonamiento verbal","items":[{"t":"Comprensión de órdenes","op":[]},{"t":"Definición de palabras","op":[]},{"t":"Formación de familias de palabras por criterios","op":[]},{"t":"Explicación del significado de frases","op":[]},{"t":"Compleción de oraciones (tarea de cierre gramatical)","op":[]},{"t":"Resolución de un problema real o ficticio","op":[]},{"t":"Resumen de una explicación o texto","op":[]},{"t":"Búsqueda de igualdad entre dos o más palabras","op":[]},{"t":"Búsqueda de semejanza entre dos o más palabras","op":[]},{"t":"Búsqueda de diferencia entre dos o más palabras","op":[]},{"t":"Búsqueda de absurdos en expresiones verbales","op":[]},{"t":"Extracción de conclusiones lógicas ante un enunciado","op":[]},{"t":"Distinción de lo fundamental y secundario de un relato","op":[]},{"t":"Reconocimiento de sí mismo ante el espejo","op":[]}]},{"id":"s6_4","num":"6.4","nombre":"Desarrollo cognitivo","items":[{"t":"Asociación de objetos-imágenes iguales","op":[]},{"t":"Agrupación de objetos-imágenes","op":[]},{"t":"Clasificación de objetos-imágenes","op":[]}]}]},{"id":"b7","num":"7","nombre":"Lectoescritura","subs":[{"id":"s7_1","num":"7.1","nombre":"Pre-lectura","items":[{"t":"Lectura interpretando dibujos","op":[]},{"t":"Lectura interpretando pictogramas","op":[]},{"t":"Lectura interpretando signos","op":[]}]},{"id":"s7_2","num":"7.2","nombre":"Lectura","items":[{"t":"Lectura de vocales aisladas","op":["a","e","i","o","u"],"sec":"Mecánica lectora"},{"t":"Lectura de consonantes aisladas","op":["l","m","s","p","t","n","d","h","k","ch","f","g","r","rr","j","b","ñ","z","y","ll","v"],"sec":"Mecánica lectora"},{"t":"Lectura de sílabas directas","op":[],"sec":"Mecánica lectora"},{"t":"Lectura de sílabas indirectas","op":[],"sec":"Mecánica lectora"},{"t":"Lectura de sílabas mixtas","op":[],"sec":"Mecánica lectora"},{"t":"Lectura de sílabas trabadas","op":["bl","pl","fl","br","pr","fr","cl","cr","gl","gr","tr","dr"],"sec":"Mecánica lectora"},{"t":"Lectura de sílabas de doble grafía","op":["h","b-v","r-rr","g-gu-gü","j-g","z-c","c-qu-k"],"sec":"Mecánica lectora"},{"t":"Lectura de palabras","op":[],"sec":"Mecánica lectora"},{"t":"Lectura de frases","op":[],"sec":"Mecánica lectora"},{"t":"Lectura de párrafos","op":[],"sec":"Mecánica lectora"},{"t":"Lectura de textos","op":[],"sec":"Mecánica lectora"},{"t":"Comprensión de palabras","op":[],"sec":"Comprensión lectora"},{"t":"Comprensión de frases","op":["3 elementos","4 elementos","5 elementos","6 elementos","7 elementos"],"sec":"Comprensión lectora"},{"t":"Comprensión de párrafos","op":[],"sec":"Comprensión lectora"},{"t":"Comprensión de textos","op":[],"sec":"Comprensión lectora"},{"t":"Respuesta correcta a preguntas literales","op":[],"sec":"Comprensión lectora"},{"t":"Respuesta correcta a preguntas no literales","op":[],"sec":"Comprensión lectora"},{"t":"Reconocimiento de las ideas más importantes de un texto","op":[],"sec":"Comprensión lectora"},{"t":"Resumen de un texto escrito","op":[],"sec":"Comprensión lectora"},{"t":"Reconocimiento de los personajes, el espacio… de un texto","op":[],"sec":"Comprensión lectora"}]},{"id":"s7_3","num":"7.3","nombre":"Errores en lectura","items":[{"t":"Silabeo: lectura sílaba por sílaba","op":[]},{"t":"Denegación: detección en la decodificación","op":[]},{"t":"Lectura mecánica veloz: sin comprensión","op":[]},{"t":"Ralentización: por exceso de fijaciones","op":[]},{"t":"Vocalización: labialización y repetición verbal de palabras","op":[]},{"t":"Subvocalización: pronunciación mental de las palabras","op":[]},{"t":"Señalado: Apoyo indicador para guiar la lectura","op":[]},{"t":"Regresión: relectura de las palabras y frases previas","op":[]},{"t":"Pérdida de renglón","op":[]},{"t":"Movimientos de cabeza durante la lectura","op":[]},{"t":"Confusiones visuales de letras","op":["por distinta orientación","por grafía semejante"]},{"t":"Inversiones","op":["del orden de las letras en sílabas","del orden de la sílaba en palabras"]},{"t":"Agregados","op":["al inicio","intermedios","finales"]},{"t":"Omisiones","op":["de letras y sílabas en palabras","de letras en oraciones"]},{"t":"Contaminaciones","op":[]},{"t":"Disociaciones","op":[]},{"t":"Distorsiones","op":[]}]},{"id":"s7_4","num":"7.4","nombre":"Pre-escritura","items":[{"t":"Realización de trazos libres","op":[]},{"t":"Realización de: líneas rectas","op":["horizontales","verticales","inclinadas","paralelas","quebradas"]},{"t":"Realización de líneas curvas","op":[]},{"t":"Realización de trazos: ángulos, bucles, picos, cruces, aspas","op":[]},{"t":"Trazo de figuras: cuadrado, círculo, rectángulo, triángulo","op":[]}]},{"id":"s7_5","num":"7.5","nombre":"Escritura","items":[{"t":"Escritura de vocales aisladas","op":["a","e","i","o","u"],"sec":"Escritura en copia"},{"t":"Escritura de consonantes aisladas","op":["l","m","s","p","t","n","d","h","k","ch","f","g","r","rr","j","b","ñ","z","y","ll","v"],"sec":"Escritura en copia"},{"t":"Escritura de sílabas directas","op":["l","m","s","p","t","n","d","h","k","ch","f","g","r","rr","j","b","ñ","z","y","ll","v"],"sec":"Escritura en copia"},{"t":"Escritura de sílabas indirectas","op":["-n","-l","-s","-r","-b","-d","-k","-f","-p","-m","-z"],"sec":"Escritura en copia"},{"t":"Escritura de sílabas mixtas","op":[],"sec":"Escritura en copia"},{"t":"Escritura de sílabas trabadas","op":["pl","bl","fl","cl","gl","pr","br","fr","cr","gr","dr","tr"],"sec":"Escritura en copia"},{"t":"Escritura de sílabas de doble grafía","op":["h","b-v","r-rr","g-gu-j","c-z","c-qu-k"],"sec":"Escritura en copia"},{"t":"Escritura de palabras","op":[],"sec":"Escritura en copia"},{"t":"Escritura de frases","op":[],"sec":"Escritura en copia"},{"t":"Escritura de párrafos","op":[],"sec":"Escritura en copia"},{"t":"Escritura de textos","op":[],"sec":"Escritura en copia"},{"t":"Escritura de vocales aisladas","op":["a","e","i","o","u"],"sec":"Escritura al dictado"},{"t":"Escritura de consonantes aisladas","op":["l","m","s","p","t","n","d","h","k","ch","f","g","r","rr","j","b","ñ","z","y","ll","v"],"sec":"Escritura al dictado"},{"t":"Escritura de sílabas directas","op":["l","m","s","p","t","n","d","h","k","ch","f","g","r","rr","j","b","ñ","z","y","ll","v"],"sec":"Escritura al dictado"},{"t":"Escritura de sílabas indirectas","op":["-n","-l","-s","-r","-b","-d","-k","-f","-p","-m","-z"],"sec":"Escritura al dictado"},{"t":"Escritura de sílabas mixtas","op":[],"sec":"Escritura al dictado"},{"t":"Escritura de sílabas trabadas","op":["pl","bl","fl","cl","gl","pr","br","fr","cr","gr","dr","tr"],"sec":"Escritura al dictado"},{"t":"Escritura de sílabas de doble grafía","op":["h","b-v","r-rr","g-gu-j","c-z","c-qu-k"],"sec":"Escritura al dictado"},{"t":"Escritura de palabras","op":[],"sec":"Escritura al dictado"},{"t":"Escritura de frases","op":[],"sec":"Escritura al dictado"},{"t":"Escritura de párrafos","op":[],"sec":"Escritura al dictado"},{"t":"Escritura de textos","op":[],"sec":"Escritura al dictado"},{"t":"Escritura de palabras","op":[],"sec":"Escritura espontanea"},{"t":"Escritura de frases","op":["3 elementos","4 elementos","5 elementos","6 elementos","7 elementos"],"sec":"Escritura espontanea"},{"t":"Escritura de párrafos","op":[],"sec":"Escritura espontanea"},{"t":"Escritura de textos","op":[],"sec":"Escritura espontanea"}]},{"id":"s7_6","num":"7.6","nombre":"Errores en escritura","items":[{"t":"Omisiones de letras","op":["al inicio","en medio","al final"]},{"t":"Omisiones de sílabas","op":["al inicio","en medio","al final"]},{"t":"Omisiones de palabras","op":[]},{"t":"Inversiones de letras","op":["al inicio","en medio","al final"]},{"t":"Inversiones de sílabas","op":["al inicio","en medio","al final"]},{"t":"Inversiones de palabra","op":[]},{"t":"Sustituciones de letras","op":["al inicio","en medio","al final"]},{"t":"Sustituciones de sílabas","op":["al inicio","en medio","al final"]},{"t":"Sustituciones de palabras","op":[]},{"t":"Fragmentaciones de palabras","op":[]},{"t":"Adiciones de letras","op":["al inicio","en medio","al final"]},{"t":"Adiciones de sílabas","op":["al inicio","en medio","al final"]},{"t":"Adiciones de palabra","op":[]},{"t":"Repeticiones/ Reiteraciones","op":[]},{"t":"Mezcla de mayúsculas y minúsculas","op":[]},{"t":"Uniones de palabras","op":[]},{"t":"Contaminaciones","op":[]},{"t":"Distorsiones","op":[]},{"t":"Transposiciones","op":["de letras","de sílabas","de palabras"]},{"t":"Rotaciones de letras","op":["de izda-dcha","de arriba-abajo","combinadas"]},{"t":"Digrafía","op":[]},{"t":"Disortografía","op":[]},{"t":"Pobre expresión escrita","op":[]}]}]},{"id":"b8","num":"8","nombre":"Contenidos de Lengua","subs":[{"id":"s8_1","num":"8.1","nombre":"Expresión oral","items":[{"t":"Presentación de uno mismo","op":[]},{"t":"Presentación de otros","op":[]},{"t":"Dar instrucciones","op":[]},{"t":"Participación en un debate","op":[]},{"t":"Narración de una experiencia personal","op":[]},{"t":"Expresión de sentimientos","op":[]}]},{"id":"s8_2","num":"8.2","nombre":"Vocabulario","items":[{"t":"Conocimiento del abecedario","op":[]},{"t":"Identificación y formación de palabras sinónimas","op":[]},{"t":"Identificación y formación de palabras antónimas","op":[]},{"t":"Denominación de palabras derivadas","op":[]},{"t":"Formación de palabras compuestas","op":[]},{"t":"Creación de diminutivos","op":[]},{"t":"Creación de aumentativos","op":[]},{"t":"Conocimiento del significado de palabras polisémicas","op":[]},{"t":"Conocimiento del significado de palabras homófonas","op":[]},{"t":"Conocimiento del significado de frases hechas","op":[]},{"t":"Formación de palabras con prefijos","op":[]},{"t":"Formación de palabras con sufijos","op":[]},{"t":"Formación de gentilicios","op":[]},{"t":"Empleo de siglas","op":[]},{"t":"Empleo de abreviaturas","op":[]},{"t":"Agrupación de palabras por campos semánticos","op":[]},{"t":"Conocimiento de palabras tabú","op":[]},{"t":"Conocimiento de eufemismos","op":[]},{"t":"Conocimiento de palabras parónimas","op":[]},{"t":"Conocimiento de neologismos","op":[]},{"t":"Formación de sustantivos","op":[]},{"t":"Formación de adjetivos","op":[]},{"t":"Formación de verbos","op":[]},{"t":"Conocimiento de palabras onomatopéyicas","op":[]}]},{"id":"s8_3","num":"8.3","nombre":"Gramática","items":[{"t":"Identificación de las letras de una palabra","op":[]},{"t":"Separación en sílabas de una palabra","op":[]},{"t":"Identificación de las palabras de una frase","op":[]},{"t":"Identificación de los sustantivos o nombres","op":[]},{"t":"Identificación de los adjetivos","op":[]},{"t":"Identificación de los verbos","op":[]},{"t":"Identificación de los determinantes","op":[]},{"t":"Identificación de los pronombres","op":[]},{"t":"Identificación de los adverbios","op":[]},{"t":"Identificación de las preposiciones","op":[]},{"t":"Identificación de las locuciones","op":[]},{"t":"Identificación de las conjunciones","op":[]},{"t":"Identificación de los sustantivos","op":[]},{"t":"Identificación de los pronombres personales","op":[]},{"t":"Identificación del sujeto y del predicado de una oración","op":[]},{"t":"Identificación de los complementos del verbo","op":[]},{"t":"Identificación de tipos de oraciones","op":[]},{"t":"Utilización correcta del género","op":[]},{"t":"Utilización correcta del número","op":[]},{"t":"Utilización correcta de tiempos verbales","op":[]}]},{"id":"s8_4","num":"8.4","nombre":"Ortografía","items":[{"t":"Utilización correcta de la mayúscula","op":[]},{"t":"Escritura correcta de palabras con –mp - mb","op":[]},{"t":"Escritura correcta de palabras con r-rr","op":[]},{"t":"Escritura correcta de palabras con –z y -d","op":[]},{"t":"Escritura correcta de palabras con ca-co-cu-que-qui","op":[]},{"t":"Escritura correcta de palabras con za-zo-zu-ce-ci","op":[]},{"t":"Escritura correcta de palabras con ga-go-gu-que-qui","op":[]},{"t":"Escritura correcta de palabras con güe- güi","op":[]},{"t":"Escritura correcta de palabras con je-ji-ge-gi","op":[]},{"t":"Utilización adecuada de la tilde en palabras agudas","op":[]},{"t":"Utilización adecuada de la tilde en palabras llanas","op":[]},{"t":"Utilización adecuada de la tilde en palabras esdrújulas","op":[]},{"t":"Utilización adecuada de la tilde en palabras con hiato","op":[]},{"t":"Utilización adecuada de la tilde en palabras con diptongo","op":[]},{"t":"Utilización adecuada de la tilde en palabras monosílabas","op":[]},{"t":"Utilización adecuada de la tilde en interrogativos","op":[]},{"t":"Utilización adecuada de la tilde en exclamativos","op":[]},{"t":"Escritura correcta de palabras con b","op":[]},{"t":"Escritura correcta de palabras con v","op":[]},{"t":"Escritura correcta de palabras con h","op":[]},{"t":"Escritura correcta de palabras con ll","op":[]},{"t":"Escritura correcta de palabras con y","op":[]},{"t":"Escritura correcta de palabras con s- x-","op":[]},{"t":"Escritura correcta de palabras con –cc -ct","op":[]},{"t":"Uso correcto del punto","op":[]},{"t":"Uso correcto de los signos de interrogación","op":[]},{"t":"Uso correcto de los signos de exclamación","op":[]},{"t":"Uso correcto del guion","op":[]},{"t":"Uso correcto de la raya","op":[]},{"t":"Uso correcto de los dos puntos","op":[]},{"t":"Uso correcto de la coma","op":[]},{"t":"Uso correcto del punto y coma","op":[]},{"t":"Uso correcto de los puntos suspensivos","op":[]},{"t":"Uso correcto de los paréntesis","op":[]},{"t":"Uso correcto de las comillas","op":[]}]},{"id":"s8_5","num":"8.5","nombre":"Literatura","items":[{"t":"Identificación de un poema","op":[]},{"t":"Reconocimiento de rima consonante y asonante","op":[]},{"t":"Identificación de estrofas","op":[]},{"t":"Identificación de versos","op":[]},{"t":"Identificación de un estribillo","op":[]},{"t":"Discriminación de prosa y verso","op":[]},{"t":"La narración","op":[]},{"t":"El cuento","op":[]},{"t":"La novela","op":[]},{"t":"El diario","op":[]},{"t":"La leyenda","op":[]},{"t":"La fábula","op":[]},{"t":"El teatro","op":[]},{"t":"Discriminación de textos literario y no literarios","op":[]}]},{"id":"s8_6","num":"8.6","nombre":"Expresión escrita","items":[{"t":"Escritura de listas","op":[]},{"t":"Escritura de oraciones","op":[]},{"t":"Escritura de invitaciones","op":[]},{"t":"Escritura de notas","op":[]},{"t":"Escritura de un diario","op":[]},{"t":"Escritura de una ficha","op":[]},{"t":"Escritura de una carta","op":[]},{"t":"Escritura de un cuento","op":[]},{"t":"Escribe un poema","op":[]},{"t":"Escritura de una noticia","op":[]},{"t":"Escritura de un cartel","op":[]},{"t":"Escritura de una receta","op":[]},{"t":"Descripción de una persona","op":[]},{"t":"Descripción de un objeto","op":[]},{"t":"Descripción de un animal","op":[]},{"t":"Descripción de un lugar","op":[]},{"t":"Escritura de un diálogo","op":[]},{"t":"Escritura de una publicidad","op":[]},{"t":"Escritura de una entrevista","op":[]}]}]}];
+
+const AL_BLOQUES = {
+  b1:{obj:'Desarrollar los prerrequisitos básicos para la comunicación y el lenguaje', ck:'CCL · CPSAA', ce:['CE2','CE3']},
+  b2:{obj:'Mejorar la competencia fonético-fonológica', ck:'CCL', ce:['CE3','CE9']},
+  b3:{obj:'Ampliar el vocabulario y mejorar la comprensión y la organización léxico-semántica', ck:'CCL · CPSAA', ce:['CE2','CE3','CE9']},
+  b4:{obj:'Mejorar la comprensión y la construcción de frases (morfosintaxis)', ck:'CCL', ce:['CE3','CE9']},
+  b5:{obj:'Desarrollar el uso social y comunicativo del lenguaje (pragmática)', ck:'CCL · CPSAA · CC', ce:['CE3','CE10']},
+  b6:{obj:'Potenciar las habilidades psicolingüísticas: memoria, comprensión y razonamiento verbal', ck:'CCL · CPSAA', ce:['CE2','CE4']},
+  b7:{obj:'Avanzar en el aprendizaje y la mejora de la lectura y la escritura', ck:'CCL · CPSAA', ce:['CE4','CE5']},
+  b8:{obj:'Reforzar los contenidos de Lengua del nivel', ck:'CCL', ce:['CE3','CE4','CE5','CE9']}
+};
+const AL_CE = {
+  CE2:'CE2. Comprender e interpretar textos orales y multimodales.',
+  CE3:'CE3. Producir textos orales y multimodales con coherencia y claridad.',
+  CE4:'CE4. Comprender e interpretar textos escritos y multimodales.',
+  CE5:'CE5. Producir textos escritos y multimodales sencillos.',
+  CE9:'CE9. Reflexionar de forma guiada sobre el lenguaje.',
+  CE10:'CE10. Usar el lenguaje de forma respetuosa y al servicio de la convivencia.'
+};
+// Por subcategoría: contenido que se propone y actividades tipo
+const AL_SUB = {
+  s1_1:{c:'Atención y escucha: fijación de la mirada, atención conjunta y atención sostenida',a:['Juegos de atención conjunta con objetos, cuentos y burbujas','Búsqueda de objetos y sonidos aumentando poco a poco el tiempo de trabajo']},
+  s1_2:{c:'Imitación de gestos, praxias, sonidos y modelos verbales',a:['Juego del espejo: imitar gestos, expresiones y praxias','Imitación de onomatopeyas, sílabas y palabras con apoyo visual']},
+  s1_3:{c:'Comprensión y seguimiento de instrucciones gestuales y verbales',a:['Juego «Simón dice» con órdenes de una, dos y tres acciones','Detección de absurdos y diferencias en láminas']},
+  s1_4:{c:'Percepción y discriminación auditiva y visual',a:['Lotos sonoros: identificar sonidos del cuerpo, la casa y los animales','Puzles, laberintos y búsqueda de diferencias']},
+  s1_5:{c:'Ritmo: pulso, estructuras rítmicas y sílaba tónica',a:['Palmear, saltar y marcar el ritmo de canciones y palabras','Reproducción de series rítmicas con instrumentos']},
+  s1_6:{c:'Organización espacial y temporal: conceptos y secuencias',a:['Situar objetos según consignas espaciales (encima, debajo, delante…)','Ordenar secuencias temporales de viñetas y rutinas diarias']},
+  s2_1:{c:'Prosodia: tono, volumen, ritmo y entonación del habla',a:['Lectura y recitado de poemas, retahílas y adivinanzas','Juegos de voces: imitar personajes y emociones con la entonación']},
+  s2_2:{c:'Respiración y soplo: inspiración nasal, espiración bucal y control del soplo',a:['Ejercicios de soplo con pajitas, molinillos, velas y pompas','Respiración nasal y espiración bucal controlada con apoyo visual']},
+  s2_4:{c:'Relajación de la musculatura facial, del cuello y del cuerpo',a:['Ejercicios de tensión-distensión de cara y cuello','Relajación guiada al inicio o al final de la sesión']},
+  s2_5:{c:'Discriminación auditiva y fonológica de sonidos, fonemas, sílabas y palabras',a:['Lotos fonéticos y juegos de «igual o diferente»','Identificación de palabras con pares mínimos']},
+  s2_6:{c:'Conciencia léxica, silábica y fonológica',a:['Segmentar frases en palabras y palabras en sílabas con palmadas','Omitir, añadir y sustituir sílabas y fonemas con tarjetas']},
+  s2_7:{c:'Alfabeto: correspondencia fonema-grafema, nombre y orden de las letras',a:['Asociación de cada sonido con su letra con abecedario móvil','Canciones y juegos con el orden del abecedario']},
+  s2_8:{c:'Memoria secuencial auditiva',a:['Repetición de series de sonidos, palabras y frases cada vez más largas','Aprendizaje de adivinanzas, poemas y canciones']},
+  s2_9:{c:'Articulación de vocales, diptongos, fonemas y sinfones en distintas posiciones',a:['Praxias bucofonatorias y colocación de la boca ante el espejo','Repetición del fonema en sílabas, palabras, frases y lenguaje espontáneo']},
+  s3_1:{c:'Vocabulario básico por categorías: comprensión, denominación, uso y definición',a:['Juegos de vocabulario por categorías con láminas y pictogramas','Familias de palabras, sinónimos y antónimos con tarjetas']},
+  s3_2:{c:'Conceptos espaciales básicos',a:['Juegos de colocar objetos y a uno mismo según conceptos espaciales','Fichas y láminas de conceptos opuestos']},
+  s3_3:{c:'Conceptos temporales básicos',a:['Calendario y rutina diaria con pictogramas','Secuencias de antes, ahora y después']},
+  s3_4:{c:'Comprensión de órdenes, preguntas y frases de longitud creciente',a:['Ejecución de órdenes de una, dos y tres acciones','Elegir la imagen que corresponde a una frase escuchada']},
+  s3_5:{c:'Relaciones léxicas: categorización, comparación y cierre gramatical',a:['Clasificar imágenes por categorías semánticas','Juegos de «¿qué sobra?» y de completar frases']},
+  s4_1:{c:'Comprensión y uso de frases: estructura S-V-C y tipos de oraciones',a:['Construcción de frases con tarjetas de sujeto, verbo y complemento','Juegos de preguntas, negaciones y exclamaciones con apoyo visual']},
+  s4_2:{c:'Elementos morfológicos: concordancia, artículos, pronombres, preposiciones y tiempos verbales',a:['Ejercicios de concordancia de género y número con imágenes','Uso de verbos en presente, pasado y futuro contando lo que hace el alumno']},
+  s4_3:{c:'Organización del discurso: descripción, narración y orden cronológico',a:['Describir láminas con un guion visual','Ordenar viñetas y contar la historia']},
+  s5_1:{c:'Comunicación preverbal: intención comunicativa, turnos y petición de ayuda',a:['Juegos de turnos y de petición con objetos atractivos','Uso de gestos, signos o SAAC para pedir y elegir']},
+  s5_2:{c:'Habilidades conversacionales: iniciar, mantener y cerrar una conversación',a:['Conversaciones guiadas sobre sus intereses','Narración de experiencias con apoyo de fotos o secuencias']},
+  s5_3:{c:'Comprensión y uso de preguntas y estructuras básicas',a:['Juego de preguntas ¿quién?, ¿qué?, ¿dónde?, ¿por qué?','Formular preguntas a partir de una respuesta dada']},
+  s5_4:{c:'Funciones del lenguaje: pedir, regular, informar, expresar e imaginar',a:['Situaciones simuladas de pedir, rechazar y dar información','Inventar historias a partir de imágenes']},
+  s5_5:{c:'Habilidades comunicativas sociales: saludar, despedirse, agradecer y pedir permiso',a:['Role-playing de saludos, despedidas, disculpas y peticiones','Rutinas de cortesía al entrar y salir del aula de AL']},
+  s5_6:{c:'Reconocimiento y expresión de emociones',a:['Identificar emociones en caras, fotos y cuentos','Expresar cómo se siente con apoyo de pictogramas']},
+  s5_7:{c:'Lenguaje no literal: causa-efecto, bromas, frases hechas e inferencias',a:['Explicar frases hechas y refranes con apoyo visual','Juegos de adivinanzas, chistes e inferencias en láminas']},
+  s6_1:{c:'Memoria visual',a:['Juegos de memoria con tarjetas e imágenes escondidas','Recordar y nombrar series de imágenes']},
+  s6_2:{c:'Memoria verbal',a:['Repetición de secuencias de sílabas, palabras y frases','Aprendizaje de poesías, retahílas y canciones']},
+  s6_3:{c:'Comprensión y razonamiento verbal',a:['Explicar semejanzas, diferencias y absurdos verbales','Resolver problemas sencillos de la vida diaria de forma oral']},
+  s6_4:{c:'Desarrollo cognitivo: asociación, agrupación y clasificación',a:['Asociar y agrupar objetos e imágenes por criterios','Clasificación de tarjetas por categorías']},
+  s7_1:{c:'Prelectura: lectura de dibujos, pictogramas y signos',a:['Lectura de cuentos con pictogramas','Interpretación de signos y señales del entorno']},
+  s7_2:{c:'Lectura: mecánica lectora y comprensión lectora',a:['Lectura de sílabas, palabras y frases con tarjetas y abecedario móvil','Lectura comprensiva con preguntas literales e inferenciales']},
+  s7_3:{c:'Corrección de errores de lectura',a:['Lecturas repetidas para mejorar la fluidez','Lectura guiada con marcador y autocorrección de errores']},
+  s7_4:{c:'Preescritura: trazos y figuras',a:['Trazos libres y dirigidos en pizarra, arena y papel','Fichas de grafomotricidad progresiva']},
+  s7_5:{c:'Escritura en copia, al dictado y espontánea',a:['Copia y dictado de sílabas, palabras y frases trabajadas','Escritura espontánea de frases a partir de imágenes']},
+  s7_6:{c:'Corrección de errores de escritura',a:['Autocorrección guiada de omisiones, inversiones y sustituciones','Dictados con revisión y reescritura']},
+  s8_1:{c:'Expresión oral: presentaciones, instrucciones, debates y narraciones',a:['Exposiciones orales breves con guion visual','Contar experiencias y dar instrucciones a un compañero']},
+  s8_2:{c:'Vocabulario del nivel: sinónimos, antónimos, derivadas, compuestas y campos semánticos',a:['Juegos de formación de palabras con prefijos y sufijos','Mapas de campos semánticos']},
+  s8_3:{c:'Gramática: clases de palabras, oración y concordancia',a:['Identificación de clases de palabras con colores','Construcción y análisis guiado de oraciones']},
+  s8_4:{c:'Ortografía: reglas ortográficas, acentuación y signos de puntuación',a:['Dictados de palabras con la regla trabajada','Juegos de clasificar palabras por su regla ortográfica']},
+  s8_5:{c:'Literatura: poema, cuento, fábula, teatro y otros géneros',a:['Lectura y recitado de poemas y fábulas','Dramatización de textos breves']},
+  s8_6:{c:'Expresión escrita: listas, notas, cartas, cuentos, descripciones y otros textos',a:['Escritura guiada de textos breves con plantilla','Descripciones de personas, objetos y lugares con guion']}
+};
+
+function esPerfilAL(){ return !!(PERFILES[PERFIL] && PERFILES[PERFIL].al); }
+function _alEsc(t){ return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function _alListaY(arr){ if(arr.length<2) return arr[0]||''; const conY=arr.some(x=>/ y /.test(x)); return arr.slice(0,-1).join(', ')+(conY?', y ':' y ')+arr[arr.length-1]; }
+function _alItem(key){
+  const m = /^(s\d+_\d+)_(\d+)$/.exec(key); if(!m) return null;
+  for(const b of AL_CATALOGO){ for(const s of b.subs){ if(s.id===m[1]) return {b, s, it:s.items[parseInt(m[2])]}; } }
+  return null;
+}
+function _alTextoIndicador(it, ops){
+  if(!it) return '';
+  const base = it.t.replace(/[:\s]+$/,'');
+  return (ops && ops.length) ? base+': '+ops.join(', ') : base;
+}
+
+// Estado del editor
+let AL = { pId:null, sel:{}, prop:{}, paso:1, filtro:'' };
+
+function alAbrir(pId){
+  const a = alumnos[alumnoActual];
+  AL = { pId:pId||null, sel:{}, prop:{}, paso:1, filtro:'' };
+  if(pId && a.programas && a.programas[pId]){
+    const p = a.programas[pId];
+    AL.sel = JSON.parse(JSON.stringify(p.alSel||{}));
+    AL.prop = JSON.parse(JSON.stringify(p.alBloques||{}));
+    AL.paso = 2;
+  }
+  alPintar();
+  abrirModal('modalAL');
+}
+function alEditar(pId){ alAbrir(pId); }
+
+function alPintar(){
+  const box = document.getElementById('alCuerpo');
+  const pie = document.getElementById('alPie');
+  const n = Object.keys(AL.sel).length;
+  document.getElementById('alTitulo').textContent = AL.paso===1 ? '🗣️ Programa de AL · 1. Elige indicadores' : '🗣️ Programa de AL · 2. Revisa la propuesta';
+  if(AL.paso===1){
+    box.innerHTML = alHtmlPaso1();
+    pie.innerHTML = '<span style="flex:1;font-size:.8rem;color:var(--text-light)"><b id="alCuenta">'+n+'</b> indicadores elegidos</span>'+
+      '<button class="btn btn-secondary" onclick="cerrarModal(\'modalAL\')">Cancelar</button>'+
+      '<button class="btn btn-primary" onclick="alIrPaso2()">Siguiente ▶</button>';
+    const f = document.getElementById('alFiltro'); if(f){ f.value = AL.filtro; }
+  } else {
+    box.innerHTML = alHtmlPaso2();
+    pie.innerHTML = '<button class="btn btn-secondary" onclick="alIrPaso1()">◀ Indicadores</button>'+
+      '<span style="flex:1"></span>'+
+      '<button class="btn btn-secondary" onclick="cerrarModal(\'modalAL\')">Cancelar</button>'+
+      '<button class="btn btn-primary" onclick="alGuardar()">💾 Guardar programa</button>';
+  }
+}
+
+function alHtmlPaso1(){
+  const f = (AL.filtro||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const norm = t => t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  let h = '<input class="form-input" id="alFiltro" placeholder="🔎 Buscar indicador (p. ej. «soplo», «sinfones», «rima»…)" oninput="AL.filtro=this.value;alRefiltrar()" style="margin-bottom:10px">';
+  h += '<div id="alArbol">';
+  AL_CATALOGO.forEach(b=>{
+    const nB = Object.keys(AL.sel).filter(k=>{const x=_alItem(k);return x&&x.b.id===b.id;}).length;
+    let hb = '';
+    b.subs.forEach(s=>{
+      let hs = '', vistos = 0, secAnt = null;
+      s.items.forEach((it,i)=>{
+        const key = s.id+'_'+i;
+        if(f && norm(it.t+' '+(it.op||[]).join(' ')+' '+s.nombre+' '+(it.sec||'')).indexOf(f)<0) return;
+        vistos++;
+        if(it.sec && it.sec!==secAnt){ hs += '<div style="font-size:.7rem;font-weight:800;color:#0369a1;text-transform:uppercase;letter-spacing:.04em;margin:8px 0 2px">'+_alEsc(it.sec)+'</div>'; secAnt = it.sec; }
+        const marcado = !!AL.sel[key];
+        hs += '<div class="al-item'+(marcado?' on':'')+'"><label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer">'+
+              '<input type="checkbox" '+(marcado?'checked':'')+' onchange="alMarcar(\''+key+'\',this.checked)" style="margin-top:3px;width:17px;height:17px;accent-color:#0ea5e9;flex:0 0 auto">'+
+              '<span>'+_alEsc(it.t)+'</span></label>';
+        if(it.op && it.op.length && marcado){
+          const ops = AL.sel[key].op||[];
+          hs += '<div style="display:flex;flex-wrap:wrap;gap:5px;margin:6px 0 2px 25px">'+
+            it.op.map(o=>'<button type="button" class="al-chip'+(ops.includes(o)?' on':'')+'" onclick="alOpcion(\''+key+'\',\''+_alEsc(o).replace(/'/g,"\\'")+'\')">'+_alEsc(o)+'</button>').join('')+
+            '<span style="font-size:.68rem;color:var(--text-light);align-self:center">'+(ops.length?'':'(ninguna = todo)')+'</span></div>';
+        }
+        hs += '</div>';
+      });
+      if(!vistos) return;
+      const nS = Object.keys(AL.sel).filter(k=>k.indexOf(s.id+'_')===0).length;
+      hb += '<details class="al-sub"'+((f||nS)?' open':'')+'><summary>'+s.num+' '+_alEsc(s.nombre)+(nS?' <span class="al-num">'+nS+'</span>':'')+'</summary>'+hs+'</details>';
+    });
+    if(!hb) return;
+    h += '<details class="al-bloque"'+((f||nB)?' open':'')+'><summary>'+b.num+'. '+_alEsc(b.nombre)+(nB?' <span class="al-num">'+nB+'</span>':'')+'</summary>'+hb+'</details>';
+  });
+  h += '</div>';
+  return h;
+}
+function alRefiltrar(){
+  const arbol = document.getElementById('alArbol'); if(!arbol) return;
+  const tmp = document.createElement('div'); tmp.innerHTML = alHtmlPaso1();
+  arbol.innerHTML = tmp.querySelector('#alArbol').innerHTML;
+}
+function alMarcar(key,on){
+  if(on) AL.sel[key] = AL.sel[key] || {op:[]};
+  else delete AL.sel[key];
+  alRefiltrar();
+  const c = document.getElementById('alCuenta'); if(c) c.textContent = Object.keys(AL.sel).length;
+}
+function alOpcion(key,o){
+  const s = AL.sel[key]; if(!s) return;
+  s.op = s.op||[];
+  const i = s.op.indexOf(o);
+  if(i<0) s.op.push(o); else s.op.splice(i,1);
+  const x = _alItem(key); if(x && x.it.op) s.op.sort((a,b)=>x.it.op.indexOf(a)-x.it.op.indexOf(b));
+  alRefiltrar();
+}
+
+// Construye/actualiza la propuesta a partir de lo marcado, conservando lo editado
+function alConstruirPropuesta(){
+  const porB = {};
+  const orden = [];
+  AL_CATALOGO.forEach(b=>b.subs.forEach(s=>s.items.forEach((it,i)=>{ const k=s.id+'_'+i; if(AL.sel[k]){ (porB[b.id]=porB[b.id]||[]).push({k,b,s,it}); } })));
+  const nueva = {};
+  AL_CATALOGO.forEach(b=>{
+    const lista = porB[b.id]; if(!lista) return;
+    const prev = AL.prop[b.id] || {};
+    const subs = []; lista.forEach(x=>{ if(!subs.includes(x.s)) subs.push(x.s); });
+    const meta = AL_BLOQUES[b.id] || {obj:'Trabajar '+b.nombre.toLowerCase(), ck:'CCL', ce:['CE3']};
+    const objAuto = meta.obj+': '+_alListaY(subs.map(s=>s.nombre.toLowerCase()))+'.';
+    const n = lista.length;
+    const indsPrev = {}; (prev.inds||[]).forEach(x=>{ indsPrev[x.k]=x; });
+    const inds = lista.map((x,i)=>{
+      const p = indsPrev[x.k];
+      return { k:x.k, t:_alTextoIndicador(x.it, AL.sel[x.k].op), tri: p ? p.tri : (1+Math.floor(3*i/n)) };
+    });
+    const contAuto = subs.map(s=>(AL_SUB[s.id]||{}).c||s.nombre);
+    const actAuto = []; subs.forEach(s=>((AL_SUB[s.id]||{}).a||[]).forEach(t=>actAuto.push(t)));
+    const comp = 'Competencias clave: '+meta.ck+'\nCompetencias específicas (Lengua Castellana y Literatura):\n'+meta.ce.map(c=>AL_CE[c]).join('\n');
+    nueva[b.id] = {
+      nombre: b.nombre,
+      obj: prev.objEditado ? prev.obj : objAuto, objEditado: !!prev.objEditado,
+      inds,
+      cont: prev.contEditado ? prev.cont : contAuto, contEditado: !!prev.contEditado,
+      act: prev.actEditado ? prev.act : actAuto, actEditado: !!prev.actEditado,
+      comp: prev.compEditado ? prev.comp : comp, compEditado: !!prev.compEditado
+    };
+  });
+  AL.prop = nueva;
+}
+function alIrPaso2(){
+  if(!Object.keys(AL.sel).length){ toast('Marca al menos un indicador','error'); return; }
+  alConstruirPropuesta(); AL.paso = 2; alPintar();
+  document.getElementById('alCuerpo').scrollTop = 0;
+}
+function alIrPaso1(){ alLeerPaso2(); AL.paso = 1; alPintar(); }
+
+function alHtmlLista(bid,campo,items,ph){
+  let h = '<div class="al-lista" data-b="'+bid+'" data-campo="'+campo+'">';
+  items.forEach((t,i)=>{
+    h += '<div class="al-fila"><span class="al-n">'+(i+1)+'</span><textarea rows="1" class="form-input al-txt" oninput="alAuto(this)">'+_alEsc(t)+'</textarea>'+
+         '<button type="button" class="al-x" title="Eliminar" onclick="alQuitar(\''+bid+'\',\''+campo+'\','+i+')">✕</button></div>';
+  });
+  h += '<button type="button" class="btn btn-secondary btn-sm" style="margin-top:4px" onclick="alAnadir(\''+bid+'\',\''+campo+'\')">➕ '+ph+'</button></div>';
+  return h;
+}
+function alHtmlPaso2(){
+  let h = '<div class="seneca-info" style="margin-bottom:12px">Todo se puede <b>editar</b> o <b>eliminar</b>. Cada bloque será un objetivo del programa. El trimestre de cada indicador se ha repartido solo; cámbialo si quieres.</div>';
+  Object.keys(AL.prop).forEach((bid,bi)=>{
+    const P = AL.prop[bid];
+    h += '<div class="al-card" data-b="'+bid+'">';
+    h += '<div style="font-weight:800;color:#0369a1;margin-bottom:6px">🎯 Objetivo '+(bi+1)+' · '+_alEsc(P.nombre)+'</div>';
+    h += '<textarea class="form-input al-obj" rows="2" oninput="alAuto(this)">'+_alEsc(P.obj)+'</textarea>';
+    h += '<div class="al-sec">📊 Indicadores ('+P.inds.length+')</div>';
+    P.inds.forEach((x,i)=>{
+      h += '<div class="al-fila" data-k="'+x.k+'"><select class="form-select al-tri" title="Trimestre">'+[1,2,3].map(t=>'<option value="'+t+'"'+(x.tri===t?' selected':'')+'>T'+t+'</option>').join('')+'</select>'+
+           '<textarea rows="1" class="form-input al-ind" oninput="alAuto(this)">'+_alEsc(x.t)+'</textarea>'+
+           '<button type="button" class="al-x" title="Quitar indicador" onclick="alQuitarInd(\''+bid+'\','+i+')">✕</button></div>';
+    });
+    h += '<div class="al-sec">📚 Contenidos</div>'+alHtmlLista(bid,'cont',P.cont,'Añadir contenido');
+    h += '<div class="al-sec">🎮 Actividades</div>'+alHtmlLista(bid,'act',P.act,'Añadir actividad');
+    h += '<div class="al-sec">🏆 Competencias</div><textarea class="form-input al-comp" rows="4" oninput="alAuto(this)">'+_alEsc(P.comp)+'</textarea>';
+    h += '</div>';
+  });
+  setTimeout(()=>document.querySelectorAll('#alCuerpo textarea').forEach(alAuto),0);
+  return h;
+}
+function alAuto(t){ t.style.height='auto'; t.style.height=(t.scrollHeight+2)+'px'; }
+
+// Vuelca lo escrito en pantalla al estado
+function alLeerPaso2(){
+  document.querySelectorAll('#alCuerpo .al-card').forEach(card=>{
+    const bid = card.dataset.b, P = AL.prop[bid]; if(!P) return;
+    const obj = card.querySelector('.al-obj').value.trim();
+    if(obj !== P.obj){ P.obj = obj; P.objEditado = true; }
+    const inds = [];
+    card.querySelectorAll('.al-fila[data-k]').forEach(f=>{
+      inds.push({k:f.dataset.k, t:f.querySelector('.al-ind').value.trim(), tri:parseInt(f.querySelector('.al-tri').value)||1});
+    });
+    P.inds = inds;
+    ['cont','act'].forEach(campo=>{
+      const lst = card.querySelector('.al-lista[data-campo="'+campo+'"]');
+      const arr = [...lst.querySelectorAll('.al-txt')].map(t=>t.value.trim()).filter(Boolean);
+      if(JSON.stringify(arr)!==JSON.stringify(P[campo])){ P[campo] = arr; P[campo+'Editado'] = true; }
+    });
+    const comp = card.querySelector('.al-comp').value.trim();
+    if(comp !== P.comp){ P.comp = comp; P.compEditado = true; }
+  });
+}
+function alQuitar(bid,campo,i){ alLeerPaso2(); AL.prop[bid][campo].splice(i,1); AL.prop[bid][campo+'Editado']=true; alPintar(); }
+function alAnadir(bid,campo){ alLeerPaso2(); AL.prop[bid][campo].push(''); AL.prop[bid][campo+'Editado']=true; alPintar();
+  setTimeout(()=>{const l=document.querySelector('.al-lista[data-b="'+bid+'"][data-campo="'+campo+'"]');if(l){const t=l.querySelectorAll('.al-txt');if(t.length)t[t.length-1].focus();}},30); }
+function alQuitarInd(bid,i){
+  alLeerPaso2();
+  const x = AL.prop[bid].inds.splice(i,1)[0];
+  if(x) delete AL.sel[x.k];
+  if(!AL.prop[bid].inds.length) delete AL.prop[bid];
+  alPintar();
+}
+
+// Programa interno: por cada bloque, un objetivo por trimestre que tenga indicadores
+function alObjetivosInternos(prop){
+  const objs = []; let n = 1;
+  Object.keys(prop).forEach(bid=>{
+    const P = prop[bid];
+    [1,2,3].forEach(t=>{
+      const inds = P.inds.filter(x=>x.tri===t).map(x=>x.t).filter(Boolean);
+      if(!inds.length) return;
+      objs.push({numero:n++, descripcion:P.obj, trimestre:t, indicadores:inds, bloque:bid});
+    });
+  });
+  return objs;
+}
+async function alGuardar(){
+  alLeerPaso2();
+  const bloques = Object.keys(AL.prop).filter(b=>AL.prop[b].inds.length);
+  if(!bloques.length){ toast('El programa no tiene indicadores','error'); return; }
+  const a = alumnos[alumnoActual];
+  const pId = AL.pId || ('p_'+Date.now());
+  const programa = {
+    tipo:'al', modalidad:'al', nombre:'Programa de Audición y Lenguaje',
+    objetivos: alObjetivosInternos(AL.prop),
+    alSel: AL.sel, alBloques: AL.prop, actualizado: Date.now()
+  };
+  try{
+    await db.ref(PA+'/'+alumnoActual+'/programas/'+pId).set(programa);
+    a.programas = a.programas||{}; a.programas[pId] = programa;
+    // Las ediciones de Séneca hechas sobre la versión anterior ya no encajan
+    if(AL.pId && a.seneca && a.seneca[pId]){ delete a.seneca[pId]; db.ref(PA+'/'+alumnoActual+'/seneca/'+pId).remove().catch(()=>{}); }
+    const nueva = generarProgramacion(a);
+    await db.ref(PA+'/'+alumnoActual+'/programacion').set(nueva);
+    a.programacion = nueva;
+    cerrarModal('modalAL');
+    try{ renderProgs(); renderProg(); }catch(e){}
+    toast(AL.pId ? 'Programa de AL actualizado ✓' : 'Programa de AL creado ✓','success');
+  }catch(e){ toast('No se pudo guardar: '+(e.message||e),'error'); }
+}
+
+// ── Séneca para el programa de AL ─────────────────────────────────
+function renderSenecaAL(pId,p,a,progNum){
+  const B = p.alBloques || {};
+  const nombre = 'PROGRAMA ESPECÍFICO DE AUDICIÓN Y LENGUAJE';
+  const bids = Object.keys(B).filter(b=>(B[b].inds||[]).length);
+  let h = '<div class="seneca-programa" style="border-left-color:#0ea5e9">';
+  h += '<div class="seneca-programa-header"><span class="seneca-programa-titulo">🗣️ Programa '+progNum+': Audición y Lenguaje</span></div>';
+  h += '<div class="seneca-seccion"><div class="seneca-seccion-header"><span class="seneca-seccion-titulo">📋 Nombre del Programa</span>'+
+       '<button class="btn-copiar" onclick="copiarSeneca(this,\''+nombre+'\')">📋 Copiar</button></div><div class="seneca-contenido">'+nombre+'</div></div>';
+  h += '<div class="seneca-seccion" style="border:2px solid var(--primary)"><div class="seneca-seccion-header">'+
+       '<span class="seneca-seccion-titulo">🎯 Objetivos del programa ('+bids.length+')</span>'+
+       '<button class="btn-copiar" onclick="copiarIndicadoresSeneca(this)" title="Copia todos los objetivos, uno por línea">📋 Copiar todos</button></div><div class="seneca-indicadores-lista">';
+  bids.forEach((b,i)=>{
+    h += '<div class="seneca-indicador-item"><span class="seneca-indicador-num">'+(i+1)+'</span><span class="seneca-indicador-texto">'+_escHTML(B[b].obj)+'</span>'+
+         '<button class="btn-copiar btn-copiar-sm" onclick="copiarSeneca(this,\''+escaparTexto(B[b].obj)+'\')">📋</button></div>';
+  });
+  h += '</div></div>';
+  bids.forEach((b,idx)=>{
+    const P = B[b];
+    h += '<div class="seneca-objetivo"><div class="seneca-objetivo-header"><span class="seneca-objetivo-titulo">🎯 Objetivo '+(idx+1)+' · '+_escHTML(P.nombre||'')+'</span></div>';
+    h += '<div class="seneca-seccion"><div class="seneca-seccion-header"><span class="seneca-seccion-titulo">Definición del objetivo</span>'+
+         '<button class="btn-copiar" onclick="copiarSeneca(this,`'+escaparTexto(P.obj)+'`)">📋 Copiar</button></div><div class="seneca-contenido">'+_escHTML(P.obj)+'</div></div>';
+    h += senecaLista('📊 Indicadores',(P.inds||[]).map(x=>x.t).filter(Boolean),pId,idx,'ind');
+    h += senecaLista('📚 Contenidos',(P.cont||[]).filter(Boolean),pId,idx,'cont');
+    h += senecaLista('🎮 Actividades',(P.act||[]).filter(Boolean),pId,idx,'act');
+    h += '<div class="seneca-seccion"><div class="seneca-seccion-header"><span class="seneca-seccion-titulo">🏆 Competencias</span>'+
+         '<button class="btn-copiar" onclick="copiarSeneca(this,`'+escaparTexto(P.comp||'')+'`)">📋 Copiar</button></div><div class="seneca-contenido">'+_escHTML(P.comp||'')+'</div></div>';
+    h += '</div>';
+  });
+  h += '<div class="seneca-objetivo" style="border-color:#f59e0b"><div class="seneca-objetivo-header"><span class="seneca-objetivo-titulo" style="color:#b45309">🗂️ Organización y Recursos Materiales</span></div>';
+  h += senecaBloqueTexto('🏫 Organización',senecaOrganizacion(alumnoActual,p));
+  h += senecaBloqueTexto('🧰 Recursos Materiales',senecaRecursosAL(alumnoActual,p));
+  h += '</div></div>';
+  return h;
+}
+function senecaRecursosAL(id,p){
+  const a = alumnos[id];
+  const ciclo = getCicloDeAlumno(a);
+  const bajo = (ciclo==='infantil'||ciclo==='ciclo1');
+  const B = p.alBloques||{};
+  const tiene = b => !!(B[b] && (B[b].inds||[]).length);
+  const prog = [], mat = ['espejo', 'láminas y tarjetas de vocabulario', 'pictogramas de ARASAAC'];
+  if(tiene('b2')){ prog.push('registro fonológico inducido','PLON-R'); mat.push('material de soplo (pajitas, molinillos, velas)','lotos fonéticos'); }
+  if(tiene('b1')) mat.push('juegos de atención y discriminación auditiva');
+  if(tiene('b3')||tiene('b4')) mat.push('tarjetas para construir frases','secuencias temporales');
+  if(tiene('b5')) mat.push('historias sociales','juegos de turnos');
+  if(tiene('b7')||tiene('b8')){ prog.push(bajo?'Letrilandia':'lecturas graduadas'); mat.push('abecedario móvil','fichas de lectoescritura adaptadas'); }
+  mat.push('cuentos e imágenes para narrar');
+  const txt = [
+    'Bibliografía: Orden 30/05/2023 (currículo) e Instrucciones 8/03/2017 (NEAE).',
+    prog.length ? 'Programas y pruebas: '+[...new Set(prog)].join(', ')+'.' : '',
+    'Software: Wordwall, LiveWorksheets y ARASAAC, y apps propias del centro.',
+    'Web: arasaac.org, soyvisual.org.',
+    'Materiales: '+[...new Set(mat)].join(', ')+'.'
+  ].filter(Boolean).join('\n');
+  return txt.slice(0,500);
+}
+
+// ── Centros (Lorena trabaja en dos colegios) ─────────────────────
+function alCentroClave(p){ return 'gestorpe_centro_'+p; }
+function elegirCentro(p, alTerminar){
+  const info = PERFILES[p]; if(!info || !info.centros){ alTerminar(); return; }
+  let ult = null; try{ ult = localStorage.getItem(alCentroClave(p)); }catch(e){}
+  try{ if(sessionStorage.getItem('gestorpe_centro_ok')===p && ult && info.centros[ult]){ aplicarCentro(p,ult); alTerminar(); return; } }catch(e){}
+  let ov = document.getElementById('screenCentro');
+  if(!ov){ ov = document.createElement('div'); ov.id='screenCentro'; ov.className='perfil-overlay'; document.body.appendChild(ov); }
+  let h = '<div class="perfil-box"><h2>🏫 ¿En qué colegio?</h2><p>Elige el centro en el que vas a trabajar ahora.</p>';
+  Object.keys(info.centros).forEach(c=>{
+    const ce = info.centros[c];
+    h += '<button class="perfil-btn" onclick="alElegirCentro(\''+p+'\',\''+c+'\')"'+(c===ult?' style="border-color:#1565C0;background:#E3F2FD"':'')+'>'+
+         '<span class="perfil-emoji">'+(ce.emoji||'🏫')+'</span><span><span class="perfil-nombre">'+ce.nombre+'</span><br><span class="perfil-sub">'+(ce.lugar||'')+(c===ult?' · último usado':'')+'</span></span></button>';
+  });
+  h += '</div>';
+  ov.innerHTML = h; ov.style.display = 'flex';
+  window._alTrasCentro = alTerminar;
+}
+function alElegirCentro(p,c){
+  try{ localStorage.setItem(alCentroClave(p),c); sessionStorage.setItem('gestorpe_centro_ok',p); }catch(e){}
+  aplicarCentro(p,c);
+  const ov = document.getElementById('screenCentro'); if(ov) ov.style.display='none';
+  const f = window._alTrasCentro; window._alTrasCentro = null; if(f) f();
+}
+let CENTRO = null;
+function aplicarCentro(p,c){
+  const info = PERFILES[p]; if(!info||!info.centros||!info.centros[c]) return;
+  CENTRO = c;
+  ROOT = info.centros[c].root;
+  try{ setCursoPaths(); }catch(e){}
+  const badge = document.getElementById('perfilBadge');
+  if(badge) badge.textContent = info.emoji+' '+info.nombre;
+  let pill = document.getElementById('centroPill');
+  if(!pill && badge){
+    pill = document.createElement('button'); pill.id='centroPill'; pill.className='perfil-pill'; pill.title='Cambiar de colegio';
+    pill.onclick = cambiarCentro; badge.parentNode.insertBefore(pill, badge);
+  }
+  if(pill) pill.textContent = '🏫 '+(info.centros[c].corto||info.centros[c].nombre);
+}
+async function cambiarCentro(){
+  const info = PERFILES[PERFIL]; if(!info||!info.centros) return;
+  const otros = Object.keys(info.centros).filter(c=>c!==CENTRO);
+  if(!otros.length) return;
+  const dest = otros[0];
+  if(!await confirmar('Vas a pasar a '+info.centros[dest].nombre+'. Cada colegio tiene sus propios alumnos, grupos y cursos.',{titulo:'¿Cambiar de colegio?',ok:'Cambiar'})) return;
+  try{ localStorage.setItem(alCentroClave(PERFIL),dest); sessionStorage.setItem('gestorpe_centro_ok',PERFIL); }catch(e){}
+  location.reload();
+}
+
+</script>
+<script>
 // ===== Novedades (salen una sola vez en cada dispositivo) =====
 (function(){
-  var ID='2026-10-12', K='novedades-gestorpt', ITEMS=["📅 Programación: arreglado el desfase de días (el 12 de octubre ya sale en lunes) y los festivos caen en su día.", "🏫 Actividades del Aula PT para todos los cursos, de Infantil a 6.º, y su nombre se ve en cada casilla de la programación.", "🔄 La programación de cada alumno se reajusta sola desde hoy en adelante; lo pasado y lo que tiene resultados no se toca."];
+  var ID='2026-10-20', K='novedades-gestorpt', ITEMS=["🗣️ Nuevo perfil de Audición y Lenguaje (Lorena), con elección de colegio: Capitulaciones o Reyes Católicos.", "📋 En AL, el programa se crea marcando indicadores del plan de trabajo de AL; la app propone objetivos, contenidos, actividades y competencias, todo editable.", "🏛️ La pestaña Séneca del programa de AL tiene los mismos apartados y botones de copiar que en PT."];
   function ver(){ try{ if(localStorage.getItem(K)===ID) return; }catch(e){ return; }
     var d=document.createElement('div');
     d.style.cssText='position:fixed;inset:0;background:rgba(15,23,42,.55);display:flex;align-items:center;justify-content:center;z-index:99999;padding:18px;font-family:inherit';

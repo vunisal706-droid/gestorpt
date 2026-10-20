@@ -106,7 +106,7 @@ if (P && AREAS && CICLOS) {
   // ═══════════ 4. COBERTURA ═══════════
   sec('4. Cobertura ciclo × área');
   const cic = ['infantil', 'ciclo1', 'ciclo2', 'ciclo3'];
-  const tipos = Object.keys(AREAS).filter(k => k !== 'lectoescritura');
+  const tipos = Object.keys(AREAS).filter(k => k !== 'lectoescritura' && k !== 'al'); // 'al' no usa plantillas: se construye desde el catálogo de AL
   console.log('     ' + 'área'.padEnd(14) + cic.map(c => CICLOS[c].nombre.padEnd(9)).join(''));
   const huecos = [];
   tipos.forEach(tp => {
