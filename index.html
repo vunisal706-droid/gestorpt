@@ -2716,7 +2716,7 @@
                     const p=a.programas[pId];if(!p||!p.objetivos)return;
                     Object.keys(p.objetivos).forEach(k=>{
                         const o=p.objetivos[k];if(!o||o.criterio)return;
-                        const c=buscar(o,p.tipo,p.cicloOrigen||cicloA);
+                        const c=(p.tipo==='al'&&typeof alCriterioCiclo==='function')?alCriterioCiclo(o.bloque,p.cicloOrigen||cicloA):buscar(o,p.tipo,p.cicloOrigen||cicloA);
                         if(c){o.criterio=c;updates[PA+'/'+id+'/programas/'+pId+'/objetivos/'+k+'/criterio']=c;n++;}
                     });
                 });
@@ -10527,6 +10527,33 @@ const AL_COMP = {
   CE:'CE (Competencia Emprendedora)',
   CCEC:'CCEC (Competencia en Conciencia y Expresión Culturales)'
 };
+// Criterio LOMLOE por defecto de cada bloque (ciclo del alumno). Se puede cambiar.
+const AL_CRIT = { b1:['1.1','CCL.2'], b2:['2.1','CCL.1'], b3:['8.1','CCL.1'], b4:['2.1','CCL.1'], b5:['2.2','CCL.5'], b6:['1.1','CCL.2'], b7:['3.1','CCL.4'], b8:['4.1','CCL.3'] };
+const AL_CRIT_INF = { 'CCL.1':'Expresarse oralmente de forma coherente y adecuada a la situación', 'CCL.2':'Comprender mensajes orales y textos sencillos', 'CCL.3':'Localizar y usar información de forma guiada', 'CCL.4':'Disfrutar de la escucha y la lectura de textos adaptados', 'CCL.5':'Usar el lenguaje para convivir de forma respetuosa' };
+function alCriteriosCiclo(){
+  const a = alumnos[alumnoActual]; const c = a ? getCicloDeAlumno(a) : 'ciclo1';
+  if(c==='infantil') return AL_CRIT_INF;
+  return (typeof ACI_CRITERIOS!=='undefined' && ACI_CRITERIOS.LCL && ACI_CRITERIOS.LCL[c]) || {};
+}
+function alCriterioCiclo(bid,c){
+  const d = AL_CRIT[bid] || ['2.1','CCL.1'];
+  if(c==='infantil') return d[1];
+  const lista = (typeof ACI_CRITERIOS!=='undefined' && ACI_CRITERIOS.LCL && ACI_CRITERIOS.LCL[c]) || {};
+  const n = String(c||'ciclo1').replace('ciclo','');
+  let k = 'LCL.'+n+'.'+d[0];
+  if(!lista[k] && d[0]==='2.2') k = 'LCL.'+n+'.2.1';
+  return lista[k] ? k : (Object.keys(lista)[0]||k);
+}
+function alCriterioPorDefecto(bid){
+  const a = alumnos[alumnoActual]; const c = a ? getCicloDeAlumno(a) : 'ciclo1';
+  const d = AL_CRIT[bid] || ['2.1','CCL.1'];
+  if(c==='infantil') return d[1];
+  const n = c.replace('ciclo','');
+  const lista = alCriteriosCiclo();
+  let k = 'LCL.'+n+'.'+d[0];
+  if(!lista[k] && d[0]==='2.2') k = 'LCL.'+n+'.2.1';
+  return lista[k] ? k : (Object.keys(lista)[0]||k);
+}
 function alCompTexto(c){ return Array.isArray(c) ? c.map(k=>AL_COMP[k]||k).join('\n') : String(c||''); }
 // Por subcategoría: contenido que se propone y actividades tipo
 const AL_SUB = {
@@ -10712,6 +10739,7 @@ function alConstruirPropuesta(){
       inds,
       cont: prev.contEditado ? prev.cont : contAuto, contEditado: !!prev.contEditado,
       act: prev.actEditado ? prev.act : actAuto, actEditado: !!prev.actEditado,
+      crit: prev.crit || alCriterioPorDefecto(b.id),
       comp: (prev.compEditado && Array.isArray(prev.comp)) ? prev.comp : comp, compEditado: !!(prev.compEditado && Array.isArray(prev.comp))
     };
   });
@@ -10740,6 +10768,10 @@ function alHtmlPaso2(){
     h += '<div class="al-card" data-b="'+bid+'">';
     h += '<div style="font-weight:800;color:#0369a1;margin-bottom:6px">🎯 Objetivo '+(bi+1)+' · '+_alEsc(P.nombre)+'</div>';
     h += '<textarea class="form-input al-obj" rows="2" oninput="alAuto(this)">'+_alEsc(P.obj)+'</textarea>';
+    const crits = alCriteriosCiclo(); const critSel = P.crit || alCriterioPorDefecto(bid);
+    h += '<div class="al-sec">🏷️ Criterio LOMLOE</div><select class="form-select al-crit">'+
+         Object.keys(crits).map(k=>'<option value="'+k+'"'+(k===critSel?' selected':'')+'>'+k+' · '+_alEsc(crits[k])+'</option>').join('')+
+         (crits[critSel]?'':'<option value="'+_alEsc(critSel)+'" selected>'+_alEsc(critSel)+'</option>')+'</select>';
     h += '<div class="al-sec">📊 Indicadores ('+P.inds.length+')</div>';
     P.inds.forEach((x,i)=>{
       h += '<div class="al-fila" data-k="'+x.k+'"><select class="form-select al-tri" title="Trimestre">'+[1,2,3].map(t=>'<option value="'+t+'"'+(x.tri===t?' selected':'')+'>T'+t+'</option>').join('')+'</select>'+
@@ -10763,6 +10795,7 @@ function alLeerPaso2(){
     const bid = card.dataset.b, P = AL.prop[bid]; if(!P) return;
     const obj = card.querySelector('.al-obj').value.trim();
     if(obj !== P.obj){ P.obj = obj; P.objEditado = true; }
+    const cs = card.querySelector('.al-crit'); if(cs) P.crit = cs.value;
     const inds = [];
     card.querySelectorAll('.al-fila[data-k]').forEach(f=>{
       inds.push({k:f.dataset.k, t:f.querySelector('.al-ind').value.trim(), tri:parseInt(f.querySelector('.al-tri').value)||1});
@@ -10796,7 +10829,7 @@ function alObjetivosInternos(prop){
     [1,2,3].forEach(t=>{
       const inds = P.inds.filter(x=>x.tri===t).map(x=>x.t).filter(Boolean);
       if(!inds.length) return;
-      objs.push({numero:n++, descripcion:P.obj, trimestre:t, indicadores:inds, bloque:bid});
+      objs.push({numero:n++, descripcion:P.obj, trimestre:t, indicadores:inds, bloque:bid, criterio:P.crit||alCriterioPorDefecto(bid)});
     });
   });
   return objs;
