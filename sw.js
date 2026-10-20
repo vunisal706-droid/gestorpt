@@ -6,7 +6,7 @@
 //  · HTML: network-first (para no servir lógica vieja).
 //  · Resto: stale-while-revalidate.
 
-const VERSION     = 'v9-b2610201347';
+const VERSION     = 'v9-b2610201352';
 const CACHE_SHELL = 'gestor-pe-shell-' + VERSION;
 const CACHE_LIBS  = 'gestor-pe-libs-'  + VERSION;
 const CACHES_OK   = [CACHE_SHELL, CACHE_LIBS];
