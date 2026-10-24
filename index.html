@@ -410,6 +410,7 @@
                 <button class="nav-scroll-btn" id="navScrollLeft" onclick="navScroll(-1)" title="Anterior">◀</button>
                 <div class="nav-tabs" id="navTabsBar">
                 <button class="nav-tab active" onclick="cambiarSeccion('alumnos',this)">👥 Alumnos</button>
+                <button class="nav-tab" onclick="cambiarSeccion('hoy',this)">📅 Hoy</button>
                 <button class="nav-tab" onclick="cambiarSeccion('grupos',this)">👨‍👧‍👦 Grupos</button>
                 <button class="nav-tab" onclick="cambiarSeccion('estadisticas',this)">📊 Estadísticas</button>
                 <button class="nav-tab" onclick="cambiarSeccion('sda',this)">🎓 SDA</button>
@@ -434,6 +435,7 @@
                     <div class="alumnos-grid" id="alumnosGrid"></div>
                 </div>
             </div>
+            <div id="seccionHoy" style="display:none"></div>
             <div id="seccionEstadisticas" style="display:none">
                 <div class="card">
                     <div class="card-header">
@@ -1644,7 +1646,7 @@
         function _sinColeCal(ds){return (window.CalendarioCole&&CalendarioCole.sinCole)?CalendarioCole.sinCole(ds):null;}
         let CAL_FIRMA='';
         if(window.CalendarioCole&&CalendarioCole.listo) CalendarioCole.listo.then(()=>{try{
-            if(ajustarMesesAlCalendario()&&typeof alumnos!=='undefined'&&alumnos){aplicarCalendarioAlumnos();if(alumnoActual&&alumnos[alumnoActual]&&document.getElementById('tabProgramacion'))renderProg();}
+            if(ajustarMesesAlCalendario()&&typeof alumnos!=='undefined'&&alumnos){aplicarCalendarioAlumnos();if(typeof renderHoy==='function'&&document.getElementById('seccionHoy')&&document.getElementById('seccionHoy').style.display!=='none')renderHoy();if(alumnoActual&&alumnos[alumnoActual]&&document.getElementById('tabProgramacion'))renderProg();}
         }catch(e){console.warn('calendario',e);}});
         function ajustarMesesAlCalendario(){
             if(!window.CalendarioCole) return false;
@@ -2690,6 +2692,7 @@
             aplicarCalendarioAlumnos();
             aciData={};Object.keys(alumnos).forEach(id=>{if(alumnos[id].aci)aciData[id]=alumnos[id].aci;});
             renderInicio();
+            if(typeof renderHoy==='function'&&document.getElementById('seccionHoy')&&document.getElementById('seccionHoy').style.display!=='none')renderHoy();
             if(alumnoActual&&alumnos[alumnoActual]){renderProgs();renderProg();renderEval();renderAsis();}
             if(document.getElementById('seccionACI').style.display!=='none')renderAciSeccion();
         }
@@ -2953,7 +2956,114 @@
             });
         })();
 
-        function cambiarSeccion(s,btn){document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');document.getElementById('seccionAlumnos').style.display=s==='alumnos'?'block':'none';document.getElementById('seccionEstadisticas').style.display=s==='estadisticas'?'block':'none';document.getElementById('seccionSDA').style.display=s==='sda'?'block':'none';document.getElementById('seccionBiblioteca').style.display=s==='biblioteca'?'block':'none';document.getElementById('seccionRecursos').style.display=s==='recursos'?'block':'none';document.getElementById('seccionSeguimiento').style.display=s==='seguimiento'?'block':'none';document.getElementById('seccionGrupos').style.display=s==='grupos'?'block':'none';document.getElementById('seccionACI').style.display=s==='aci'?'block':'none';document.getElementById('seccionMemoria').style.display=s==='memoria'?'block':'none';document.getElementById('seccionInformes').style.display=s==='informes'?'block':'none';if(s==='biblioteca'){if(alumnoActual&&alumnos[alumnoActual]){const fc=document.getElementById('filtroCiclo');if(fc&&!fc.value)fc.value=getCicloDeAlumno(alumnos[alumnoActual]);}renderBiblioteca();}if(s==='estadisticas')renderEstadisticasGlobal();if(s==='recursos')inicializarRecursos();if(s==='seguimiento')renderSeguimiento();if(s==='grupos')renderGrupos();if(s==='aci')renderAciSeccion();if(s==='memoria')memoriaIniciar();if(s==='informes')informesIniciar();}
+        // ═══ Pestaña «Hoy»: sesiones del día y ausencias ═══════════════════════
+        // Usa el calendario escolar común (agenda/calendario.json, vía CalendarioCole):
+        // festivos y vacaciones no son días de cole y se saltan al navegar.
+        let hoyFecha=null;
+        const _hEsc=t=>String(t==null?'':t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        const _MES_L=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+        const _DIA_L=['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+        function _hMas(ds,n){const d=new Date(ds+'T12:00');d.setDate(d.getDate()+n);return _isoD(d);}
+        function _hNoCole(ds){const d=new Date(ds+'T12:00').getDay();if(d===0||d===6)return {nombre:'Fin de semana',emoji:'😎',tipo:'finde'};return _sinColeCal(ds);}
+        function _hProxLectivo(ds,dir){let x=ds;for(let i=0;i<400;i++){x=_hMas(x,dir);if(!_hNoCole(x))return x;}return null;}
+        function _hLargo(ds){const d=new Date(ds+'T12:00');return _DIA_L[d.getDay()]+' '+d.getDate()+' de '+_MES_L[d.getMonth()];}
+        // Clave «mes_semana_día» de una fecha para un alumno (null si ese día no le toca)
+        function claveSesionFecha(a,ds){
+            const f=new Date(ds+'T12:00'), dow=f.getDay()-1;
+            if(dow<0||dow>4) return null;
+            if((a.diasSesion||[1,3,4]).indexOf(dow)<0) return null;
+            const lu=new Date(f); lu.setDate(lu.getDate()-dow); const luIso=_isoD(lu);
+            for(let mi=0;mi<MESES.length;mi++){const ix=(MESES[mi].lunes||[]).indexOf(luIso); if(ix>=0) return mi+'_'+(ix+1)+'_'+dow;}
+            // Sin calendario cargado: solo sabemos calcular el día de hoy
+            if(ds===_hoyIso()&&typeof geuSesionDeFecha==='function') return geuSesionDeFecha(a,f);
+            return null;
+        }
+        function hoyIr(dir){
+            const base=window._hoyMostrado||hoyFecha||_hoyIso();
+            if(dir===0){hoyFecha=null;}else{const x=_hProxLectivo(base,dir);if(x)hoyFecha=x;}
+            renderHoy();
+        }
+        function hoyElegir(v){if(v){hoyFecha=v;renderHoy();}}
+        function _hContenido(a,k){
+            const c=a.programacion?a.programacion[k]:null;
+            let h='';
+            if(c&&a.programas&&a.programas[c.pId]){
+                const p=a.programas[c.pId],obj=p.objetivos?p.objetivos[c.oIdx]:null,info=AREAS[p.tipo]||{nombre:p.tipo,icon:'📄',color:'#475569'};
+                h+='<div class="hoy-prog" style="--c:'+(info.color||'#475569')+'">'+(info.icon||'📄')+' '+_hEsc(info.nombre||p.tipo)+'</div>';
+                if(obj){
+                    const ind=obj.indicadores?(obj.indicadores[c.iIdx]||''):'';
+                    h+='<div class="hoy-obj"><b>O'+_hEsc(obj.numero)+'.</b> '+_hEsc(obj.descripcion||'')+(obj.criterio?' <span class="hoy-crit">'+_hEsc(obj.criterio)+'</span>':'')+'</div>';
+                    if(ind) h+='<div class="hoy-ind">🎯 '+_hEsc(ind)+'</div>';
+                }
+                const r=c.recursoId&&typeof RECURSOS_ONLINE!=='undefined'?RECURSOS_ONLINE.find(x=>x.id===c.recursoId):null;
+                if(r) h+='<div class="hoy-rec">'+(String(r.titulo).indexOf('🏫')===0?'':'📎 ')+(r.url?'<a href="'+_hEsc(r.url)+'" target="_blank" rel="noopener">'+_hEsc(r.titulo)+'</a>':_hEsc(r.titulo))+'</div>';
+                try{const ap=appsDeCelda(a,c);if(ap&&ap.length)h+='<div class="hoy-apps">'+ap.map(x=>chipApp(x,false)).join('')+'</div>';}catch(e){}
+            } else {
+                h+='<div class="hoy-vacio">Sin contenido programado para esta sesión.</div>';
+            }
+            try{const g=geuTextoSesion(a,k);if(g)h+='<div class="hoy-geu">📚 '+_hEsc(g)+'</div>';}catch(e){}
+            try{const ev=(momentosEvaluacion(a).porK||{})[k]||[];if(ev.length){const ec=a.evalCriterios||{};h+='<div class="hoy-eval">📝 Toca evaluar: '+ev.map(e=>_hEsc(e.crit)+(ec[e.clave]?' ✓'+_hEsc(ec[e.clave]):'')).join(', ')+'</div>';}}catch(e){}
+            return h;
+        }
+        function renderHoy(){
+            const box=document.getElementById('seccionHoy'); if(!box) return;
+            const hoy=_hoyIso();
+            let ds=hoyFecha||hoy, nota='';
+            const nc=_hNoCole(ds);
+            if(!hoyFecha&&nc){const sig=_hProxLectivo(ds,1); if(sig){nota=(nc.emoji||'🏠')+' Hoy no hay cole ('+_hEsc(nc.nombre)+'). Te enseño el próximo día de cole.'; ds=sig;}}
+            window._hoyMostrado=ds;
+            const ncDs=_hNoCole(ds);
+            const fueraCurso=!MESES.some(m=>m.lunes&&m.lunes.length);
+            const ids=Object.keys(alumnos||{});
+            const orden={infantil:0,ciclo1:1,ciclo2:2,ciclo3:3};
+            const filas=[];
+            if(!ncDs) ids.forEach(id=>{const a=alumnos[id];const k=claveSesionFecha(a,ds);if(k)filas.push({id,a,k});});
+            filas.sort((x,y)=>((orden[x.a.ciclo]??9)-(orden[y.a.ciclo]??9))||String(x.a.curso).localeCompare(String(y.a.curso))||String(x.a.siglas).localeCompare(String(y.a.siglas)));
+            const est=f=>{const a=f.a,k=f.k;if(a.ausencias&&a.ausencias[k])return 'ausencia';if(a.sincole&&a.sincole[k]&&!(a._scAuto&&a._scAuto[k]))return 'sincole';return 'asiste';};
+            const nAus=filas.filter(f=>est(f)!=='asiste').length;
+            const titulo=ds===hoy?'Hoy':(ds===_hMas(hoy,1)?'Mañana':(ds===_hMas(hoy,-1)?'Ayer':''));
+            let h='<div class="card hoy-card"><div class="hoy-cab"><div><div class="hoy-kicker">'+(titulo||'Día de cole')+'</div><h2 class="card-title hoy-fecha">'+_hLargo(ds)+'</h2></div>'
+              +'<div class="hoy-nav"><button class="btn btn-secondary btn-sm" onclick="hoyIr(-1)" title="Día de cole anterior" aria-label="Día de cole anterior">◀</button>'
+              +'<button class="btn btn-secondary btn-sm" onclick="hoyIr(0)"'+(!hoyFecha?' disabled':'')+'>Hoy</button>'
+              +'<button class="btn btn-secondary btn-sm" onclick="hoyIr(1)" title="Día de cole siguiente" aria-label="Día de cole siguiente">▶</button>'
+              +'<input type="date" class="form-input hoy-date" value="'+ds+'" onchange="hoyElegir(this.value)" aria-label="Elegir fecha"></div></div>';
+            if(nota) h+='<div class="hoy-aviso">'+nota+'</div>';
+            if(ncDs){
+                h+='<div class="hoy-libre">'+(ncDs.emoji||'🏠')+' <b>No hay cole</b> · '+_hEsc(ncDs.nombre)+'</div>';
+            } else if(!filas.length){
+                h+='<div class="hoy-libre">🙌 Ningún alumno tiene sesión este día.'+(fueraCurso?'<br><small>El calendario escolar aún no se ha cargado; revisa la conexión.</small>':'')+'</div>';
+            } else {
+                h+='<div class="hoy-resumen"><b>'+filas.length+'</b> '+(filas.length===1?'sesión':'sesiones')+(nAus?' · <span style="color:var(--danger)"><b>'+nAus+'</b> sin asistir</span>':'')+'</div><div class="hoy-lista">';
+                filas.forEach(f=>{
+                    const e=est(f), a=f.a, dow=+f.k.split('_')[2];
+                    h+='<div class="hoy-al hoy-'+e+'"><div class="hoy-al-cab"><button class="hoy-sig" onclick="abrirAlumno(\''+f.id+'\')" title="Abrir la ficha">'+_hEsc(a.siglas)+'</button><span class="hoy-curso">'+_hEsc(a.curso||'')+'</span>'
+                      +'<button class="btn btn-secondary btn-sm hoy-edit" onclick="hoyEditar(\''+f.id+'\',\''+f.k+'\','+dow+')">✏️ Sesión</button></div>';
+                    h+=e==='asiste'?_hContenido(a,f.k):'<div class="hoy-vacio">'+(e==='ausencia'?'❌ Ausencia registrada. Lo programado pasa a la siguiente sesión.':'🏫 Sin cole (excursión, actividad…). Lo programado pasa a la siguiente sesión.')+'</div>';
+                    h+='<div class="hoy-estado" role="group" aria-label="Asistencia de '+_hEsc(a.siglas)+'">'
+                      +['asiste','ausencia','sincole'].map(x=>'<button type="button" class="asist-btn '+x+(e===x?' selected':'')+'" aria-pressed="'+(e===x)+'" onclick="hoyMarcar(\''+f.id+'\',\''+f.k+'\',\''+x+'\')">'+({asiste:'✅ Asiste',ausencia:'❌ Ausencia',sincole:'🏫 Sin cole'})[x]+'</button>').join('')
+                      +'</div></div>';
+                });
+                h+='</div>';
+            }
+            h+='</div>';
+            box.innerHTML=h;
+        }
+        function hoyMarcar(id,k,estado){
+            const a=alumnos[id]; if(!a) return;
+            const base=PA+'/'+id+'/', u={};
+            u[base+'ausencias/'+k]=null; u[base+'sincole/'+k]=null; u[base+'resultados/'+k]=null;
+            const aTmp={...a, ausencias:{...(a.ausencias||{})}, sincole:{...(a.sincole||{})}};
+            delete aTmp.ausencias[k]; delete aTmp.sincole[k];
+            if(estado==='ausencia'||estado==='sincole'){const t=estado==='ausencia'?'ausencias':'sincole';u[base+t+'/'+k]=true;aTmp[t][k]=true;}
+            const era=(a.ausencias&&a.ausencias[k])||(a.sincole&&a.sincole[k]&&!(a._scAuto&&a._scAuto[k]));
+            if(estado==='asiste'&&!era) return;
+            // Igual que en el cuadrante: la programación se recoloca saltando los días perdidos
+            if(a.programas&&Object.keys(a.programas).length) u[base+'programacion']=generarProgramacion(aTmp);
+            db.ref().update(u).then(()=>toast(estado==='asiste'?a.siglas+': asiste ✓':(estado==='ausencia'?a.siglas+': ausencia ✓':a.siglas+': sin cole ✓'),'success'))
+              .catch(e=>toast('No se pudo guardar: '+(e&&e.message?e.message:'error de conexión'),'error'));
+        }
+        function hoyEditar(id,k,dow){alumnoActual=id;editarCelda(k,dow);}
+        function cambiarSeccion(s,btn){document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');document.getElementById('seccionAlumnos').style.display=s==='alumnos'?'block':'none';document.getElementById('seccionHoy').style.display=s==='hoy'?'block':'none';if(s==='hoy'){hoyFecha=null;renderHoy();}document.getElementById('seccionEstadisticas').style.display=s==='estadisticas'?'block':'none';document.getElementById('seccionSDA').style.display=s==='sda'?'block':'none';document.getElementById('seccionBiblioteca').style.display=s==='biblioteca'?'block':'none';document.getElementById('seccionRecursos').style.display=s==='recursos'?'block':'none';document.getElementById('seccionSeguimiento').style.display=s==='seguimiento'?'block':'none';document.getElementById('seccionGrupos').style.display=s==='grupos'?'block':'none';document.getElementById('seccionACI').style.display=s==='aci'?'block':'none';document.getElementById('seccionMemoria').style.display=s==='memoria'?'block':'none';document.getElementById('seccionInformes').style.display=s==='informes'?'block':'none';if(s==='biblioteca'){if(alumnoActual&&alumnos[alumnoActual]){const fc=document.getElementById('filtroCiclo');if(fc&&!fc.value)fc.value=getCicloDeAlumno(alumnos[alumnoActual]);}renderBiblioteca();}if(s==='estadisticas')renderEstadisticasGlobal();if(s==='recursos')inicializarRecursos();if(s==='seguimiento')renderSeguimiento();if(s==='grupos')renderGrupos();if(s==='aci')renderAciSeccion();if(s==='memoria')memoriaIniciar();if(s==='informes')informesIniciar();}
         function renderInicio(){const g=document.getElementById('alumnosGrid'),ids=Object.keys(alumnos);if(!ids.length){g.innerHTML='<div class="alumno-card alumno-card-add" onclick="abrirModalNuevo()"><span style="font-size:1.3rem">➕</span><span style="font-size:.8rem">Añadir</span></div>';return;}let h=ids.map(id=>{const a=alumnos[id],n=a.programas?Object.keys(a.programas).length:0;return'<div class="alumno-card" onclick="abrirAlumno(\''+id+'\')"><div class="alumno-siglas">'+a.siglas+'</div><div class="alumno-curso">'+a.curso+'</div><div class="alumno-progs">'+n+' prog.</div></div>';}).join('');h+='<div class="alumno-card alumno-card-add" onclick="abrirModalNuevo()"><span style="font-size:1.3rem">➕</span></div>';g.innerHTML=h;}
         
         // BIBLIOTECA
@@ -11011,7 +11121,7 @@ async function cambiarCentro(){
 <script>
 // ===== Novedades (salen una sola vez en cada dispositivo) =====
 (function(){
-  var ID='2026-10-21-diseno', K='novedades-gestorpt', ITEMS=["🎨 <b>Nuevo diseño</b>: la app estrena aspecto, más moderno y con los colores del cole.","🧭 Las secciones (Alumnos, Grupos, Estadísticas, SDA, Informes…) están en la <b>barra lateral</b>; en el móvil, en la fila de arriba.","🗂️ Cada alumno es una <b>ficha con el color de su etapa</b>, y los apartados (Programas, Programación, Evaluación, Séneca…) son <b>separadores de colores</b>.","✅ Todo funciona igual que antes: solo cambia la apariencia."];
+  var ID='2026-10-24-hoy', K='novedades-gestorpt', ITEMS=["📅 <b>Nueva pestaña «Hoy»</b>, justo debajo de Alumnos: ves de un vistazo qué alumnos tienes hoy y qué toca trabajar con cada uno.","❌ Desde ahí marcas <b>ausencias</b> o «sin cole» con un toque. La programación se recoloca sola, igual que en el cuadrante.","🗓️ Usa el <b>calendario escolar 2026/27</b> del cole: festivos y vacaciones se saltan solos. Con ◀ ▶ vas al día de cole anterior o siguiente."];
   function ver(){ try{ if(localStorage.getItem(K)===ID) return; }catch(e){ return; }
     var d=document.createElement('div');
     d.style.cssText='position:fixed;inset:0;background:rgba(15,23,42,.55);display:flex;align-items:center;justify-content:center;z-index:99999;padding:18px;font-family:inherit';
@@ -11027,6 +11137,40 @@ async function cambiarCentro(){
 })();
 </script>
 
+<style id="hoy-css">
+/* ── Pestaña Hoy ── */
+.hoy-cab{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:flex-end;justify-content:space-between;margin-bottom:12px}
+.hoy-kicker{font-size:.75rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#0c8599}
+.hoy-fecha{margin:2px 0 0;text-transform:none}
+.hoy-fecha::first-letter{text-transform:uppercase}
+.hoy-nav{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.hoy-nav .btn{min-height:40px;min-width:40px}
+.hoy-date{width:auto;min-height:40px;padding:6px 10px}
+.hoy-aviso{background:#fff7e6;border:1px solid #ffd8a8;color:#7a3e00;border-radius:12px;padding:9px 12px;margin-bottom:12px;font-size:.9rem}
+.hoy-libre{text-align:center;padding:28px 12px;color:#475569;font-size:1rem;background:#f8fafc;border-radius:14px}
+.hoy-resumen{font-size:.9rem;color:#475569;margin-bottom:10px}
+.hoy-lista{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+.hoy-al{border:1px solid #e2e8f0;border-radius:14px;padding:12px 14px;background:#fff;display:flex;flex-direction:column;gap:6px}
+.hoy-al.hoy-ausencia{background:#fff5f5;border-color:#fecaca}
+.hoy-al.hoy-sincole{background:#f5f7ff;border-color:#c7d2fe}
+.hoy-al-cab{display:flex;align-items:center;gap:8px}
+.hoy-sig{font:inherit;font-weight:800;font-size:1.1rem;color:#0f172a;background:none;border:0;padding:0;cursor:pointer;text-decoration:underline;text-decoration-color:#cbd5e1;text-underline-offset:3px}
+.hoy-curso{font-size:.82rem;color:#64748b;flex:1}
+.hoy-edit{min-height:34px}
+.hoy-prog{font-size:.78rem;font-weight:800;color:var(--c)}
+.hoy-obj{font-size:.92rem;line-height:1.4;color:#1e293b}
+.hoy-crit{font-family:ui-monospace,monospace;font-size:.72rem;color:#64748b;background:#f1f5f9;border-radius:5px;padding:1px 5px}
+.hoy-ind{font-size:.86rem;color:#334155}
+.hoy-rec,.hoy-geu{font-size:.82rem;color:#1d4ed8}
+.hoy-rec a{color:inherit}
+.hoy-eval{font-size:.8rem;font-weight:700;color:#b45309}
+.hoy-vacio{font-size:.85rem;color:#64748b;font-style:italic}
+.hoy-estado{display:flex;gap:6px;margin-top:4px;flex-wrap:wrap}
+.hoy-estado .asist-btn{flex:1 1 0;min-height:40px;font-size:.82rem;padding:6px 8px}
+.hoy-estado .asist-btn.asiste.selected{border-color:var(--success);background:rgba(16,185,129,.1)}
+.hoy-estado .asist-btn.sincole.selected{border-color:#6366f1;background:rgba(99,102,241,.1)}
+@media (max-width:600px){.hoy-lista{grid-template-columns:1fr}.hoy-cab{align-items:flex-start}.hoy-estado .asist-btn{min-width:0;white-space:nowrap;font-size:.78rem;padding:6px 4px}}
+</style>
 <!-- ══ NUEVO DISEÑO 2026 ══ -->
 <style id="g-2026">
 /* ══════════════════════════════════════════════════════════════════
@@ -11115,7 +11259,7 @@ body::before{content:'';position:fixed;inset:-20%;z-index:-1;pointer-events:none
 .nav-tab.active{background:color-mix(in srgb,var(--t2) 10%,#fff)!important;color:var(--ink)!important;font-weight:800!important}
 .nav-tab .g-ico{width:30px;height:30px;flex:0 0 30px;padding:6px;border-radius:9px;color:#fff;stroke:currentColor;fill:none;stroke-width:2.1;stroke-linecap:round;stroke-linejoin:round;
   background:linear-gradient(135deg,var(--t1),var(--t2));box-shadow:0 6px 12px -6px var(--t2)}
-.nav-tab[onclick*="'alumnos'"]{--t1:#4dabf7;--t2:#1c63c9} .nav-tab[onclick*="'grupos'"]{--t1:#63e6be;--t2:#0b7379}
+.nav-tab[onclick*="'alumnos'"]{--t1:#4dabf7;--t2:#1c63c9} .nav-tab[onclick*="'hoy'"]{--t1:#66d9e8;--t2:#0c8599} .nav-tab[onclick*="'grupos'"]{--t1:#63e6be;--t2:#0b7379}
 .nav-tab[onclick*="'estadisticas'"]{--t1:#b197fc;--t2:#7444c2} .nav-tab[onclick*="'sda'"]{--t1:#748ffc;--t2:#233a8c}
 .nav-tab[onclick*="'biblioteca'"]{--t1:#ffa94d;--t2:#e0601a} .nav-tab[onclick*="'recursos'"]{--t1:#ff8787;--t2:#c4361f}
 .nav-tab[onclick*="'seguimiento'"]{--t1:#69db7c;--t2:#1f9a55} .nav-tab[onclick*="'aci'"]{--t1:#f783ac;--t2:#b8307a}
@@ -11310,7 +11454,7 @@ body::before{inset:0!important;background-size:140% 140%!important;animation:gDr
       hc.appendChild(lab); hc.appendChild(nw);
       var f=document.createElement('div'); f.className='g-side-foot'; f.innerHTML='<b>CEIP Capitulaciones de Santa Fe</b><br>Pedagogía Terapéutica y Audición y Lenguaje'; hc.appendChild(f);
     }
-    var mapa={alumnos:'users',grupos:'group',estadisticas:'chart',sda:'cap',biblioteca:'book',recursos:'target',seguimiento:'trend',aci:'clip',memoria:'pen',informes:'file'};
+    var mapa={hoy:'cal',alumnos:'users',grupos:'group',estadisticas:'chart',sda:'cap',biblioteca:'book',recursos:'target',seguimiento:'trend',aci:'clip',memoria:'pen',informes:'file'};
     document.querySelectorAll('.nav-tab').forEach(function(b){ var m=(b.getAttribute('onclick')||'').match(/'(\w+)'/); if(m&&mapa[m[1]]) icono(b,mapa[m[1]]); b.removeAttribute('style'); });
     var tm={programas:'file',programacion:'cal',inicial:'search',evaluacion:'chart',asistencia:'trend',geu:'book',seneca:'bank',todos:'clip',mias:'pen',online:'globe',favoritas:'star'};
     document.querySelectorAll('.tab').forEach(function(b){ var m=(b.getAttribute('onclick')||'').match(/'(\w+)'/); if(m&&tm[m[1]]) icono(b,tm[m[1]]); });
