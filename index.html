@@ -2984,7 +2984,7 @@
             renderHoy();
         }
         function hoyElegir(v){if(v){hoyFecha=v;renderHoy();}}
-        function _hContenido(a,k){
+        function _hContenido(a,k,id){
             const c=a.programacion?a.programacion[k]:null;
             let h='';
             if(c&&a.programas&&a.programas[c.pId]){
@@ -3002,7 +3002,10 @@
                 h+='<div class="hoy-vacio">Sin contenido programado para esta sesión.</div>';
             }
             try{const g=geuTextoSesion(a,k);if(g)h+='<div class="hoy-geu">📚 '+_hEsc(g)+'</div>';}catch(e){}
-            try{const ev=(momentosEvaluacion(a).porK||{})[k]||[];if(ev.length){const ec=a.evalCriterios||{};h+='<div class="hoy-eval">📝 Toca evaluar: '+ev.map(e=>_hEsc(e.crit)+(ec[e.clave]?' ✓'+_hEsc(ec[e.clave]):'')).join(', ')+'</div>';}}catch(e){}
+            try{const ev=(momentosEvaluacion(a).porK||{})[k]||[];if(ev.length){const ec=a.evalCriterios||{};
+                h+=ev.map(e=>'<div class="hoy-eval"><div class="hoy-eval-tit">📝 Toca evaluar '+_hEsc(e.crit)+' · '+(e.n===1?'1.ª evaluación (observación)':'2.ª evaluación (producción o prueba)')+'</div>'
+                  +'<div class="hoy-eval-nv" role="group" aria-label="Nivel de logro de '+_hEsc(e.crit)+'">'+[1,2,3,4].map(n=>'<button type="button" class="hoy-nv'+(ec[e.clave]===n?' on':'')+'" aria-pressed="'+(ec[e.clave]===n)+'" title="'+_hEsc(NIVELES_RUB[n])+'" onclick="hoyEvaluar(\''+id+'\',\''+e.clave+'\','+n+')"><b>'+n+'</b> '+_hEsc(NIVELES_RUB[n])+'</button>').join('')+'</div>'
+                  +(ec[e.clave]?'':'<div class="hoy-eval-pend">Pendiente: pulsa el nivel de logro.</div>')+'</div>').join('');}}catch(e){}
             return h;
         }
         function renderHoy(){
@@ -3038,7 +3041,7 @@
                     const e=est(f), a=f.a, dow=+f.k.split('_')[2];
                     h+='<div class="hoy-al hoy-'+e+'"><div class="hoy-al-cab"><button class="hoy-sig" onclick="abrirAlumno(\''+f.id+'\')" title="Abrir la ficha">'+_hEsc(a.siglas)+'</button><span class="hoy-curso">'+_hEsc(a.curso||'')+'</span>'
                       +'<button class="btn btn-secondary btn-sm hoy-edit" onclick="hoyEditar(\''+f.id+'\',\''+f.k+'\','+dow+')">✏️ Sesión</button></div>';
-                    h+=e==='asiste'?_hContenido(a,f.k):'<div class="hoy-vacio">'+(e==='ausencia'?'❌ Ausencia registrada. Lo programado pasa a la siguiente sesión.':'🏫 Sin cole (excursión, actividad…). Lo programado pasa a la siguiente sesión.')+'</div>';
+                    h+=e==='asiste'?_hContenido(a,f.k,f.id):'<div class="hoy-vacio">'+(e==='ausencia'?'❌ Ausencia registrada. Lo programado pasa a la siguiente sesión.':'🏫 Sin cole (excursión, actividad…). Lo programado pasa a la siguiente sesión.')+'</div>';
                     h+='<div class="hoy-estado" role="group" aria-label="Asistencia de '+_hEsc(a.siglas)+'">'
                       +['asiste','ausencia','sincole'].map(x=>'<button type="button" class="asist-btn '+x+(e===x?' selected':'')+'" aria-pressed="'+(e===x)+'" onclick="hoyMarcar(\''+f.id+'\',\''+f.k+'\',\''+x+'\')">'+({asiste:'✅ Asiste',ausencia:'❌ Ausencia',sincole:'🏫 Sin cole'})[x]+'</button>').join('')
                       +'</div></div>';
@@ -3062,6 +3065,7 @@
             db.ref().update(u).then(()=>toast(estado==='asiste'?a.siglas+': asiste ✓':(estado==='ausencia'?a.siglas+': ausencia ✓':a.siglas+': sin cole ✓'),'success'))
               .catch(e=>toast('No se pudo guardar: '+(e&&e.message?e.message:'error de conexión'),'error'));
         }
+        function hoyEvaluar(id,clave,n){alumnoActual=id;guardarEvalCriterio(clave,n);}
         function hoyEditar(id,k,dow){alumnoActual=id;editarCelda(k,dow);}
         function cambiarSeccion(s,btn){document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');document.getElementById('seccionAlumnos').style.display=s==='alumnos'?'block':'none';document.getElementById('seccionHoy').style.display=s==='hoy'?'block':'none';if(s==='hoy'){hoyFecha=null;renderHoy();}document.getElementById('seccionEstadisticas').style.display=s==='estadisticas'?'block':'none';document.getElementById('seccionSDA').style.display=s==='sda'?'block':'none';document.getElementById('seccionBiblioteca').style.display=s==='biblioteca'?'block':'none';document.getElementById('seccionRecursos').style.display=s==='recursos'?'block':'none';document.getElementById('seccionSeguimiento').style.display=s==='seguimiento'?'block':'none';document.getElementById('seccionGrupos').style.display=s==='grupos'?'block':'none';document.getElementById('seccionACI').style.display=s==='aci'?'block':'none';document.getElementById('seccionMemoria').style.display=s==='memoria'?'block':'none';document.getElementById('seccionInformes').style.display=s==='informes'?'block':'none';if(s==='biblioteca'){if(alumnoActual&&alumnos[alumnoActual]){const fc=document.getElementById('filtroCiclo');if(fc&&!fc.value)fc.value=getCicloDeAlumno(alumnos[alumnoActual]);}renderBiblioteca();}if(s==='estadisticas')renderEstadisticasGlobal();if(s==='recursos')inicializarRecursos();if(s==='seguimiento')renderSeguimiento();if(s==='grupos')renderGrupos();if(s==='aci')renderAciSeccion();if(s==='memoria')memoriaIniciar();if(s==='informes')informesIniciar();}
         function renderInicio(){const g=document.getElementById('alumnosGrid'),ids=Object.keys(alumnos);if(!ids.length){g.innerHTML='<div class="alumno-card alumno-card-add" onclick="abrirModalNuevo()"><span style="font-size:1.3rem">➕</span><span style="font-size:.8rem">Añadir</span></div>';return;}let h=ids.map(id=>{const a=alumnos[id],n=a.programas?Object.keys(a.programas).length:0;return'<div class="alumno-card" onclick="abrirAlumno(\''+id+'\')"><div class="alumno-siglas">'+a.siglas+'</div><div class="alumno-curso">'+a.curso+'</div><div class="alumno-progs">'+n+' prog.</div></div>';}).join('');h+='<div class="alumno-card alumno-card-add" onclick="abrirModalNuevo()"><span style="font-size:1.3rem">➕</span></div>';g.innerHTML=h;}
@@ -11163,7 +11167,13 @@ async function cambiarCentro(){
 .hoy-ind{font-size:.86rem;color:#334155}
 .hoy-rec,.hoy-geu{font-size:.82rem;color:#1d4ed8}
 .hoy-rec a{color:inherit}
-.hoy-eval{font-size:.8rem;font-weight:700;color:#b45309}
+.hoy-eval{background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:8px 10px;margin-top:2px}
+.hoy-eval-tit{font-size:.82rem;font-weight:800;color:#92400e;margin-bottom:6px}
+.hoy-eval-nv{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.hoy-nv{font:inherit;font-size:.72rem;line-height:1.15;color:#92400e;background:#fff;border:1px solid #fcd34d;border-radius:9px;padding:6px 4px;min-height:44px;cursor:pointer}
+.hoy-nv b{display:block;font-size:.95rem}
+.hoy-nv.on{background:#d97706;border-color:#d97706;color:#fff}
+.hoy-eval-pend{font-size:.74rem;color:#b45309;margin-top:5px}
 .hoy-vacio{font-size:.85rem;color:#64748b;font-style:italic}
 .hoy-estado{display:flex;gap:6px;margin-top:4px;flex-wrap:wrap}
 .hoy-estado .asist-btn{flex:1 1 0;min-height:40px;font-size:.82rem;padding:6px 8px}
