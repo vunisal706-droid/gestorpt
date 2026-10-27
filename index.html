@@ -2935,14 +2935,39 @@
         // visible y esperamos a que el usuario pulse Víctor o Encarna.
         // Solo se entra si Firebase confirma la sesión. El perfil guardado en
         // el navegador no basta: sin sesión válida las reglas rechazan todo.
+        // La sesión tiene que ser la de la cuenta del perfil. Si es otra (p. ej. otra
+        // app del cole en el mismo dominio), las reglas rechazarían cada cambio:
+        // mejor pedir entrar de nuevo que fallar al guardar.
+        function sesionDelPerfil(u, p){
+            const info = PERFILES[p];
+            if (!u || !info) return false;
+            if (!info.idea) return true;
+            return String(u.email || '').toLowerCase() === (info.idea + PE_DOMINIO).toLowerCase();
+        }
+        function pedirEntrarDeNuevo(motivo){
+            try { localStorage.removeItem('gestorpe_perfil'); } catch(e){}
+            firebase.auth().signOut().catch(function(){});
+            const sp = document.getElementById('screenPerfil');
+            if (sp) sp.style.display = 'flex';
+            if (motivo) peError(motivo);
+        }
+        window.pedirEntrarDeNuevo = pedirEntrarDeNuevo;
         (function(){
             let resuelto = false;
             firebase.auth().onAuthStateChanged(function(u){
-                if (resuelto) return;
+                // Si en cualquier momento la sesión pasa a ser de otra cuenta, se pide entrar
+                if (resuelto) {
+                    if (PERFIL && u && !sesionDelPerfil(u, PERFIL)) pedirEntrarDeNuevo('Se ha abierto otra cuenta en este navegador. Vuelve a entrar con tu usuario IdEA.');
+                    return;
+                }
                 resuelto = true;
                 const sp = document.getElementById('screenPerfil');
                 const guardado = localStorage.getItem('gestorpe_perfil');
 
+                if (u && guardado && PERFILES[guardado] && !sesionDelPerfil(u, guardado)) {
+                    pedirEntrarDeNuevo('La sesión guardada no era la tuya. Vuelve a entrar con tu usuario IdEA.');
+                    return;
+                }
                 if (u && guardado && PERFILES[guardado]) {
                     if (sp) sp.style.display = 'none';
                     aplicarPerfil(guardado);
@@ -8269,7 +8294,7 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
         // UTILIDADES
         function abrirModal(id){document.getElementById(id).classList.add('active');}
         function cerrarModal(id){document.getElementById(id).classList.remove('active');}
-        function toast(msg,tipo){const t=document.getElementById('toast');t.textContent=msg;t.className='toast '+(tipo||'');setTimeout(()=>{t.classList.add('show');},10);setTimeout(()=>{t.classList.remove('show');},2500);}
+        function toast(msg,tipo){if(/permission[_ ]denied/i.test(String(msg))){msg='Sin permiso para guardar: la sesión no es la tuya. Vuelve a entrar con tu usuario IdEA.';tipo='error';if(window.pedirEntrarDeNuevo)setTimeout(()=>pedirEntrarDeNuevo('No se pudo guardar porque la sesión no era la tuya. Vuelve a entrar con tu usuario IdEA.'),1500);}const t=document.getElementById('toast');t.textContent=msg;t.className='toast '+(tipo||'');setTimeout(()=>{t.classList.add('show');},10);setTimeout(()=>{t.classList.remove('show');},2500);}
         // Descarga un texto como fichero (evita que el portapapeles trunque prompts largos)
         function descargarTexto(nombre, contenido, mime){
             try{
@@ -11125,7 +11150,7 @@ async function cambiarCentro(){
 <script>
 // ===== Novedades (salen una sola vez en cada dispositivo) =====
 (function(){
-  var ID='2026-10-24-hoy', K='novedades-gestorpt', ITEMS=["📅 <b>Nueva pestaña «Hoy»</b>, justo debajo de Alumnos: ves de un vistazo qué alumnos tienes hoy y qué toca trabajar con cada uno.","❌ Desde ahí marcas <b>ausencias</b> o «sin cole» con un toque. La programación se recoloca sola, igual que en el cuadrante.","🗓️ Usa el <b>calendario escolar 2026/27</b> del cole: festivos y vacaciones se saltan solos. Con ◀ ▶ vas al día de cole anterior o siguiente."];
+  var ID='2026-10-27-sesion', K='novedades-gestorpt', ITEMS=["🔐 <b>Sesión más segura:</b> si el navegador tiene abierta otra cuenta (por ejemplo, de otra app del cole), la app te pide entrar de nuevo con tu usuario IdEA en lugar de fallar al guardar.","📅 <b>Nueva pestaña «Hoy»</b>, justo debajo de Alumnos: ves de un vistazo qué alumnos tienes hoy y qué toca trabajar con cada uno.","❌ Desde ahí marcas <b>ausencias</b> o «sin cole» con un toque. La programación se recoloca sola, igual que en el cuadrante.","🗓️ Usa el <b>calendario escolar 2026/27</b> del cole: festivos y vacaciones se saltan solos. Con ◀ ▶ vas al día de cole anterior o siguiente."];
   function ver(){ try{ if(localStorage.getItem(K)===ID) return; }catch(e){ return; }
     var d=document.createElement('div');
     d.style.cssText='position:fixed;inset:0;background:rgba(15,23,42,.55);display:flex;align-items:center;justify-content:center;z-index:99999;padding:18px;font-family:inherit';
