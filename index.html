@@ -11168,13 +11168,12 @@ async function cambiarCentro(){
     t=String(t||''); const T=tabla();
     T.forEach(({et,a})=>{
       ['diagnostico','deficit','neae','observaciones'].forEach(k=>{ const v=(a[k]||'').toString().trim(); if(k!=='observaciones'&&v.length>2) t=t.split(v).join('[necesidad de apoyo]'); });
-      const nom=(a.nombre||'').trim(); if(nom.length>3) t=t.replace(new RegExp(esc(nom),'gi'),et);
-      const s=(a.siglas||'').trim(); if(s){ const sin=s.replace(/\./g,''), con=sin.split('').join('.')+'.';
-        [s,sin,con].filter((x,i,arr)=>x&&arr.indexOf(x)===i).sort((x,y)=>y.length-x.length).forEach(x=>{ t=t.replace(new RegExp('(^|[^'+L+'.])'+esc(x)+'(?!['+L+'])','g'),'$1'+et); }); }
+      // Se mantienen las siglas; si hubiera un nombre completo, se cambia por las siglas
+      const nom=(a.nombre||'').trim(); if(nom.length>3) t=t.replace(new RegExp(esc(nom),'gi'),(a.siglas||et));
     });
     DIAG.forEach(r=>{ t=t.replace(r,'[necesidad de apoyo]'); });
     t=t.replace(/(\[necesidad de apoyo\][\s,y/]*)+\[necesidad de apoyo\]/g,'[necesidad de apoyo]');
-    return '⚠️ Datos anonimizados por protección de datos: cada alumno/a aparece como «Alumno N». Mantén exactamente esas etiquetas en tu respuesta y no pidas datos personales ni diagnósticos.\n\n'+t;
+    return '⚠️ Por protección de datos, este texto no incluye diagnósticos ni datos de salud del alumnado. No los pidas ni los supongas.\n\n'+t;
   };
   window.desanonIA=function(t){
     t=String(t||''); const T=tabla().slice().sort((x,y)=>y.et.length-x.et.length);
@@ -11207,7 +11206,6 @@ async function cambiarCentro(){
   }
   window.dlgSiglasIA=dlgSiglas;
   window.clipIA=function(t){
-    botonSiglas();
     const x=anonIA(t);
     const fb=()=>{ const ta=document.createElement('textarea'); ta.value=x; document.body.appendChild(ta); ta.select(); try{document.execCommand('copy');}catch(e){} ta.remove(); };
     return (navigator.clipboard&&navigator.clipboard.writeText?navigator.clipboard.writeText(x):Promise.reject()).catch(()=>fb());
@@ -11217,7 +11215,7 @@ async function cambiarCentro(){
 <script>
 // ===== Novedades (salen una sola vez en cada dispositivo) =====
 (function(){
-  var ID='2026-11-05-ia2', K='novedades-gestorpt', ITEMS=["🔒 <b>IA y protección de datos:</b> al copiar un prompt para Claude, Gemini o ChatGPT, la app cambia las siglas por «Alumno 1, Alumno 2…» y quita los diagnósticos. Al pegar la respuesta (o con el botón «🔁 Poner siglas a la respuesta de la IA») vuelve a poner las siglas. Describe las necesidades con palabras pedagógicas (p. ej. «necesita apoyo visual»)."];
+  var ID='2026-11-05-ia3', K='novedades-gestorpt', ITEMS=["🔒 <b>IA y protección de datos:</b> al copiar un prompt para la IA, la app mantiene las siglas pero <b>quita los diagnósticos</b> (TEA, TDAH, dislexia…). Describe las necesidades con palabras pedagógicas (p. ej. «necesita apoyo visual»)."];
   function ver(){ try{ if(localStorage.getItem(K)===ID) return; }catch(e){ return; }
     var d=document.createElement('div');
     d.style.cssText='position:fixed;inset:0;background:rgba(15,23,42,.55);display:flex;align-items:center;justify-content:center;z-index:99999;padding:18px;font-family:inherit';
