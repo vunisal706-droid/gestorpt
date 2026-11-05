@@ -878,7 +878,7 @@
 
             <div class="form-group" style="margin-bottom:10px">
                 <label class="form-label">Observaciones previas <span style="font-weight:400;color:var(--text-light)">(opcional — diagnóstico, contexto, fuentes de información…)</span></label>
-                <textarea class="form-textarea" id="evalInicialObs" rows="2" placeholder="Ej: Diagnóstico TEA nivel 1 confirmado en sep. 2024. Información del tutor anterior y familia…"></textarea>
+                <textarea class="form-textarea" id="evalInicialObs" rows="2" placeholder="Ej: necesita anticipación y apoyos visuales; le cuesta mantener la atención; información del tutor anterior… (sin diagnósticos ni nombres)"></textarea>
             </div>
 
             <div class="form-group" style="margin-bottom:12px">
@@ -11181,7 +11181,33 @@ async function cambiarCentro(){
     T.forEach(({et,a})=>{ if(a.siglas) t=t.replace(new RegExp('\\b'+esc(et)+'\\b','g'),a.siglas); });
     return t;
   };
+  // Botón para volver a poner las siglas en cualquier texto que devuelva la IA (informes, evaluación inicial…)
+  function botonSiglas(){
+    if(document.getElementById('btnSiglasIA')) return;
+    const b=document.createElement('button'); b.id='btnSiglasIA'; b.type='button'; b.textContent='🔁 Poner siglas a la respuesta de la IA';
+    b.style.cssText='position:fixed;left:14px;bottom:14px;z-index:9990;background:#7c3aed;color:#fff;border:0;border-radius:999px;padding:11px 16px;font:700 .9rem system-ui,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.25);cursor:pointer';
+    b.onclick=dlgSiglas; document.body.appendChild(b);
+  }
+  function dlgSiglas(){
+    let d=document.getElementById('dlgSiglasIA');
+    if(!d){ d=document.createElement('div'); d.id='dlgSiglasIA'; document.body.appendChild(d); }
+    d.style.cssText='position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:99998;display:flex;align-items:center;justify-content:center;padding:16px';
+    d.innerHTML='<div style="background:#fff;border-radius:16px;max-width:720px;width:100%;max-height:90vh;overflow:auto;padding:20px;font-family:system-ui,sans-serif">'+
+      '<h3 style="margin:0 0 6px;font-size:1.15rem">🔁 Poner las siglas</h3><p style="margin:0 0 10px;font-size:.88rem;color:#475569">Pega aquí lo que te ha devuelto la IA. La app cambia «Alumno 1, Alumno 2…» por las siglas de cada alumno/a (solo en este dispositivo) y te lo copia.</p>'+
+      '<textarea id="sigIn" rows="9" style="width:100%;box-sizing:border-box;border:1.5px solid #cbd5e1;border-radius:10px;padding:10px;font-size:.85rem" placeholder="Pega aquí la respuesta de la IA"></textarea>'+
+      '<div id="sigQuien" style="font-size:.82rem;color:#475569;margin:8px 0"></div>'+
+      '<div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap"><button type="button" id="sigC" style="padding:10px 16px;border-radius:10px;border:1px solid #cbd5e1;background:#fff;cursor:pointer">Cerrar</button>'+
+      '<button type="button" id="sigOk" style="padding:10px 16px;border-radius:10px;border:0;background:#7c3aed;color:#fff;font-weight:700;cursor:pointer">Poner siglas y copiar</button></div></div>';
+    const ta=d.querySelector('#sigIn'), q=d.querySelector('#sigQuien');
+    ta.oninput=()=>{ const T=tabla(), usados=T.filter(({et})=>new RegExp('\\b'+esc(et)+'\\b').test(ta.value)); q.textContent=usados.length?'Aparecen: '+usados.map(({et,a})=>et+' → '+(a.siglas||'?')).join(' · '):''; };
+    d.querySelector('#sigC').onclick=()=>d.remove();
+    d.querySelector('#sigOk').onclick=()=>{ const out=desanonIA(ta.value); ta.value=out; ta.oninput();
+      (navigator.clipboard&&navigator.clipboard.writeText?navigator.clipboard.writeText(out):Promise.reject()).then(()=>{ if(window.toast) toast('✓ Siglas puestas y texto copiado','success'); }).catch(()=>{ ta.select(); try{document.execCommand('copy');}catch(e){} }); };
+    ta.focus();
+  }
+  window.dlgSiglasIA=dlgSiglas;
   window.clipIA=function(t){
+    botonSiglas();
     const x=anonIA(t);
     const fb=()=>{ const ta=document.createElement('textarea'); ta.value=x; document.body.appendChild(ta); ta.select(); try{document.execCommand('copy');}catch(e){} ta.remove(); };
     return (navigator.clipboard&&navigator.clipboard.writeText?navigator.clipboard.writeText(x):Promise.reject()).catch(()=>fb());
@@ -11191,7 +11217,7 @@ async function cambiarCentro(){
 <script>
 // ===== Novedades (salen una sola vez en cada dispositivo) =====
 (function(){
-  var ID='2026-11-05-ia', K='novedades-gestorpt', ITEMS=["🔒 <b>IA y protección de datos:</b> al copiar un prompt para Claude, Gemini o ChatGPT, la app cambia las siglas por «Alumno 1, Alumno 2…» y quita los diagnósticos. Al pegar la respuesta, vuelve a poner las siglas. Describe las necesidades con palabras pedagógicas (p. ej. «necesita apoyo visual»)."];
+  var ID='2026-11-05-ia2', K='novedades-gestorpt', ITEMS=["🔒 <b>IA y protección de datos:</b> al copiar un prompt para Claude, Gemini o ChatGPT, la app cambia las siglas por «Alumno 1, Alumno 2…» y quita los diagnósticos. Al pegar la respuesta (o con el botón «🔁 Poner siglas a la respuesta de la IA») vuelve a poner las siglas. Describe las necesidades con palabras pedagógicas (p. ej. «necesita apoyo visual»)."];
   function ver(){ try{ if(localStorage.getItem(K)===ID) return; }catch(e){ return; }
     var d=document.createElement('div');
     d.style.cssText='position:fixed;inset:0;background:rgba(15,23,42,.55);display:flex;align-items:center;justify-content:center;z-index:99999;padding:18px;font-family:inherit';
