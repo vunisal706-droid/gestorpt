@@ -3652,7 +3652,7 @@
         function regenerarProg(){const a=alumnos[alumnoActual];if(!a.programas||!Object.keys(a.programas).length){toast('Añade programa','error');return;}const nueva=regenerarConservandoPasado(a);db.ref(PA+'/'+alumnoActual+'/programacion').set(nueva).then(()=>{a.programacion=nueva;renderProg();toast('Regenerado ✓ (las sesiones ya pasadas no se tocan)','success');});}
         function reajustarDesde(a,desdeClave){const todasSesiones=getTodasLasSesiones(a);const idx=todasSesiones.indexOf(desdeClave);if(idx<0)return a.programacion;const nueva={...a.programacion};for(let i=todasSesiones.length-1;i>idx;i--){const keyActual=todasSesiones[i];const keyAnterior=todasSesiones[i-1];if(nueva[keyAnterior]){nueva[keyActual]=nueva[keyAnterior];}}delete nueva[desdeClave];return nueva;}
         function insertarRepeticion(a,clave,contenido){const todasSesiones=getTodasLasSesiones(a);const idx=todasSesiones.indexOf(clave);if(idx<0)return a.programacion;const dias=a.diasSesion||[1,3,4];let idxRepetir=idx+dias.length;if(idxRepetir>=todasSesiones.length)idxRepetir=todasSesiones.length-1;const claveRepetir=todasSesiones[idxRepetir];const nueva={...a.programacion};for(let i=todasSesiones.length-1;i>idxRepetir;i--){const keyActual=todasSesiones[i];const keyAnterior=todasSesiones[i-1];if(nueva[keyAnterior]){nueva[keyActual]=nueva[keyAnterior];}}nueva[claveRepetir]=contenido;return nueva;}
-        function generarPromptIA(){const a=alumnos[alumnoActual];if(!a.programas||!Object.keys(a.programas).length){toast('Añade programas','error');return;}const dias=a.diasSesion||[1,3,4];const todasSesiones=getTodasLasSesiones(a);let prompt='Genera programación COMPLETA curso 2025/2026.\n\n👤 '+a.siglas+' ('+a.curso+')\n📆 '+dias.map(d=>DIAS_C[d]).join(', ')+'\n📊 '+todasSesiones.length+' sesiones\n\n📚 PROGRAMAS:\n';Object.keys(a.programas).forEach(pId=>{const p=a.programas[pId],info=AREAS[p.tipo]||{nombre:p.tipo};prompt+='\n🔷 '+info.nombre+' (ID: "'+pId+'")\n';(p.objetivos||[]).forEach((obj,oi)=>{prompt+='  O'+obj.numero+' (oIdx:'+oi+', T'+obj.trimestre+'): '+obj.descripcion+'\n';(obj.indicadores||[]).forEach((ind,ii)=>{prompt+='    - iIdx:'+ii+': '+ind+'\n';});});});prompt+='\n📤 RESPONDE SOLO JSON:\n{"mes_semana_dia": {"pId": "...", "oIdx": N, "iIdx": N}, ...}\n\n⚠️ '+todasSesiones.length+' entradas. Alterna 50-50. Respeta trimestres.';navigator.clipboard.writeText(prompt).then(()=>{toast('Copiado','success');window.open('https://chat.openai.com/','_blank');});}
+        function generarPromptIA(){const a=alumnos[alumnoActual];if(!a.programas||!Object.keys(a.programas).length){toast('Añade programas','error');return;}const dias=a.diasSesion||[1,3,4];const todasSesiones=getTodasLasSesiones(a);let prompt='Genera programación COMPLETA curso 2025/2026.\n\n👤 '+a.siglas+' ('+a.curso+')\n📆 '+dias.map(d=>DIAS_C[d]).join(', ')+'\n📊 '+todasSesiones.length+' sesiones\n\n📚 PROGRAMAS:\n';Object.keys(a.programas).forEach(pId=>{const p=a.programas[pId],info=AREAS[p.tipo]||{nombre:p.tipo};prompt+='\n🔷 '+info.nombre+' (ID: "'+pId+'")\n';(p.objetivos||[]).forEach((obj,oi)=>{prompt+='  O'+obj.numero+' (oIdx:'+oi+', T'+obj.trimestre+'): '+obj.descripcion+'\n';(obj.indicadores||[]).forEach((ind,ii)=>{prompt+='    - iIdx:'+ii+': '+ind+'\n';});});});prompt+='\n📤 RESPONDE SOLO JSON:\n{"mes_semana_dia": {"pId": "...", "oIdx": N, "iIdx": N}, ...}\n\n⚠️ '+todasSesiones.length+' entradas. Alterna 50-50. Respeta trimestres.';clipIA(prompt).then(()=>{toast('Copiado','success');window.open('https://chat.openai.com/','_blank');});}
         function importarJSON(){const txt=document.getElementById('jsonInput').value.trim();if(!txt){toast('Pega JSON','error');return;}try{let cleanJSON=txt.replace(/```json?\n?/g,'').replace(/```/g,'').trim();const prog=JSON.parse(cleanJSON);db.ref(PA+'/'+alumnoActual+'/programacion').set(prog).then(()=>{alumnos[alumnoActual].programacion=prog;cerrarModal('modalImportJSON');document.getElementById('jsonInput').value='';renderProg();toast('Importado ✓','success');});}catch(e){toast('Error JSON','error');}}
 
         // Repara trimestre en objetivos de Firebase (cuando están a null/undefined)
@@ -5792,7 +5792,7 @@ ${instruccionesFormato}`;
             sdaGenerarPrompt();
             const txt=document.getElementById('sdaPromptPreview').textContent;
             if(txt.includes('Pulsa')){toast('Primero pulsa "Generar prompt"','error');return;}
-            navigator.clipboard.writeText(txt).then(()=>{toast('Prompt copiado al portapapeles 📋','success');}).catch(()=>{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);toast('Prompt copiado 📋','success');});
+            clipIA(txt).then(()=>{toast('Prompt copiado al portapapeles 📋','success');}).catch(()=>{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);toast('Prompt copiado 📋','success');});
         }
 
         function sdaAbrirGemini(){
@@ -6221,7 +6221,7 @@ ${instruccionesFormato}`;
 
         function memoriaCopiar(id){
             const txt = memoriaConstructPrompt(id);
-            navigator.clipboard.writeText(txt).then(()=>toast('Prompt copiado \uD83D\uDCCB','success'));
+            clipIA(txt).then(()=>toast('Prompt copiado \uD83D\uDCCB','success'));
         }
 
         function memoriaAbrirChatGPT(id){
@@ -6278,7 +6278,7 @@ ${instruccionesFormato}`;
             const ids = Object.keys(alumnos);
             if(!ids.length){ toast('Sin alumnos','error'); return; }
             const all=memoriaConstructPromptTodos();
-            navigator.clipboard.writeText(all).then(()=>{
+            clipIA(all).then(()=>{
                 toast('Prompt de los '+ids.length+' alumnos copiado 📋','success');
                 setTimeout(()=>window.open('https://chatgpt.com','_blank'),400);
             }).catch(()=>{
@@ -6702,7 +6702,7 @@ ${instrucciones}
 
         function evalInicialCopiar(){
             const txt=document.getElementById('evalInicialPromptTexto').textContent;
-            navigator.clipboard.writeText(txt).then(()=>toast('Copiado ✓','success')).catch(()=>toast('Error al copiar','error'));
+            clipIA(txt).then(()=>toast('Copiado ✓','success')).catch(()=>toast('Error al copiar','error'));
         }
 
         function evalInicialAbrirClaude(){
@@ -6712,7 +6712,7 @@ ${instrucciones}
             const formato=document.getElementById('evalInicialFormato').value;
             const prompt=evalInicialBuildPrompt(id,obs,formato);
             if(!prompt)return;
-            navigator.clipboard.writeText(prompt).then(()=>{
+            clipIA(prompt).then(()=>{
                 toast('Prompt copiado — abriendo Claude…','success');
                 setTimeout(()=>window.open('https://claude.ai/','_blank'),400);
             });
@@ -6725,7 +6725,7 @@ ${instrucciones}
             const formato=document.getElementById('evalInicialFormato').value;
             const prompt=evalInicialBuildPrompt(id,obs,formato);
             if(!prompt)return;
-            navigator.clipboard.writeText(prompt).then(()=>{
+            clipIA(prompt).then(()=>{
                 toast('Prompt copiado — abriendo Gemini…','success');
                 setTimeout(()=>window.open('https://gemini.google.com/','_blank'),400);
             });
@@ -6747,9 +6747,9 @@ ${instrucciones}
                         <span style="font-family:monospace;font-weight:700;font-size:.9rem;color:#065f46">${a.siglas}</span>
                         <span style="font-size:.75rem;color:var(--text-light)">${a.curso||''}</span>
                         <div style="display:flex;gap:5px;flex-wrap:wrap">
-                            <button class="btn btn-sm" style="background:#10b981;color:#fff;padding:5px 9px" onclick="navigator.clipboard.writeText('${promptEscapado}'.replace(/\\\\n/g,'\\n')).then(()=>toast('Copiado ✓','success'))">📋 Copiar</button>
-                            <button class="btn btn-sm btn-ai" onclick="navigator.clipboard.writeText('${promptEscapado}'.replace(/\\\\n/g,'\\n')).then(()=>{toast('Copiado — abriendo Claude…','success');setTimeout(()=>window.open('https://claude.ai/','_blank'),400)})">🤖 Claude</button>
-                            <button class="btn btn-sm btn-secondary" onclick="navigator.clipboard.writeText('${promptEscapado}'.replace(/\\\\n/g,'\\n')).then(()=>{toast('Copiado — abriendo Gemini…','success');setTimeout(()=>window.open('https://gemini.google.com/','_blank'),400)})">✨ Gemini</button>
+                            <button class="btn btn-sm" style="background:#10b981;color:#fff;padding:5px 9px" onclick="clipIA('${promptEscapado}'.replace(/\\\\n/g,'\\n')).then(()=>toast('Copiado ✓','success'))">📋 Copiar</button>
+                            <button class="btn btn-sm btn-ai" onclick="clipIA('${promptEscapado}'.replace(/\\\\n/g,'\\n')).then(()=>{toast('Copiado — abriendo Claude…','success');setTimeout(()=>window.open('https://claude.ai/','_blank'),400)})">🤖 Claude</button>
+                            <button class="btn btn-sm btn-secondary" onclick="clipIA('${promptEscapado}'.replace(/\\\\n/g,'\\n')).then(()=>{toast('Copiado — abriendo Gemini…','success');setTimeout(()=>window.open('https://gemini.google.com/','_blank'),400)})">✨ Gemini</button>
                         </div>
                     </div>
                     <div style="font-size:.68rem;color:var(--text-light)">${Object.keys(a.programas||{}).length} programa(s): ${Object.keys(a.programas||{}).map(pId=>{const info=AREAS[(a.programas[pId]||{}).tipo];return info?info.short||info.nombre:'?';}).join(', ')||'—'}</div>
@@ -6782,7 +6782,7 @@ ${instrucciones}
                 prompt+=datos+'\n\n────────────────────────────────────\n\n';
             });
             prompt+='\nGenera ahora el informe de evaluación inicial para cada alumno/a en el formato indicado, en el mismo orden.';
-            navigator.clipboard.writeText(prompt).then(()=>{
+            clipIA(prompt).then(()=>{
                 document.getElementById('evalInicialPromptBox').style.display='block';
                 document.getElementById('evalInicialPromptTexto').textContent=prompt;
                 document.getElementById('evalInicialTodosBox').style.display='none';
@@ -6932,7 +6932,7 @@ ${instrucciones}
                 prompt='Informe para el TUTOR/A sobre alumno con necesidades educativas especiales.\n\n'+datosBase+'\n\nREQUISITOS:\n- Lenguaje técnico-pedagógico\n- Resumen de objetivos trabajados y grado de consecución\n- Orientaciones para la coordinación en el aula ordinaria\n- Propuestas de adaptación metodológica\n- Recomendaciones para reforzar en clase\n- 3-4 párrafos\n\nEscribe el informe de coordinación con el tutor/a.';
             }
             
-            navigator.clipboard.writeText(prompt).then(()=>{toast('Copiado para ChatGPT','success');window.open('https://chat.openai.com/','_blank');});
+            clipIA(prompt).then(()=>{toast('Copiado para ChatGPT','success');window.open('https://chat.openai.com/','_blank');});
         }
         function imprimirInforme(){
             if(!informeData) return;
@@ -7192,7 +7192,7 @@ body{font-family:Arial,sans-serif;font-size:10px;color:#222}
 
             const prompt = 'Eres un especialista en Pedagogía Terapéutica. Redacta un informe de seguimiento breve y profesional para cada alumno indicado, basándote SOLO en los indicadores conseguidos. Para cada alumno: 2-3 párrafos con valoración positiva de los logros, progreso observado y orientaciones breves. Usa lenguaje técnico pero claro. Período: ' + periodoTexto + '.\n\n' + bloques.join('\n\n---\n\n');
 
-            navigator.clipboard.writeText(prompt).then(() => {
+            clipIA(prompt).then(() => {
                 toast('Prompt copiado (' + ids.length + ' alumnos) — abre ChatGPT', 'success');
                 window.open('https://chat.openai.com/', '_blank');
             });
@@ -7568,7 +7568,7 @@ NOTAS FINALES PARA GEMINI
 - El documento final debe estar listo para ser revisado y firmado por el PT del centro
 ════════════════════════════════════════════════════════`;
 
-            navigator.clipboard.writeText(prompt).then(() => {
+            clipIA(prompt).then(() => {
                 toast('✓ Prompt copiado (' + [...areasPrincipales].join(', ') + ') — abriendo Gemini…', 'success');
                 window.open('https://gemini.google.com/', '_blank');
             }).catch(() => {
@@ -9437,7 +9437,7 @@ tr:nth-child(even) td:not(:first-child){background:#f8f9fa}
         function grupoIAImportarJSON(){
             if(!grupoIAActual){toast('No hay grupo seleccionado','error');return;}
             const g = grupos[grupoIAActual];
-            const txt = (document.getElementById('grupoIAJsonInput')||{}).value;
+            const txt = desanonIA((document.getElementById('grupoIAJsonInput')||{}).value||'');
             if(!txt || !txt.trim()){toast('Pega el JSON que te ha dado la IA','error');return;}
             let actividades;
             try{
@@ -9790,7 +9790,7 @@ ${tematica?'8. Hilo temático: '+tematica:''}`;
             grupoIAGenerarPrompt();
             const txt=document.getElementById('grupoIAPrompt').textContent;
             if(txt.includes('Pulsa')){toast('Primero pulsa "Generar"','error');return;}
-            navigator.clipboard.writeText(txt).then(()=>toast('Prompt copiado 📋','success'))
+            clipIA(txt).then(()=>toast('Prompt copiado 📋','success'))
                 .catch(()=>{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);toast('Prompt copiado 📋','success');});
         }
 
@@ -9888,7 +9888,7 @@ Genera ahora un resumen por cada uno de los ${total} alumnos en el formato indic
             const prompt=seguimientoBuildPrompt(trim);
             if(!prompt){toast('No hay alumnos','error');return;}
             const abrir=()=>setTimeout(()=>window.open('https://gemini.google.com','_blank'),300);
-            navigator.clipboard.writeText(prompt).then(()=>{
+            clipIA(prompt).then(()=>{
                 toast('Prompt copiado 📋 — abriendo Gemini…','success');
                 abrir();
             }).catch(()=>{
@@ -9933,7 +9933,7 @@ Genera ahora un resumen por cada uno de los ${total} alumnos en el formato indic
         }
 
         function seguimientoDistribuir(){
-            const raw=document.getElementById('seguimientoRespuestaIA')?.value||'';
+            const raw=desanonIA(document.getElementById('seguimientoRespuestaIA')?.value||'');
             if(!raw.trim()){toast('Pega primero la respuesta de la IA','error');return;}
             const trim=parseInt(document.getElementById('seguimientoTrim').value);
             // Parse ===ALUMNO: XXX=== blocks
@@ -10348,7 +10348,7 @@ Genera ahora un resumen por cada uno de los ${total} alumnos en el formato indic
             grupoSdAGenerarPrompt();
             const txt=document.getElementById('grupoSdAPrompt').textContent;
             if(txt.startsWith('Rellena')){toast('Primero genera el prompt','error');return;}
-            navigator.clipboard.writeText(txt).then(()=>toast('Prompt copiado 📋','success')).catch(()=>{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);toast('Prompt copiado 📋','success');});
+            clipIA(txt).then(()=>toast('Prompt copiado 📋','success')).catch(()=>{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);toast('Prompt copiado 📋','success');});
         }
         function grupoSdAAbrirIA(){grupoSdACopiarPrompt();setTimeout(()=>window.open('https://claude.ai','_blank'),400);}
 
@@ -11148,9 +11148,50 @@ async function cambiarCentro(){
 
 </script>
 <script>
+// ===== Protección de datos al usar la IA =====
+// Antes de copiar un prompt para Claude, Gemini o ChatGPT: cada alumno/a pasa a «Alumno 1, Alumno 2…» y los
+// diagnósticos (datos de salud) se sustituyen por «[necesidad de apoyo]». La tabla de equivalencias solo vive
+// en este dispositivo; al pegar la respuesta de la IA, la app vuelve a poner las siglas.
+(function(){
+  const esc=s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  const L='A-Za-zÁÉÍÓÚÜÑáéíóúüñ';
+  function tabla(){
+    const ids=Object.keys(window.alumnos||(typeof alumnos!=='undefined'?alumnos:{})).sort();
+    const A=typeof alumnos!=='undefined'?alumnos:{};
+    return ids.map((id,i)=>({id,et:'Alumno '+(i+1),a:A[id]||{}}));
+  }
+  const DIAG=[/\bT\.?E\.?A\.?\b/g,/\bTGD\b/g,/\bTDA-?H?\b/g,/\bTEL\b/g,/\bTDL\b/g,/\bautis(mo|ta)\b/gi,/\bAsperger\b/gi,/\bhiperactiv[a-záéíóú]*\b/gi,/\bd[ée]ficit de atenci[oó]n\b/gi,
+    /\bdisle[xs]i[ae]\b/gi,/\bdisc[aá]lculi[ae]\b/gi,/\bdisgraf[ií]a\b/gi,/\bdisortograf[ií]a\b/gi,/\bdisfasia\b/gi,/\bdislalia[s]?\b/gi,/\bdisartria\b/gi,/\bdisfemia\b/gi,/\btartamud[a-z]*\b/gi,
+    /\btrastorno[^.,;:\n()]{0,60}/gi,/\bs[ií]ndrome( de)? [A-ZÁÉÍÓÚ][^\s.,;:\n()]*/g,/\bDown\b/g,/\bdiscapacidad[^.,;:\n()]{0,30}/gi,/\bpar[áa]lisis cerebral\b/gi,/\bepilep[a-z]*\b/gi,
+    /\bhipoacusia\b/gi,/\bsorder[ao]\b/gi,/\bceguera\b/gi,/\bbaja visi[oó]n\b/gi,/\bretraso (madurativo|mental|psicomotor|global|del desarrollo|del lenguaje)\b/gi,/\bdiabet[a-z]*\b/gi,/\balergi[a-z]*\b/gi,/\bmedicaci[oó]n\b/gi,/\bdiagn[oó]stic[a-z]*\b/gi];
+  window.anonIA=function(t){
+    t=String(t||''); const T=tabla();
+    T.forEach(({et,a})=>{
+      ['diagnostico','deficit','neae','observaciones'].forEach(k=>{ const v=(a[k]||'').toString().trim(); if(k!=='observaciones'&&v.length>2) t=t.split(v).join('[necesidad de apoyo]'); });
+      const nom=(a.nombre||'').trim(); if(nom.length>3) t=t.replace(new RegExp(esc(nom),'gi'),et);
+      const s=(a.siglas||'').trim(); if(s){ const sin=s.replace(/\./g,''), con=sin.split('').join('.')+'.';
+        [s,sin,con].filter((x,i,arr)=>x&&arr.indexOf(x)===i).sort((x,y)=>y.length-x.length).forEach(x=>{ t=t.replace(new RegExp('(^|[^'+L+'.])'+esc(x)+'(?!['+L+'])','g'),'$1'+et); }); }
+    });
+    DIAG.forEach(r=>{ t=t.replace(r,'[necesidad de apoyo]'); });
+    t=t.replace(/(\[necesidad de apoyo\][\s,y/]*)+\[necesidad de apoyo\]/g,'[necesidad de apoyo]');
+    return '⚠️ Datos anonimizados por protección de datos: cada alumno/a aparece como «Alumno N». Mantén exactamente esas etiquetas en tu respuesta y no pidas datos personales ni diagnósticos.\n\n'+t;
+  };
+  window.desanonIA=function(t){
+    t=String(t||''); const T=tabla().slice().sort((x,y)=>y.et.length-x.et.length);
+    T.forEach(({et,a})=>{ if(a.siglas) t=t.replace(new RegExp('\\b'+esc(et)+'\\b','g'),a.siglas); });
+    return t;
+  };
+  window.clipIA=function(t){
+    const x=anonIA(t);
+    const fb=()=>{ const ta=document.createElement('textarea'); ta.value=x; document.body.appendChild(ta); ta.select(); try{document.execCommand('copy');}catch(e){} ta.remove(); };
+    return (navigator.clipboard&&navigator.clipboard.writeText?navigator.clipboard.writeText(x):Promise.reject()).catch(()=>fb());
+  };
+})();
+</script>
+<script>
 // ===== Novedades (salen una sola vez en cada dispositivo) =====
 (function(){
-  var ID='2026-10-27-sesion', K='novedades-gestorpt', ITEMS=["🔐 <b>Sesión más segura:</b> si el navegador tiene abierta otra cuenta (por ejemplo, de otra app del cole), la app te pide entrar de nuevo con tu usuario IdEA en lugar de fallar al guardar.","📅 <b>Nueva pestaña «Hoy»</b>, justo debajo de Alumnos: ves de un vistazo qué alumnos tienes hoy y qué toca trabajar con cada uno.","❌ Desde ahí marcas <b>ausencias</b> o «sin cole» con un toque. La programación se recoloca sola, igual que en el cuadrante.","🗓️ Usa el <b>calendario escolar 2026/27</b> del cole: festivos y vacaciones se saltan solos. Con ◀ ▶ vas al día de cole anterior o siguiente."];
+  var ID='2026-11-05-ia', K='novedades-gestorpt', ITEMS=["🔒 <b>IA y protección de datos:</b> al copiar un prompt para Claude, Gemini o ChatGPT, la app cambia las siglas por «Alumno 1, Alumno 2…» y quita los diagnósticos. Al pegar la respuesta, vuelve a poner las siglas. Describe las necesidades con palabras pedagógicas (p. ej. «necesita apoyo visual»)."];
   function ver(){ try{ if(localStorage.getItem(K)===ID) return; }catch(e){ return; }
     var d=document.createElement('div');
     d.style.cssText='position:fixed;inset:0;background:rgba(15,23,42,.55);display:flex;align-items:center;justify-content:center;z-index:99999;padding:18px;font-family:inherit';
