@@ -1343,6 +1343,280 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<!-- DEMO-PRE -->
+<script>
+/* ══════════ MODO DEMOSTRACIÓN · kit común ══════════
+   Base de datos de mentira (en memoria, nada sale del navegador), banner y guía
+   explicativa con «?» junto a cada apartado. Cada app añade sus datos y su guía. */
+(function () {
+  const clon = v => v === undefined ? undefined : JSON.parse(JSON.stringify(v));
+  let _n = 0; const nuevoId = () => 'demo' + Date.now().toString(36) + (++_n);
+
+  /* ── Firestore (compat) en memoria ── */
+  function MockFS(semilla) {
+    const C = {}; Object.entries(semilla || {}).forEach(([c, docs]) => { C[c] = {}; Object.entries(docs).forEach(([id, d]) => C[c][id] = clon(d)); });
+    const col = n => (C[n] = C[n] || {});
+    const oyentes = [];
+    const avisar = () => oyentes.slice().forEach(f => { try { f(); } catch (e) {} });
+    const snapDoc = (c, id) => { const d = col(c)[id]; return { id, exists: d !== undefined, data: () => clon(d), get: k => (d || {})[k], ref: docRef(c, id) }; };
+    const valor = (o, campo) => campo.split('.').reduce((a, k) => a == null ? a : a[k], o);
+    function cumple(d, [campo, op, v]) {
+      const x = valor(d, campo);
+      switch (op) {
+        case '==': return x === v; case '!=': return x !== v; case '<': return x < v; case '<=': return x <= v;
+        case '>': return x > v; case '>=': return x >= v; case 'in': return (v || []).includes(x);
+        case 'array-contains': return Array.isArray(x) && x.includes(v);
+        case 'array-contains-any': return Array.isArray(x) && (v || []).some(y => x.includes(y));
+        default: return true;
+      }
+    }
+    function query(c, filtros, orden, limite) {
+      const q = {
+        where: (a, b, v) => query(c, filtros.concat([[a, b, v]]), orden, limite),
+        orderBy: (campo, dir) => query(c, filtros, orden.concat([[campo, dir]]), limite),
+        limit: n => query(c, filtros, orden, n), limitToLast: n => query(c, filtros, orden, -n),
+        get: async () => {
+          let docs = Object.keys(col(c)).filter(id => filtros.every(f => cumple(col(c)[id], f))).map(id => snapDoc(c, id));
+          orden.forEach(([campo, dir]) => docs.sort((a, b) => { const x = valor(a.data(), campo), y = valor(b.data(), campo); return (x > y ? 1 : x < y ? -1 : 0) * (dir === 'desc' ? -1 : 1); }));
+          if (limite > 0) docs = docs.slice(0, limite); else if (limite < 0) docs = docs.slice(limite);
+          return { docs, size: docs.length, empty: !docs.length, forEach: f => docs.forEach(f), docChanges: () => docs.map(d => ({ type: 'added', doc: d })) };
+        },
+        onSnapshot: (ok) => { const f = () => q.get().then(ok); oyentes.push(f); f(); return () => { const i = oyentes.indexOf(f); if (i >= 0) oyentes.splice(i, 1); }; }
+      };
+      if (c !== null) Object.assign(q, { doc: id => docRef(c, id || nuevoId()), add: async d => { const id = nuevoId(); col(c)[id] = clon(d); avisar(); return docRef(c, id); } });
+      return q;
+    }
+    function docRef(c, id) {
+      const r = {
+        id, path: c + '/' + id,
+        get: async () => snapDoc(c, id),
+        set: async (d, o) => { col(c)[id] = (o && o.merge) ? Object.assign(col(c)[id] || {}, clon(d)) : clon(d); avisar(); },
+        update: async d => { const cur = col(c)[id] = col(c)[id] || {}; Object.entries(d).forEach(([k, v]) => { if (k.includes('.')) { const p = k.split('.'); let o = cur; p.slice(0, -1).forEach(s => o = o[s] = o[s] || {}); o[p[p.length - 1]] = clon(v); } else cur[k] = clon(v); }); avisar(); },
+        delete: async () => { delete col(c)[id]; avisar(); },
+        onSnapshot: ok => { const f = () => ok(snapDoc(c, id)); oyentes.push(f); f(); return () => { const i = oyentes.indexOf(f); if (i >= 0) oyentes.splice(i, 1); }; },
+        collection: sub => query(c + '/' + id + '/' + sub, [], [], 0)
+      };
+      return r;
+    }
+    return {
+      collection: n => query(n, [], [], 0),
+      doc: p => { const i = p.lastIndexOf('/'); return docRef(p.slice(0, i), p.slice(i + 1)); },
+      batch: () => { const ops = []; const b = { set: (r, d, o) => (ops.push(() => r.set(d, o)), b), update: (r, d) => (ops.push(() => r.update(d)), b), delete: r => (ops.push(() => r.delete()), b), commit: async () => { for (const op of ops) await op(); } }; return b; },
+      runTransaction: async f => f({ get: r => r.get(), set: (r, d, o) => r.set(d, o), update: (r, d) => r.update(d), delete: r => r.delete() }),
+      enablePersistence: async () => {}, settings: () => {}, _datos: C
+    };
+  }
+
+  /* ── Realtime Database (compat) en memoria ── */
+  function MockRTDB(semilla) {
+    const raiz = { v: clon(semilla) || {} };
+    const oyentes = [];
+    const partes = p => String(p || '').split('/').filter(Boolean);
+    const leer = p => partes(p).reduce((o, k) => (o == null ? null : (o[k] === undefined ? null : o[k])), raiz.v);
+    const escribir = (p, v) => {
+      const ps = partes(p); if (!ps.length) { raiz.v = clon(v) || {}; return; }
+      let o = raiz.v; ps.slice(0, -1).forEach(k => { if (o[k] == null || typeof o[k] !== 'object') o[k] = {}; o = o[k]; });
+      if (v === null || v === undefined) delete o[ps[ps.length - 1]]; else o[ps[ps.length - 1]] = clon(v);
+    };
+    const avisar = () => oyentes.slice().forEach(f => { try { f(); } catch (e) {} });
+    function snap(p, v) {
+      const key = partes(p).pop() || null;
+      return {
+        key, val: () => clon(v), exists: () => v !== null && v !== undefined, exportVal: () => clon(v),
+        numChildren: () => (v && typeof v === 'object') ? Object.keys(v).length : 0,
+        hasChildren: () => !!(v && typeof v === 'object' && Object.keys(v).length),
+        hasChild: k => !!(v && typeof v === 'object' && v[k] !== undefined),
+        child: k => snap(p + '/' + k, (v && typeof v === 'object') ? (partes(k).reduce((o, x) => o == null ? null : o[x], v) ?? null) : null),
+        forEach: f => { if (v && typeof v === 'object') { for (const k of Object.keys(v)) { if (f(snap(p + '/' + k, v[k])) === true) return true; } } return false; },
+        ref: ref(p)
+      };
+    }
+    function ref(p, q) {
+      q = q || {};
+      const valorQ = () => {
+        let v = leer(p); if (!q.campo && !q.lim && !('igual' in q) && !q.porClave) return v;
+        if (!v || typeof v !== 'object') return v;
+        let ks = Object.keys(v);
+        const campo = k => q.campo === '$key' ? k : (q.campo === '$value' ? v[k] : (v[k] || {})[q.campo]);
+        if ('igual' in q) ks = ks.filter(k => campo(k) === q.igual);
+        if ('desde' in q) ks = ks.filter(k => campo(k) >= q.desde);
+        if ('hasta' in q) ks = ks.filter(k => campo(k) <= q.hasta);
+        if (q.campo) ks.sort((a, b) => { const x = campo(a), y = campo(b); return x > y ? 1 : x < y ? -1 : 0; });
+        if (q.lim > 0) ks = ks.slice(0, q.lim); else if (q.lim < 0) ks = ks.slice(q.lim);
+        const o = {}; ks.forEach(k => o[k] = v[k]); return o;
+      };
+      const r = {
+        key: partes(p).pop() || null, path: p,
+        child: k => ref(partes(p).concat(partes(k)).join('/')),
+        parent: null,
+        once: async (ev, ok) => { const s = snap(p, valorQ()); if (ok) ok(s); return s; },
+        get: async () => snap(p, valorQ()),
+        on: (ev, ok) => { const f = () => ok(snap(p, valorQ())); f.__ok = ok; f.__p = p; oyentes.push(f); f(); return ok; },
+        off: (ev, ok) => { for (let i = oyentes.length - 1; i >= 0; i--) if (oyentes[i].__p === p && (!ok || oyentes[i].__ok === ok)) oyentes.splice(i, 1); },
+        set: async v => { escribir(p, v); avisar(); },
+        update: async o => { Object.entries(o || {}).forEach(([k, v]) => escribir(partes(p).concat(partes(k)).join('/'), v)); avisar(); },
+        remove: async () => { escribir(p, null); avisar(); },
+        push: v => { const k = nuevoId(); const c = ref(partes(p).concat([k]).join('/')); if (v !== undefined) { escribir(c.path, v); avisar(); } const pr = Promise.resolve(c); c.then = pr.then.bind(pr); c.catch = pr.catch.bind(pr); return c; },
+        transaction: async f => { const v = f(leer(p)); if (v !== undefined) { escribir(p, v); avisar(); } return { committed: true, snapshot: snap(p, leer(p)) }; },
+        orderByChild: c => ref(p, Object.assign({}, q, { campo: c })), orderByKey: () => ref(p, Object.assign({}, q, { campo: '$key' })),
+        orderByValue: () => ref(p, Object.assign({}, q, { campo: '$value' })),
+        equalTo: v => ref(p, Object.assign({}, q, { igual: v })), startAt: v => ref(p, Object.assign({}, q, { desde: v })), endAt: v => ref(p, Object.assign({}, q, { hasta: v })),
+        limitToFirst: n => ref(p, Object.assign({}, q, { lim: n })), limitToLast: n => ref(p, Object.assign({}, q, { lim: -n })),
+        onDisconnect: () => ({ remove: async () => {}, set: async () => {}, update: async () => {}, cancel: async () => {} }),
+        toString: () => 'demo://' + p
+      };
+      return r;
+    }
+    return { ref: p => ref(p || ''), refFromURL: u => ref(''), goOnline() {}, goOffline() {}, _raiz: raiz };
+  }
+
+  /* ── Auth de mentira ── */
+  function MockAuth(usuario) {
+    const u = Object.assign({ uid: 'demo', email: 'demo@demo.local', displayName: 'Demostración', getIdToken: async () => 'demo', getIdTokenResult: async () => ({ claims: {} }) }, usuario || {});
+    return { currentUser: u, onAuthStateChanged: f => { setTimeout(() => f(u), 0); return () => {}; }, signOut: async () => location.reload(), signInWithEmailAndPassword: async () => ({ user: u }), setPersistence: async () => {} };
+  }
+
+  /* ── Banner y guía explicativa ── */
+  const CSS = `
+  .dmo-banda{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:2147483000;display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center;
+    background:#111827;color:#fff;font:600 13px/1.3 system-ui,-apple-system,'Segoe UI',sans-serif;padding:8px 10px 8px 14px;border-radius:999px;box-shadow:0 10px 30px rgba(0,0,0,.3);max-width:calc(100vw - 20px)}
+  .dmo-banda b{color:#FDE68A}.dmo-banda button{all:unset;cursor:pointer;background:#FDE68A;color:#111827;padding:6px 12px;border-radius:999px;font-weight:700}
+  .dmo-banda button.dmo-salir{background:#374151;color:#fff}
+  button.dmo-q.dmo-q,.dmo-q{all:unset;box-sizing:border-box;display:inline-grid;place-items:center;width:22px;height:22px;margin:0 6px;border-radius:50%;background:#F59E0B;color:#fff;
+    font:800 13px/1 system-ui,sans-serif;cursor:pointer;vertical-align:middle;box-shadow:0 0 0 3px rgba(245,158,11,.25);animation:dmoLate 2.4s ease-in-out infinite;flex:none}
+  .dmo-q:hover{background:#D97706}@keyframes dmoLate{0%,100%{box-shadow:0 0 0 3px rgba(245,158,11,.25)}50%{box-shadow:0 0 0 7px rgba(245,158,11,.08)}}
+  .dmo-pop{position:fixed;z-index:2147483001;max-width:min(380px,calc(100vw - 24px));background:#fff;color:#1f2937;border-radius:14px;box-shadow:0 18px 50px rgba(0,0,0,.28);
+    padding:14px 16px 12px;font:14px/1.5 system-ui,-apple-system,'Segoe UI',sans-serif;border-top:5px solid #F59E0B}
+  .dmo-pop h4{margin:0 0 6px;font-size:15px}.dmo-pop p{margin:0 0 8px}.dmo-pop .dmo-como{background:#FFFBEB;border-radius:8px;padding:8px 10px;font-size:13px}
+  .dmo-pop .dmo-x{all:unset;cursor:pointer;position:absolute;right:10px;top:8px;font-size:18px;color:#6B7280}
+  .dmo-panel{position:fixed;right:14px;bottom:70px;z-index:2147483001;width:min(360px,calc(100vw - 28px));max-height:min(70vh,560px);overflow:auto;background:#fff;color:#1f2937;
+    border-radius:16px;box-shadow:0 18px 50px rgba(0,0,0,.28);font:14px/1.45 system-ui,-apple-system,'Segoe UI',sans-serif}
+  .dmo-panel header{position:sticky;top:0;background:#111827;color:#fff;padding:12px 14px;font-weight:700;display:flex;justify-content:space-between;align-items:center}
+  .dmo-panel header button{all:unset;cursor:pointer;font-size:18px}
+  .dmo-panel .dmo-int{padding:10px 14px;background:#FFFBEB;font-size:13px}
+  .dmo-panel ol{margin:0;padding:6px 8px 10px 8px;list-style:none;counter-reset:d}
+  .dmo-panel li{counter-increment:d}.dmo-panel li button{all:unset;box-sizing:border-box;display:flex;gap:10px;width:100%;padding:9px 8px;border-radius:10px;cursor:pointer}
+  .dmo-panel li button:hover{background:#F3F4F6}.dmo-panel li button::before{content:counter(d);flex:none;width:22px;height:22px;border-radius:50%;background:#F59E0B;color:#fff;display:grid;place-items:center;font-weight:800;font-size:12px}
+  .dmo-panel li small{display:block;color:#6B7280}
+  .dmo-foco{outline:3px solid #F59E0B!important;outline-offset:4px!important;border-radius:8px;transition:outline-color .3s}
+  @media print{.dmo-banda,.dmo-q,.dmo-pop,.dmo-panel{display:none!important}}`;
+  const esc = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  let pop = null, panel = null, ITEMS = [];
+  function cerrarPop() { if (pop) { pop.remove(); pop = null; } document.querySelectorAll('.dmo-foco').forEach(e => e.classList.remove('dmo-foco')); }
+  function mostrar(it, ancla) {
+    cerrarPop();
+    pop = document.createElement('div'); pop.className = 'dmo-pop'; pop.setAttribute('role', 'dialog');
+    pop.innerHTML = '<button class="dmo-x" aria-label="Cerrar">×</button><h4>' + esc(it.titulo) + '</h4><p>' + it.texto + '</p>' + (it.como ? '<div class="dmo-como"><b>Cómo se hace:</b> ' + it.como + '</div>' : '');
+    document.body.appendChild(pop);
+    pop.querySelector('.dmo-x').onclick = cerrarPop;
+    const r = ancla ? ancla.getBoundingClientRect() : null, w = pop.offsetWidth, h = pop.offsetHeight;
+    let x = r ? r.left : (innerWidth - w) / 2, y = r ? r.bottom + 8 : (innerHeight - h) / 2;
+    if (y + h > innerHeight - 10) y = Math.max(10, (r ? r.top : innerHeight) - h - 8);
+    x = Math.max(10, Math.min(x, innerWidth - w - 10));
+    pop.style.left = x + 'px'; pop.style.top = y + 'px';
+  }
+  function visible(el) { return el && el.offsetParent !== null && el.getClientRects().length; }
+  function poner() {
+    ITEMS.forEach((it, i) => {
+      document.querySelectorAll(it.sel).forEach(el => {
+        if (it.contiene && !(el.textContent || '').includes(it.contiene)) return;
+        if (el.dataset.dmo === String(i) || el.querySelector(':scope > .dmo-q[data-i="' + i + '"]')) return;
+        el.dataset.dmo = String(i);
+        const b = document.createElement('button'); b.type = 'button'; b.className = 'dmo-q'; b.dataset.i = i; b.textContent = '?'; b.title = 'Qué es esto: ' + it.titulo;
+        b.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); mostrar(it, b); });
+        if (it.donde === 'antes') el.parentNode.insertBefore(b, el); else if (it.donde === 'despues') el.after(b); else el.appendChild(b);
+      });
+    });
+  }
+  function abrirPanel() {
+    if (panel) { panel.remove(); panel = null; return; }
+    panel = document.createElement('div'); panel.className = 'dmo-panel';
+    panel.innerHTML = '<header>📘 Guía de la demostración<button aria-label="Cerrar">×</button></header><div class="dmo-int">' + (window.__DEMO_INTRO || 'Pulsa los círculos <b>?</b> que verás junto a cada apartado, o elige uno aquí.') + '</div><ol>' +
+      ITEMS.map((it, i) => '<li><button data-i="' + i + '"><span><b>' + esc(it.titulo) + '</b>' + (it.donde_txt ? '<small>' + esc(it.donde_txt) + '</small>' : '') + '</span></button></li>').join('') + '</ol>';
+    document.body.appendChild(panel);
+    panel.querySelector('header button').onclick = abrirPanel;
+    panel.addEventListener('click', e => {
+      const b = e.target.closest('li button'); if (!b) return; const it = ITEMS[+b.dataset.i];
+      if (innerWidth < 1500) abrirPanel();
+      if (it.ir) { try { it.ir(); } catch (er) {} }
+      setTimeout(() => {
+        const el = [...document.querySelectorAll(it.sel)].find(e => visible(e) && (!it.contiene || (e.textContent || '').includes(it.contiene)));
+        if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.classList.add('dmo-foco'); setTimeout(() => mostrar(it, el.querySelector('.dmo-q') || el), 450); }
+        else mostrar(it, null);
+      }, it.ir ? 500 : 0);
+    });
+  }
+  window.DEMO = {
+    activo: false, MockFS, MockRTDB, MockAuth,
+    iniciar(opciones) {
+      this.activo = true; window._demo = true; ITEMS = opciones.guia || []; window.__DEMO_INTRO = opciones.intro;
+      const st = document.createElement('style'); st.textContent = CSS; document.head.appendChild(st);
+      const bn = document.createElement('div'); bn.className = 'dmo-banda';
+      bn.innerHTML = '<span>🧪 <b>Modo demostración</b> · datos inventados · no se guarda nada</span><button type="button" class="dmo-guia">📘 Guía</button><button type="button" class="dmo-salir">Salir</button>';
+      document.body.appendChild(bn);
+      bn.querySelector('.dmo-guia').onclick = abrirPanel;
+      bn.querySelector('.dmo-salir').onclick = () => { location.href = location.pathname; };
+      document.addEventListener('click', e => { if (pop && !pop.contains(e.target) && !e.target.closest('.dmo-q')) cerrarPop(); });
+      new MutationObserver(() => { clearTimeout(this._t); this._t = setTimeout(poner, 120); }).observe(document.body, { childList: true, subtree: true });
+      poner(); setTimeout(abrirPanel, 900);
+    },
+    boton(texto) {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'dmo-entrar';
+      b.textContent = texto || '🧪 Ver una demostración con datos de ejemplo';
+      b.style.cssText = 'display:block;width:100%;margin:12px 0 0;padding:12px 14px;border-radius:12px;border:2px dashed #F59E0B;background:#FFFBEB;color:#92400E;font:700 15px system-ui,sans-serif;cursor:pointer';
+      return b;
+    }
+  };
+})();
+
+</script>
+<script>
+/* Modo demostración del Gestor PT y AL (parte 1: antes de la app).
+   Con ?demo la app usa una base de datos en memoria con alumnado inventado:
+   no se conecta a Firebase ni se guarda nada. */
+(function () {
+  if (!/[?&]demo\b/.test(location.search)) return;
+  window._demo = true;
+  const mem = { gestorpe_perfil: 'demo' };
+  try {
+    Storage.prototype.getItem = function (k) { return Object.prototype.hasOwnProperty.call(mem, k) ? mem[k] : null; };
+    Storage.prototype.setItem = function (k, v) { mem[k] = String(v); };
+    Storage.prototype.removeItem = function (k) { delete mem[k]; };
+  } catch (e) { }
+  const Y = (() => { const d = new Date(); return d.getMonth() >= 8 ? d.getFullYear() : d.getFullYear() - 1; })();
+  const CUR = Y + '-' + String(Y + 1).slice(2);
+  const nuevo = (siglas, curso, ciclo, dias) => ({ siglas, curso, ciclo, diasSesion: dias, programas: {}, programacion: {}, evaluaciones: {}, ausencias: {}, sincole: {}, resultados: {}, pasados: {} });
+  const alumnos = {
+    d1: nuevo('I.M.R.', 'Infantil 5 años', 'infantil', [0, 2, 4]),
+    d2: nuevo('L.P.G.', '1º Primaria', 'ciclo1', [1, 3]),
+    d3: nuevo('A.S.T.', '2º Primaria', 'ciclo1', [0, 2, 4]),
+    d4: nuevo('D.R.H.', '3º Primaria', 'ciclo2', [1, 3]),
+    d5: nuevo('N.C.F.', '3º Primaria', 'ciclo2', [0, 3])
+  };
+  const semilla = {
+    '.info': { connected: true },
+    demo_pt: { config: { cursoActivo: CUR }, cursos: { _meta: { [CUR]: { nombre: CUR.replace('-', '/') } }, [CUR]: { alumnos } } }
+  };
+  const base = window.DEMO.MockAuth({ email: 'demo@capitulaciones.local' });
+  // Que la sesión «entre» cuando ya esté cargada toda la página
+  const auth = Object.assign({}, base, {
+    onAuthStateChanged: f => { const ir = () => setTimeout(() => f(base.currentUser), 0); if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ir); else ir(); return () => { }; },
+    setPersistence: async () => { }
+  });
+  let db = null;
+  const dbf = () => (db = db || window.DEMO.MockRTDB(semilla));
+  const falso = {
+    initializeApp: () => ({ name: '[DEFAULT]', database: dbf, auth: () => auth }),
+    database: dbf,
+    auth: Object.assign(() => auth, { Auth: { Persistence: { LOCAL: 'local', SESSION: 'session' } } }),
+    apps: [1]
+  };
+  if (window.firebase) { ['initializeApp', 'database', 'auth'].forEach(k => { try { window.firebase[k] = falso[k]; } catch (e) { } }); }
+  else window.firebase = falso;
+})();
+
+</script>
+<!-- /DEMO-PRE -->
     <script>
         // ─── Carga perezosa de Mammoth (solo al importar .docx) ─────────
         let _mammothPromise=null;
@@ -11215,8 +11489,8 @@ async function cambiarCentro(){
 <script>
 // ===== Novedades (salen una sola vez en cada dispositivo) =====
 (function(){
-  var ID='2026-11-05-ia3', K='novedades-gestorpt', ITEMS=["🔒 <b>IA y protección de datos:</b> al copiar un prompt para la IA, la app mantiene las siglas pero <b>quita los diagnósticos</b> (TEA, TDAH, dislexia…). Describe las necesidades con palabras pedagógicas (p. ej. «necesita apoyo visual»)."];
-  function ver(){ try{ if(localStorage.getItem(K)===ID) return; }catch(e){ return; }
+  var ID='2026-11-18-demo', K='novedades-gestorpt', ITEMS=["🧪 <b>Modo demostración:</b> en la pantalla de acceso hay un botón para ver la app con alumnado inventado y una guía que explica cada apartado. Sirve para enseñarla a otros centros; no toca tus datos."];
+  function ver(){ if(window._demo) return; try{ if(localStorage.getItem(K)===ID) return; }catch(e){ return; }
     var d=document.createElement('div');
     d.style.cssText='position:fixed;inset:0;background:rgba(15,23,42,.55);display:flex;align-items:center;justify-content:center;z-index:99999;padding:18px;font-family:inherit';
     d.innerHTML='<div role="dialog" aria-modal="true" style="background:#fff;border-radius:16px;max-width:440px;width:100%;max-height:88vh;overflow:auto;padding:22px 22px 18px;box-shadow:0 20px 60px rgba(0,0,0,.3);color:#1e293b">'+
@@ -11602,5 +11876,70 @@ body::before{inset:0!important;background-size:140% 140%!important;animation:gDr
 })();
 
 </script>
+<!-- DEMO -->
+<script>
+/* Modo demostración del Gestor PT y AL (parte 2: datos, entrada y guía). */
+(function () {
+  const ES_DEMO = /[?&]demo\b/.test(location.search);
+  function ponerBoton() {
+    const ok = document.getElementById('peBtnEntrar'); if (!ok || document.querySelector('.dmo-entrar')) return;
+    const b = window.DEMO.boton(); b.onclick = () => { location.search = '?demo'; }; ok.after(b);
+  }
+  if (!ES_DEMO) { ponerBoton(); return; }
+  PERFILES.demo = { nombre: 'Maestra de PT (demo)', emoji: '🧪', root: 'demo_pt', idea: '' };
+  const PROGS = { d1: ['cognitivo', 'comunicativo'], d2: ['dislexia', 'pra_mat'], d3: ['tea', 'social'], d4: ['tdah', 'pra_lcl'], d5: ['discalculia'] };
+  let azar = 11; const r = () => { azar = (azar * 9301 + 49297) % 233280; return azar / 233280; };
+  const pad = n => String(n).padStart(2, '0');
+  const iso = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  async function rellenar() {
+    for (let i = 0; i < 80 && !(typeof alumnos !== 'undefined' && alumnos.d5 && typeof plantillas !== 'undefined' && Object.keys(plantillas).length); i++) await new Promise(ok => setTimeout(ok, 100));
+    // 1) Programas de la biblioteca, como si se hubieran asignado a mano
+    for (const [aid, tipos] of Object.entries(PROGS)) {
+      const a = alumnos[aid]; if (!a) continue;
+      for (const t of tipos) {
+        const pid = 'base_' + a.ciclo + '_' + t; if (plantillas[pid]) await asignarPlantilla(pid, aid, { explicito: true });
+        await new Promise(ok => setTimeout(ok, 60));
+      }
+    }
+    await new Promise(ok => setTimeout(ok, 400));
+    // 2) Evaluación del 1.er trimestre y alguna ausencia ya pasada
+    const hoy = iso(new Date()), up = {};
+    Object.entries(alumnos).forEach(([aid, a], n) => {
+      Object.entries(a.programas || {}).forEach(([pid, p]) => (p.objetivos || []).forEach((o, oi) => {
+        if ((o.trimestre || 1) !== 1) return;
+        (o.indicadores || []).forEach((_, ii) => { const x = r(); up[PA + '/' + aid + '/evaluaciones/' + pid + '_' + oi + '_' + ii + '_T1'] = x < .66 - n * .06 ? 'C' : x < .9 ? 'P' : 'NC'; });
+      }));
+      const pas = getTodasLasSesiones(a).filter(k => { const [mi, s, d] = k.split('_').map(Number), lu = MESES[mi] && MESES[mi].lunes && MESES[mi].lunes[s - 1]; if (!lu) return false; const f = new Date(lu + 'T12:00'); f.setDate(f.getDate() + d); return iso(f) < hoy; });
+      [pas[3], pas[9]].filter(Boolean).forEach(k => up[PA + '/' + aid + '/ausencias/' + k] = true);
+    });
+    await db.ref().update(up);
+    try { volverInicio(); } catch (e) { }
+  }
+  setTimeout(rellenar, 300);
+  const nav = s => '#navTabsBar button[onclick*="\'' + s + '\'"]';
+  const sec = s => () => { const b = document.querySelector(nav(s)); if (!document.getElementById('screenInicio').offsetParent) try { volverInicio(); } catch (e) { } cambiarSeccion(s, document.querySelector(nav(s))); };
+  const tab = t => 'button[onclick="cambiarTab(\'' + t + '\')"]';
+  const ficha = t => () => { abrirAlumno('d4'); setTimeout(() => { const b = document.querySelector(tab(t)); if (b) b.click(); }, 150); };
+  window.DEMO.iniciar({
+    intro: 'Estás dentro del Gestor PT y AL con <b>5 alumnos inventados</b> (de Infantil a 3.º), con sus programas de la biblioteca ya asignados y el 1.er trimestre evaluado. Toca lo que quieras: <b>no se guarda nada</b>. Pulsa los <b>?</b> para saber qué hace cada apartado.',
+    guia: [
+      { sel: nav('alumnos'), ir: sec('alumnos'), titulo: 'Alumnos', texto: 'Las fichas del alumnado que atiendes, con sus programas y el progreso de un vistazo.', como: 'Con <b>➕ Nuevo</b> pones siglas, curso y días de sesión. Toca una ficha para entrar en ella.' },
+      { sel: tab('programas'), ir: ficha('programas'), titulo: 'Ficha · Programas', texto: 'Los programas de cada alumno/a (TDAH, lectoescritura, matemáticas…), con sus objetivos e indicadores por trimestre.', como: 'Pulsa <b>＋ Programa</b> y elige una plantilla de la biblioteca o sube un documento. La programación de todo el curso se genera sola.' },
+      { sel: tab('programacion'), ir: ficha('programacion'), titulo: 'Ficha · Programación', texto: 'El cuadrante mes a mes: qué objetivo toca cada día de sesión. Las ausencias y días sin cole se marcan en color.', como: 'Toca una celda para marcar <b>ausencia</b> o <b>sin cole</b>: lo programado pasa a la siguiente sesión. Con «Generar actividades con IA» prepara actividades para el mes.' },
+      { sel: tab('evaluacion'), ir: ficha('evaluacion'), titulo: 'Ficha · Evaluación', texto: 'Cada indicador se evalúa por trimestre: <b>C</b> conseguido, <b>P</b> en proceso, <b>NC</b> no conseguido.', como: 'Elige el trimestre y toca cada indicador. Con eso salen las gráficas, el informe a la familia y la memoria.' },
+      { sel: tab('asistencia'), ir: ficha('asistencia'), titulo: 'Ficha · Resumen', texto: 'Sesiones programadas, dadas y ausencias del alumno/a, con gráfica por meses.' },
+      { sel: nav('hoy'), ir: sec('hoy'), titulo: 'Hoy', texto: 'Qué alumnado tienes hoy y qué toca con cada uno, según sus días de sesión.', como: 'Marca la ausencia desde aquí mismo; la programación se recoloca sola.' },
+      { sel: nav('grupos'), ir: sec('grupos'), titulo: 'Grupos', texto: 'Para trabajar con varios alumnos a la vez: actividades comunes con la parte de cada uno.' },
+      { sel: nav('estadisticas'), ir: sec('estadisticas'), titulo: 'Estadísticas y gráficas', texto: 'Ranking de progreso (% de indicadores conseguidos), reparto de los programas por áreas y la tabla de calificaciones de todo el alumnado.', como: 'Se calcula solo con la evaluación. «Generar informe con gráficas» lo prepara para imprimir.' },
+      { sel: nav('biblioteca'), ir: sec('biblioteca'), titulo: 'Biblioteca de programas', texto: 'Plantillas de programas por ciclo (cognitivo, TEA, TDAH, dislexia, discalculia, lenguaje…) listas para asignar.', como: 'Puedes crear las tuyas pegando un programa o subiendo un Word.' },
+      { sel: nav('aci'), ir: sec('aci'), titulo: 'ACI', texto: 'Las adaptaciones curriculares: la app monta el documento con los programas y la evaluación del alumno/a.' },
+      { sel: nav('memoria'), ir: sec('memoria'), titulo: 'Memoria final', texto: 'La memoria de fin de curso del aula de PT, con los datos de todo el alumnado.' },
+      { sel: nav('informes'), ir: sec('informes'), titulo: 'Informes', texto: 'Informes para la familia, la tutoría y el expediente, con los datos ya puestos. Se pueden afinar con IA (sin diagnósticos, solo siglas).' }
+    ]
+  });
+})();
+
+</script>
+<!-- /DEMO -->
 </body>
 </html>
