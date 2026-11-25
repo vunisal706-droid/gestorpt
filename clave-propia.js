@@ -25,7 +25,7 @@
     caja.style.cssText = 'margin:8px 0 10px;font-size:13px;text-align:left';
     caja.innerHTML =
       '<a href="#" id="ccLink" style="color:#475569;text-decoration:underline">🔒 Tengo contraseña propia</a>' +
-      '<div id="ccCampo" style="display:none;margin-top:6px"><input type="password" id="ccClave" placeholder="Tu contraseña de esta app" autocomplete="current-password" ' +
+      '<div id="ccCampo" style="display:none;margin-top:6px"><input type="password" id="ccClave" placeholder="Tu contraseña de esta app" autocomplete="off" ' +
       'style="width:100%;box-sizing:border-box;padding:10px 12px;border:2px solid #d6dde6;border-radius:10px;font-size:15px"></div>' +
       '<label style="display:flex;gap:8px;align-items:center;margin-top:8px;color:#475569;cursor:pointer"><input type="checkbox" id="ccCambiar"> Ponerme o cambiar mi contraseña al entrar</label>';
     e.insertAdjacentElement('afterend', caja);
@@ -77,9 +77,13 @@
   if (window.firebase && firebase.auth && firebase.auth.Auth) {
     var P = firebase.auth.Auth.prototype, orig = P.signInWithEmailAndPassword;
     P.signInWithEmailAndPassword = async function (email, pass) {
-      var usar = aplica(email), cred;
-      try { cred = await orig.call(this, email, usar ? claveEscrita() : pass); }
-      catch (e) { throw usar ? errorClave(e) : e; }
+      var usar = aplica(email), cred, self = this;
+      try { cred = await orig.call(self, email, usar ? claveEscrita() : pass); }
+      catch (e) {
+        if (!usar) throw e;
+        // Si la contraseña falla (p. ej. la rellenó el navegador), se prueba con el IdEA
+        try { cred = await orig.call(self, email, pass); } catch (e2) { throw errorClave(e); }
+      }
       if (quiereCambiar() && cred && cred.user) await modal(function (n) { return cred.user.updatePassword(n); });
       return cred;
     };
@@ -89,7 +93,10 @@
   window.ccEntrar = async function (signIn, auth, email, pass) {
     var usar = aplica(email), cred;
     try { cred = await signIn(auth, email, usar ? claveEscrita() : pass); }
-    catch (e) { throw usar ? errorClave(e) : e; }
+    catch (e) {
+      if (!usar) throw e;
+      try { cred = await signIn(auth, email, pass); } catch (e2) { throw errorClave(e); }
+    }
     if (quiereCambiar() && cred && cred.user) {
       await modal(async function (n) {
         var m = await import('https://www.gstatic.com/firebasejs/' + (MOD || '10.12.0') + '/firebase-auth.js');
