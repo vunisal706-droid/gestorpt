@@ -1758,7 +1758,7 @@
                 if (e.code === 'auth/network-request-failed') return peError('Sin conexión. Inténtalo de nuevo.');
                 if (e.code === 'auth/too-many-requests')      return peError('Demasiados intentos. Espera unos minutos.');
                 if (e.code === 'auth/user-not-found')         return peError('Esa cuenta no está dada de alta.');
-                return peError('El usuario IdEA no es correcto.');
+                return peError('No te deja entrar. Si te has puesto una contraseña propia (aquí, en Programas o en Refuerzo, que comparten acceso), pulsa «🔒 Tengo contraseña propia» y escríbela. Si no, revisa tu usuario IdEA.');
             }
         }
 
